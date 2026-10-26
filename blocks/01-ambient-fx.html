@@ -1,0 +1,194 @@
+<script>
+/* ── 块 01 · 高级粒子特效：多层景深、拖尾火星、星芒、环绕光带、鼠标魔法轨迹、汇聚/爆散/穿越 ── */
+(function(SB){
+  const fx = SB.fx = {};
+  const back = document.getElementById('fx-back'), front = document.getElementById('fx-front');
+  const bctx = back.getContext('2d'), fctx = front.getContext('2d');
+  let W = 0, H = 0, DPR = 1;
+  const S = {}; // 精灵图
+  const parts = [], glints = [], wand = [];
+  let orbitPts = [];
+  const mode = { gather:0, burst:0, warp:0, tg:{gather:0, burst:0, warp:0}, gx:.5, gy:.5 };
+  const mouse = { x:0, y:0, tx:0, ty:0, px:-1, py:-1 };
+  const orbit = { on:false, k:0, cx:0, cy:0, rx:0, ry:0, tilt:-.18, speed:.12, boost:1 };
+  let palette = 'warm';
+
+  function glow(r, stops){
+    const c = document.createElement('canvas'); c.width = c.height = r*2;
+    const g = c.getContext('2d'), gr = g.createRadialGradient(r,r,0,r,r,r);
+    stops.forEach(([o,col]) => gr.addColorStop(o,col)); g.fillStyle = gr; g.fillRect(0,0,r*2,r*2); return c;
+  }
+  function star(r, core, halo){
+    const c = document.createElement('canvas'); c.width = c.height = r*2; const g = c.getContext('2d');
+    g.drawImage(glow(r, [[0,core],[.12,halo],[1,'rgba(0,0,0,0)']]), 0, 0);
+    g.globalCompositeOperation = 'lighter';
+    for(const [w,h] of [[r*2,r*.09],[r*.09,r*2]]){
+      const gr = g.createLinearGradient(r-w/2, r-h/2, r+w/2, r+h/2);
+      gr.addColorStop(0,'rgba(0,0,0,0)'); gr.addColorStop(.5,core); gr.addColorStop(1,'rgba(0,0,0,0)');
+      g.fillStyle = gr; g.fillRect(r-w/2, r-h/2, w, h);
+    }
+    return c;
+  }
+  function makeSprites(){
+    S.warm = {
+      bokeh: glow(64, [[0,'rgba(255,200,120,.55)'],[.3,'rgba(255,160,70,.2)'],[1,'rgba(0,0,0,0)']]),
+      dust:  glow(20, [[0,'rgba(255,244,214,1)'],[.25,'rgba(255,196,100,.6)'],[1,'rgba(0,0,0,0)']]),
+      ember: glow(14, [[0,'rgba(255,252,236,1)'],[.3,'rgba(255,160,60,.75)'],[1,'rgba(0,0,0,0)']]),
+      glint: star(40, 'rgba(255,248,226,1)', 'rgba(255,196,110,.5)'),
+      trail: 'rgba(255,170,80,'
+    };
+    S.night = {
+      bokeh: glow(64, [[0,'rgba(150,170,255,.35)'],[.3,'rgba(110,120,230,.14)'],[1,'rgba(0,0,0,0)']]),
+      dust:  glow(20, [[0,'rgba(236,240,255,1)'],[.25,'rgba(170,186,255,.55)'],[1,'rgba(0,0,0,0)']]),
+      ember: glow(14, [[0,'rgba(255,252,236,1)'],[.3,'rgba(255,196,110,.75)'],[1,'rgba(0,0,0,0)']]),
+      glint: star(40, 'rgba(255,255,255,1)', 'rgba(190,200,255,.45)'),
+      trail: 'rgba(255,206,130,'
+    };
+  }
+  const count = () => SB.perf.level === 'high' ? 220 : SB.perf.level === 'low' ? 110 : 30;
+  function spawn(p, initial){
+    const r = Math.random();
+    p.kind = r < .14 ? 'bokeh' : r < .62 ? 'dust' : 'ember';
+    p.d = p.kind === 'bokeh' ? .2 + Math.random()*.3 : p.kind === 'dust' ? .4 + Math.random()*.4 : .8 + Math.random()*.4;
+    p.x = Math.random()*W; p.y = initial ? Math.random()*H : H + 30;
+    p.size = p.kind === 'bokeh' ? 20 + Math.random()*40 : p.kind === 'dust' ? 2.4 + Math.random()*4 : 1.8 + Math.random()*2.4;
+    p.vy = p.kind === 'bokeh' ? 2 + Math.random()*4 : p.kind === 'dust' ? 5 + Math.random()*10 : 10 + Math.random()*14;
+    p.sway = 6 + Math.random()*20; p.ph = Math.random()*6.28; p.fq = .12 + Math.random()*.3;
+    p.a = p.kind === 'bokeh' ? .1 + Math.random()*.18 : .4 + Math.random()*.55;
+    p.tw = .5 + Math.random()*1.6; p.ox = 0; p.oy = 0; p.front = p.kind === 'ember' && Math.random() < .45;
+    return p;
+  }
+  function buildOrbit(){
+    const n = SB.perf.level === 'high' ? 180 : SB.perf.level === 'low' ? 90 : 0;
+    orbitPts = Array.from({length:n}, () => ({ a:Math.random()*6.28, r:.86 + Math.random()*.28, h:(Math.random()-.5)*.16,
+      s:.6 + Math.random()*.8, size:1.2 + Math.random()*2.6, tw:Math.random()*6.28, big:Math.random() < .08 }));
+  }
+  function resize(){
+    DPR = Math.min(devicePixelRatio || 1, SB.perf.level === 'high' ? 2 : 1.5);
+    W = innerWidth; H = innerHeight;
+    for(const [c,x] of [[back,bctx],[front,fctx]]){ c.width = W*DPR; c.height = H*DPR; x.setTransform(DPR,0,0,DPR,0,0); }
+    const n = count();
+    while(parts.length < n) parts.push(spawn({}, true));
+    parts.length = n;
+    buildOrbit();
+  }
+
+  /* ── 对外接口 ── */
+  fx.calm   = () => { mode.tg.gather = 0; mode.tg.burst = 0; mode.tg.warp = 0; };
+  fx.gather = (x, y) => { mode.gx = x/W; mode.gy = y/H; mode.tg.gather = 1; mode.tg.warp = 0; };
+  fx.burst  = (ms=900) => { mode.tg.burst = 1; setTimeout(() => { mode.tg.burst = 0; }, ms); };
+  fx.warp   = (on=true) => { mode.tg.warp = on ? 1 : 0; if(on) mode.tg.gather = 0; };
+  fx.orbit  = (o) => { if(!o){ orbit.on = false; return; } Object.assign(orbit, o); orbit.on = true; };
+  fx.orbitBoost = (v) => { orbit.boost = v; };
+  fx.palette = (p) => { palette = p; };
+  fx.refresh = resize;
+
+  addEventListener('pointermove', e => {
+    mouse.tx = (e.clientX/W - .5)*2; mouse.ty = (e.clientY/H - .5)*2;
+    if(SB.perf.level === 'reduced') return;
+    const dx = e.clientX - mouse.px, dy = e.clientY - mouse.py;
+    if(mouse.px < 0 || dx*dx + dy*dy > 120){
+      mouse.px = e.clientX; mouse.py = e.clientY;
+      if(wand.length < 70) for(let i = 0; i < 2; i++) wand.push({ x:e.clientX + (Math.random()-.5)*8, y:e.clientY + (Math.random()-.5)*8,
+        vx:(Math.random()-.5)*24, vy:10 + Math.random()*30, life:0, max:.7 + Math.random()*.5, s:1.4 + Math.random()*2.2 });
+    }
+  }, {passive:true});
+
+  let last = performance.now(), running = true;
+  function frame(now){
+    if(!running) return;
+    const dt = SB.clamp((now - last)/1000, 0, .05); last = now;
+    const t = now/1000, sp = S[palette];
+    for(const k of ['gather','burst','warp']) mode[k] = SB.lerp(mode[k], mode.tg[k], Math.min(1, dt*(k === 'burst' ? 3 : 1.7)));
+    mouse.x = SB.lerp(mouse.x, mouse.tx, Math.min(1, dt*1.5)); mouse.y = SB.lerp(mouse.y, mouse.ty, Math.min(1, dt*1.5));
+    bctx.clearRect(0,0,W,H); fctx.clearRect(0,0,W,H);
+    bctx.globalCompositeOperation = fctx.globalCompositeOperation = 'lighter';
+    const gx = mode.gx*W, gy = mode.gy*H, cx = W/2, cy = H/2;
+
+    /* 漂浮粒子 */
+    for(const p of parts){
+      p.y -= p.vy*dt*(1 + mode.burst*3);
+      p.ph += p.fq*dt;
+      let x = p.x + Math.sin(p.ph)*p.sway, y = p.y;
+      if(mode.gather > .01){
+        const dx = gx - x - p.ox, dy = gy - y - p.oy, d = Math.hypot(dx,dy) + 1;
+        p.ox += (dx/d*70 - dy/d*95)*dt*mode.gather*p.d;
+        p.oy += (dy/d*70 + dx/d*95)*dt*mode.gather*p.d;
+      }else{ p.ox *= 1 - dt*.35; p.oy *= 1 - dt*.35; }
+      if(mode.burst > .01 || mode.warp > .01){
+        const dx = x + p.ox - cx, dy = y + p.oy - cy, d = Math.hypot(dx,dy) + 1;
+        const f = (mode.burst*150 + mode.warp*(80 + d*2.2))*dt*p.d;
+        p.ox += dx/d*f; p.oy += dy/d*f;
+      }
+      x += p.ox - mouse.x*18*p.d; y += p.oy - mouse.y*12*p.d;
+      if(!(Math.abs(x) < 1e5 && Math.abs(y) < 1e5)){ spawn(p, false); p.ox = p.oy = 0; continue; }
+      if(y < -80 || x < -100 || x > W + 100 || y > H + 100){ spawn(p, false); continue; }
+      const ctx = p.front ? fctx : bctx;
+      const a = p.a*(p.kind === 'bokeh' ? 1 : .55 + .45*Math.sin(t*p.tw + p.ph*3));
+      ctx.globalAlpha = SB.clamp(a, 0, 1);
+      if(mode.warp > .05 && p.kind !== 'bokeh'){
+        const dx = x - cx, dy = y - cy, d = Math.hypot(dx,dy) + 1, L = 8 + d*.18*mode.warp;
+        ctx.strokeStyle = sp.trail + (.5*mode.warp) + ')'; ctx.lineWidth = p.size*.5;
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - dx/d*L, y - dy/d*L); ctx.stroke();
+      }else if(p.kind === 'ember'){
+        const L = 6 + p.vy*.5;
+        const gr = ctx.createLinearGradient(x, y, x - Math.cos(p.ph)*p.sway*.15, y + L);
+        gr.addColorStop(0, sp.trail + '.55)'); gr.addColorStop(1, sp.trail + '0)');
+        ctx.strokeStyle = gr; ctx.lineWidth = p.size*.55;
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - Math.cos(p.ph)*p.sway*.15, y + L); ctx.stroke();
+      }
+      const s = p.size*2;
+      ctx.drawImage(sp[p.kind], x - s/2, y - s/2, s, s);
+    }
+
+    /* 星芒：偶尔闪现 */
+    if(SB.perf.level !== 'reduced' && glints.length < (SB.perf.level === 'high' ? 9 : 5) && Math.random() < dt*2.2){
+      glints.push({ x:Math.random()*W, y:Math.random()*H*.9, life:0, max:1.6 + Math.random()*1.8, s:14 + Math.random()*26, rot:Math.random()*.8, vr:(Math.random()-.5)*.6, front:Math.random() < .4 });
+    }
+    for(let i = glints.length - 1; i >= 0; i--){
+      const g = glints[i]; g.life += dt; g.rot += g.vr*dt;
+      if(g.life > g.max){ glints.splice(i,1); continue; }
+      const k = g.life/g.max, a = Math.sin(k*Math.PI), ctx = g.front ? fctx : bctx;
+      ctx.globalAlpha = a*.9;
+      ctx.save(); ctx.translate(g.x - mouse.x*10, g.y - mouse.y*8); ctx.rotate(g.rot);
+      const s = g.s*(.6 + .4*a); ctx.drawImage(sp.glint, -s, -s, s*2, s*2); ctx.restore();
+    }
+
+    /* 环绕光带 */
+    orbit.k = SB.lerp(orbit.k, orbit.on ? 1 : 0, Math.min(1, dt*1.4));
+    if(orbit.k > .01 && orbitPts.length){
+      const ct = Math.cos(orbit.tilt), st = Math.sin(orbit.tilt);
+      for(const o of orbitPts){
+        o.a += orbit.speed*o.s*orbit.boost*dt;
+        const ex = Math.cos(o.a)*orbit.rx*o.r, ey = Math.sin(o.a)*orbit.ry*o.r + o.h*orbit.ry;
+        const x = orbit.cx + ex*ct - ey*st, y = orbit.cy + ex*st + ey*ct;
+        const depth = Math.sin(o.a), isFront = depth > 0;
+        const ctx = isFront ? fctx : bctx;
+        const a = orbit.k*(isFront ? .55 + .45*depth : .25 + .25*(1+depth))*(.6 + .4*Math.sin(t*2 + o.tw));
+        const s = o.size*(isFront ? 1 + depth*.7 : .7)*(o.big ? 2.4 : 1)*2;
+        ctx.globalAlpha = SB.clamp(a, 0, 1);
+        ctx.drawImage(o.big ? sp.glint : sp.dust, x - s/2, y - s/2, s, s);
+      }
+    }
+
+    /* 鼠标魔法轨迹 */
+    for(let i = wand.length - 1; i >= 0; i--){
+      const w = wand[i]; w.life += dt;
+      if(w.life > w.max){ wand.splice(i,1); continue; }
+      w.x += w.vx*dt; w.y += w.vy*dt; w.vx *= .97;
+      const a = 1 - w.life/w.max;
+      fctx.globalAlpha = a; const s = w.s*2*(.5 + a*.5);
+      fctx.drawImage(sp.ember, w.x - s/2, w.y - s/2, s, s);
+    }
+
+    bctx.globalAlpha = fctx.globalAlpha = 1;
+    bctx.globalCompositeOperation = fctx.globalCompositeOperation = 'source-over';
+    requestAnimationFrame(frame);
+  }
+  fx.start = () => { makeSprites(); resize(); addEventListener('resize', resize); last = performance.now(); requestAnimationFrame(frame); };
+  document.addEventListener('visibilitychange', () => {
+    if(document.hidden){ running = false; }
+    else if(!running){ running = true; last = performance.now(); requestAnimationFrame(frame); }
+  });
+})(window.SB);
+</script>

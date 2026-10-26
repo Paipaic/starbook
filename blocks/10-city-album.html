@@ -1,0 +1,122 @@
+<style>
+/* ── 块 10 · 城市回忆目录（时间线） ── */
+.sb-scene[data-scene="city"]{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}
+.ca-ghost{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);font-family:var(--f-title);font-size:min(34vw,320px);line-height:1;white-space:nowrap;
+  color:transparent;-webkit-text-stroke:1px rgba(244,184,96,.09);text-shadow:0 0 80px rgba(244,184,96,.06);pointer-events:none;letter-spacing:.1em;}
+.ca-wrap{position:relative;padding-block:calc(84px + var(--safe-t)) calc(50px + var(--safe-b));
+  padding-left:max(16px,var(--safe-l));padding-right:max(16px,var(--safe-r));max-width:1100px;margin:0 auto;}
+.ca-head{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;margin-bottom:30px;}
+.ca-head small{font-family:var(--f-rune);font-size:11px;letter-spacing:.45em;color:var(--gold-dim);}
+.ca-head h1{margin:0;font-family:var(--f-title);font-weight:400;font-size:clamp(40px,7vw,72px);letter-spacing:.24em;color:var(--gold-hi);text-shadow:0 0 30px rgba(244,184,96,.6);}
+.ca-head p{margin:0;color:#c9c6ea;letter-spacing:.14em;font-size:14px;}
+.ca-line{position:relative;display:flex;flex-direction:column;gap:34px;}
+.ca-line::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:2px;transform:translateX(-50%);
+  background:linear-gradient(transparent, rgba(244,184,96,.7) 6%, rgba(244,184,96,.7) 94%, transparent);box-shadow:0 0 12px rgba(244,184,96,.5);}
+.ca-row{position:relative;display:grid;grid-template-columns:1fr 70px 1fr;align-items:center;}
+.ca-row > .ca-card{grid-column:1;justify-self:end;}
+.ca-row.r > .ca-card{grid-column:3;justify-self:start;}
+.ca-node{grid-column:2;grid-row:1;justify-self:center;display:flex;flex-direction:column;align-items:center;gap:4px;z-index:1;}
+.ca-node i{width:14px;height:14px;transform:rotate(45deg);background:var(--gold-hi);box-shadow:0 0 14px 4px rgba(244,184,96,.7);}
+.ca-node span{font-family:var(--f-title);font-size:13px;letter-spacing:.1em;color:var(--gold);white-space:nowrap;background:rgba(10,10,28,.85);padding:2px 8px;border-radius:999px;}
+.ca-card{position:relative;width:min(420px,100%);border-radius:14px;cursor:pointer;text-align:left;padding:12px;border:1px solid rgba(244,184,96,.3);
+  background:linear-gradient(180deg, rgba(40,32,60,.8), rgba(14,12,30,.85));box-shadow:0 14px 34px rgba(0,0,0,.45);
+  transition:transform .4s var(--ease-soft), box-shadow .4s, border-color .4s;animation:ctIn .8s var(--ease-soft) backwards;}
+.ca-card:hover,.ca-card:focus-visible{transform:translateY(-5px);border-color:rgba(255,226,168,.75);box-shadow:0 18px 40px rgba(0,0,0,.5), 0 0 30px rgba(244,184,96,.3);}
+.ca-cover{position:relative;aspect-ratio:4/3;border-radius:8px;overflow:hidden;background:#151230;
+  box-shadow:inset 0 0 0 1px rgba(255,226,168,.55), inset 0 0 0 5px rgba(10,8,20,.6), inset 0 0 0 6px rgba(244,184,96,.35);}
+.ca-cover img{width:100%;height:100%;object-fit:cover;display:block;filter:sepia(.15) saturate(1.05);transition:transform 1.2s var(--ease-soft);}
+.ca-card:hover .ca-cover img{transform:scale(1.06);}
+.ca-cover::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 1px rgba(255,226,168,.55), inset 0 0 40px rgba(0,0,0,.5);pointer-events:none;border-radius:8px;}
+.ca-meta{display:flex;flex-direction:column;gap:4px;padding:12px 4px 2px;}
+.ca-meta h3{margin:0;font-family:var(--f-title);font-weight:400;font-size:21px;letter-spacing:.08em;color:var(--gold-hi);line-height:1.35;}
+.ca-meta p{margin:0;font-size:13px;color:var(--text-dim);letter-spacing:.06em;display:flex;gap:12px;flex-wrap:wrap;}
+.ca-edit{position:absolute;top:18px;right:18px;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:rgba(10,10,28,.75);
+  color:var(--gold-hi);cursor:pointer;display:grid;place-items:center;z-index:2;opacity:.85;}
+.ca-edit:hover{opacity:1;box-shadow:0 0 14px rgba(244,184,96,.5);}
+.ca-edit svg{width:18px;height:18px;}
+.ca-new{min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;border-style:dashed;
+  font-family:var(--f-title);letter-spacing:.18em;color:var(--gold-hi);font-size:20px;}
+.ca-new b{font-weight:400;font-size:44px;line-height:1;text-shadow:0 0 20px rgba(244,184,96,.8);}
+.ca-empty{margin:20px auto 0;width:min(460px,100%);aspect-ratio:3/4;max-height:56vh;border-radius:6px 12px 12px 6px;
+  background:radial-gradient(60% 45% at 50% 45%, rgba(255,232,176,.9), rgba(255,200,120,.35) 50%, transparent 80%), #e9d6aa;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:#6b3a12;text-align:center;padding:24px;
+  box-shadow:0 20px 50px rgba(0,0,0,.5), 0 0 40px rgba(244,184,96,.25);}
+.ca-empty p{margin:0;font-family:var(--f-title);font-size:22px;letter-spacing:.14em;line-height:1.8;}
+@media (max-width:760px){
+  .ca-line::before{left:14px;}
+  .ca-row,.ca-row.r{grid-template-columns:28px 1fr;gap:0 12px;}
+  .ca-row > .ca-card,.ca-row.r > .ca-card{grid-column:2;justify-self:stretch;width:100%;}
+  .ca-node{grid-column:1;align-self:start;margin-top:16px;}
+  .ca-node span{position:absolute;left:24px;top:-22px;}
+}
+</style>
+
+<section class="sb-scene" data-scene="city" aria-label="城市回忆">
+  <div class="ca-ghost" id="ca-ghost" aria-hidden="true"></div>
+  <div class="ca-wrap">
+    <header class="ca-head"><small id="ca-en"></small><h1 id="ca-title"></h1><p id="ca-stat"></p></header>
+    <div id="ca-body"></div>
+  </div>
+</section>
+
+<script>
+(function(SB){
+  const $ = id => document.getElementById(id);
+  const QUILL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 3c-6 1-11 6-13 13l-2 5 5-2c7-2 12-7 13-13z M7 16l6-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>';
+  let cityId = null;
+  SB.fmtDate = d => { if(!d) return '未标注时间'; const [y,m] = d.split('-'); return m ? `${y} 年 ${+m} 月` : `${y} 年`; };
+
+  function render(){
+    const c = SB.store.city(cityId);
+    const body = $('ca-body'); body.innerHTML = '';
+    if(!c){ const e = SB.el('div','sb-empty'); e.textContent = '这座城市已经不在星图上了'; body.appendChild(e); return; }
+    $('ca-title').textContent = c.name; $('ca-ghost').textContent = c.name;
+    $('ca-en').textContent = `${c.countryName} · ${c.regionName}`;
+    const list = SB.store.memoriesOf(cityId);
+    $('ca-stat').textContent = list.length ? `${list.length} 段回忆 · ${list.reduce((n,m)=>n+(m.slides||[]).length,0)} 张照片` : '';
+    if(!list.length){
+      const e = SB.el('div','ca-empty');
+      const p = SB.el('p'); p.innerHTML = '这里还没有回忆<br>写下第一页吧';
+      e.appendChild(p);
+      if(SB.store.canEdit) e.appendChild(SB.ui.button('＋ 新的回忆', 'primary', () => SB.editor.open({cityId})));
+      body.appendChild(e); return;
+    }
+    const line = SB.el('div','ca-line');
+    if(SB.store.canEdit){
+      const row = SB.el('div','ca-row');
+      const n = SB.el('div','ca-node','<i></i><span>新的一页</span>');
+      const card = SB.el('button','ca-card ca-new','<b>＋</b>新的回忆'); card.type = 'button';
+      card.addEventListener('click', () => SB.editor.open({cityId}));
+      row.append(card, n); line.appendChild(row);
+    }
+    list.forEach((m, i) => {
+      const row = SB.el('div','ca-row' + ((i + (SB.store.canEdit ? 1 : 0)) % 2 ? ' r' : ''));
+      const node = SB.el('div','ca-node','<i></i><span></span>'); node.querySelector('span').textContent = SB.fmtDate(m.date);
+      const card = SB.el('div','ca-card'); card.tabIndex = 0; card.setAttribute('role','button'); card.setAttribute('aria-label','放映：' + m.title);
+      card.style.animationDelay = (i*80) + 'ms';
+      const cover = m.cover?.id || m.slides?.[0]?.id;
+      card.innerHTML = `<div class="ca-cover">${cover ? `<img alt="" loading="lazy" src="${SB.esc(SB.store.url(cover))}">` : ''}</div>
+        <div class="ca-meta"><h3></h3><p><span>${SB.esc(SB.fmtDate(m.date))}</span><span>${(m.slides||[]).length} 张照片</span>${m.bgm || m.bgmMode === 'global' ? '<span>♪ 背景音乐</span>' : ''}</p></div>`;
+      card.querySelector('h3').textContent = m.title;
+      const open = e => SB.scenes.go('player', {id:m.id}, {transition:'portal', x:e.clientX || innerWidth/2, y:e.clientY || innerHeight/2});
+      card.addEventListener('click', open);
+      card.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); open(e); } });
+      if(SB.store.canEdit){
+        const ed = SB.el('button','ca-edit', QUILL); ed.type = 'button'; ed.setAttribute('aria-label','编辑这段回忆');
+        ed.addEventListener('click', e => { e.stopPropagation(); SB.editor.open({cityId, memory:m}); });
+        card.appendChild(ed);
+      }
+      row.append(card, node); line.appendChild(row);
+    });
+    body.appendChild(line);
+  }
+  document.addEventListener('sb:data', () => { if(SB.scenes.current === 'city') render(); });
+
+  SB.scenes.register('city', {
+    world:'night',
+    title:p => SB.store.city(p.id)?.name || '城市',
+    parent:p => { const c = SB.store.city(p.id); return c ? {id:'country', params:{k:c.country}} : {id:'globe', params:{}}; },
+    enter(p){ cityId = p.id; SB.fx.palette('night'); render(); document.querySelector('.sb-scene[data-scene="city"]').scrollTop = 0; }
+  });
+})(window.SB);
+</script>

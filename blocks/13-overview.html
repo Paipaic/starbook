@@ -1,0 +1,138 @@
+<style>
+/* ── 块 13 · 回忆总览 ── */
+.sb-scene[data-scene="overview"]{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}
+.ov-wrap{padding-block:calc(84px + var(--safe-t)) calc(50px + var(--safe-b));padding-left:max(16px,var(--safe-l));padding-right:max(16px,var(--safe-r));
+  max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:34px;}
+.ov-head{text-align:center;display:flex;flex-direction:column;gap:6px;align-items:center;}
+.ov-head small{font-family:var(--f-rune);font-size:11px;letter-spacing:.45em;color:var(--gold-dim);}
+.ov-head h1{margin:0;font-family:var(--f-title);font-weight:400;font-size:clamp(36px,6vw,60px);letter-spacing:.28em;color:var(--gold-hi);text-shadow:0 0 30px rgba(244,184,96,.6);}
+.ov-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.ov-stat{display:flex;flex-direction:column;align-items:center;gap:4px;padding:18px 8px;border-radius:14px;border:1px solid rgba(244,184,96,.25);
+  background:radial-gradient(80% 80% at 50% 0%, rgba(244,184,96,.12), transparent 70%), rgba(14,14,40,.6);}
+.ov-stat b{font-family:var(--f-rune);font-weight:400;font-size:clamp(30px,5vw,48px);color:var(--gold-hi);text-shadow:0 0 22px rgba(244,184,96,.7);font-variant-numeric:tabular-nums;}
+.ov-stat span{font-family:var(--f-title);font-size:14px;letter-spacing:.2em;color:var(--text-dim);}
+.ov-sec h2{margin:0 0 14px;font-family:var(--f-title);font-weight:400;font-size:22px;letter-spacing:.2em;color:var(--gold-hi);display:flex;align-items:center;gap:12px;}
+.ov-sec h2::after{content:"";flex:1;height:1px;background:linear-gradient(90deg, var(--line), transparent);}
+.ov-recent{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin;}
+.ov-mem{flex:none;width:200px;border:0;padding:0;background:none;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:8px;}
+.ov-mem .im{aspect-ratio:4/3;border-radius:10px;overflow:hidden;background:#151230;box-shadow:inset 0 0 0 1px rgba(255,226,168,.5), 0 10px 24px rgba(0,0,0,.4);transition:box-shadow .3s, transform .3s;}
+.ov-mem:hover .im{transform:translateY(-3px);box-shadow:inset 0 0 0 1px rgba(255,226,168,.9), 0 0 24px rgba(244,184,96,.35);}
+.ov-mem img{width:100%;height:100%;object-fit:cover;display:block;}
+.ov-mem b{font-family:var(--f-title);font-weight:400;font-size:16px;color:var(--text);letter-spacing:.06em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ov-mem span{font-size:12px;color:var(--text-dim);}
+.ov-tree{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;}
+.ov-country{padding:14px 16px;border-radius:14px;border:1px solid rgba(244,184,96,.22);background:rgba(14,14,40,.55);}
+.ov-country h3{margin:0 0 8px;font-family:var(--f-title);font-weight:400;font-size:20px;letter-spacing:.12em;color:var(--gold-hi);cursor:pointer;}
+.ov-region{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;padding:6px 0;border-top:1px dashed rgba(244,184,96,.15);}
+.ov-region > span{font-size:13px;color:var(--text-dim);min-width:4.5em;}
+.ov-region button{border:0;background:none;cursor:pointer;padding:2px 4px;font-family:var(--f-title);font-size:16px;color:var(--text);letter-spacing:.06em;border-radius:6px;}
+.ov-region button:hover{color:var(--gold-hi);background:rgba(244,184,96,.1);}
+.ov-region button::before{content:"★ ";color:var(--gold-hi);text-shadow:0 0 6px #f4b860;}
+.ov-music{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:16px;border-radius:14px;border:1px solid rgba(244,184,96,.22);background:rgba(14,14,40,.55);}
+.ov-music .t{flex:1;min-width:200px;font-family:var(--f-title);font-size:17px;letter-spacing:.08em;}
+@media (max-width:620px){ .ov-stats{grid-template-columns:repeat(2,1fr);} .ov-tree{grid-template-columns:1fr;} }
+</style>
+
+<section class="sb-scene" data-scene="overview" aria-label="回忆总览">
+  <div class="ov-wrap" id="ov-wrap"></div>
+</section>
+
+<script>
+(function(SB){
+  const wrap = document.getElementById('ov-wrap');
+  let previewA = null;
+  function countUp(el, n){
+    const t0 = performance.now(), D = 1200;
+    const step = now => { const k = Math.min(1, (now - t0)/D); el.textContent = Math.round(n*(1 - Math.pow(1-k, 3))); if(k < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  }
+  function render(animate){
+    const s = SB.store.stats();
+    wrap.innerHTML = '';
+    const head = SB.el('header','ov-head','<small>SUMMA MEMORIAE</small><h1>回忆总览</h1>'); wrap.appendChild(head);
+    const stats = SB.el('div','ov-stats');
+    [['countries','国家'],['regions','省份'],['cities','城市'],['memories','回忆']].forEach(([k,l]) => {
+      const d = SB.el('div','ov-stat', `<b>0</b><span>${l}</span>`); stats.appendChild(d);
+      const b = d.querySelector('b'); animate ? countUp(b, s[k]) : (b.textContent = s[k]);
+    });
+    wrap.appendChild(stats);
+
+    if(!s.cities){
+      const e = SB.el('div','sb-empty'); e.innerHTML = '<p style="margin:0">星屿还是一片寂静<br>从世界星图开始点亮第一颗星吧</p>';
+      e.appendChild(SB.ui.button('前往世界星图', 'primary', () => SB.scenes.go('globe', {}, {transition:'flash'})));
+      wrap.appendChild(e);
+    }
+
+    // 最近的回忆
+    const recent = [...SB.store.memories].sort((a,b) => (b.date||'').localeCompare(a.date||'') || (b.createdAt||'').localeCompare(a.createdAt||'')).slice(0, 8);
+    if(recent.length){
+      const sec = SB.el('section','ov-sec','<h2>最近的回忆</h2>'); const row = SB.el('div','ov-recent');
+      recent.forEach(m => {
+        const c = SB.store.city(m.cityId); const b = SB.el('button','ov-mem'); b.type = 'button';
+        const cov = m.cover?.id || m.slides?.[0]?.id;
+        b.innerHTML = `<div class="im">${cov ? `<img alt="" loading="lazy" src="${SB.esc(SB.store.url(cov))}">` : ''}</div><b></b><span></span>`;
+        b.querySelector('b').textContent = m.title; b.querySelector('span').textContent = `${c?.name || ''} · ${SB.fmtDate(m.date)}`;
+        b.addEventListener('click', e => SB.scenes.go('player', {id:m.id}, {transition:'portal', x:e.clientX, y:e.clientY}));
+        row.appendChild(b);
+      });
+      sec.appendChild(row); wrap.appendChild(sec);
+    }
+
+    // 足迹：国家 → 省份 → 城市
+    if(s.cities){
+      const sec = SB.el('section','ov-sec','<h2>我们的足迹</h2>'); const tree = SB.el('div','ov-tree');
+      const byC = {}; SB.store.cities.forEach(c => { (byC[c.country] ||= {name:c.countryName, regions:{}}); (byC[c.country].regions[c.region] ||= {name:c.regionName, cities:[]}).cities.push(c); });
+      Object.entries(byC).sort((a,b) => Object.keys(b[1].regions).length - Object.keys(a[1].regions).length).forEach(([k, v]) => {
+        const box = SB.el('div','ov-country'); const h = SB.el('h3'); h.textContent = v.name; h.addEventListener('click', () => SB.scenes.go('country', {k}));
+        box.appendChild(h);
+        Object.values(v.regions).forEach(r => {
+          const row = SB.el('div','ov-region'); const n = SB.el('span'); n.textContent = r.name; row.appendChild(n);
+          r.cities.forEach(c => { const b = SB.el('button'); b.type = 'button'; b.textContent = c.name; b.addEventListener('click', () => SB.scenes.go('city', {id:c.id})); row.appendChild(b); });
+          box.appendChild(row);
+        });
+        tree.appendChild(box);
+      });
+      sec.appendChild(tree); wrap.appendChild(sec);
+    }
+
+    // 全站背景音乐
+    const sec = SB.el('section','ov-sec','<h2>全站背景音乐</h2>'); const box = SB.el('div','ov-music');
+    const t = SB.el('div','t'); const bgm = SB.store.settings?.bgm;
+    t.textContent = bgm ? '♪ ' + bgm.name : '还没有设置，上传一首属于你们的歌吧';
+    box.appendChild(t);
+    if(bgm) box.appendChild(SB.ui.button('试听', 'small', e => {
+      if(previewA && !previewA.paused){ previewA.pause(); e.target.textContent = '试听'; return; }
+      previewA = SB.audio.preview(bgm.id); previewA.play().catch(()=>{}); e.target.textContent = '停止'; }));
+    if(SB.store.canEdit && SB.store.canUpload){
+      const up = SB.el('label','sb-btn small primary'); up.style.position = 'relative'; up.textContent = bgm ? '换一首' : '上传音乐';
+      const inp = SB.el('input'); inp.type = 'file'; inp.accept = 'audio/*,.mp3,.m4a,.aac,.wav,.mp4'; inp.style.cssText = 'position:absolute;inset:0;opacity:0;cursor:pointer';
+      inp.setAttribute('aria-label','选择音乐文件');
+      inp.addEventListener('change', async () => {
+        const f = inp.files[0]; if(!f) return; inp.value = '';
+        try{ const r = await SB.store.uploadAudio(f, step => t.textContent = step);
+          const old = SB.store.settings?.bgm?.id;
+          await SB.store.saveSettings({bgm:r});
+          if(old && !SB.store.memories.some(m => m.bgm?.id === old)) SB.store.deleteFile(old);
+          SB.toast('全站背景音乐已更新'); SB.audio.unlock();
+        }catch(e){ SB.toast(e.msg || SB.store.errText(e), 4200); render(); }
+      });
+      up.appendChild(inp); box.appendChild(up);
+      if(bgm) box.appendChild(SB.ui.button('移除', 'small danger', async () => {
+        if(!await SB.ui.confirm('移除全站背景音乐？', '移除')) return;
+        try{ await SB.store.saveSettings({bgm:null}); if(!SB.store.memories.some(m => m.bgm?.id === bgm.id)) SB.store.deleteFile(bgm.id); }catch(e){ SB.toast(SB.store.errText(e)); }
+      }));
+    }
+    sec.appendChild(box); wrap.appendChild(sec);
+  }
+  document.addEventListener('sb:data', () => { if(SB.scenes.current === 'overview') render(false); });
+
+  SB.scenes.register('overview', {
+    world:'night', deepLink:true,
+    title:() => '回忆总览',
+    parent:() => ({id:'globe', params:{}}),
+    enter(){ SB.fx.palette('night'); render(true); document.querySelector('.sb-scene[data-scene="overview"]').scrollTop = 0; },
+    leave(){ previewA?.pause(); }
+  });
+  SB.menu.add({id:'overview', order:40, icon:'scroll', label:'回忆总览', desc:() => { const s = SB.store.stats(); return s.cities ? `${s.countries} 国 · ${s.cities} 城 · ${s.memories} 段回忆` : '我们走过的国家、城市与时光'; }, scene:'overview'});
+})(window.SB);
+</script>

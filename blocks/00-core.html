@@ -1,0 +1,393 @@
+<title>星屿之书</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Noto+Serif+SC:wght@400;600&family=ZCOOL+XiaoWei&display=swap">
+<style>
+/* 布局概念：全屏叠放的"场景舞台"；一层共享的光、雾与粒子贯穿所有场景；唯一导航在左上角 */
+:root{
+  --ink:#0d0805; --ink-2:#1a100a;
+  --leather:#3a2416; --leather-hi:#5a3a22; --leather-lo:#1e110a;
+  --gold:#f4b860; --gold-hi:#ffe2a8; --gold-dim:#9a6a2c; --ember:#ff9a3c;
+  --night:#070818; --night-2:#12153a; --aurora:#8fa4ff;
+  --text:#f6e7cc; --text-dim:#bfa582; --danger:#e07a5f;
+  --glass:rgba(24,14,8,.80); --glass-night:rgba(14,14,36,.82); --line:rgba(244,184,96,.38);
+  --f-title:"ZCOOL XiaoWei","Noto Serif SC","Songti SC","STSong",serif;
+  --f-body:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  --f-rune:"Cinzel Decorative","Cinzel","Times New Roman",serif;
+  --ease-soft:cubic-bezier(.45,.05,.25,1);
+  --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+  --safe-l:env(safe-area-inset-left,0px); --safe-r:env(safe-area-inset-right,0px);
+  color-scheme:dark;
+}
+html,body{width:100%;height:100%;min-height:100%;overscroll-behavior:none;-webkit-text-size-adjust:100%;}
+body{min-height:100vh;min-height:100dvh;background:var(--ink);color:var(--text);font-family:var(--f-body);overflow:hidden;-webkit-tap-highlight-color:transparent;}
+*{box-sizing:border-box;}
+button,input,textarea,select{font:inherit;color:inherit;}
+:focus-visible{outline:2px solid var(--gold-hi);outline-offset:3px;border-radius:6px;}
+
+/* ── 全局氛围层 ── */
+#sb-ambient{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+#sb-ambient .glow{position:absolute;inset:0;transition:opacity 1.8s var(--ease-soft);}
+#sb-ambient .glow.warm{background:
+    radial-gradient(60% 45% at 50% 62%, rgba(255,154,60,.22), transparent 70%),
+    radial-gradient(90% 70% at 50% 50%, rgba(90,52,24,.38), transparent 80%),
+    radial-gradient(120% 100% at 50% 50%, transparent 55%, rgba(0,0,0,.78) 100%), var(--ink);}
+#sb-ambient .glow.cool{opacity:0;background:
+    radial-gradient(55% 45% at 50% 42%, rgba(70,84,190,.30), transparent 70%),
+    radial-gradient(40% 30% at 80% 85%, rgba(244,184,96,.10), transparent 70%),
+    radial-gradient(120% 100% at 50% 50%, transparent 50%, rgba(0,0,6,.85) 100%), var(--night);}
+body[data-world="night"] #sb-ambient .glow.cool{opacity:1;}
+.sb-rays{position:absolute;inset:-20% -10% auto;height:90%;opacity:.55;
+  background:
+    linear-gradient(105deg, transparent 38%, rgba(255,214,150,.07) 44%, transparent 50%),
+    linear-gradient(98deg, transparent 52%, rgba(255,214,150,.05) 57%, transparent 63%),
+    linear-gradient(112deg, transparent 18%, rgba(255,214,150,.045) 24%, transparent 30%);
+  animation:sbRays 14s ease-in-out infinite alternate;transform-origin:50% 0;}
+body[data-world="night"] .sb-rays{opacity:.25;}
+@keyframes sbRays{from{opacity:.25;transform:rotate(-2deg)}to{opacity:.65;transform:rotate(2deg)}}
+.sb-mist{position:absolute;width:90vmax;height:40vmax;border-radius:50%;
+  background:radial-gradient(closest-side, rgba(255,214,160,.07), transparent);will-change:transform;}
+body[data-world="night"] .sb-mist{background:radial-gradient(closest-side, rgba(150,170,255,.06), transparent);}
+.sb-mist.m1{left:-30vmax;top:10%;animation:sbMist 46s ease-in-out infinite alternate;}
+.sb-mist.m2{right:-35vmax;bottom:5%;animation:sbMist 58s ease-in-out infinite alternate-reverse;}
+.sb-mist.m3{left:10%;top:-20vmax;animation:sbMist 70s ease-in-out infinite alternate;opacity:.6;}
+@keyframes sbMist{from{transform:translate3d(-4vw,0,0) scale(1)}to{transform:translate3d(8vw,-3vh,0) scale(1.12)}}
+#fx-back{position:absolute;inset:0;width:100%;height:100%;}
+#fx-front{position:fixed;inset:0;width:100%;height:100%;z-index:30;pointer-events:none;}
+
+/* ── 场景 ── */
+#sb-stage{position:fixed;inset:0;z-index:1;height:100vh;height:100dvh;}
+.sb-scene{position:absolute;inset:0;display:none;overflow:hidden;}
+.sb-scene.is-active{display:block;}
+.sb-scene.is-entering{z-index:2;}
+
+/* ── 转场 ── */
+#sb-veil{position:fixed;inset:0;z-index:50;pointer-events:none;opacity:0;
+  background:radial-gradient(circle at 50% 50%, rgba(255,240,210,0) 0%, rgba(255,214,150,.55) 35%, rgba(60,30,10,.97) 100%);}
+body[data-world="night"] #sb-veil{background:radial-gradient(circle at 50% 50%, rgba(255,240,210,0) 0%, rgba(255,214,150,.45) 30%, rgba(14,16,48,.98) 100%);}
+#sb-veil.veil-in{animation:sbVeilIn .7s var(--ease-soft) forwards;}
+#sb-veil.veil-out{animation:sbVeilOut .8s var(--ease-soft) forwards;}
+@keyframes sbVeilIn{from{opacity:0;transform:scale(1.25)}to{opacity:1;transform:scale(1)}}
+@keyframes sbVeilOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(1.35)}}
+#sb-flash{position:fixed;inset:0;z-index:51;pointer-events:none;opacity:0;
+  background:radial-gradient(circle at 50% 50%, #fffaf0 0%, #ffe2a8 30%, rgba(244,184,96,.9) 60%, rgba(120,60,20,.95) 100%);}
+#sb-flash.flash-in{animation:sbFlashIn .6s ease-in forwards;}
+#sb-flash.flash-out{animation:sbFlashOut 1.2s var(--ease-soft) forwards;}
+@keyframes sbFlashIn{from{opacity:0;transform:scale(.4);border-radius:50%}to{opacity:1;transform:scale(1);border-radius:0}}
+@keyframes sbFlashOut{from{opacity:1}to{opacity:0}}
+.sb-portal-ring{position:fixed;z-index:52;pointer-events:none;border-radius:50%;
+  border:2px solid rgba(255,226,168,.9);box-shadow:0 0 40px 10px rgba(244,184,96,.55), inset 0 0 30px rgba(255,214,150,.5);
+  transform:translate(-50%,-50%);}
+body.is-busy #sb-stage,body.is-busy #sb-nav{pointer-events:none;}
+
+/* ── 提示条 ── */
+#sb-toast{position:fixed;left:50%;bottom:calc(28px + var(--safe-b));z-index:90;
+  transform:translate(-50%,12px);opacity:0;pointer-events:none;
+  padding:10px 20px;border-radius:999px;background:var(--glass);border:1px solid var(--line);
+  color:var(--gold-hi);font-family:var(--f-title);font-size:15px;letter-spacing:.08em;
+  box-shadow:0 0 24px rgba(244,184,96,.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  transition:opacity .4s, transform .4s var(--ease-soft);max-width:calc(100vw - 32px);text-align:center;}
+#sb-toast.show{opacity:1;transform:translate(-50%,0);}
+
+/* ── 通用组件：卷轴弹窗 / 表单 / 按钮 ── */
+.sb-modal{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:16px;
+  padding-left:max(16px,var(--safe-l));padding-right:max(16px,var(--safe-r));
+  background:rgba(5,3,10,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+  opacity:0;transition:opacity .35s var(--ease-soft);}
+.sb-modal.show{opacity:1;}
+.sb-scroll{position:relative;width:min(560px,100%);max-height:calc(100dvh - 32px - var(--safe-t) - var(--safe-b));
+  display:flex;flex-direction:column;border-radius:16px;
+  background:radial-gradient(120% 50% at 50% 0%, rgba(244,184,96,.12), transparent 70%), var(--glass);
+  border:1px solid var(--line);
+  box-shadow:0 0 0 4px rgba(20,11,6,.6),0 0 0 5px rgba(244,184,96,.22),0 24px 70px rgba(0,0,0,.65),0 0 50px rgba(244,184,96,.12);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  transform:scale(.9);filter:blur(6px);transition:transform .45s var(--ease-soft), filter .45s var(--ease-soft);}
+.sb-modal.show .sb-scroll{transform:none;filter:none;}
+.sb-scroll.wide{width:min(760px,100%);}
+.sb-scroll > header{padding:20px 22px 10px;text-align:center;}
+.sb-scroll > header h3{margin:0;font-family:var(--f-title);font-weight:400;font-size:24px;letter-spacing:.14em;color:var(--gold-hi);text-shadow:0 0 14px rgba(244,184,96,.5);}
+.sb-scroll > header p{margin:6px 0 0;font-family:var(--f-rune);font-size:10px;letter-spacing:.3em;color:var(--gold-dim);}
+.sb-scroll > .body{padding:8px 22px 14px;overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:14px;}
+.sb-scroll > footer{padding:12px 22px 18px;display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;border-top:1px solid rgba(244,184,96,.15);}
+.sb-scroll > footer .spacer{flex:1;}
+.sb-corner{position:absolute;width:20px;height:20px;color:var(--gold);opacity:.8;pointer-events:none;}
+.sb-corner.tl{top:6px;left:6px}.sb-corner.tr{top:6px;right:6px;transform:scaleX(-1)}
+.sb-corner.bl{bottom:6px;left:6px;transform:scaleY(-1)}.sb-corner.br{bottom:6px;right:6px;transform:scale(-1)}
+@media (max-width:560px){
+  .sb-modal{place-items:end center;padding:0;}
+  .sb-scroll{width:100%;border-radius:18px 18px 0 0;max-height:calc(100dvh - 40px - var(--safe-t));transform:translateY(40px);padding-bottom:var(--safe-b);}
+}
+.sb-field{display:flex;flex-direction:column;gap:6px;}
+.sb-field > span{font-family:var(--f-title);font-size:14px;letter-spacing:.12em;color:var(--text-dim);}
+.sb-input{width:100%;padding:10px 4px 8px;border:0;border-bottom:1px solid rgba(244,184,96,.4);background:transparent;
+  color:var(--text);font-size:16px;outline:none;transition:border-color .3s, box-shadow .3s;}
+.sb-input:focus{border-color:var(--gold-hi);box-shadow:0 8px 14px -12px rgba(255,214,150,.9);}
+.sb-input::placeholder{color:rgba(191,165,130,.45);}
+textarea.sb-input{resize:vertical;min-height:64px;line-height:1.6;}
+.sb-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:8px 20px;border-radius:999px;cursor:pointer;
+  font-family:var(--f-title);font-size:16px;letter-spacing:.14em;border:1px solid var(--line);background:rgba(244,184,96,.06);color:var(--gold-hi);
+  transition:box-shadow .3s, border-color .3s, transform .2s, opacity .3s;}
+.sb-btn:hover{border-color:rgba(255,226,168,.8);box-shadow:0 0 18px rgba(244,184,96,.3);}
+.sb-btn:active{transform:scale(.97);}
+.sb-btn.primary{border-color:transparent;color:#2a1608;background:linear-gradient(180deg,#ffe7b5,#f4b860 55%,#c98636);box-shadow:0 0 18px rgba(244,184,96,.35), inset 0 1px 0 rgba(255,255,255,.6);}
+.sb-btn.danger{color:#ffb39e;border-color:rgba(224,122,95,.5);background:rgba(224,122,95,.06);}
+.sb-btn.small{min-height:32px;padding:4px 14px;font-size:14px;}
+.sb-btn[disabled]{opacity:.45;pointer-events:none;}
+@media (pointer:coarse){
+  .sb-btn{min-height:44px;touch-action:manipulation;}
+  .sb-btn.small{min-height:40px;}
+  .sb-input{min-height:44px;}
+  button{touch-action:manipulation;}
+}
+.sb-spin{display:flex;flex-direction:column;align-items:center;gap:14px;color:var(--gold-hi);font-family:var(--f-title);letter-spacing:.2em;}
+.sb-spin svg{width:64px;height:64px;animation:sbSpin 6s linear infinite;filter:drop-shadow(0 0 8px rgba(244,184,96,.7));}
+.sb-spin svg .r2{transform-origin:50% 50%;animation:sbSpin 3s linear infinite reverse;}
+@keyframes sbSpin{to{transform:rotate(360deg)}}
+.sb-empty{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;color:var(--text-dim);font-family:var(--f-title);letter-spacing:.12em;line-height:1.8;}
+
+@media (prefers-reduced-motion:reduce){ .sb-mist,.sb-rays{animation:none;} }
+</style>
+
+<div id="sb-ambient" aria-hidden="true">
+  <div class="glow warm"></div><div class="glow cool"></div>
+  <div class="sb-rays"></div>
+  <div class="sb-mist m1"></div><div class="sb-mist m2"></div><div class="sb-mist m3"></div>
+  <canvas id="fx-back"></canvas>
+</div>
+<main id="sb-stage"></main>
+<canvas id="fx-front" aria-hidden="true"></canvas>
+<div id="sb-veil" aria-hidden="true"></div>
+<div id="sb-flash" aria-hidden="true"></div>
+<div id="sb-toast" role="status" aria-live="polite"></div>
+
+<script>
+window.SB = window.SB || {};
+(function(SB){
+  /* ── 性能档位 ── */
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const small = Math.min(innerWidth, innerHeight) < 600;
+  const cores = navigator.hardwareConcurrency || 4;
+  SB.perf = { level: reduced ? 'reduced' : (cores <= 4 || small ? 'low' : 'high'), small, reduced,
+    touch: matchMedia('(pointer:coarse)').matches };
+  try{ const saved = localStorage.getItem('sb-motion'); if(saved && !reduced) SB.perf.level = saved; }catch(e){}
+
+  SB.wait = ms => new Promise(r => setTimeout(r, ms));
+  SB.lerp = (a,b,t) => a + (b-a)*t;
+  SB.clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+  SB.esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  SB.el = (tag, cls, html) => { const e = document.createElement(tag); if(cls) e.className = cls; if(html != null) e.innerHTML = html; return e; };
+  SB.uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+  /* ── 按顺序尝试加载脚本 ── */
+  const loaded = {};
+  SB.loadScript = (urls, options={}) => {
+    const key = urls.join('|');
+    if(loaded[key]) return loaded[key];
+    const timeoutMs = Math.max(2500, Number(options.timeoutMs) || 9000);
+    return loaded[key] = new Promise((resolve, reject) => {
+      let i = 0;
+      const next = () => {
+        if(i >= urls.length){ delete loaded[key]; reject(new Error('load_failed')); return; }
+        const s = document.createElement('script'); s.src = urls[i++]; s.async = true;
+        let settled = false;
+        const timer = setTimeout(() => {
+          if(settled) return; settled = true; s.remove(); next();
+        }, timeoutMs);
+        s.onload = () => { if(settled) return; settled = true; clearTimeout(timer); resolve(); };
+        s.onerror = () => { if(settled) return; settled = true; clearTimeout(timer); s.remove(); next(); };
+        document.head.appendChild(s);
+      };
+      next();
+    });
+  };
+
+  /* ── 通用组件 ── */
+  const CORNER = '<path d="M1 19 V6 Q1 1 6 1 H19 M4.5 19 V8 Q4.5 4.5 8 4.5 H19" fill="none" stroke="currentColor" stroke-width=".9"/><circle cx="4.5" cy="4.5" r="1.5" fill="currentColor"/>';
+  const corners = () => ['tl','tr','bl','br'].map(c=>`<svg class="sb-corner ${c}" viewBox="0 0 20 20" aria-hidden="true">${CORNER}</svg>`).join('');
+  let toastTimer;
+  const ui = SB.ui = {
+    corners,
+    toast(text, ms=2600){
+      const el = document.getElementById('sb-toast');
+      el.textContent = text; el.classList.add('show');
+      clearTimeout(toastTimer); toastTimer = setTimeout(()=>el.classList.remove('show'), ms);
+    },
+    button(text, kind='', onClick){
+      const b = SB.el('button', 'sb-btn ' + kind); b.type = 'button'; b.textContent = text;
+      if(onClick) b.addEventListener('click', onClick); return b;
+    },
+    field(label, input){
+      const f = SB.el('label','sb-field'); const s = SB.el('span'); s.textContent = label; f.append(s, input); return f;
+    },
+    input(attrs={}){
+      const i = SB.el(attrs.multiline ? 'textarea' : 'input', 'sb-input');
+      for(const [k,v] of Object.entries(attrs)) if(k!=='multiline') i.setAttribute(k, v);
+      return i;
+    },
+    spinner(text){
+      const d = SB.el('div','sb-spin', `<svg viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="#f4b860" stroke-width="1.2">
+        <circle cx="32" cy="32" r="29"/><circle cx="32" cy="32" r="25" stroke-dasharray="2 4"/>
+        <path d="M32 3 L39 32 L32 61 L25 32Z M3 32 L32 25 L61 32 L32 39Z" stroke-width=".9"/></g>
+        <g class="r2" fill="none" stroke="#ffe2a8" stroke-width="1"><circle cx="32" cy="32" r="14"/><path d="M32 18 L36 32 L32 46 L28 32Z"/></g></svg><span></span>`);
+      d.querySelector('span').textContent = text || ''; return d;
+    },
+    /* 卷轴弹窗：返回 {el, body, close} */
+    dialog({title, sub, wide, build, actions=[], onClose}={}){
+      const m = SB.el('div','sb-modal'); m.setAttribute('role','dialog'); m.setAttribute('aria-modal','true');
+      const box = SB.el('div','sb-scroll' + (wide ? ' wide' : ''), corners());
+      const hd = SB.el('header'); const h = SB.el('h3'); h.textContent = title || ''; hd.appendChild(h);
+      if(sub){ const p = SB.el('p'); p.textContent = sub; hd.appendChild(p); }
+      const body = SB.el('div','body'); const ft = SB.el('footer');
+      box.append(hd, body, ft); m.appendChild(box);
+      let closed = false;
+      const close = (v) => { if(closed) return; closed = true; m.classList.remove('show'); setTimeout(()=>m.remove(), 380); document.removeEventListener('keydown', onKey); onClose?.(v); };
+      const onKey = e => { if(e.key === 'Escape') close(); };
+      m.addEventListener('pointerdown', e => { if(e.target === m) m._down = true; });
+      m.addEventListener('click', e => { if(e.target === m && m._down) close(); m._down = false; });
+      document.addEventListener('keydown', onKey);
+      for(const a of actions){
+        if(a === 'spacer'){ ft.appendChild(SB.el('span','spacer')); continue; }
+        const b = ui.button(a.text, a.kind||'', async () => { const r = await a.onClick?.(close, b); if(r !== false && a.close !== false) close(r); });
+        if(a.id) b.dataset.act = a.id;
+        ft.appendChild(b);
+      }
+      if(!actions.length) ft.remove();
+      build?.(body, close);
+      document.body.appendChild(m);
+      requestAnimationFrame(()=>requestAnimationFrame(()=>m.classList.add('show')));
+      setTimeout(()=>{ const f = body.querySelector('input,textarea'); if(f && !SB.perf.touch) f.focus(); }, 300);
+      return {el:m, body, footer:ft, close};
+    },
+    confirm(text, okText='确定', kind='danger'){
+      return new Promise(res => {
+        ui.dialog({ title:'请确认', build(b){ const p = SB.el('p'); p.style.cssText='margin:0;line-height:1.8;color:var(--text)'; p.textContent = text; b.appendChild(p); },
+          actions:[{text:'取消', onClick:()=>{ res(false); }}, {text:okText, kind, onClick:()=>{ res(true); }}],
+          onClose:()=>res(false) });
+      });
+    }
+  };
+  SB.toast = ui.toast;
+
+  /* ── 场景管理器 ── */
+  const scenes = SB.scenes = { map:{}, current:null, params:{}, _pendingHistory:null };
+  scenes.register = (id, hooks={}) => { scenes.map[id] = hooks; };
+  scenes.el = id => document.querySelector(`.sb-scene[data-scene="${id}"]`);
+  /* 魔法路径：沿着每个场景的 parent() 一路向上 */
+  scenes.path = () => {
+    const out = []; let id = scenes.current, p = scenes.params, guard = 0;
+    while(id && guard++ < 10){
+      const h = scenes.map[id]; if(!h) break;
+      out.unshift({id, params:p, label: h.title ? h.title(p) : id});
+      const up = h.parent ? h.parent(p) : null;
+      if(!up) break; id = up.id; p = up.params || {};
+    }
+    return out;
+  };
+  scenes.back = () => {
+    const h = scenes.map[scenes.current]; const up = h?.parent?.(scenes.params);
+    if(!up) return;
+    const hs = history.state;
+    // 如果当前浏览器历史正是从父场景进入的，直接交给浏览器返回，避免制造“返回后又能回到子页”的假历史。
+    if(hs?.starbook && hs.from?.id === up.id && JSON.stringify(hs.from?.params||{}) === JSON.stringify(up.params||{})){
+      history.back(); return;
+    }
+    scenes.go(up.id, up.params||{}, {transition: up.transition || 'veil', back:true, replaceHistory:true});
+  };
+  function syncHistory(id, params, opts, prev){
+    if(opts?.fromHistory) return;
+    try{
+      const url = scenes.map[id].hash === false ? location.pathname + location.search : '#'+id;
+      const state = {starbook:true, scene:id, params:params||{}, from:prev ? {id:prev.id, params:prev.params||{}} : null};
+      if(opts?.boot || opts?.replaceHistory) history.replaceState(state,'',url);
+      else history.pushState(state,'',url);
+    }catch(e){}
+  }
+  function swap(id, params, opts){
+    const prev = scenes.current ? {id:scenes.current, params:scenes.params} : null;
+    if(prev){ scenes.el(prev.id)?.classList.remove('is-active'); scenes.map[prev.id]?.leave?.(opts); }
+    scenes.current = id; scenes.params = params || {};
+    document.body.dataset.scene = id;
+    document.body.dataset.world = scenes.map[id].world || 'night';
+    scenes.el(id)?.classList.add('is-active');
+    scenes.map[id]?.enter?.(scenes.params, opts);
+    syncHistory(id,scenes.params,opts||{},prev);
+    document.dispatchEvent(new CustomEvent('sb:scene', {detail:{id, params:scenes.params}}));
+  }
+  scenes.go = async (id, params={}, opts={}) => {
+    if(!scenes.map[id]) return;
+    if(document.body.classList.contains('is-busy')){
+      // Android/浏览器可能在转场动画期间连续触发 popstate。
+      // 永远保留最后一次历史目标，动画结束后再追上，避免 URL 与画面不同步。
+      if(opts?.fromHistory) scenes._pendingHistory = {id, params:params||{}, opts:{...opts}};
+      return;
+    }
+    if(id === scenes.current && JSON.stringify(params) === JSON.stringify(scenes.params) && !opts.force) return;
+    const tr = opts.transition || 'veil';
+    document.body.classList.add('is-busy');
+    SB.menu?.close?.();
+    const veil = document.getElementById('sb-veil'), flash = document.getElementById('sb-flash');
+    try{
+      if(SB.perf.level === 'reduced' || tr === 'none'){
+        swap(id, params, opts);
+      }else if(tr === 'flash'){
+        flash.className = 'flash-in'; await SB.wait(600);
+        swap(id, params, opts); await SB.wait(120);
+        flash.className = 'flash-out'; await SB.wait(1200); flash.className = '';
+      }else if(tr === 'portal'){
+        const x = opts.x ?? innerWidth/2, y = opts.y ?? innerHeight/2;
+        const prev = scenes.current, prevEl = scenes.el(prev);
+        const ring = SB.el('div','sb-portal-ring'); ring.style.left = x+'px'; ring.style.top = y+'px';
+        document.body.appendChild(ring);
+        const R = Math.hypot(Math.max(x, innerWidth-x), Math.max(y, innerHeight-y)) + 40;
+        const el = scenes.el(id);
+        el.classList.add('is-entering');
+        el.style.clipPath = `circle(0px at ${x}px ${y}px)`;
+        // 先让旧场景保持可见
+        prevEl?.classList.add('is-active');
+        swap(id, params, opts); prevEl?.classList.add('is-active');
+        SB.fx?.burst?.(500);
+        const t0 = performance.now(), D = 1050;
+        await new Promise(res => { const step = now => { const k = Math.min(1,(now-t0)/D), e = 1-Math.pow(1-k,3), r = e*R;
+          el.style.clipPath = `circle(${r}px at ${x}px ${y}px)`; ring.style.width = ring.style.height = (r*2)+'px'; ring.style.opacity = String(1-k*.9);
+          k < 1 ? requestAnimationFrame(step) : res(); }; requestAnimationFrame(step); });
+        el.style.clipPath = ''; el.classList.remove('is-entering'); ring.remove();
+        if(prev !== id) prevEl?.classList.remove('is-active');
+      }else{
+        SB.fx?.gather?.(innerWidth/2, innerHeight/2);
+        veil.className = 'veil-in'; await SB.wait(720);
+        swap(id, params, opts); SB.fx?.calm?.(); SB.fx?.burst?.(700);
+        veil.className = 'veil-out'; await SB.wait(820); veil.className = '';
+      }
+    }finally{
+      document.body.classList.remove('is-busy');
+      const pending = scenes._pendingHistory; scenes._pendingHistory = null;
+      if(pending && (pending.id !== scenes.current || JSON.stringify(pending.params||{}) !== JSON.stringify(scenes.params||{}))){
+        setTimeout(() => scenes.go(pending.id, pending.params||{}, {...pending.opts, force:true}), 0);
+      }
+    }
+  };
+  scenes.boot = (fallback) => {
+    // 各块的场景写在 <main> 之外，这里统一收进舞台，保证点击能落到场景上
+    const stage = document.getElementById('sb-stage');
+    document.querySelectorAll('.sb-scene').forEach(s => stage.appendChild(s));
+    const hs = history.state;
+    const want = hs?.starbook ? hs.scene : (location.hash||'').slice(1);
+    const h = scenes.map[want];
+    const params = hs?.starbook && h ? (hs.params||{}) : {};
+    swap(h && h.deepLink ? want : fallback, params, {boot:true});
+  };
+  window.addEventListener('popstate', e => {
+    const st = e.state;
+    if(!st?.starbook || !scenes.map[st.scene]) return;
+    scenes.go(st.scene, st.params||{}, {fromHistory:true, transition:'veil', force:true});
+  });
+  // 从系统返回 / bfcache 恢复时，清掉可能被冻结在动画中间的阻塞状态。
+  window.addEventListener('pageshow', e => {
+    if(!e.persisted) return;
+    document.body.classList.remove('is-busy');
+    const veil = document.getElementById('sb-veil'), flash = document.getElementById('sb-flash');
+    if(veil) veil.className = '';
+    if(flash) flash.className = '';
+  });
+})(window.SB);
+</script>

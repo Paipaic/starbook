@@ -1,0 +1,203 @@
+<style>
+/* ── 块 02 · 左上角按钮、返回光球、悬浮菜单 ── */
+#sb-nav{position:fixed;z-index:60;display:flex;align-items:flex-start;gap:10px;
+  top:calc(14px + var(--safe-t)); left:calc(14px + var(--safe-l));}
+#sb-nav-btn,#sb-back{border:1px solid var(--line);cursor:pointer;color:var(--gold-hi);
+  background:linear-gradient(180deg, rgba(48,28,15,.84), rgba(20,11,6,.84));
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  box-shadow:0 0 0 1px rgba(0,0,0,.4) inset, 0 6px 24px rgba(0,0,0,.45), 0 0 18px rgba(244,184,96,.12);
+  transition:border-color .3s, box-shadow .3s, transform .3s var(--ease-soft), opacity .4s;}
+body[data-world="night"] #sb-nav-btn,body[data-world="night"] #sb-back{background:linear-gradient(180deg, rgba(26,24,58,.84), rgba(10,10,28,.84));}
+#sb-nav-btn{display:flex;align-items:center;gap:10px;padding:8px 18px 8px 10px;border-radius:999px;
+  font-family:var(--f-title);font-size:18px;letter-spacing:.14em;}
+#sb-nav-btn:hover,#sb-back:hover{border-color:rgba(255,226,168,.75);box-shadow:0 0 0 1px rgba(0,0,0,.4) inset,0 6px 24px rgba(0,0,0,.45),0 0 28px rgba(244,184,96,.35);}
+#sb-nav-btn:active,#sb-back:active{transform:scale(.96);}
+#sb-nav-btn .gem{width:26px;height:26px;flex:none;animation:sbGemBreath 4s ease-in-out infinite;}
+#sb-nav-btn .chev{width:12px;height:12px;opacity:.7;transition:transform .35s var(--ease-soft);}
+#sb-nav.open #sb-nav-btn .chev{transform:rotate(180deg);}
+@keyframes sbGemBreath{0%,100%{filter:drop-shadow(0 0 3px rgba(255,190,90,.5))}50%{filter:drop-shadow(0 0 9px rgba(255,220,150,.95))}}
+#sb-back{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;padding:0;}
+#sb-back svg{width:20px;height:20px;}
+#sb-back[hidden]{display:none!important;}
+
+#sb-menu{position:absolute;top:calc(100% + 12px);left:0;width:min(350px, calc(100vw - 28px - var(--safe-l) - var(--safe-r)));
+  max-height:calc(100dvh - 100px - var(--safe-t) - var(--safe-b));overflow:auto;overscroll-behavior:contain;
+  padding:18px 14px 12px;border-radius:14px;
+  background:radial-gradient(120% 60% at 50% 0%, rgba(244,184,96,.10), transparent 70%), var(--glass);
+  border:1px solid var(--line);
+  box-shadow:0 0 0 4px rgba(20,11,6,.6), 0 0 0 5px rgba(244,184,96,.22), 0 18px 50px rgba(0,0,0,.6), 0 0 40px rgba(244,184,96,.12);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  transform-origin:24px -10px;opacity:0;transform:scale(.86) translateY(-6px);filter:blur(6px);pointer-events:none;visibility:hidden;
+  transition:opacity .45s var(--ease-soft), transform .45s var(--ease-soft), filter .45s var(--ease-soft), visibility 0s .45s;}
+body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%, rgba(244,184,96,.10), transparent 70%), var(--glass-night);}
+#sb-nav.open #sb-menu{opacity:1;transform:none;filter:none;pointer-events:auto;visibility:visible;
+  transition:opacity .45s var(--ease-soft), transform .45s var(--ease-soft), filter .45s var(--ease-soft), visibility 0s;}
+#sb-menu .inscr{font-family:var(--f-rune);font-size:10px;letter-spacing:.32em;text-align:center;color:var(--gold-dim);margin:0 0 10px;}
+.sb-crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:2px 4px;margin:0 6px 10px;padding:8px 10px;border-radius:10px;
+  background:rgba(244,184,96,.06);border:1px dashed rgba(244,184,96,.22);font-family:var(--f-title);font-size:14px;}
+.sb-crumbs[hidden]{display:none!important;}
+.sb-crumbs button{border:0;background:none;padding:2px 4px;cursor:pointer;color:var(--text-dim);border-radius:6px;}
+.sb-crumbs button:hover{color:var(--gold-hi);}
+.sb-crumbs button.cur{color:var(--gold-hi);text-shadow:0 0 10px rgba(244,184,96,.6);}
+.sb-crumbs i{font-style:normal;color:var(--gold-dim);font-size:11px;}
+#sb-menu ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;}
+.sb-mi{width:100%;display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;
+  padding:9px 10px;border:0;border-radius:10px;background:transparent;cursor:pointer;text-align:left;transition:background .25s;}
+.sb-mi:hover{background:rgba(244,184,96,.09);}
+.sb-mi .ic{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;
+  border:1px solid rgba(244,184,96,.3);background:radial-gradient(circle, rgba(244,184,96,.15), transparent 70%);color:var(--gold);}
+.sb-mi .ic svg{width:18px;height:18px;}
+.sb-mi .tx{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.sb-mi .nm{font-family:var(--f-title);font-size:17px;color:var(--text);letter-spacing:.06em;}
+.sb-mi .ds{font-size:12px;color:var(--text-dim);line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sb-mi .tag{font-size:11px;color:var(--gold-dim);font-family:var(--f-title);letter-spacing:.1em;white-space:nowrap;}
+.sb-mi.is-current .nm{color:var(--gold-hi);}
+.sb-mi.is-current .ic{border-color:var(--gold);box-shadow:0 0 12px rgba(244,184,96,.4);}
+.sb-mi.off .nm,.sb-mi.off .ic{opacity:.5;}
+.sb-sub{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;padding:2px 6px 8px 54px;}
+.sb-sub[hidden]{display:none!important;}
+.sb-sub button{border:1px solid rgba(244,184,96,.2);background:rgba(244,184,96,.04);border-radius:8px;
+  padding:7px 8px;font-family:var(--f-title);font-size:14px;color:var(--text-dim);cursor:pointer;text-align:left;transition:all .25s;display:flex;justify-content:space-between;gap:6px;}
+.sb-sub button:hover{color:var(--gold-hi);border-color:var(--line);}
+.sb-sub button b{font-weight:400;color:var(--gold);font-size:12px;}
+.sb-divider{height:1px;margin:8px 10px;background:linear-gradient(90deg, transparent, var(--line), transparent);}
+.sb-seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;}
+.sb-seg span{padding:3px 10px;font-size:12px;font-family:var(--f-title);color:var(--text-dim);}
+.sb-seg span.on{background:rgba(244,184,96,.22);color:var(--gold-hi);}
+.sb-status{margin:8px 10px 0;font-size:11px;color:var(--text-dim);text-align:center;letter-spacing:.06em;opacity:.8;}
+@media (pointer:coarse){
+  #sb-nav-btn{min-height:44px;}
+  #sb-back{width:44px;height:44px;}
+  .sb-mi{min-height:50px;}
+  .sb-sub button{min-height:42px;}
+}
+@media (max-width:480px){ #sb-nav{top:calc(10px + var(--safe-t));left:calc(10px + var(--safe-l));gap:8px;} #sb-nav-btn{font-size:15px;padding:7px 12px 7px 8px;} #sb-nav-btn .gem{width:24px;height:24px;} #sb-menu{width:min(350px,calc(100vw - 20px - var(--safe-l) - var(--safe-r)));} }
+</style>
+
+<nav id="sb-nav" aria-label="星屿之书导航">
+  <div style="position:relative">
+    <button id="sb-nav-btn" type="button" aria-expanded="false" aria-controls="sb-menu">
+      <svg class="gem" viewBox="0 0 32 32" aria-hidden="true">
+        <defs><linearGradient id="sbNavGem" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff4d6"/><stop offset=".45" stop-color="#f4b860"/><stop offset="1" stop-color="#a5561c"/></linearGradient></defs>
+        <circle cx="16" cy="16" r="14" fill="none" stroke="#f4b860" stroke-opacity=".45" stroke-width="1"/>
+        <path d="M16 5 L24 13 L16 27 L8 13 Z" fill="url(#sbNavGem)"/>
+        <path d="M8 13 H24 M12 13 L16 5 L20 13 L16 27 Z" fill="none" stroke="#fff4d6" stroke-opacity=".6" stroke-width=".7"/>
+      </svg>
+      <span>星屿之书</span>
+      <svg class="chev" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4 L6 8 L10 4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+    </button>
+    <div id="sb-menu" role="menu">
+      <div id="sb-menu-corners"></div>
+      <p class="inscr">LIBER INSULARUM STELLARUM</p>
+      <div class="sb-crumbs" id="sb-crumbs" hidden></div>
+      <ul id="sb-menu-list"></ul>
+      <p class="sb-status" id="sb-status"></p>
+    </div>
+  </div>
+  <button id="sb-back" type="button" aria-label="返回上一层" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-opacity=".35"/></svg>
+  </button>
+</nav>
+
+<script>
+(function(SB){
+  const ICONS = {
+    book:'<svg viewBox="0 0 24 24"><path d="M4 4.5h7a2 2 0 0 1 2 2V20a2 2 0 0 0-2-2H4z M20 4.5h-7 M20 4.5V18h-7" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="7.5" cy="10" r="1.6" fill="currentColor"/></svg>',
+    globe:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.3"/><ellipse cx="12" cy="12" rx="3.6" ry="8" fill="none" stroke="currentColor" stroke-width="1"/><path d="M4 12h16M5.5 8h13M5.5 16h13" stroke="currentColor" stroke-width=".9"/></svg>',
+    compass:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M12 5l2.2 7L12 19l-2.2-7z" fill="currentColor"/></svg>',
+    scroll:'<svg viewBox="0 0 24 24"><path d="M7 4h11a2 2 0 0 1 0 4h-1v10a2 2 0 0 1-2 2H6a2 2 0 0 1 0-4h1z M7 16V4 M10 9h5M10 12h5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>',
+    note:'<svg viewBox="0 0 24 24"><path d="M9 17V6l10-2v11" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="7" cy="17" r="2.2" fill="currentColor"/><circle cx="17" cy="15" r="2.2" fill="currentColor"/></svg>',
+    spark:'<svg viewBox="0 0 24 24"><path d="M12 3l1.8 6.2L20 12l-6.2 1.8L12 20l-1.8-6.2L4 12l6.2-2.8z" fill="currentColor"/></svg>'
+  };
+  const items = [];
+  const nav = document.getElementById('sb-nav'), btn = document.getElementById('sb-nav-btn'), list = document.getElementById('sb-menu-list');
+  const backBtn = document.getElementById('sb-back'), crumbs = document.getElementById('sb-crumbs');
+  document.getElementById('sb-menu-corners').innerHTML = SB.ui.corners();
+
+  const menu = SB.menu = {
+    icons: ICONS,
+    add(item){ items.push(item); items.sort((a,b)=>(a.order||0)-(b.order||0)); if(menu._ready) render(); },
+    update(id, patch){ const it = items.find(i=>i.id===id); if(it){ Object.assign(it, patch); if(menu._ready) render(); } },
+    open(){ render(); nav.classList.add('open'); btn.setAttribute('aria-expanded','true'); },
+    close(){ nav.classList.remove('open'); btn.setAttribute('aria-expanded','false'); },
+    toggle(){ nav.classList.contains('open') ? menu.close() : menu.open(); },
+    status(text){ document.getElementById('sb-status').textContent = text || ''; },
+    refresh(){ if(nav.classList.contains('open')) render(); },
+    _ready:false
+  };
+
+  function renderCrumbs(){
+    const path = SB.scenes.path();
+    crumbs.innerHTML = '';
+    crumbs.hidden = path.length < 2;
+    path.forEach((p, i) => {
+      if(i) { const s = SB.el('i'); s.textContent = '›'; crumbs.appendChild(s); }
+      const b = SB.el('button', i === path.length-1 ? 'cur' : ''); b.type = 'button'; b.textContent = p.label;
+      b.addEventListener('click', () => { if(i < path.length-1) SB.scenes.go(p.id, p.params, {transition:'veil'}); else menu.close(); });
+      crumbs.appendChild(b);
+    });
+  }
+  function render(){
+    renderCrumbs();
+    list.innerHTML = '';
+    for(const it of items){
+      if(it.hidden?.()) continue;
+      if(it.divider){ const li = SB.el('li','sb-divider'); li.setAttribute('aria-hidden','true'); list.appendChild(li); continue; }
+      const li = SB.el('li');
+      const b = SB.el('button'); b.type = 'button'; b.setAttribute('role','menuitem');
+      const cur = typeof it.current === 'function' ? it.current() : (it.scene && it.scene === SB.scenes.current);
+      b.className = 'sb-mi' + (cur ? ' is-current' : '') + (it.off?.() ? ' off' : '');
+      b.innerHTML = `<span class="ic">${ICONS[it.icon]||ICONS.spark}</span><span class="tx"><span class="nm"></span><span class="ds"></span></span><span class="tag"></span>`;
+      b.querySelector('.nm').textContent = typeof it.label === 'function' ? it.label() : it.label;
+      b.querySelector('.ds').textContent = typeof it.desc === 'function' ? it.desc() : (it.desc || '');
+      b.querySelector('.tag').innerHTML = typeof it.tag === 'function' ? it.tag() : (it.tag || '');
+      li.appendChild(b);
+      let sub;
+      if(it.children){
+        sub = SB.el('div','sb-sub'); sub.hidden = !it._expanded;
+        for(const c of (typeof it.children === 'function' ? it.children() : it.children)){
+          const cb = SB.el('button'); cb.type = 'button';
+          cb.innerHTML = `<span></span>${c.badge ? `<b>${SB.esc(c.badge)}</b>` : ''}`;
+          cb.querySelector('span').textContent = c.label;
+          cb.addEventListener('click', () => activate(c)); sub.appendChild(cb);
+        }
+        li.appendChild(sub);
+      }
+      b.addEventListener('click', () => {
+        if(it.children){ it._expanded = !it._expanded; sub.hidden = !it._expanded; return; }
+        activate(it);
+      });
+      list.appendChild(li);
+    }
+  }
+  function activate(it){
+    if(it.keepOpen){ it.action?.(); render(); return; }
+    menu.close();
+    if(it.scene) SB.scenes.go(it.scene, it.params || {}, it.sceneOpts || {});
+    it.action?.();
+  }
+
+  btn.addEventListener('click', e => { e.stopPropagation(); menu.toggle(); });
+  backBtn.addEventListener('click', () => SB.scenes.back());
+  document.addEventListener('click', e => { if(!nav.contains(e.target)) menu.close(); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') menu.close(); });
+  document.addEventListener('sb:scene', e => {
+    const h = SB.scenes.map[e.detail.id];
+    backBtn.hidden = !h?.parent?.(e.detail.params);
+    menu.refresh();
+  });
+
+  menu.add({id:'book', order:10, icon:'book', label:'合上魔法书', desc:'回到封面，重新开启旅程', scene:'book'});
+  menu.add({id:'motion', order:90, icon:'spark', label:'动效强度', desc:'手机或旧电脑建议选柔和', keepOpen:true,
+    tag:()=>`<span class="sb-seg"><span class="${SB.perf.level!=='high'?'on':''}">柔和</span><span class="${SB.perf.level==='high'?'on':''}">华丽</span></span>`,
+    action(){
+      if(SB.perf.reduced){ SB.toast('系统已开启"减少动态效果"'); return; }
+      SB.perf.level = SB.perf.level === 'high' ? 'low' : 'high';
+      try{ localStorage.setItem('sb-motion', SB.perf.level); }catch(e){}
+      SB.fx.refresh(); document.dispatchEvent(new Event('sb:perf'));
+      SB.toast(SB.perf.level === 'high' ? '已切换为华丽动效' : '已切换为柔和动效');
+    }});
+  menu.add({divider:true, order:50});
+  menu._ready = true; render();
+})(window.SB);
+</script>

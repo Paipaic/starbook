@@ -1,0 +1,228 @@
+<style>
+/* ── 块 11 · 回忆放映 + 背景音乐 ── */
+.sb-scene[data-scene="player"]{background:#05040c;}
+.pl-bg{position:absolute;inset:-60px;background-size:cover;background-position:center;filter:blur(40px) brightness(.45) saturate(1.2);transform:scale(1.1);transition:background-image 1.4s;}
+.pl-stage{position:absolute;inset:0;overflow:hidden;}
+.pl-img{position:absolute;inset:0;display:grid;place-items:center;opacity:0;transition:opacity 1.4s var(--ease-soft);}
+.pl-img.on{opacity:1;}
+.pl-img{padding:calc(70px + var(--safe-t)) max(24px,var(--safe-r)) calc(150px + var(--safe-b)) max(24px,var(--safe-l));}
+.pl-img img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;border-radius:4px;
+  box-shadow:0 0 0 1px rgba(255,226,168,.55), 0 0 0 7px rgba(10,8,20,.55), 0 0 0 8px rgba(244,184,96,.35), 0 30px 80px rgba(0,0,0,.65), 0 0 60px rgba(244,184,96,.18);
+  transform:scale(var(--k0,1.08)) translate(var(--x0,0), var(--y0,0));}
+.pl-img.on img{animation:plKen var(--dur,7s) linear forwards;}
+@keyframes plKen{to{transform:scale(var(--k1,1)) translate(var(--x1,0), var(--y1,0));}}
+.pl-dust{position:absolute;inset:-20% -60%;pointer-events:none;opacity:0;
+  background:linear-gradient(100deg, transparent 40%, rgba(255,214,150,.0) 44%, rgba(255,226,168,.35) 50%, rgba(255,214,150,0) 56%, transparent 60%);}
+.pl-dust.go{animation:plDust 1.6s var(--ease-soft);}
+@keyframes plDust{0%{opacity:0;transform:translateX(-40%)}30%{opacity:1}100%{opacity:0;transform:translateX(40%)}}
+.pl-vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 45%, transparent 55%, rgba(0,0,0,.7));}
+.pl-cap{position:absolute;left:50%;bottom:calc(86px + var(--safe-b));transform:translateX(-50%);width:min(820px, calc(100vw - 32px));text-align:center;
+  font-family:var(--f-title);font-size:clamp(18px,2.4vw,26px);letter-spacing:.12em;line-height:1.7;color:#fff6e4;
+  text-shadow:0 0 18px rgba(244,184,96,.7), 0 2px 8px rgba(0,0,0,.9);pointer-events:none;}
+.pl-cap span{opacity:0;animation:plChar .6s forwards;}
+@keyframes plChar{from{opacity:0;filter:blur(4px)}to{opacity:1;filter:none}}
+.pl-title{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:0 24px;
+  opacity:0;transition:opacity 1.2s var(--ease-soft);pointer-events:none;}
+.pl-title.on{opacity:1;}
+.pl-title small{font-family:var(--f-rune);font-size:12px;letter-spacing:.5em;color:var(--gold);}
+.pl-title h2{margin:0;font-family:var(--f-title);font-weight:400;font-size:clamp(34px,6vw,64px);letter-spacing:.18em;color:var(--gold-hi);text-shadow:0 0 40px rgba(244,184,96,.7);}
+.pl-title p{margin:0;max-width:34em;color:#e9dcc4;line-height:1.9;letter-spacing:.08em;font-size:15px;}
+.pl-title i{width:min(320px,60vw);height:1px;background:linear-gradient(90deg, transparent, var(--gold), transparent);}
+.pl-ui{position:absolute;left:0;right:0;bottom:0;padding:14px max(16px,var(--safe-r)) calc(16px + var(--safe-b)) max(16px,var(--safe-l));
+  background:linear-gradient(transparent, rgba(0,0,0,.6));display:flex;flex-direction:column;gap:12px;transition:opacity .5s;z-index:3;}
+.sb-scene[data-scene="player"].idle .pl-ui,.sb-scene[data-scene="player"].idle .pl-top{opacity:0;pointer-events:none;}
+.sb-scene[data-scene="player"].idle{cursor:none;}
+.pl-bars{display:flex;gap:4px;}
+.pl-bars b{flex:1;height:3px;border-radius:2px;background:rgba(255,226,168,.22);overflow:hidden;cursor:pointer;}
+.pl-bars b i{display:block;height:100%;width:0;background:linear-gradient(90deg,#f4b860,#fff1cc);box-shadow:0 0 8px #f4b860;}
+.pl-bars b.done i{width:100%;}
+.pl-ctl{display:flex;justify-content:center;align-items:center;gap:10px;}
+.pl-ctl button{width:46px;height:46px;border-radius:50%;border:1px solid var(--line);background:rgba(10,10,28,.6);color:var(--gold-hi);cursor:pointer;display:grid;place-items:center;}
+.pl-ctl button:hover{box-shadow:0 0 16px rgba(244,184,96,.45);}
+.pl-ctl button.big{width:58px;height:58px;}
+.pl-ctl button.off{opacity:.5;}
+.pl-ctl svg{width:20px;height:20px;}
+.pl-top{position:absolute;top:calc(14px + var(--safe-t));right:max(14px,var(--safe-r));z-index:3;display:flex;gap:8px;transition:opacity .5s;}
+.pl-top .sb-btn{background:rgba(10,10,28,.6);}
+.pl-count{position:absolute;top:calc(22px + var(--safe-t));left:50%;transform:translateX(-50%);font-family:var(--f-rune);font-size:12px;letter-spacing:.3em;color:var(--gold);z-index:3;transition:opacity .5s;}
+.sb-scene[data-scene="player"].idle .pl-count{opacity:0;}
+@media (max-width:600px){ .pl-img{padding:calc(64px + var(--safe-t)) 12px calc(170px + var(--safe-b));} }
+@media (prefers-reduced-motion:reduce){ .pl-img.on img{animation:none;} }
+</style>
+
+<section class="sb-scene" data-scene="player" aria-label="回忆放映">
+  <div class="pl-bg" id="pl-bg"></div>
+  <div class="pl-stage" id="pl-stage">
+    <div class="pl-img" id="pl-a"><img alt=""></div>
+    <div class="pl-img" id="pl-b"><img alt=""></div>
+    <div class="pl-dust" id="pl-dust"></div>
+    <div class="pl-vig"></div>
+    <div class="pl-title" id="pl-title"><small id="pl-tdate"></small><h2 id="pl-th"></h2><i></i><p id="pl-tnote"></p></div>
+    <div class="pl-cap" id="pl-cap" aria-live="polite"></div>
+  </div>
+  <div class="pl-count" id="pl-count"></div>
+  <div class="pl-top" id="pl-top"></div>
+  <div class="pl-ui" id="pl-ui">
+    <div class="pl-bars" id="pl-bars"></div>
+    <div class="pl-ctl">
+      <button type="button" id="pl-prev" aria-label="上一张"><svg viewBox="0 0 24 24"><path d="M15 5 L8 12 L15 19" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
+      <button type="button" id="pl-play" class="big" aria-label="暂停"></button>
+      <button type="button" id="pl-next" aria-label="下一张"><svg viewBox="0 0 24 24"><path d="M9 5 L16 12 L9 19" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
+      <button type="button" id="pl-music" aria-label="背景音乐开关"><svg viewBox="0 0 24 24"><path d="M9 17V6l10-2v11" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="7" cy="17" r="2.2" fill="currentColor"/><circle cx="17" cy="15" r="2.2" fill="currentColor"/></svg></button>
+    </div>
+  </div>
+</section>
+
+<script>
+/* ── 背景音乐 SB.audio：全站一个播放器，切换时淡入淡出 ── */
+(function(SB){
+  const el = new Audio(); el.loop = true; el.preload = 'auto';
+  let want = true, unlocked = false, cur = null, override = null, fadeT = 0;
+  try{ want = localStorage.getItem('sb-music') !== 'off'; }catch(e){}
+  function fade(to, ms){
+    cancelAnimationFrame(fadeT);
+    return new Promise(res => { const from = el.volume, t0 = performance.now();
+      const step = now => { const k = Math.min(1, (now - t0)/ms); el.volume = SB.clamp(from + (to - from)*k, 0, 1); k < 1 ? fadeT = requestAnimationFrame(step) : res(); };
+      fadeT = requestAnimationFrame(step); });
+  }
+  async function sync(){
+    const track = override === undefined ? null : (override || SB.store.settings?.bgm || null);
+    const id = track?.id || null;
+    if(!want || !unlocked || !id){ if(!el.paused){ await fade(0, 900); el.pause(); } cur = id ? track : cur; SB.menu?.refresh(); return; }
+    if(cur?.id !== id || el.paused){
+      if(!el.paused) await fade(0, 900);
+      if(cur?.id !== id || !el.src){ el.src = SB.store.url(id); }
+      cur = track; el.volume = 0;
+      try{ await el.play(); await fade(.8, 1400); }catch(e){}
+    }
+    SB.menu?.refresh();
+  }
+  SB.audio = {
+    unlock(){ if(unlocked) return; unlocked = true; sync(); },
+    set(track){ override = track; sync(); },          // 放映时：专属曲目 / null 表示用全站曲目 / undefined 表示静音
+    clear(){ override = null; sync(); },
+    toggle(){ want = !want; try{ localStorage.setItem('sb-music', want ? 'on' : 'off'); }catch(e){} unlocked = true; sync(); return want; },
+    get on(){ return want; }, get playing(){ return !el.paused; }, get track(){ return cur; },
+    preview(id){ const a = new Audio(SB.store.url(id)); a.volume = .8; return a; }
+  };
+  document.addEventListener('pointerdown', () => SB.audio.unlock(), {once:true});
+  document.addEventListener('sb:data', () => { if(override === null) sync(); });
+
+  SB.menu.add({id:'music', order:60, icon:'note', keepOpen:true,
+    label:() => SB.audio.playing ? '背景音乐 · 播放中' : '背景音乐',
+    desc:() => SB.audio.track?.name ? '♪ ' + SB.audio.track.name : (SB.store.settings?.bgm ? '♪ ' + SB.store.settings.bgm.name : '在「回忆总览」里上传全站音乐'),
+    tag:() => `<span class="sb-seg"><span class="${SB.audio.on?'':'on'}">关</span><span class="${SB.audio.on?'on':''}">开</span></span>`,
+    action(){ const on = SB.audio.toggle(); SB.toast(on ? '背景音乐已开启' : '背景音乐已关闭'); }});
+})(window.SB);
+
+/* ── 放映 ── */
+(function(SB){
+  const $ = id => document.getElementById(id);
+  const scene = document.querySelector('.sb-scene[data-scene="player"]');
+  const PLAY = '<svg viewBox="0 0 24 24"><path d="M8 5 L19 12 L8 19Z" fill="currentColor"/></svg>', PAUSE = '<svg viewBox="0 0 24 24"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" fill="currentColor"/></svg>';
+  const P = { m:null, i:-1, playing:true, t:0, dur:0, layer:0, raf:0, idleT:0, last:0 };
+  const SLIDE = 6500, TITLE = 4200;
+
+  function showTitle(on){ $('pl-title').classList.toggle('on', on); }
+  function caption(text){
+    const cap = $('pl-cap'); cap.innerHTML = '';
+    [...(text || '')].forEach((ch, i) => { const s = SB.el('span'); s.textContent = ch; s.style.animationDelay = (400 + i*55) + 'ms'; cap.appendChild(s); });
+  }
+  function go(i){
+    const slides = P.m.slides || [];
+    const n = slides.length;
+    if(i >= n){ i = -1; }           // 播完回到扉页，循环
+    if(i < -1) i = n - 1;
+    P.i = i; P.t = 0;
+    document.querySelectorAll('#pl-bars b').forEach((b, k) => { b.classList.toggle('done', k < i); b.querySelector('i').style.width = k < i ? '100%' : '0'; });
+    $('pl-count').textContent = i < 0 ? '' : `${i+1} / ${n}`;
+    if(i < 0){
+      P.dur = TITLE; showTitle(true); caption('');
+      document.querySelectorAll('.pl-img').forEach(l => l.classList.remove('on'));
+      const c = P.m.cover?.id || slides[0]?.id; if(c) $('pl-bg').style.backgroundImage = `url("${SB.store.url(c)}")`;
+      return;
+    }
+    P.dur = SLIDE; showTitle(false);
+    const s = slides[i], url = SB.store.url(s.id);
+    P.layer ^= 1;
+    const on = $(P.layer ? 'pl-b' : 'pl-a'), off = $(P.layer ? 'pl-a' : 'pl-b');
+    const img = on.querySelector('img');
+    const r = () => (Math.random()*2 - 1).toFixed(2);
+    on.style.setProperty('--k0', (1.06 + Math.random()*.06).toFixed(3)); on.style.setProperty('--k1', '1');
+    on.style.setProperty('--x0', r() + '%'); on.style.setProperty('--y0', r() + '%');
+    on.style.setProperty('--x1', r() + '%'); on.style.setProperty('--y1', r() + '%');
+    on.style.setProperty('--dur', (SLIDE/1000 + 1.4) + 's');
+    on.classList.remove('on'); img.style.animation = 'none';
+    img.onload = () => { void img.offsetWidth; img.style.animation = ''; on.classList.add('on'); off.classList.remove('on'); };
+    img.onerror = () => { on.classList.add('on'); off.classList.remove('on'); };
+    img.src = url; img.alt = s.caption || P.m.title;
+    $('pl-bg').style.backgroundImage = `url("${url}")`;
+    const d = $('pl-dust'); d.classList.remove('go'); void d.offsetWidth; d.classList.add('go');
+    caption(s.caption);
+  }
+  function tick(now){
+    if(SB.scenes.current !== 'player') return;
+    const dt = Math.min(100, now - (P.last || now)); P.last = now;
+    if(P.playing){ P.t += dt;
+      if(P.i >= 0){ const b = document.querySelectorAll('#pl-bars b')[P.i]; if(b) b.querySelector('i').style.width = Math.min(100, P.t/P.dur*100) + '%'; }
+      if(P.t >= P.dur) go(P.i + 1); }
+    P.raf = requestAnimationFrame(tick);
+  }
+  function setPlaying(v){ P.playing = v; $('pl-play').innerHTML = v ? PAUSE : PLAY; $('pl-play').setAttribute('aria-label', v ? '暂停' : '播放'); }
+  function wake(){ scene.classList.remove('idle'); clearTimeout(P.idleT); P.idleT = setTimeout(() => scene.classList.add('idle'), 3000); }
+  function musicBtn(){ $('pl-music').classList.toggle('off', !SB.audio.on); }
+
+  $('pl-prev').addEventListener('click', () => { go(P.i - 1); wake(); });
+  $('pl-next').addEventListener('click', () => { go(P.i + 1); wake(); });
+  $('pl-play').addEventListener('click', () => { setPlaying(!P.playing); wake(); });
+  $('pl-music').addEventListener('click', () => { SB.audio.toggle(); musicBtn(); wake(); });
+  scene.addEventListener('pointermove', wake);
+  // 手机：左右滑动切换，点按显示控制条
+  let sx = 0, sy = 0, st = 0;
+  $('pl-stage').addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; st = performance.now(); });
+  $('pl-stage').addEventListener('pointerup', e => {
+    const dx = e.clientX - sx, dy = e.clientY - sy;
+    if(Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)){ go(P.i + (dx < 0 ? 1 : -1)); wake(); }
+    else if(performance.now() - st < 300){ scene.classList.contains('idle') ? wake() : (e.pointerType === 'mouse' ? setPlaying(!P.playing) : scene.classList.add('idle')); }
+  });
+  document.addEventListener('keydown', e => {
+    if(SB.scenes.current !== 'player' || document.querySelector('.sb-modal')) return;
+    if(e.key === 'ArrowRight'){ go(P.i + 1); wake(); } else if(e.key === 'ArrowLeft'){ go(P.i - 1); wake(); }
+    else if(e.key === ' '){ e.preventDefault(); setPlaying(!P.playing); wake(); }
+    else if(e.key === 'Escape' && !document.getElementById('sb-nav').classList.contains('open')) SB.scenes.back();
+  });
+
+  function start(m){
+    P.m = m; P.i = -1; P.last = 0;
+    $('pl-tdate').textContent = SB.fmtDate(m.date).toUpperCase();
+    $('pl-th').textContent = m.title; $('pl-tnote').textContent = m.note || '';
+    const bars = $('pl-bars'); bars.innerHTML = '';
+    (m.slides || []).forEach((s, k) => { const b = SB.el('b', '', '<i></i>'); b.addEventListener('click', () => { go(k); wake(); }); bars.appendChild(b); });
+    const top = $('pl-top'); top.innerHTML = '';
+    if(SB.store.canEdit) top.appendChild(SB.ui.button('编辑', 'small', () => { setPlaying(false); SB.editor.open({cityId:m.cityId, memory:m}); }));
+    top.appendChild(SB.ui.button('退出放映', 'small', () => SB.scenes.back()));
+    setPlaying(true); musicBtn(); go(-1); wake();
+    // 音乐：专属 > 全站 > 静音
+    SB.audio.set(m.bgmMode === 'none' ? undefined : (m.bgm || null));
+    cancelAnimationFrame(P.raf); P.raf = requestAnimationFrame(tick);
+  }
+  document.addEventListener('sb:data', () => {
+    if(SB.scenes.current !== 'player' || !P.m) return;
+    const m = SB.store.memory(P.m.id);
+    if(m && m.updatedAt !== P.m.updatedAt) start(m);
+  });
+
+  SB.scenes.register('player', {
+    world:'night', hash:false,
+    title:p => SB.store.memory(p.id)?.title || '回忆',
+    parent:p => { const m = SB.store.memory(p.id); return m ? {id:'city', params:{id:m.cityId}} : {id:'globe', params:{}}; },
+    enter(p){
+      SB.fx.palette('warm'); SB.fx.calm();
+      const m = SB.store.memory(p.id);
+      if(!m){ SB.toast('这段回忆找不到了'); setTimeout(() => SB.scenes.back(), 50); return; }
+      start(m);
+    },
+    leave(){ cancelAnimationFrame(P.raf); clearTimeout(P.idleT); scene.classList.remove('idle'); SB.audio.clear(); P.m = null; }
+  });
+})(window.SB);
+</script>
