@@ -12,46 +12,6 @@
    "updatedAt": "2026-10-26T12:16:30.816Z"
   }
  },
- "memories": {
-  "mvp82zu5lcf0ct": {
-   "cityId": "mvp80dnk0ktpl2",
-   "title": "王力宏演唱会",
-   "date": "2026-10",
-   "note": "",
-   "slides": [
-    {
-     "id": "mvp81urrhs907b.jpg",
-     "w": 1800,
-     "h": 2400,
-     "caption": "撸撸小猫"
-    },
-    {
-     "id": "mvp82g92m9vr73.jpg",
-     "w": 1440,
-     "h": 1920,
-     "caption": ""
-    },
-    {
-     "id": "mvp82i2qp1f8oa.jpg",
-     "w": 2400,
-     "h": 1800,
-     "caption": ""
-    },
-    {
-     "id": "mvp82k0bsmr3d8.jpg",
-     "w": 2400,
-     "h": 1800,
-     "caption": ""
-    }
-   ],
-   "cover": {
-    "id": "mvp81urrhs907b.jpg"
-   },
-   "bgmMode": "global",
-   "bgm": null,
-   "createdAt": "2026-10-26T12:18:16.621Z",
-   "updatedAt": "2026-10-26T12:18:16.621Z"
-  }
- },
+ "memories": {},
  "settings": {}
 }
