@@ -1,0 +1,224 @@
+# Starbook Architecture & Extension Contract
+
+> 本文定义 Starbook 当前架构中**不能被后续优化无意破坏**的长期扩展契约。
+
+## 1. 平台长期模型
+
+Starbook 长期抽象：
+
+```text
+User
+  ↕
+Book Membership
+  ↕
+Book
+├─ Relationship Type
+├─ Theme
+├─ Experience
+├─ Memories
+├─ Assets
+├─ Locations
+└─ Settings
+```
+
+当前只实现其中一个受限实例：
+
+```text
+relationship = romantic
+theme = magic-celestial
+experience = world-map
+```
+
+但 Core 不得把这三个值视为唯一可能。
+
+## 2. User 与 Book
+
+必须保持：
+
+- 一个 User 可加入多本 Book；
+- 一本 Book 可有多个 User；
+- User 与 Book 是多对多；
+- `book_members` 是权限关系来源；
+- Book 内容属于 Book，不属于单个 User。
+
+禁止：
+
+```text
+user_id == book_id
+一个账户 == 一本书
+照片归用户目录而非 Book
+```
+
+## 3. Runtime namespaces
+
+### `SB.user`
+
+职责：
+
+- Supabase session；
+- 当前 user；
+- auth state。
+
+### `SB.book`
+
+职责：
+
+- 当前数据 Book；
+- 当前 membership role；
+- Book metadata。
+
+不得负责视觉魔法书。
+
+### `SB.magicBook`
+
+职责：
+
+- Magic Celestial Theme 的书封面；
+- 宝石；
+- 悬浮；
+- 开书视觉动画。
+
+它是 Theme-specific controller，不是业务 Book Context。
+
+### `SB.theme`
+
+当前只有 Context：
+
+```text
+magic-celestial
+```
+
+未来可升级 Theme registry / loader，但当前不要过度实现。
+
+### `SB.experience`
+
+当前：
+
+```text
+world-map
+```
+
+未来可以：timeline / family-tree / album / constellation 等。
+
+### `SB.store`
+
+当前业务兼容层。
+
+原则：
+
+- 地图、编辑器、播放器尽量通过 Store API 访问业务数据；
+- 不要让每个业务模块直接散落 Supabase 查询；
+- 未来正规化数据库时，优先换 Store 内部实现，降低 UI 重写成本。
+
+## 4. Relationship 与 Theme 解耦
+
+合法组合示例：
+
+```text
+romantic + magic-celestial
+romantic + vintage-album
+friendship + magic-celestial
+family + forest-grimoire
+```
+
+关系类型可以推荐 Theme，但不能决定 Theme。
+
+## 5. Theme 与 Experience 解耦
+
+Theme = 长什么样。
+
+Experience = 怎么探索。
+
+当前：
+
+```text
+Magic Celestial + World Map
+```
+
+未来同一个 Theme 可以承载不同 Experience；同一个 Experience 也可被不同 Theme 皮肤呈现。
+
+## 6. Memory First 的未来方向
+
+当前 V1 遗留结构是：
+
+```text
+City → Memory
+```
+
+长期应演进为：
+
+```text
+Book
+ ↓
+Memory
+├─ optional Location
+├─ Assets
+├─ Date
+├─ Tags
+├─ People
+└─ Text
+```
+
+地图只是根据 Location 展示 Memory 的一种 Experience。
+
+因此后续新功能禁止进一步制造：
+
+```text
+Memory 必须有 City
+```
+
+这样的强依赖。
+
+## 7. Storage 所属原则
+
+路径以 Book 为第一层：
+
+```text
+{book_id}/images/...
+{book_id}/audio/...
+```
+
+原因：
+
+- 资源属于 Book；
+- 成员变化不应改变资产归属；
+- RLS 以 Book membership 判断权限；
+- 未来导出/删除一本 Book 更清晰。
+
+## 8. 当前 Anniversary Bridge 是兼容层
+
+当前：
+
+```text
+book_data.payload
+```
+
+保存 V1 JSON。
+
+它不是最终 V2 schema。
+
+任何 Agent 不应因为“JSONB 已经能用”而把未来所有新平台功能继续无限塞入同一个大 JSON。
+
+周年后应逐步正规化。
+
+## 9. Theme / Experience 当前不做什么
+
+在周年版阶段：
+
+- 不实现动态插件商城；
+- 不引入复杂框架；
+- 不拆完所有 Theme 组件；
+- 只保持正确 Context 和代码边界。
+
+## 10. 扩展兼容检查
+
+每次新增功能至少问：
+
+- 如果用户有 2 本 Book，还成立吗？
+- 如果 Book 是 family 而不是 romantic，还成立吗？
+- 如果 Theme 不是 magic-celestial，还成立吗？
+- 如果 Experience 不是 world-map，还成立吗？
+- 如果 Memory 没有 Location，还成立吗？
+- 如果当前用户只是 viewer，还成立吗？
+
+如果答案是否定的，需要明确说明“这是当前 Theme/Experience 特有能力”，而不是把限制写进 Core。

@@ -1,5 +1,70 @@
 # Changelog
 
+## [1.5.2] - 2026-10-26
+
+### Fixed
+- **字体“乱码”根因修复**：移除 ZCOOL XiaoWei。该字体的「回 圃 圄 圊 崮 徊」字形自身损坏，在 Chromium / FreeType 下渲染为实心方块，导致「回忆总览」等显示为「■忆总览」；且只覆盖约 7000 字，罕见字会混入其他字形。
+- 移除 Cinzel Decorative：数字「1」显示为罗马式「I」，小字号花体难以辨认。
+- `✦ ✎ ✕ ⟲` 等在网页字体中不存在的符号全部改为内联 SVG 图标，手机上不再回退成 Emoji 或空心方框。
+- 标题中的分隔点「·」不再出现在行首。
+
+### Added
+- 「星文」字体系统：中文统一思源宋体（Noto Serif SC 400/600，封面书名 900 按字子集加载）、拉丁铭文 Cinzel、数字与日期 Cormorant Garamond。
+- 排版令牌：字号阶梯 `--fs-*`、行高 `--lh-*`、字距 `--tr-*`、字重 `--fw-*`；`.sb-num`、`.sb-rune`、`.sb-foil` 工具类。
+- `SB.icon(name)` 内联 SVG 图标集（spark / star / quill / close / reset / plus / minus / up / down / chevron / note）。
+- `SB.ui.button(text, kind, onClick, icon)` 可选图标参数（向后兼容）。
+- `SB.fmtTitle()` 标题分隔点防断行；`SB.type.ready` 字体预热。
+- `docs/design/VISUAL_UPGRADE_PLAN.md`：v1.5.2 → v1.6.2 视觉升级计划、乱码实测与调研来源。
+- `prompts/00-typography.md`：字体系统提示词。
+
+### Changed
+- 所有场景标题、按钮、标签、菜单、提示条、弹窗改用 `--f-display`；居中大字距标题增加光学居中补偿。
+- 总览统计、时间线日期、放映页码等数字改用 Cormorant Garamond 等高数字。
+- 魔法书封面 SVG 文字改用思源宋体 900 / Cinzel，铭文分隔改为 `·` 与绘制的四芒星。
+- Supabase 客户端 `x-client-info` 改为读取运行时配置版本号。
+
+### CI / Governance
+- `tools/check_project.py` 新增字体回归检查：构建产物中出现 ZCOOL XiaoWei、Cinzel Decorative 或 `✦ ✎ ✕ ⟲` 时校验失败；并检查 `SB.icon` 存在。
+
+### Data
+- **无数据库、RLS、Storage 变化；无需运行 SQL；不影响任何已有回忆数据。**
+
+## [1.5.1] - 2026-10-26
+
+### Added
+- 根目录 `README.md`，为 GitHub 与人工阅读提供简短入口，并明确新 Agent 从 `AGENTS.md` 开始。
+- `supabase/migrations/002_v151_title_and_members.sql`：非破坏性更新当前 Book 标题，并加入两名 `editor` 成员。
+- 当前 Book 新增 editor：`11aa32fe-3875-4880-81fb-02a543dca853`。
+- 当前 Book 新增 editor：`62adee54-c59a-4844-abb5-1b5629da3bf9`。
+- 根目录 `AGENTS.md`，作为所有新 Agent / 新开发会话的强制上下文入口。
+- `docs/PROJECT_MANAGEMENT_FULL_CHAIN.md`，固化需求 → 分支 → 校验 → PR → main → Pages → 数据保留 → 回滚的完整项目链路。
+- `docs/ARCHITECTURE_EXTENSION_CONTRACT.md`，固化多用户、多 Book、多 Relationship、多 Theme、多 Experience 的长期扩展边界。
+- `docs/DATA_LIFECYCLE.md`，明确 Git/Pages 与 Supabase 数据生命周期分离以及向前 migration 原则。
+- `docs/PROJECT_DOCS_INDEX.md` 与 `docs/templates/RELEASE_RECORD_TEMPLATE.md`。
+- `docs/V151_OPERATOR_STEPS.md`，明确本次发布、Supabase migration 与 Production smoke test 的 Owner 操作。
+- `docs/releases/v1.5.1.md` 完整 Release Record。
+- 正式纳入 `validate.yml`、`deploy-pages.yml` 与 `publish.ps1` 的长期发布链路说明。
+
+### Changed
+- 当前 Anniversary Book 展示名称由《我们的星屿》统一为《星屿之书》，包括 Supabase `books.name`、登录权限提示、初始化 seed 与当前项目文档。
+- `main` 正式定义为唯一 Production branch；release/feature 分支只通过 PR 进入 main。
+- 每个版本必须记录 Product、Runtime、Architecture、Data、Auth/RLS、Storage、CI、Git/PR、Pages、Agent Governance 等链路变化；无变化也必须显式声明。
+- 发布检查升级为“代码 + 文档治理”双重校验。
+
+### Fixed
+- 修复 Windows PowerShell 下 `publish.ps1` 的 Secret 扫描：`site/.nojekyll` 等空文件会让 `Get-Content -Raw` 返回 `$null`，此前会在 `.Contains()` 处中断发布。现仅扫描文本资源并显式跳过空内容。
+
+### CI / Governance
+- `tools/check_project.py` 开始检查 VERSION、Release Record、CHANGELOG、PROJECT_STATE 和核心治理文档一致性。
+- `validate-starbook` 在 PR 上执行 build、项目检查和高风险 Secret 扫描。
+- `publish.ps1` 发布前要求当前版本文档完整，避免无记录发布。
+
+### Data
+- **无 schema 结构变化，`schema_version` 保持 1。**
+- 发布 v1.5.1 后需运行一次 `supabase/migrations/002_v151_title_and_members.sql`。
+- Migration 仅更新 `books.name` 并 upsert 两名 editor；**不会修改 `book_data.payload`，不会删除/重建 Storage，不需要重新导入城市/回忆/照片/BGM。**
+- Supabase 现有数据继续由同一 Book ID / Private Storage 承载。
+
 ## [1.5.0-anniversary] - 2026-10-26 (in progress)
 
 ### Added

@@ -28,7 +28,6 @@ Dashboard → SQL Editor → New query。
 - public.books
 - public.book_members
 - public.book_data
-- private schema helper functions
 - Storage bucket `starbook-media`
 
 ### 3. 初始化周年 Book
@@ -37,7 +36,7 @@ Dashboard → SQL Editor → New query。
 
 它会创建固定 Book：
 - Book ID: `8a3cc6fe-b667-4ce7-b47b-79cebc0e1353`
-- Name: `我们的星屿`
+- Name: `星屿之书`
 - relationship: romantic
 - theme: magic-celestial
 - experience: world-map
@@ -71,7 +70,7 @@ python -m http.server 8000 -d site
 
 使用你的 Supabase Email + Password 登录。
 
-成功后应自动打开唯一一本《我们的星屿》。
+成功后应自动打开唯一一本《星屿之书》。
 
 ### 6. 测试数据写入
 依次验证：
@@ -91,20 +90,21 @@ python -m http.server 8000 -d site
 
 Bucket 仍必须是 Private。
 
-### 8. 女朋友账号之后再添加
-创建她的 Auth User 后，复制她的 User UUID。
+### 8. v1.5.1 标题与成员 migration
 
-打开：
-`supabase/seed/003_add_partner_template.sql`
+当前项目在 v1.5.1 使用：
 
-把：
-`YOUR_PARTNER_USER_UUID`
+`supabase/migrations/002_v151_title_and_members.sql`
 
-替换成实际 UUID 后运行。
+该 migration 会：
 
-她将获得 `editor` 权限。
+- 将当前 Book 标题统一为《星屿之书》；
+- 添加 editor `11aa32fe-3875-4880-81fb-02a543dca853`；
+- 添加 editor `62adee54-c59a-4844-abb5-1b5629da3bf9`。
 
-不要提供她的密码给任何代码或 AI。
+运行前确认两个 UID 已存在于 Authentication → Users。脚本不会修改回忆 payload 或 Storage。
+
+`003_add_partner_template.sql` 保留作为未来手动追加单个成员的通用模板。
 
 ## 若运行 SQL 报错
 不要关闭 RLS 来绕过错误。

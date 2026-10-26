@@ -9,7 +9,7 @@
 - 奇幻童话、温暖魔法金光。魔法书和地球都要有光芒和粒子环绕。
 - 主色：琥珀金（光）、深墨褐（书的世界）、夜空靛蓝（星图世界）。金色永远是"被点亮/去过"的意思。
 - 单一深色主题（刻意选择）。
-- 字体：标题 ZCOOL XiaoWei，正文 Noto Serif SC，拉丁铭文 Cinzel Decorative。
+- 字体（v1.5.2 起）：中文标题与正文统一思源宋体（Noto Serif SC），拉丁铭文 Cinzel，数字 Cormorant Garamond，详见 `prompts/00-typography.md`。ZCOOL XiaoWei 与 Cinzel Decorative 因字形损坏/数字难辨已移除。
 - 减少留白：每个场景都有铺满的背景光、粒子、雾霭或法阵；内容尽量撑满视口。
 - 动效：慢、柔、连贯。只在开书、进入新层级这种关键时刻加速爆发。
 - 流畅：动画只改 transform / opacity；粒子用 canvas 一次性绘制；按设备自动降级；页面隐藏时暂停；尊重"减少动态效果"。

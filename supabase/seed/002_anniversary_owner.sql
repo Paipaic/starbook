@@ -8,7 +8,7 @@ insert into public.books (
   id,name,relationship_type,theme_id,experience_id,created_by
 ) values (
   '8a3cc6fe-b667-4ce7-b47b-79cebc0e1353',
-  '我们的星屿',
+  '星屿之书',
   'romantic',
   'magic-celestial',
   'world-map',

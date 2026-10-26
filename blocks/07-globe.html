@@ -4,33 +4,34 @@
 #gl-canvas.dragging{cursor:grabbing;}
 .gl-head{position:absolute;left:50%;top:calc(18px + var(--safe-t));transform:translateX(-50%);text-align:center;pointer-events:none;
   display:flex;flex-direction:column;align-items:center;gap:4px;width:max-content;max-width:calc(100vw - 32px);}
-.gl-head h1{margin:0;font-family:var(--f-title);font-weight:400;font-size:clamp(24px,3.2vw,38px);letter-spacing:.34em;color:var(--gold-hi);
+.gl-head h1{margin:0;padding-left:.32em;font-family:var(--f-display);font-weight:var(--fw-display);font-size:clamp(24px,3.2vw,38px);letter-spacing:.32em;color:var(--gold-hi);
   text-shadow:0 0 22px rgba(244,184,96,.65);}
-.gl-head p{margin:0;font-size:13px;letter-spacing:.16em;color:#c9c6ea;}
-.gl-head small{font-family:var(--f-rune);font-size:10px;letter-spacing:.4em;color:var(--gold-dim);}
+.gl-head p{margin:0;font-size:13px;letter-spacing:.12em;color:#c9c6ea;}
+.gl-head small{font-family:var(--f-rune);font-weight:500;font-size:10.5px;letter-spacing:.4em;padding-left:.4em;color:var(--gold-dim);}
 .gl-labels{position:absolute;inset:0;pointer-events:none;}
 .gl-cont{position:absolute;left:0;top:0;pointer-events:auto;cursor:pointer;border:0;padding:0;background:none;
   display:flex;flex-direction:column;align-items:center;gap:2px;transition:opacity .3s;will-change:transform,opacity;}
 .gl-cont .orb{position:relative;display:flex;align-items:center;gap:6px;padding:6px 14px 6px 8px;border-radius:999px;
   background:linear-gradient(180deg, rgba(30,26,70,.78), rgba(10,10,30,.78));border:1px solid rgba(255,226,168,.55);
   box-shadow:0 0 18px rgba(244,184,96,.35), inset 0 0 10px rgba(244,184,96,.15);
-  font-family:var(--f-title);font-size:16px;letter-spacing:.18em;color:var(--gold-hi);white-space:nowrap;
+  font-family:var(--f-display);font-weight:var(--fw-display);font-size:15.5px;letter-spacing:.16em;color:var(--gold-hi);white-space:nowrap;
   backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);transition:transform .3s var(--ease-soft), box-shadow .3s;}
 .gl-cont .orb svg{width:18px;height:18px;animation:sbSpin 12s linear infinite;}
-.gl-cont .orb b{font-weight:400;font-size:11px;color:var(--gold);letter-spacing:0;margin-left:2px;}
+.gl-cont .orb b{font-weight:600;font-size:13px;font-family:var(--f-num);color:var(--gold);letter-spacing:0;margin-left:2px;display:inline-flex;align-items:center;gap:2px;}
 .gl-cont:hover .orb,.gl-cont:focus-visible .orb{transform:scale(1.08);box-shadow:0 0 30px rgba(244,184,96,.65), inset 0 0 14px rgba(244,184,96,.3);}
 .gl-cont .stem{width:1px;height:14px;background:linear-gradient(var(--gold), transparent);}
 .gl-cont .dot{width:6px;height:6px;border-radius:50%;background:var(--gold-hi);box-shadow:0 0 10px 3px rgba(244,184,96,.8);}
 .gl-tip{position:absolute;left:0;top:0;pointer-events:none;padding:6px 12px;border-radius:10px;
   background:rgba(12,12,34,.85);border:1px solid var(--line);color:var(--text);font-size:13px;letter-spacing:.08em;white-space:nowrap;
   opacity:0;transition:opacity .2s;box-shadow:0 0 16px rgba(244,184,96,.2);}
-.gl-tip b{font-family:var(--f-title);font-weight:400;font-size:16px;color:var(--gold-hi);margin-right:6px;}
+.gl-tip b{font-family:var(--f-display);font-weight:var(--fw-display);font-size:16px;color:var(--gold-hi);margin-right:6px;}
+.gl-tip .sb-ico{color:var(--gold-hi);margin:0 2px 0 4px;}
 .gl-tip.show{opacity:1;}
 .gl-dock{position:absolute;left:0;right:0;bottom:calc(12px + var(--safe-b));display:none;gap:8px;overflow-x:auto;scrollbar-width:none;
   padding:4px max(16px,var(--safe-l)) 4px max(16px,var(--safe-l));}
 .gl-dock::-webkit-scrollbar{display:none;}
 .gl-dock button{flex:none;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:rgba(14,14,40,.78);
-  color:var(--gold-hi);font-family:var(--f-title);font-size:15px;letter-spacing:.14em;cursor:pointer;}
+  color:var(--gold-hi);font-family:var(--f-display);font-weight:var(--fw-display);font-size:15px;letter-spacing:.12em;cursor:pointer;}
 .gl-hint{position:absolute;right:max(16px,var(--safe-r));bottom:calc(16px + var(--safe-b));font-size:12px;color:var(--text-dim);letter-spacing:.12em;opacity:.7;pointer-events:none;}
 .gl-load{position:absolute;inset:0;display:grid;place-items:center;}
 .gl-load[hidden]{display:none!important;}
@@ -235,7 +236,7 @@
     const s = SB.store.stats();
     $('gl-stat').textContent = s.cities ? `已点亮 ${s.countries} 个国家 · ${s.cities} 座城市 · ${s.memories} 段回忆` : '还没有点亮任何地方 · 选一个大洲开始吧';
     const vis = SB.store.visitedCountries();
-    contBtns.forEach(({c, badge}) => { const n = SB.geo.inContinent(c.code).filter(x => vis.has(x.key)).length; badge.textContent = n ? '★' + n : ''; });
+    contBtns.forEach(({c, badge}) => { const n = SB.geo.inContinent(c.code).filter(x => vis.has(x.key)).length; badge.innerHTML = n ? SB.icon('star') + n : ''; });
   }
   document.addEventListener('sb:data', () => {
     refreshStats();
@@ -306,7 +307,7 @@
     earthMat.uniforms.hk.value = idx; earthMat.uniforms.hc.value = c ? (contIndex[c.cont] || -1) : -1;
     if(!c){ tip.classList.remove('show'); return; }
     const n = SB.store.citiesIn(c.key).length;
-    tip.innerHTML = `<b>${SB.esc(c.zh)}</b>${SB.esc(SB.geo.continent(c.cont)?.name || '')}${n ? ` · ★ ${n} 座城市` : ''}`;
+    tip.innerHTML = `<b>${SB.esc(c.zh)}</b>${SB.esc(SB.geo.continent(c.cont)?.name || '')}${n ? ` · ${SB.icon('star')}${n} 座城市` : ''}`;
     tip.style.transform = `translate(${Math.min(x + 16, innerWidth - tip.offsetWidth - 12)}px, ${y + 18}px)`;
     tip.classList.add('show');
   }

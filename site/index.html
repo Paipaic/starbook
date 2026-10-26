@@ -15,10 +15,10 @@
 <body>
 <!-- ████ BLOCK 00-config START ████ -->
 <script>
-/* ── Starbook v1.5 Anniversary · 公开客户端配置 ──
+/* ── Starbook v1.5.2 · 公开客户端配置 ──
    Publishable Key 设计上允许出现在浏览器；不要在此文件放 Secret / service_role / 数据库密码。 */
 window.STARBOOK_CONFIG = Object.freeze({
-  version: '1.5.0-anniversary',
+  version: '1.5.2',
   supabaseUrl: 'https://xowbbcumcxtsrrnulunb.supabase.co',
   supabasePublishableKey: 'sb_publishable_SYGBrk2PiwwzRXZm03Patg_oDlYSIGd',
   storageBucket: 'starbook-media',
@@ -37,7 +37,9 @@ window.STARBOOK_CONFIG = Object.freeze({
 <title>星屿之书</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Noto+Serif+SC:wght@400;600&family=ZCOOL+XiaoWei&display=swap">
+<!-- v1.5.2 「星文」字体系统：思源宋体超家族 + Cinzel 碑铭体 + Cormorant Garamond 数字；封面书名 900 字重单独按字子集加载 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Noto+Serif+SC:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&text=%E6%98%9F%E5%B1%BF%E4%B9%8B%E4%B9%A6&display=swap">
 <style>
 /* 布局概念：全屏叠放的"场景舞台"；一层共享的光、雾与粒子贯穿所有场景；唯一导航在左上角 */
 :root{
@@ -47,16 +49,42 @@ window.STARBOOK_CONFIG = Object.freeze({
   --night:#070818; --night-2:#12153a; --aurora:#8fa4ff;
   --text:#f6e7cc; --text-dim:#bfa582; --danger:#e07a5f;
   --glass:rgba(24,14,8,.80); --glass-night:rgba(14,14,36,.82); --line:rgba(244,184,96,.38);
-  --f-title:"ZCOOL XiaoWei","Noto Serif SC","Songti SC","STSong",serif;
-  --f-body:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
-  --f-rune:"Cinzel Decorative","Cinzel","Times New Roman",serif;
+  /* ── 「星文」字体系统（v1.5.2）：每个字体栈都以思源宋体兜底中文，避免同一行混入两种字形 ── */
+  --f-cjk:"Noto Serif SC","Source Han Serif SC","Noto Serif CJK SC","Songti SC","STSong",serif;
+  --f-display:"Noto Serif SC","Source Han Serif SC","Noto Serif CJK SC","Songti SC","STSong",serif;
+  --f-title:var(--f-display);
+  --f-body:var(--f-cjk);
+  --f-rune:"Cinzel","Trajan Pro","Cormorant SC","Noto Serif SC","Source Han Serif SC","Songti SC",serif;
+  --f-num:"Cormorant Garamond","EB Garamond","Garamond","Noto Serif SC","Source Han Serif SC","Songti SC",serif;
+  --fw-display:600; --fw-body:400;
+  --fs-cap:12px; --fs-sm:13.5px; --fs-body:15.5px; --fs-lead:17px; --fs-h3:20px;
+  --fs-h2:clamp(22px,2.4vw,28px); --fs-h1:clamp(30px,5.2vw,56px); --fs-hero:clamp(38px,7vw,72px);
+  --lh-body:1.8; --lh-ui:1.45; --lh-title:1.25;
+  --tr-hero:.2em; --tr-title:.16em; --tr-ui:.08em; --tr-body:.02em; --tr-rune:.32em;
   --ease-soft:cubic-bezier(.45,.05,.25,1);
   --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
   --safe-l:env(safe-area-inset-left,0px); --safe-r:env(safe-area-inset-right,0px);
+  --ico-spark:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-10 -10 20 20'%3E%3Cpath d='M0-10C.9-3.2 3.2-.9 10 0 3.2.9.9 3.2 0 10-.9 3.2-3.2.9-10 0-3.2-.9-.9-3.2 0-10Z'/%3E%3C/svg%3E");
   color-scheme:dark;
 }
 html,body{width:100%;height:100%;min-height:100%;overscroll-behavior:none;-webkit-text-size-adjust:100%;}
-body{min-height:100vh;min-height:100dvh;background:var(--ink);color:var(--text);font-family:var(--f-body);overflow:hidden;-webkit-tap-highlight-color:transparent;}
+body{min-height:100vh;min-height:100dvh;background:var(--ink);color:var(--text);font-family:var(--f-body);overflow:hidden;-webkit-tap-highlight-color:transparent;
+  font-size:var(--fs-body);font-weight:var(--fw-body);line-height:var(--lh-ui);letter-spacing:var(--tr-body);}
+/* ── 「星文」排版基础 ── */
+html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;font-kerning:normal;
+  font-synthesis:none;font-variant-numeric:lining-nums;}
+h1,h2,h3,h4{font-family:var(--f-display);font-weight:var(--fw-display);line-height:var(--lh-title);text-wrap:balance;}
+p{line-break:strict;text-wrap:pretty;}
+@supports (text-autospace:normal){ html{text-autospace:normal;} }
+@media (min-width:900px){ :root{--fs-body:16px;} }
+.sb-num{font-family:var(--f-num);font-variant-numeric:lining-nums tabular-nums;letter-spacing:.02em;}
+.sb-rune{font-family:var(--f-rune);font-weight:500;text-transform:uppercase;letter-spacing:var(--tr-rune);}
+/* 金色烫金文字：渐变填充 + 柔光（渐变文字不能使用 text-shadow） */
+.sb-foil{background:linear-gradient(176deg,#fff6dc 0%,#ffe2a8 30%,#f2b863 55%,#c98a3a 74%,#ffe7b8 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 14px rgba(244,184,96,.42)) drop-shadow(0 1px 0 rgba(60,30,8,.5));}
+/* 内联 SVG 图标：随文字颜色与字号缩放，替代依赖系统字体的符号 */
+.sb-ico{display:inline-block;width:1em;height:1em;flex:none;vertical-align:-.14em;overflow:visible;}
 *{box-sizing:border-box;}
 button,input,textarea,select{font:inherit;color:inherit;}
 :focus-visible{outline:2px solid var(--gold-hi);outline-offset:3px;border-radius:6px;}
@@ -120,9 +148,12 @@ body.is-busy #sb-stage,body.is-busy #sb-nav{pointer-events:none;}
 #sb-toast{position:fixed;left:50%;bottom:calc(28px + var(--safe-b));z-index:90;
   transform:translate(-50%,12px);opacity:0;pointer-events:none;
   padding:10px 20px;border-radius:999px;background:var(--glass);border:1px solid var(--line);
-  color:var(--gold-hi);font-family:var(--f-title);font-size:15px;letter-spacing:.08em;
+  color:var(--gold-hi);font-family:var(--f-display);font-weight:var(--fw-display);font-size:15px;letter-spacing:var(--tr-ui);line-height:1.5;
   box-shadow:0 0 24px rgba(244,184,96,.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-  transition:opacity .4s, transform .4s var(--ease-soft);max-width:calc(100vw - 32px);text-align:center;}
+  transition:opacity .4s, transform .4s var(--ease-soft);max-width:calc(100vw - 32px);text-align:center;
+  display:flex;align-items:center;gap:10px;}
+#sb-toast::before{content:"";flex:none;width:14px;height:14px;background:var(--gold-hi);filter:drop-shadow(0 0 5px rgba(255,214,150,.9));
+  -webkit-mask:var(--ico-spark) center/contain no-repeat;mask:var(--ico-spark) center/contain no-repeat;}
 #sb-toast.show{opacity:1;transform:translate(-50%,0);}
 
 /* ── 通用组件：卷轴弹窗 / 表单 / 按钮 ── */
@@ -141,8 +172,8 @@ body.is-busy #sb-stage,body.is-busy #sb-nav{pointer-events:none;}
 .sb-modal.show .sb-scroll{transform:none;filter:none;}
 .sb-scroll.wide{width:min(760px,100%);}
 .sb-scroll > header{padding:20px 22px 10px;text-align:center;}
-.sb-scroll > header h3{margin:0;font-family:var(--f-title);font-weight:400;font-size:24px;letter-spacing:.14em;color:var(--gold-hi);text-shadow:0 0 14px rgba(244,184,96,.5);}
-.sb-scroll > header p{margin:6px 0 0;font-family:var(--f-rune);font-size:10px;letter-spacing:.3em;color:var(--gold-dim);}
+.sb-scroll > header h3{margin:0;padding-left:.14em;font-family:var(--f-display);font-weight:var(--fw-display);font-size:23px;letter-spacing:.14em;color:var(--gold-hi);text-shadow:0 0 14px rgba(244,184,96,.45);}
+.sb-scroll > header p{margin:8px 0 0;padding-left:var(--tr-rune);font-family:var(--f-rune);font-weight:500;font-size:10.5px;letter-spacing:var(--tr-rune);color:var(--gold-dim);}
 .sb-scroll > .body{padding:8px 22px 14px;overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:14px;}
 .sb-scroll > footer{padding:12px 22px 18px;display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;border-top:1px solid rgba(244,184,96,.15);}
 .sb-scroll > footer .spacer{flex:1;}
@@ -154,20 +185,21 @@ body.is-busy #sb-stage,body.is-busy #sb-nav{pointer-events:none;}
   .sb-scroll{width:100%;border-radius:18px 18px 0 0;max-height:calc(100dvh - 40px - var(--safe-t));transform:translateY(40px);padding-bottom:var(--safe-b);}
 }
 .sb-field{display:flex;flex-direction:column;gap:6px;}
-.sb-field > span{font-family:var(--f-title);font-size:14px;letter-spacing:.12em;color:var(--text-dim);}
+.sb-field > span{font-family:var(--f-display);font-weight:var(--fw-display);font-size:13.5px;letter-spacing:.12em;color:var(--text-dim);}
 .sb-input{width:100%;padding:10px 4px 8px;border:0;border-bottom:1px solid rgba(244,184,96,.4);background:transparent;
   color:var(--text);font-size:16px;outline:none;transition:border-color .3s, box-shadow .3s;}
 .sb-input:focus{border-color:var(--gold-hi);box-shadow:0 8px 14px -12px rgba(255,214,150,.9);}
 .sb-input::placeholder{color:rgba(191,165,130,.45);}
-textarea.sb-input{resize:vertical;min-height:64px;line-height:1.6;}
+textarea.sb-input{resize:vertical;min-height:64px;line-height:1.7;}
 .sb-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:8px 20px;border-radius:999px;cursor:pointer;
-  font-family:var(--f-title);font-size:16px;letter-spacing:.14em;border:1px solid var(--line);background:rgba(244,184,96,.06);color:var(--gold-hi);
+  font-family:var(--f-display);font-weight:var(--fw-display);font-size:15.5px;letter-spacing:.12em;line-height:1.3;border:1px solid var(--line);background:rgba(244,184,96,.06);color:var(--gold-hi);
   transition:box-shadow .3s, border-color .3s, transform .2s, opacity .3s;}
 .sb-btn:hover{border-color:rgba(255,226,168,.8);box-shadow:0 0 18px rgba(244,184,96,.3);}
 .sb-btn:active{transform:scale(.97);}
 .sb-btn.primary{border-color:transparent;color:#2a1608;background:linear-gradient(180deg,#ffe7b5,#f4b860 55%,#c98636);box-shadow:0 0 18px rgba(244,184,96,.35), inset 0 1px 0 rgba(255,255,255,.6);}
 .sb-btn.danger{color:#ffb39e;border-color:rgba(224,122,95,.5);background:rgba(224,122,95,.06);}
-.sb-btn.small{min-height:32px;padding:4px 14px;font-size:14px;}
+.sb-btn.small{min-height:32px;padding:4px 14px;font-size:14px;letter-spacing:.08em;}
+.sb-btn .sb-ico{width:.95em;height:.95em;}
 .sb-btn[disabled]{opacity:.45;pointer-events:none;}
 @media (pointer:coarse){
   .sb-btn{min-height:44px;touch-action:manipulation;}
@@ -175,11 +207,11 @@ textarea.sb-input{resize:vertical;min-height:64px;line-height:1.6;}
   .sb-input{min-height:44px;}
   button{touch-action:manipulation;}
 }
-.sb-spin{display:flex;flex-direction:column;align-items:center;gap:14px;color:var(--gold-hi);font-family:var(--f-title);letter-spacing:.2em;}
+.sb-spin{display:flex;flex-direction:column;align-items:center;gap:14px;color:var(--gold-hi);font-family:var(--f-display);font-weight:var(--fw-display);letter-spacing:.2em;padding-left:.2em;}
 .sb-spin svg{width:64px;height:64px;animation:sbSpin 6s linear infinite;filter:drop-shadow(0 0 8px rgba(244,184,96,.7));}
 .sb-spin svg .r2{transform-origin:50% 50%;animation:sbSpin 3s linear infinite reverse;}
 @keyframes sbSpin{to{transform:rotate(360deg)}}
-.sb-empty{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;color:var(--text-dim);font-family:var(--f-title);letter-spacing:.12em;line-height:1.8;}
+.sb-empty{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;color:var(--text-dim);font-family:var(--f-display);font-weight:var(--fw-display);letter-spacing:.12em;line-height:1.9;}
 
 @media (prefers-reduced-motion:reduce){ .sb-mist,.sb-rays{animation:none;} }
 </style>
@@ -211,6 +243,39 @@ window.SB = window.SB || {};
   SB.lerp = (a,b,t) => a + (b-a)*t;
   SB.clamp = (v,a,b) => Math.max(a, Math.min(b, v));
   SB.esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  /* ── 内联 SVG 图标（v1.5.2）：不依赖系统字体，任何手机都显示一致 ── */
+  const ICON_PATHS = {
+    spark:'<path d="M12 1.5c.9 6.4 3.1 8.6 10.5 10.5-7.4 1.9-9.6 4.1-10.5 10.5-.9-6.4-3.1-8.6-10.5-10.5C8.9 10.1 11.1 7.9 12 1.5Z" fill="currentColor"/>',
+    star:'<path d="M12 2.5c.8 5.4 2.6 7.4 8.2 9.5-5.6 2.1-7.4 4.1-8.2 9.5-.8-5.4-2.6-7.4-8.2-9.5 5.6-2.1 7.4-4.1 8.2-9.5Z" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="#fff8e6" opacity=".85"/>',
+    quill:'<path d="M20.5 3.5c-6.6.9-11.8 5.6-13.6 12.7l-1.6 4.3 4.2-1.7c6.9-2 11.3-7.6 11-15.3Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M6.8 17.2 14 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>',
+    close:'<path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+    reset:'<path d="M5.2 9.2A7.5 7.5 0 1 1 4.5 13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M4.2 4.6v4.9h4.9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+    plus:'<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+    minus:'<path d="M5 12h14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+    up:'<path d="M12 19V5M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+    down:'<path d="M12 5v14M6 13l6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+    chevron:'<path d="M9.5 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+    note:'<path d="M9 17.5V6l10-2v11.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="7" cy="17.5" r="2.3" fill="currentColor"/><circle cx="17" cy="15.5" r="2.3" fill="currentColor"/>'
+  };
+  SB.icon = (name, cls='') => `<svg class="sb-ico${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${ICON_PATHS[name] || ICON_PATHS.spark}</svg>`;
+  SB.icon.names = Object.keys(ICON_PATHS);
+
+  /* ── 字体就绪（只做预热与诊断，不隐藏文字） ── */
+  SB.type = { ready: Promise.resolve() };
+  if(document.fonts?.load){
+    const warm = [
+      "600 20px 'Noto Serif SC'", "400 16px 'Noto Serif SC'", "900 40px 'Noto Serif SC'",
+      "500 12px 'Cinzel'", "500 16px 'Cormorant Garamond'"
+    ];
+    SB.type.ready = Promise.race([
+      Promise.all(warm.map(f => document.fonts.load(f, '星屿之书回忆总览 ORBIS 2026').catch(() => null))),
+      new Promise(r => setTimeout(r, 4000))
+    ]).then(() => document.documentElement.classList.add('sb-fonts-ready'));
+  }
+
+  /* 标题排版：分隔点「·」与前文不断开，换行时只会出现在行尾，不会落在行首 */
+  SB.fmtTitle = t => String(t ?? '').replace(/\s*·\s*/g, '\u00a0· ');
+
   SB.el = (tag, cls, html) => { const e = document.createElement(tag); if(cls) e.className = cls; if(html != null) e.innerHTML = html; return e; };
   SB.uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
@@ -248,8 +313,10 @@ window.SB = window.SB || {};
       el.textContent = text; el.classList.add('show');
       clearTimeout(toastTimer); toastTimer = setTimeout(()=>el.classList.remove('show'), ms);
     },
-    button(text, kind='', onClick){
-      const b = SB.el('button', 'sb-btn ' + kind); b.type = 'button'; b.textContent = text;
+    button(text, kind='', onClick, icon){
+      const b = SB.el('button', 'sb-btn ' + kind); b.type = 'button';
+      if(icon){ b.innerHTML = SB.icon(icon); const t = SB.el('span'); t.textContent = text; b.appendChild(t); }
+      else b.textContent = text;
       if(onClick) b.addEventListener('click', onClick); return b;
     },
     field(label, input){
@@ -446,8 +513,8 @@ window.SB = window.SB || {};
   border:1px solid rgba(244,184,96,.34);background:linear-gradient(180deg,rgba(30,20,18,.88),rgba(10,9,22,.9));
   box-shadow:0 30px 90px rgba(0,0,0,.62),0 0 55px rgba(244,184,96,.11),inset 0 0 45px rgba(255,226,168,.025);
   backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);}
-.sb-gate-rune{font-family:var(--f-rune);font-size:10px;letter-spacing:.34em;color:var(--gold-dim);margin:0 0 12px;}
-.sb-gate-card h1{font-family:var(--f-title);font-weight:400;letter-spacing:.16em;color:var(--gold-hi);font-size:clamp(25px,7vw,34px);margin:0;text-shadow:0 0 20px rgba(244,184,96,.4);}
+.sb-gate-rune{font-family:var(--f-rune);font-weight:500;font-size:10.5px;letter-spacing:var(--tr-rune);padding-left:var(--tr-rune);color:var(--gold-dim);margin:0 0 12px;}
+.sb-gate-card h1{font-family:var(--f-display);font-weight:var(--fw-display);letter-spacing:.2em;padding-left:.2em;color:var(--gold-hi);font-size:clamp(25px,7vw,34px);margin:0;text-shadow:0 0 20px rgba(244,184,96,.4);}
 .sb-gate-card .intro{font-size:13px;line-height:1.9;color:var(--text-dim);margin:12px auto 22px;max-width:330px;}
 .sb-gate-form{display:flex;flex-direction:column;gap:12px;text-align:left;}
 .sb-gate-form label{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--text-dim);letter-spacing:.08em;}
@@ -602,7 +669,7 @@ window.SB = window.SB || {};
       if(!current){
         showFatal(
           '这枚星钥还没有连接到一本书。',
-          '当前账号还没有《我们的星屿》的访问权限。可以重新检查权限，或返回登录并使用其他账号。',
+          '当前账号还没有《星屿之书》的访问权限。可以重新检查权限，或返回登录并使用其他账号。',
           {
             retryLabel:'重新检查权限',
             retry:()=>finishAuthenticated(),
@@ -665,7 +732,7 @@ window.SB = window.SB || {};
       if(!window.supabase?.createClient) throw new Error('supabase_client_unavailable');
       SB.supabase = window.supabase.createClient(cfg.supabaseUrl,cfg.supabasePublishableKey,{
         auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},
-        global:{headers:{'x-client-info':'starbook-v1.5-anniversary'}}
+        global:{headers:{'x-client-info':'starbook-v'+(cfg.version||'')}}
       });
       SB.supabase.auth.onAuthStateChange((event,session)=>{
         user.session=session||null; user.current=session?.user||null;
@@ -894,7 +961,7 @@ window.SB = window.SB || {};
   transition:border-color .3s, box-shadow .3s, transform .3s var(--ease-soft), opacity .4s;}
 body[data-world="night"] #sb-nav-btn,body[data-world="night"] #sb-back{background:linear-gradient(180deg, rgba(26,24,58,.84), rgba(10,10,28,.84));}
 #sb-nav-btn{display:flex;align-items:center;gap:10px;padding:8px 18px 8px 10px;border-radius:999px;
-  font-family:var(--f-title);font-size:18px;letter-spacing:.14em;}
+  font-family:var(--f-display);font-weight:var(--fw-display);font-size:17px;letter-spacing:.14em;line-height:1.2;}
 #sb-nav-btn:hover,#sb-back:hover{border-color:rgba(255,226,168,.75);box-shadow:0 0 0 1px rgba(0,0,0,.4) inset,0 6px 24px rgba(0,0,0,.45),0 0 28px rgba(244,184,96,.35);}
 #sb-nav-btn:active,#sb-back:active{transform:scale(.96);}
 #sb-nav-btn .gem{width:26px;height:26px;flex:none;animation:sbGemBreath 4s ease-in-out infinite;}
@@ -917,14 +984,14 @@ body[data-world="night"] #sb-nav-btn,body[data-world="night"] #sb-back{backgroun
 body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%, rgba(244,184,96,.10), transparent 70%), var(--glass-night);}
 #sb-nav.open #sb-menu{opacity:1;transform:none;filter:none;pointer-events:auto;visibility:visible;
   transition:opacity .45s var(--ease-soft), transform .45s var(--ease-soft), filter .45s var(--ease-soft), visibility 0s;}
-#sb-menu .inscr{font-family:var(--f-rune);font-size:10px;letter-spacing:.32em;text-align:center;color:var(--gold-dim);margin:0 0 10px;}
+#sb-menu .inscr{font-family:var(--f-rune);font-weight:500;font-size:10px;letter-spacing:var(--tr-rune);padding-left:var(--tr-rune);text-align:center;color:var(--gold-dim);margin:0 0 10px;}
 .sb-crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:2px 4px;margin:0 6px 10px;padding:8px 10px;border-radius:10px;
-  background:rgba(244,184,96,.06);border:1px dashed rgba(244,184,96,.22);font-family:var(--f-title);font-size:14px;}
+  background:rgba(244,184,96,.06);border:1px dashed rgba(244,184,96,.22);font-family:var(--f-display);font-weight:var(--fw-display);font-size:13.5px;}
 .sb-crumbs[hidden]{display:none!important;}
 .sb-crumbs button{border:0;background:none;padding:2px 4px;cursor:pointer;color:var(--text-dim);border-radius:6px;}
 .sb-crumbs button:hover{color:var(--gold-hi);}
 .sb-crumbs button.cur{color:var(--gold-hi);text-shadow:0 0 10px rgba(244,184,96,.6);}
-.sb-crumbs i{font-style:normal;color:var(--gold-dim);font-size:11px;}
+.sb-crumbs i{font-style:normal;color:var(--gold-dim);font-size:12px;display:inline-flex;}
 #sb-menu ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;}
 .sb-mi{width:100%;display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;
   padding:9px 10px;border:0;border-radius:10px;background:transparent;cursor:pointer;text-align:left;transition:background .25s;}
@@ -933,21 +1000,21 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
   border:1px solid rgba(244,184,96,.3);background:radial-gradient(circle, rgba(244,184,96,.15), transparent 70%);color:var(--gold);}
 .sb-mi .ic svg{width:18px;height:18px;}
 .sb-mi .tx{display:flex;flex-direction:column;gap:2px;min-width:0;}
-.sb-mi .nm{font-family:var(--f-title);font-size:17px;color:var(--text);letter-spacing:.06em;}
-.sb-mi .ds{font-size:12px;color:var(--text-dim);line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.sb-mi .tag{font-size:11px;color:var(--gold-dim);font-family:var(--f-title);letter-spacing:.1em;white-space:nowrap;}
+.sb-mi .nm{font-family:var(--f-display);font-weight:var(--fw-display);font-size:16.5px;color:var(--text);letter-spacing:.06em;line-height:1.35;}
+.sb-mi .ds{font-size:12.5px;color:var(--text-dim);line-height:1.45;letter-spacing:.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sb-mi .tag{font-size:11.5px;color:var(--gold-dim);font-family:var(--f-display);font-weight:var(--fw-display);letter-spacing:.1em;white-space:nowrap;}
 .sb-mi.is-current .nm{color:var(--gold-hi);}
 .sb-mi.is-current .ic{border-color:var(--gold);box-shadow:0 0 12px rgba(244,184,96,.4);}
 .sb-mi.off .nm,.sb-mi.off .ic{opacity:.5;}
 .sb-sub{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;padding:2px 6px 8px 54px;}
 .sb-sub[hidden]{display:none!important;}
 .sb-sub button{border:1px solid rgba(244,184,96,.2);background:rgba(244,184,96,.04);border-radius:8px;
-  padding:7px 8px;font-family:var(--f-title);font-size:14px;color:var(--text-dim);cursor:pointer;text-align:left;transition:all .25s;display:flex;justify-content:space-between;gap:6px;}
+  padding:7px 8px;font-family:var(--f-display);font-weight:var(--fw-display);font-size:14px;letter-spacing:.06em;color:var(--text-dim);cursor:pointer;text-align:left;transition:all .25s;display:flex;justify-content:space-between;gap:6px;}
 .sb-sub button:hover{color:var(--gold-hi);border-color:var(--line);}
-.sb-sub button b{font-weight:400;color:var(--gold);font-size:12px;}
+.sb-sub button b{font-weight:400;color:var(--gold);font-size:12.5px;font-family:var(--f-num);display:inline-flex;align-items:center;gap:3px;}
 .sb-divider{height:1px;margin:8px 10px;background:linear-gradient(90deg, transparent, var(--line), transparent);}
 .sb-seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;}
-.sb-seg span{padding:3px 10px;font-size:12px;font-family:var(--f-title);color:var(--text-dim);}
+.sb-seg span{padding:3px 10px;font-size:12px;font-family:var(--f-display);font-weight:var(--fw-display);letter-spacing:.06em;color:var(--text-dim);}
 .sb-seg span.on{background:rgba(244,184,96,.22);color:var(--gold-hi);}
 .sb-status{margin:8px 10px 0;font-size:11px;color:var(--text-dim);text-align:center;letter-spacing:.06em;opacity:.8;}
 @media (pointer:coarse){
@@ -1016,7 +1083,7 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
     crumbs.innerHTML = '';
     crumbs.hidden = path.length < 2;
     path.forEach((p, i) => {
-      if(i) { const s = SB.el('i'); s.textContent = '›'; crumbs.appendChild(s); }
+      if(i) { const s = SB.el('i', '', SB.icon('chevron')); crumbs.appendChild(s); }
       const b = SB.el('button', i === path.length-1 ? 'cur' : ''); b.type = 'button'; b.textContent = p.label;
       b.addEventListener('click', () => { if(i < path.length-1) SB.scenes.go(p.id, p.params, {transition:'veil'}); else menu.close(); });
       crumbs.appendChild(b);
@@ -1042,7 +1109,7 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
         sub = SB.el('div','sb-sub'); sub.hidden = !it._expanded;
         for(const c of (typeof it.children === 'function' ? it.children() : it.children)){
           const cb = SB.el('button'); cb.type = 'button';
-          cb.innerHTML = `<span></span>${c.badge ? `<b>${SB.esc(c.badge)}</b>` : ''}`;
+          cb.innerHTML = `<span></span>${c.badge ? `<b>${SB.icon('star')}${SB.esc(c.badge)}</b>` : ''}`;
           cb.querySelector('span').textContent = c.label;
           cb.addEventListener('click', () => activate(c)); sub.appendChild(cb);
         }
@@ -1169,8 +1236,8 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
     linear-gradient(90deg, rgba(90,50,20,.45), transparent 9%), var(--tex-paper) center/256px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4%;color:#5a3416;text-align:center;}
 .bk-page .emb{width:46%;opacity:.85;}
-.bk-page h2{margin:0;font-family:var(--f-title);font-weight:400;font-size:calc(var(--bw) * .07);letter-spacing:.2em;color:#6b3a12;}
-.bk-page p{margin:0;font-size:calc(var(--bw) * .03);letter-spacing:.12em;color:#7a4e24;}
+.bk-page h2{margin:0;padding-left:.2em;font-family:var(--f-display);font-weight:900;font-size:calc(var(--bw) * .07);letter-spacing:.2em;color:#6b3a12;}
+.bk-page p{margin:0;font-size:calc(var(--bw) * .03);font-weight:600;letter-spacing:.12em;padding-left:.12em;color:#7a4e24;}
 .bk-beam{position:absolute;left:50%;top:50%;width:140%;height:140%;transform:translate(-50%,-50%) scale(.2);opacity:0;pointer-events:none;
   background:repeating-conic-gradient(from 0deg, rgba(255,236,190,.0) 0deg 7deg, rgba(255,226,168,.5) 9deg 11deg, rgba(255,236,190,0) 13deg 22deg);
   -webkit-mask:radial-gradient(circle, #000 0%, transparent 62%);mask:radial-gradient(circle, #000 0%, transparent 62%);
@@ -1250,7 +1317,7 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
 @keyframes bkSmoke{0%{opacity:0;transform:translate3d(0,40%,0) scale(.5,.7)}25%{opacity:1}100%{opacity:0;transform:translate3d(18%,-120%,0) scale(1.4,1.8) rotate(12deg)}}
 
 .bk-hint{position:absolute;left:50%;top:min(calc(50% + var(--bh) * .5 + 26px), calc(100% - 36px - var(--safe-b)));transform:translateX(-50%);
-  font-family:var(--f-title);font-size:15px;letter-spacing:.3em;color:var(--gold-hi);white-space:nowrap;
+  font-family:var(--f-display);font-weight:var(--fw-display);font-size:15px;letter-spacing:.3em;padding-left:.3em;color:var(--gold-hi);white-space:nowrap;
   text-shadow:0 0 12px rgba(244,184,96,.7);animation:bkHint 4s ease-in-out infinite;pointer-events:none;transition:opacity .5s;}
 @keyframes bkHint{0%,100%{opacity:.35}50%{opacity:.95}}
 .sb-scene[data-scene="book"].is-opening .bk-hint{opacity:0;animation:none;}
@@ -1421,8 +1488,8 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
       <rect x="34" y="34" width="532" height="732" rx="6" fill="none" stroke-width=".9"/>
       <g transform="translate(40 40)">${CORNER}</g><g transform="translate(560 40) scale(-1 1)">${CORNER}</g>
       <g transform="translate(40 760) scale(1 -1)">${CORNER}</g><g transform="translate(560 760) scale(-1 -1)">${CORNER}</g>
-      ${withText ? `<text x="300" y="140" text-anchor="middle" stroke="none" font-family="ZCOOL XiaoWei, Noto Serif SC, serif" font-size="66" letter-spacing="16">星屿之书</text>
-      <text x="300" y="178" text-anchor="middle" stroke="none" font-family="Cinzel Decorative, serif" font-size="13" letter-spacing="7" opacity=".9">THE BOOK OF STAR ISLES</text>` : ''}
+      ${withText ? `<text x="308" y="142" text-anchor="middle" stroke="none" font-family="'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', serif" font-weight="900" font-size="64" letter-spacing="16">星屿之书</text>
+      <text x="303.5" y="178" text-anchor="middle" stroke="none" font-family="Cinzel, 'Trajan Pro', serif" font-weight="500" font-size="13.5" letter-spacing="7" opacity=".92">THE BOOK OF STAR ISLES</text>` : ''}
       <path d="M190 196 H270 M330 196 H410" stroke-width=".9" fill="none"/><path d="M300 189 l6 7 -6 7 -6 -7z" stroke="none"/>
       <g fill="none">
         <circle cx="${cx}" cy="${cy}" r="236" stroke-width="1.8"/><circle cx="${cx}" cy="${cy}" r="228" stroke-width=".8"/>
@@ -1436,9 +1503,9 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
   function coverArt(id, glow){
     return FOIL(id, glow) + `<g filter="url(#${id}f)">${shapes(`stroke="url(#${id}g)" fill="url(#${id}g)"`, true)}
       <path id="${id}tp" d="M ${cx-214} ${cy} A 214 214 0 1 1 ${cx+214} ${cy} A 214 214 0 1 1 ${cx-214} ${cy}" fill="none" stroke="none"/>
-      <text fill="url(#${id}g)" font-family="Cinzel Decorative, serif" font-size="11.5" letter-spacing="3.2"><textPath href="#${id}tp">✦ AMOR VINCIT OMNIA ✦ PER ASPERA AD ASTRA ✦ TECUM UBIQUE DOMUS ✦ MEMORIA STELLARUM ✦ ITER NOSTRUM ✦</textPath></text>
-      <text x="300" y="726" text-anchor="middle" fill="url(#${id}g)" font-family="ZCOOL XiaoWei, Noto Serif SC, serif" font-size="22" letter-spacing="8">✦ 爱与远方的记忆 ✦</text>
-      <text x="300" y="752" text-anchor="middle" fill="url(#${id}g)" font-family="Cinzel Decorative, serif" font-size="10" letter-spacing="6" opacity=".75">MMXXVI · LIBER PRIMUS</text></g>`;
+      <text fill="url(#${id}g)" font-family="Cinzel, 'Trajan Pro', serif" font-weight="500" font-size="12" letter-spacing="3.4"><textPath href="#${id}tp">AMOR VINCIT OMNIA · PER ASPERA AD ASTRA · TECUM UBIQUE DOMUS · MEMORIA STELLARUM · ITER NOSTRUM ·</textPath></text>
+      <text x="304" y="727" text-anchor="middle" fill="url(#${id}g)" font-family="'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', serif" font-weight="600" font-size="21" letter-spacing="8">爱与远方的记忆</text><g fill="url(#${id}g)"><path d="M178 712C179.44 717.44 180.56 718.56 186 720 180.56 721.44 179.44 722.56 178 728 176.56 722.56 175.44 721.44 170 720 175.44 718.56 176.56 717.44 178 712Z" stroke="none"/><path d="M422 712C423.44 717.44 424.56 718.56 430 720 424.56 721.44 423.44 722.56 422 728 420.56 722.56 419.44 721.44 414 720 419.44 718.56 420.56 717.44 422 712Z" stroke="none"/></g>
+      <text x="303" y="754" text-anchor="middle" fill="url(#${id}g)" font-family="Cinzel, 'Trajan Pro', serif" font-weight="500" font-size="10.5" letter-spacing="6" opacity=".8">MMXXVI · LIBER PRIMUS</text></g>`;
   }
   $('cv-art').innerHTML = coverArt('ca', 1.6);
   $('cv-art-hot').innerHTML = coverArt('ch', 5.5);
@@ -1468,7 +1535,7 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
     <circle r="146" stroke-width="2.6"/><circle r="132" stroke-width="1.3"/>
     <path d="${ticks(140,146,120)}" stroke-width=".7"/><path d="${ticks(134,146,12)}" stroke-width="1.8"/>
     <path id="m1tp" d="M -137 0 A 137 137 0 1 1 137 0 A 137 137 0 1 1 -137 0" stroke="none"/>
-    <text fill="url(#m1g)" stroke="none" font-family="Cinzel Decorative, serif" font-size="7.2" letter-spacing="2.4"><textPath href="#m1tp">${runes+runes}</textPath></text></g>`;
+    <text fill="url(#m1g)" stroke="none" font-family="Cinzel, 'Trajan Pro', serif" font-weight="600" font-size="7.4" letter-spacing="2.4"><textPath href="#m1tp">${runes+runes}</textPath></text></g>`;
   $('mk-r2').innerHTML = FOIL('m2', 1.2) + `<path d="${gear(124,116,48)}" fill="#4a2c12"/><circle r="104" fill="#1c1009"/>
     <g filter="url(#m2f)" stroke="url(#m2g)">
     <path d="${gear(124,116,48)}" fill="none" stroke-width="1.3"/>
@@ -2073,33 +2140,34 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 #gl-canvas.dragging{cursor:grabbing;}
 .gl-head{position:absolute;left:50%;top:calc(18px + var(--safe-t));transform:translateX(-50%);text-align:center;pointer-events:none;
   display:flex;flex-direction:column;align-items:center;gap:4px;width:max-content;max-width:calc(100vw - 32px);}
-.gl-head h1{margin:0;font-family:var(--f-title);font-weight:400;font-size:clamp(24px,3.2vw,38px);letter-spacing:.34em;color:var(--gold-hi);
+.gl-head h1{margin:0;padding-left:.32em;font-family:var(--f-display);font-weight:var(--fw-display);font-size:clamp(24px,3.2vw,38px);letter-spacing:.32em;color:var(--gold-hi);
   text-shadow:0 0 22px rgba(244,184,96,.65);}
-.gl-head p{margin:0;font-size:13px;letter-spacing:.16em;color:#c9c6ea;}
-.gl-head small{font-family:var(--f-rune);font-size:10px;letter-spacing:.4em;color:var(--gold-dim);}
+.gl-head p{margin:0;font-size:13px;letter-spacing:.12em;color:#c9c6ea;}
+.gl-head small{font-family:var(--f-rune);font-weight:500;font-size:10.5px;letter-spacing:.4em;padding-left:.4em;color:var(--gold-dim);}
 .gl-labels{position:absolute;inset:0;pointer-events:none;}
 .gl-cont{position:absolute;left:0;top:0;pointer-events:auto;cursor:pointer;border:0;padding:0;background:none;
   display:flex;flex-direction:column;align-items:center;gap:2px;transition:opacity .3s;will-change:transform,opacity;}
 .gl-cont .orb{position:relative;display:flex;align-items:center;gap:6px;padding:6px 14px 6px 8px;border-radius:999px;
   background:linear-gradient(180deg, rgba(30,26,70,.78), rgba(10,10,30,.78));border:1px solid rgba(255,226,168,.55);
   box-shadow:0 0 18px rgba(244,184,96,.35), inset 0 0 10px rgba(244,184,96,.15);
-  font-family:var(--f-title);font-size:16px;letter-spacing:.18em;color:var(--gold-hi);white-space:nowrap;
+  font-family:var(--f-display);font-weight:var(--fw-display);font-size:15.5px;letter-spacing:.16em;color:var(--gold-hi);white-space:nowrap;
   backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);transition:transform .3s var(--ease-soft), box-shadow .3s;}
 .gl-cont .orb svg{width:18px;height:18px;animation:sbSpin 12s linear infinite;}
-.gl-cont .orb b{font-weight:400;font-size:11px;color:var(--gold);letter-spacing:0;margin-left:2px;}
+.gl-cont .orb b{font-weight:600;font-size:13px;font-family:var(--f-num);color:var(--gold);letter-spacing:0;margin-left:2px;display:inline-flex;align-items:center;gap:2px;}
 .gl-cont:hover .orb,.gl-cont:focus-visible .orb{transform:scale(1.08);box-shadow:0 0 30px rgba(244,184,96,.65), inset 0 0 14px rgba(244,184,96,.3);}
 .gl-cont .stem{width:1px;height:14px;background:linear-gradient(var(--gold), transparent);}
 .gl-cont .dot{width:6px;height:6px;border-radius:50%;background:var(--gold-hi);box-shadow:0 0 10px 3px rgba(244,184,96,.8);}
 .gl-tip{position:absolute;left:0;top:0;pointer-events:none;padding:6px 12px;border-radius:10px;
   background:rgba(12,12,34,.85);border:1px solid var(--line);color:var(--text);font-size:13px;letter-spacing:.08em;white-space:nowrap;
   opacity:0;transition:opacity .2s;box-shadow:0 0 16px rgba(244,184,96,.2);}
-.gl-tip b{font-family:var(--f-title);font-weight:400;font-size:16px;color:var(--gold-hi);margin-right:6px;}
+.gl-tip b{font-family:var(--f-display);font-weight:var(--fw-display);font-size:16px;color:var(--gold-hi);margin-right:6px;}
+.gl-tip .sb-ico{color:var(--gold-hi);margin:0 2px 0 4px;}
 .gl-tip.show{opacity:1;}
 .gl-dock{position:absolute;left:0;right:0;bottom:calc(12px + var(--safe-b));display:none;gap:8px;overflow-x:auto;scrollbar-width:none;
   padding:4px max(16px,var(--safe-l)) 4px max(16px,var(--safe-l));}
 .gl-dock::-webkit-scrollbar{display:none;}
 .gl-dock button{flex:none;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:rgba(14,14,40,.78);
-  color:var(--gold-hi);font-family:var(--f-title);font-size:15px;letter-spacing:.14em;cursor:pointer;}
+  color:var(--gold-hi);font-family:var(--f-display);font-weight:var(--fw-display);font-size:15px;letter-spacing:.12em;cursor:pointer;}
 .gl-hint{position:absolute;right:max(16px,var(--safe-r));bottom:calc(16px + var(--safe-b));font-size:12px;color:var(--text-dim);letter-spacing:.12em;opacity:.7;pointer-events:none;}
 .gl-load{position:absolute;inset:0;display:grid;place-items:center;}
 .gl-load[hidden]{display:none!important;}
@@ -2304,7 +2372,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
     const s = SB.store.stats();
     $('gl-stat').textContent = s.cities ? `已点亮 ${s.countries} 个国家 · ${s.cities} 座城市 · ${s.memories} 段回忆` : '还没有点亮任何地方 · 选一个大洲开始吧';
     const vis = SB.store.visitedCountries();
-    contBtns.forEach(({c, badge}) => { const n = SB.geo.inContinent(c.code).filter(x => vis.has(x.key)).length; badge.textContent = n ? '★' + n : ''; });
+    contBtns.forEach(({c, badge}) => { const n = SB.geo.inContinent(c.code).filter(x => vis.has(x.key)).length; badge.innerHTML = n ? SB.icon('star') + n : ''; });
   }
   document.addEventListener('sb:data', () => {
     refreshStats();
@@ -2375,7 +2443,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
     earthMat.uniforms.hk.value = idx; earthMat.uniforms.hc.value = c ? (contIndex[c.cont] || -1) : -1;
     if(!c){ tip.classList.remove('show'); return; }
     const n = SB.store.citiesIn(c.key).length;
-    tip.innerHTML = `<b>${SB.esc(c.zh)}</b>${SB.esc(SB.geo.continent(c.cont)?.name || '')}${n ? ` · ★ ${n} 座城市` : ''}`;
+    tip.innerHTML = `<b>${SB.esc(c.zh)}</b>${SB.esc(SB.geo.continent(c.cont)?.name || '')}${n ? ` · ${SB.icon('star')}${n} 座城市` : ''}`;
     tip.style.transform = `translate(${Math.min(x + 16, innerWidth - tip.offsetWidth - 12)}px, ${y + 18}px)`;
     tip.classList.add('show');
   }
@@ -2453,8 +2521,8 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   padding-left:max(16px,var(--safe-l));padding-right:max(16px,var(--safe-r));max-width:1280px;margin:0 auto;}
 .ct-sigil{position:fixed;left:50%;top:44%;width:120vmin;height:120vmin;margin:-60vmin 0 0 -60vmin;opacity:.08;pointer-events:none;animation:bkSpin 220s linear infinite;}
 .ct-head{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;margin-bottom:22px;}
-.ct-head small{font-family:var(--f-rune);font-size:11px;letter-spacing:.5em;color:var(--gold-dim);}
-.ct-head h1{margin:0;font-family:var(--f-title);font-weight:400;font-size:clamp(38px,6vw,64px);letter-spacing:.3em;color:var(--gold-hi);
+.ct-head small{font-family:var(--f-rune);font-weight:500;font-size:11px;letter-spacing:.42em;padding-left:.42em;color:var(--gold-dim);}
+.ct-head h1{margin:0;padding-left:.28em;font-family:var(--f-display);font-weight:var(--fw-display);font-size:clamp(36px,6vw,60px);letter-spacing:.28em;color:var(--gold-hi);
   text-shadow:0 0 30px rgba(244,184,96,.6), 0 0 2px rgba(255,240,210,.9);}
 .ct-head p{margin:0;color:#c9c6ea;letter-spacing:.14em;font-size:14px;}
 .ct-search{width:min(420px,100%);margin:6px auto 0;position:relative;}
@@ -2474,10 +2542,10 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 .ct-card.lit{border-color:rgba(255,214,150,.6);background:linear-gradient(180deg, rgba(60,44,40,.8), rgba(22,16,30,.8));animation:ctIn .7s var(--ease-soft) backwards, ctBreath 4s ease-in-out infinite;}
 @keyframes ctBreath{0%,100%{box-shadow:0 0 10px rgba(244,184,96,.15)}50%{box-shadow:0 0 26px rgba(244,184,96,.4)}}
 .ct-card canvas{width:100%;aspect-ratio:16/10;display:block;}
-.ct-card .nm{font-family:var(--f-title);font-size:18px;letter-spacing:.08em;color:var(--text);line-height:1.2;}
+.ct-card .nm{font-family:var(--f-display);font-weight:var(--fw-display);font-size:17px;letter-spacing:.08em;color:var(--text);line-height:1.3;}
 .ct-card.lit .nm{color:var(--gold-hi);}
-.ct-card .en{font-size:11px;color:var(--text-dim);letter-spacing:.06em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.ct-card .badge{position:absolute;top:10px;right:10px;padding:2px 9px;border-radius:999px;font-size:12px;color:#2a1608;
+.ct-card .en{font-family:var(--f-num);font-style:italic;font-size:12.5px;color:var(--text-dim);letter-spacing:.03em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ct-card .badge{position:absolute;top:10px;right:10px;padding:2px 9px;border-radius:999px;font-size:13px;font-weight:600;color:#2a1608;display:inline-flex;align-items:center;gap:3px;
   background:linear-gradient(180deg,#ffe7b5,#f4b860);box-shadow:0 0 12px rgba(244,184,96,.6);}
 .ct-none{grid-column:1/-1;padding:40px 0;}
 /* 南极洲：世界尽头 */
@@ -2567,7 +2635,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
       const n = SB.store.citiesIn(c.key).length, lit = n > 0;
       const card = SB.el('button','ct-card' + (lit ? ' lit' : '')); card.type = 'button';
       card.style.animationDelay = Math.min(i*30, 900) + 'ms';
-      card.innerHTML = `<canvas aria-hidden="true"></canvas><span class="nm"></span><span class="en"></span>${lit ? `<span class="badge">★ ${n}</span>` : ''}`;
+      card.innerHTML = `<canvas aria-hidden="true"></canvas><span class="nm"></span><span class="en"></span>${lit ? `<span class="badge sb-num">${SB.icon('star')}${n}</span>` : ''}`;
       card.querySelector('.nm').textContent = c.zh; card.querySelector('.en').textContent = c.en;
       card.addEventListener('click', e => SB.scenes.go('country', {k:c.key}, {transition:'portal', x:e.clientX, y:e.clientY}));
       grid.appendChild(card);
@@ -2589,7 +2657,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   SB.menu.add({id:'continents', order:30, icon:'compass', label:'七大洲', desc:'按大洲翻阅国家目录',
     children:() => { const vis = SB.store.visitedCountries();
       return SB.geo.CONTINENTS.map(c => { const n = SB.geo.inContinent(c.code).filter(x => vis.has(x.key)).length;
-        return {label:c.name, badge: n ? '★' + n : '', scene:'continent', params:{c:c.code}}; }); }});
+        return {label:c.name, badge: n ? String(n) : '', scene:'continent', params:{c:c.code}}; }); }});
 })(window.SB);
 </script>
 <!-- ████ BLOCK 08-continent END ████ -->
@@ -2599,9 +2667,9 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 /* ── 块 09 · 国家地图与省份星星 ── */
 .cm-head{position:absolute;left:50%;top:calc(16px + var(--safe-t));transform:translateX(-50%);text-align:center;pointer-events:none;z-index:3;
   display:flex;flex-direction:column;align-items:center;gap:4px;width:max-content;max-width:calc(100vw - 32px);}
-.cm-head small{font-family:var(--f-rune);font-size:10px;letter-spacing:.4em;color:var(--gold-dim);}
-.cm-head h1{margin:0;font-family:var(--f-title);font-weight:400;font-size:clamp(28px,4vw,46px);letter-spacing:.3em;color:var(--gold-hi);text-shadow:0 0 24px rgba(244,184,96,.65);}
-.cm-head p{margin:0;font-size:13px;letter-spacing:.14em;color:#c9c6ea;}
+.cm-head small{font-family:var(--f-rune);font-weight:500;font-size:10.5px;letter-spacing:.4em;padding-left:.4em;color:var(--gold-dim);}
+.cm-head h1{margin:0;padding-left:.28em;font-family:var(--f-display);font-weight:var(--fw-display);font-size:clamp(28px,4vw,46px);letter-spacing:.28em;color:var(--gold-hi);text-shadow:0 0 24px rgba(244,184,96,.65);}
+.cm-head p{margin:0;font-size:13px;letter-spacing:.1em;color:#c9c6ea;}
 .cm-stage{position:absolute;inset:0;touch-action:none;}
 .cm-halo{position:absolute;left:50%;top:54%;width:80vmin;height:60vmin;transform:translate(-50%,-50%);pointer-events:none;
   background:radial-gradient(closest-side, rgba(244,184,96,.16), rgba(80,90,200,.08) 60%, transparent);filter:blur(10px);}
@@ -2622,7 +2690,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 @keyframes cmPulse{0%,100%{transform:scale(.8);opacity:.75}50%{transform:scale(1.15);opacity:1}}
 @keyframes cmPop{0%{transform:scale(.2);opacity:0}40%{transform:scale(2.6);opacity:1}100%{transform:scale(1);opacity:1}}
 .cm-tools{position:absolute;right:max(16px,var(--safe-r));bottom:calc(16px + var(--safe-b));display:flex;flex-direction:column;gap:8px;z-index:3;}
-.cm-tools button{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:rgba(14,14,40,.8);color:var(--gold-hi);font-size:20px;cursor:pointer;display:grid;place-items:center;}
+.cm-tools button{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:rgba(14,14,40,.8);color:var(--gold-hi);font-size:19px;cursor:pointer;display:grid;place-items:center;}
 .cm-tools button:hover{box-shadow:0 0 16px rgba(244,184,96,.4);}
 .cm-load{position:absolute;inset:0;display:grid;place-items:center;z-index:4;}
 .cm-load[hidden]{display:none!important;}
@@ -2636,23 +2704,23 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   opacity:0;transform:translateY(6px) scale(.96);pointer-events:none;transition:opacity .25s var(--ease-soft), transform .25s var(--ease-soft);}
 .cm-pop.show{opacity:1;transform:none;pointer-events:auto;}
-.cm-pop h4{margin:0;font-family:var(--f-title);font-weight:400;font-size:22px;letter-spacing:.14em;color:var(--gold-hi);}
+.cm-pop h4{margin:0;font-family:var(--f-display);font-weight:var(--fw-display);font-size:21px;letter-spacing:.14em;color:var(--gold-hi);}
 .cm-pop .en{font-size:11px;color:var(--text-dim);letter-spacing:.08em;margin-top:2px;}
 .cm-pop ul{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:2px;max-height:240px;overflow:auto;}
 .cm-pop li{display:flex;align-items:center;gap:6px;}
 .cm-pop .city{flex:1;display:flex;align-items:center;gap:8px;padding:7px 8px;border:0;border-radius:8px;background:none;cursor:pointer;text-align:left;
-  font-family:var(--f-title);font-size:17px;letter-spacing:.08em;color:var(--text);min-width:0;}
+  font-family:var(--f-display);font-weight:var(--fw-display);font-size:16.5px;letter-spacing:.08em;color:var(--text);min-width:0;}
 .cm-pop .city:hover{background:rgba(244,184,96,.1);color:var(--gold-hi);}
 .cm-pop .city svg{width:16px;height:16px;flex:none;filter:drop-shadow(0 0 4px rgba(255,200,110,.9));}
 .cm-pop .city span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.cm-pop .city em{font-style:normal;font-size:11px;color:var(--text-dim);margin-left:auto;font-family:var(--f-body);}
-.cm-pop .edit{width:30px;height:30px;border-radius:50%;border:0;background:none;color:var(--text-dim);cursor:pointer;flex:none;}
+.cm-pop .city em{font-style:normal;font-size:11.5px;color:var(--text-dim);margin-left:auto;font-family:var(--f-body);font-weight:400;letter-spacing:.02em;}
+.cm-pop .edit{width:30px;height:30px;border-radius:50%;border:0;background:none;color:var(--text-dim);cursor:pointer;flex:none;display:grid;place-items:center;font-size:16px;}
 .cm-pop .edit:hover{color:var(--gold-hi);background:rgba(244,184,96,.1);}
 .cm-pop .none{margin:10px 0 0;font-size:13px;color:var(--text-dim);letter-spacing:.06em;}
 .cm-pop .add{margin-top:12px;display:flex;gap:8px;align-items:center;}
 .cm-pop .add .sb-input{font-size:15px;}
-.cm-pop .x{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;border:0;background:none;color:var(--text-dim);font-size:18px;cursor:pointer;display:none;}
-@media (pointer:coarse){ .cm-pop .x{display:block;} }
+.cm-pop .x{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;border:0;background:none;color:var(--text-dim);font-size:16px;cursor:pointer;display:none;place-items:center;}
+@media (pointer:coarse){ .cm-pop .x{display:grid;} }
 @media (max-width:700px){ .cm-head{top:calc(70px + var(--safe-t));} .cm-legend{display:none;} }
 </style>
 
@@ -2673,7 +2741,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   </div>
   <header class="cm-head"><small id="cm-en"></small><h1 id="cm-title"></h1><p id="cm-stat"></p></header>
   <div class="cm-legend"><span><i style="background:#ffe2a8;box-shadow:0 0 8px #f4b860"></i>去过</span><span><i style="background:#7d7466"></i>还没去</span></div>
-  <div class="cm-tools"><button type="button" id="cm-zin" aria-label="放大">＋</button><button type="button" id="cm-zout" aria-label="缩小">－</button><button type="button" id="cm-zreset" aria-label="复位" style="font-size:16px">⟲</button></div>
+  <div class="cm-tools"><button type="button" id="cm-zin" aria-label="放大"></button><button type="button" id="cm-zout" aria-label="缩小"></button><button type="button" id="cm-zreset" aria-label="复位"></button></div>
   <div class="cm-pop" id="cm-pop" role="dialog" aria-label="省份城市"></div>
   <div class="cm-load" id="cm-load" hidden></div>
 </section>
@@ -2684,6 +2752,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   const NS = 'http://www.w3.org/2000/svg';
   const svg = $('cm-svg'), view = $('cm-view'), pop = $('cm-pop');
   const STAR = '<svg viewBox="-10 -10 20 20" aria-hidden="true"><path d="M0 -10 L1.8 -1.8 L10 0 L1.8 1.8 L0 10 L-1.8 1.8 L-10 0 L-1.8 -1.8Z" fill="#ffe2a8"/></svg>';
+  $('cm-zin').innerHTML = SB.icon('plus'); $('cm-zout').innerHTML = SB.icon('minus'); $('cm-zreset').innerHTML = SB.icon('reset');
   const S = { k:null, country:null, map:null, regions:[], fit:null, vb:null, pathEls:{}, starEls:{}, hot:null, hideT:0, token:0 };
 
   /* ── 坐标拟合与缩放 ── */
@@ -2779,7 +2848,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   function buildPop(r){
     const cities = SB.store.citiesInRegion(r.key);
     pop.innerHTML = '';
-    const x = SB.el('button','x'); x.type = 'button'; x.setAttribute('aria-label','关闭'); x.textContent = '×'; x.addEventListener('click', () => hidePop(true));
+    const x = SB.el('button','x'); x.type = 'button'; x.setAttribute('aria-label','关闭'); x.innerHTML = SB.icon('close'); x.addEventListener('click', () => hidePop(true));
     const h = SB.el('h4'); h.textContent = r.name;
     pop.append(x, h);
     if(r.en && r.en !== r.name){ const en = SB.el('div','en'); en.textContent = r.en; pop.appendChild(en); }
@@ -2793,7 +2862,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
         b.addEventListener('click', e => { hidePop(true); SB.scenes.go('city', {id:c.id}, {transition:'portal', x:e.clientX, y:e.clientY}); });
         li.appendChild(b);
         if(SB.store.canEdit){
-          const ed = SB.el('button','edit'); ed.type = 'button'; ed.setAttribute('aria-label', '编辑 ' + c.name); ed.textContent = '✎';
+          const ed = SB.el('button','edit'); ed.type = 'button'; ed.setAttribute('aria-label', '编辑 ' + c.name); ed.innerHTML = SB.icon('quill');
           ed.addEventListener('click', () => editCity(c)); li.appendChild(ed);
         }
         ul.appendChild(li);
@@ -2802,7 +2871,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
     }else{ const p = SB.el('p','none'); p.textContent = '这里还没有我们的足迹'; pop.appendChild(p); }
     if(SB.store.canEdit){
       const add = SB.el('div','add');
-      const btn = SB.ui.button('＋ 添加城市', 'small');
+      const btn = SB.ui.button('添加城市', 'small', null, 'plus');
       btn.addEventListener('click', () => {
         add.innerHTML = '';
         const inp = SB.ui.input({type:'text', placeholder:'城市名，例如：成都', maxlength:'30', 'aria-label':'城市名'});
@@ -2812,7 +2881,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
           try{
             const lon = r.lonlat?.[0] ?? S.country.mid?.[0], lat = r.lonlat?.[1] ?? S.country.mid?.[1];
             await SB.store.addCity({country:S.k, countryName:S.country.zh, region:r.key, regionName:r.name, name:inp.value, lon, lat});
-            SB.toast(`✦ ${inp.value.trim()} 已点亮`);
+            SB.toast(`${inp.value.trim()} 已点亮`);
             SB.fx.burst(500);
             paint(r.key); buildPop(r);
           }catch(e){ SB.toast(e.msg || SB.store.errText(e)); ok.disabled = false; }
@@ -2925,13 +2994,13 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 <style>
 /* ── 块 10 · 城市回忆目录（时间线） ── */
 .sb-scene[data-scene="city"]{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}
-.ca-ghost{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);font-family:var(--f-title);font-size:min(34vw,320px);line-height:1;white-space:nowrap;
+.ca-ghost{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);font-family:var(--f-display);font-weight:900;font-size:min(34vw,320px);line-height:1;white-space:nowrap;
   color:transparent;-webkit-text-stroke:1px rgba(244,184,96,.09);text-shadow:0 0 80px rgba(244,184,96,.06);pointer-events:none;letter-spacing:.1em;}
 .ca-wrap{position:relative;padding-block:calc(84px + var(--safe-t)) calc(50px + var(--safe-b));
   padding-left:max(16px,var(--safe-l));padding-right:max(16px,var(--safe-r));max-width:1100px;margin:0 auto;}
 .ca-head{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;margin-bottom:30px;}
-.ca-head small{font-family:var(--f-rune);font-size:11px;letter-spacing:.45em;color:var(--gold-dim);}
-.ca-head h1{margin:0;font-family:var(--f-title);font-weight:400;font-size:clamp(40px,7vw,72px);letter-spacing:.24em;color:var(--gold-hi);text-shadow:0 0 30px rgba(244,184,96,.6);}
+.ca-head small{font-family:var(--f-rune);font-weight:500;font-size:11.5px;letter-spacing:.36em;padding-left:.36em;color:var(--gold-dim);}
+.ca-head h1{margin:0;padding-left:.22em;font-family:var(--f-display);font-weight:var(--fw-display);font-size:var(--fs-hero);letter-spacing:.22em;color:var(--gold-hi);text-shadow:0 0 30px rgba(244,184,96,.6);}
 .ca-head p{margin:0;color:#c9c6ea;letter-spacing:.14em;font-size:14px;}
 .ca-line{position:relative;display:flex;flex-direction:column;gap:34px;}
 .ca-line::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:2px;transform:translateX(-50%);
@@ -2941,7 +3010,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 .ca-row.r > .ca-card{grid-column:3;justify-self:start;}
 .ca-node{grid-column:2;grid-row:1;justify-self:center;display:flex;flex-direction:column;align-items:center;gap:4px;z-index:1;}
 .ca-node i{width:14px;height:14px;transform:rotate(45deg);background:var(--gold-hi);box-shadow:0 0 14px 4px rgba(244,184,96,.7);}
-.ca-node span{font-family:var(--f-title);font-size:13px;letter-spacing:.1em;color:var(--gold);white-space:nowrap;background:rgba(10,10,28,.85);padding:2px 8px;border-radius:999px;}
+.ca-node span{font-family:var(--f-num);font-weight:600;font-size:14px;letter-spacing:.06em;color:var(--gold);white-space:nowrap;background:rgba(10,10,28,.85);padding:2px 8px;border-radius:999px;}
 .ca-card{position:relative;width:min(420px,100%);border-radius:14px;cursor:pointer;text-align:left;padding:12px;border:1px solid rgba(244,184,96,.3);
   background:linear-gradient(180deg, rgba(40,32,60,.8), rgba(14,12,30,.85));box-shadow:0 14px 34px rgba(0,0,0,.45);
   transition:transform .4s var(--ease-soft), box-shadow .4s, border-color .4s;animation:ctIn .8s var(--ease-soft) backwards;}
@@ -2952,20 +3021,21 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 .ca-card:hover .ca-cover img{transform:scale(1.06);}
 .ca-cover::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 1px rgba(255,226,168,.55), inset 0 0 40px rgba(0,0,0,.5);pointer-events:none;border-radius:8px;}
 .ca-meta{display:flex;flex-direction:column;gap:4px;padding:12px 4px 2px;}
-.ca-meta h3{margin:0;font-family:var(--f-title);font-weight:400;font-size:21px;letter-spacing:.08em;color:var(--gold-hi);line-height:1.35;}
-.ca-meta p{margin:0;font-size:13px;color:var(--text-dim);letter-spacing:.06em;display:flex;gap:12px;flex-wrap:wrap;}
+.ca-meta h3{margin:0;font-family:var(--f-display);font-weight:var(--fw-display);font-size:19px;letter-spacing:.06em;color:var(--gold-hi);line-height:1.45;}
+.ca-meta p{margin:0;font-size:13px;color:var(--text-dim);letter-spacing:.04em;display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+.ca-meta p span{display:inline-flex;align-items:center;gap:4px;}
 .ca-edit{position:absolute;top:18px;right:18px;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:rgba(10,10,28,.75);
   color:var(--gold-hi);cursor:pointer;display:grid;place-items:center;z-index:2;opacity:.85;}
 .ca-edit:hover{opacity:1;box-shadow:0 0 14px rgba(244,184,96,.5);}
 .ca-edit svg{width:18px;height:18px;}
 .ca-new{min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;border-style:dashed;
-  font-family:var(--f-title);letter-spacing:.18em;color:var(--gold-hi);font-size:20px;}
-.ca-new b{font-weight:400;font-size:44px;line-height:1;text-shadow:0 0 20px rgba(244,184,96,.8);}
+  font-family:var(--f-display);font-weight:var(--fw-display);letter-spacing:.18em;color:var(--gold-hi);font-size:19px;}
+.ca-new b{font-weight:400;font-size:40px;line-height:1;filter:drop-shadow(0 0 10px rgba(244,184,96,.8));display:grid;place-items:center;}
 .ca-empty{margin:20px auto 0;width:min(460px,100%);aspect-ratio:3/4;max-height:56vh;border-radius:6px 12px 12px 6px;
   background:radial-gradient(60% 45% at 50% 45%, rgba(255,232,176,.9), rgba(255,200,120,.35) 50%, transparent 80%), #e9d6aa;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:#6b3a12;text-align:center;padding:24px;
   box-shadow:0 20px 50px rgba(0,0,0,.5), 0 0 40px rgba(244,184,96,.25);}
-.ca-empty p{margin:0;font-family:var(--f-title);font-size:22px;letter-spacing:.14em;line-height:1.8;}
+.ca-empty p{margin:0;font-family:var(--f-display);font-weight:var(--fw-display);font-size:21px;letter-spacing:.14em;line-height:1.9;}
 @media (max-width:760px){
   .ca-line::before{left:14px;}
   .ca-row,.ca-row.r{grid-template-columns:28px 1fr;gap:0 12px;}
@@ -3002,14 +3072,14 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
       const e = SB.el('div','ca-empty');
       const p = SB.el('p'); p.innerHTML = '这里还没有回忆<br>写下第一页吧';
       e.appendChild(p);
-      if(SB.store.canEdit) e.appendChild(SB.ui.button('＋ 新的回忆', 'primary', () => SB.editor.open({cityId})));
+      if(SB.store.canEdit) e.appendChild(SB.ui.button('新的回忆', 'primary', () => SB.editor.open({cityId}), 'plus'));
       body.appendChild(e); return;
     }
     const line = SB.el('div','ca-line');
     if(SB.store.canEdit){
       const row = SB.el('div','ca-row');
       const n = SB.el('div','ca-node','<i></i><span>新的一页</span>');
-      const card = SB.el('button','ca-card ca-new','<b>＋</b>新的回忆'); card.type = 'button';
+      const card = SB.el('button','ca-card ca-new',`<b>${SB.icon('plus')}</b>新的回忆`); card.type = 'button';
       card.addEventListener('click', () => SB.editor.open({cityId}));
       row.append(card, n); line.appendChild(row);
     }
@@ -3020,8 +3090,8 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
       card.style.animationDelay = (i*80) + 'ms';
       const cover = m.cover?.id || m.slides?.[0]?.id;
       card.innerHTML = `<div class="ca-cover">${cover ? `<img alt="" loading="lazy" src="${SB.esc(SB.store.url(cover))}">` : ''}</div>
-        <div class="ca-meta"><h3></h3><p><span>${SB.esc(SB.fmtDate(m.date))}</span><span>${(m.slides||[]).length} 张照片</span>${m.bgm || m.bgmMode === 'global' ? '<span>♪ 背景音乐</span>' : ''}</p></div>`;
-      card.querySelector('h3').textContent = m.title;
+        <div class="ca-meta"><h3></h3><p><span>${SB.esc(SB.fmtDate(m.date))}</span><span>${(m.slides||[]).length} 张照片</span>${m.bgm || m.bgmMode === 'global' ? `<span>${SB.icon('note')}背景音乐</span>` : ''}</p></div>`;
+      card.querySelector('h3').textContent = SB.fmtTitle(m.title);
       const open = e => SB.scenes.go('player', {id:m.id}, {transition:'portal', x:e.clientX || innerWidth/2, y:e.clientY || innerHeight/2});
       card.addEventListener('click', open);
       card.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); open(e); } });
@@ -3066,16 +3136,16 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 @keyframes plDust{0%{opacity:0;transform:translateX(-40%)}30%{opacity:1}100%{opacity:0;transform:translateX(40%)}}
 .pl-vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 45%, transparent 55%, rgba(0,0,0,.7));}
 .pl-cap{position:absolute;left:50%;bottom:calc(86px + var(--safe-b));transform:translateX(-50%);width:min(820px, calc(100vw - 32px));text-align:center;
-  font-family:var(--f-title);font-size:clamp(18px,2.4vw,26px);letter-spacing:.12em;line-height:1.7;color:#fff6e4;
+  font-family:var(--f-display);font-weight:var(--fw-display);font-size:clamp(17px,2.3vw,25px);letter-spacing:.1em;line-height:1.75;color:#fff6e4;
   text-shadow:0 0 18px rgba(244,184,96,.7), 0 2px 8px rgba(0,0,0,.9);pointer-events:none;}
 .pl-cap span{opacity:0;animation:plChar .6s forwards;}
 @keyframes plChar{from{opacity:0;filter:blur(4px)}to{opacity:1;filter:none}}
 .pl-title{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:0 24px;
   opacity:0;transition:opacity 1.2s var(--ease-soft);pointer-events:none;}
 .pl-title.on{opacity:1;}
-.pl-title small{font-family:var(--f-rune);font-size:12px;letter-spacing:.5em;color:var(--gold);}
-.pl-title h2{margin:0;font-family:var(--f-title);font-weight:400;font-size:clamp(34px,6vw,64px);letter-spacing:.18em;color:var(--gold-hi);text-shadow:0 0 40px rgba(244,184,96,.7);}
-.pl-title p{margin:0;max-width:34em;color:#e9dcc4;line-height:1.9;letter-spacing:.08em;font-size:15px;}
+.pl-title small{font-family:var(--f-num);font-weight:600;font-size:15px;letter-spacing:.3em;padding-left:.3em;color:var(--gold);}
+.pl-title h2{margin:0;padding-left:.16em;font-family:var(--f-display);font-weight:var(--fw-display);font-size:clamp(30px,5.6vw,60px);letter-spacing:.16em;line-height:1.3;color:var(--gold-hi);text-shadow:0 0 40px rgba(244,184,96,.7);}
+.pl-title p{margin:0;max-width:30em;color:#e9dcc4;line-height:1.9;letter-spacing:.06em;font-size:15.5px;}
 .pl-title i{width:min(320px,60vw);height:1px;background:linear-gradient(90deg, transparent, var(--gold), transparent);}
 .pl-ui{position:absolute;left:0;right:0;bottom:0;padding:14px max(16px,var(--safe-r)) calc(16px + var(--safe-b)) max(16px,var(--safe-l));
   background:linear-gradient(transparent, rgba(0,0,0,.6));display:flex;flex-direction:column;gap:12px;transition:opacity .5s;z-index:3;}
@@ -3093,7 +3163,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 .pl-ctl svg{width:20px;height:20px;}
 .pl-top{position:absolute;top:calc(14px + var(--safe-t));right:max(14px,var(--safe-r));z-index:3;display:flex;gap:8px;transition:opacity .5s;}
 .pl-top .sb-btn{background:rgba(10,10,28,.6);}
-.pl-count{position:absolute;top:calc(22px + var(--safe-t));left:50%;transform:translateX(-50%);font-family:var(--f-rune);font-size:12px;letter-spacing:.3em;color:var(--gold);z-index:3;transition:opacity .5s;}
+.pl-count{position:absolute;top:calc(22px + var(--safe-t));left:50%;transform:translateX(-50%);font-family:var(--f-num);font-weight:600;font-size:15px;letter-spacing:.24em;color:var(--gold);z-index:3;transition:opacity .5s;}
 .sb-scene[data-scene="player"].idle .pl-count{opacity:0;}
 @media (max-width:600px){ .pl-img{padding:calc(64px + var(--safe-t)) 12px calc(170px + var(--safe-b));} }
 @media (prefers-reduced-motion:reduce){ .pl-img.on img{animation:none;} }
@@ -3243,8 +3313,8 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 
   function start(m){
     P.m = m; P.i = -1; P.last = 0;
-    $('pl-tdate').textContent = SB.fmtDate(m.date).toUpperCase();
-    $('pl-th').textContent = m.title; $('pl-tnote').textContent = m.note || '';
+    $('pl-tdate').textContent = SB.fmtDate(m.date);
+    $('pl-th').textContent = SB.fmtTitle(m.title); $('pl-tnote').textContent = m.note || '';
     const bars = $('pl-bars'); bars.innerHTML = '';
     (m.slides || []).forEach((s, k) => { const b = SB.el('b', '', '<i></i>'); b.addEventListener('click', () => { go(k); wake(); }); bars.appendChild(b); });
     const top = $('pl-top'); top.innerHTML = '';
@@ -3286,7 +3356,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 .ed-drop{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:20px;border-radius:12px;cursor:pointer;
   border:1.5px dashed rgba(244,184,96,.45);background:rgba(244,184,96,.04);text-align:center;transition:background .3s, border-color .3s;}
 .ed-drop:hover,.ed-drop.over{background:rgba(244,184,96,.1);border-color:var(--gold-hi);}
-.ed-drop b{font-family:var(--f-title);font-weight:400;font-size:18px;letter-spacing:.14em;color:var(--gold-hi);}
+.ed-drop b{font-family:var(--f-display);font-weight:var(--fw-display);font-size:17px;letter-spacing:.14em;color:var(--gold-hi);display:inline-flex;align-items:center;gap:8px;}
 .ed-drop span{font-size:12px;color:var(--text-dim);}
 .ed-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;}
 .ed-list{display:flex;flex-direction:column;gap:8px;}
@@ -3294,10 +3364,10 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 .ed-slide.cover{border-color:rgba(255,226,168,.7);box-shadow:0 0 14px rgba(244,184,96,.25);}
 .ed-thumb{position:relative;width:76px;height:76px;border-radius:8px;overflow:hidden;background:#151230;display:grid;place-items:center;font-size:11px;color:var(--text-dim);text-align:center;}
 .ed-thumb img{width:100%;height:100%;object-fit:cover;}
-.ed-thumb .star{position:absolute;top:3px;left:3px;font-size:12px;color:#2a1608;background:var(--gold-hi);border-radius:999px;padding:0 6px;}
+.ed-thumb .star{position:absolute;top:4px;left:4px;font-size:12px;line-height:1;color:#2a1608;background:var(--gold-hi);border-radius:999px;padding:3px 5px;display:grid;place-items:center;}
 .ed-slide textarea{min-height:52px;font-size:14px;}
 .ed-ops{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
-.ed-ops button{width:32px;height:32px;border-radius:8px;border:1px solid rgba(244,184,96,.25);background:none;color:var(--text-dim);cursor:pointer;font-size:14px;}
+.ed-ops button{width:32px;height:32px;border-radius:8px;border:1px solid rgba(244,184,96,.25);background:none;color:var(--text-dim);cursor:pointer;font-size:15px;display:grid;place-items:center;}
 .ed-ops button:hover{color:var(--gold-hi);border-color:var(--line);}
 .ed-ops button.on{color:#2a1608;background:var(--gold-hi);}
 .ed-music{display:flex;flex-direction:column;gap:8px;}
@@ -3348,7 +3418,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
           body.append(row, SB.ui.field('一段话', note));
 
           // 照片
-          const drop = SB.el('label','ed-drop', '<b>＋ 添加照片</b><span>点击选择或把照片拖到这里，可一次选多张；会自动压缩后上传</span>');
+          const drop = SB.el('label','ed-drop', `<b>${SB.icon('plus')}添加照片</b><span>点击选择或把照片拖到这里，可一次选多张；会自动压缩后上传</span>`);
           const fin = SB.el('input'); fin.type = 'file'; fin.accept = 'image/*'; fin.multiple = true; fin.setAttribute('aria-label','选择照片');
           drop.appendChild(fin);
           fin.addEventListener('change', () => { addFiles([...fin.files]); fin.value = ''; });
@@ -3410,7 +3480,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
               bgmMode: st.bgmMode, bgm: st.bgmMode === 'own' ? st.bgm : null };
             try{ await SB.store.saveMemory(data); }
             catch(e){ SB.toast(SB.store.errText(e)); btn.disabled = false; return false; }
-            cleanup(true, data); SB.toast('✦ 回忆已收进星屿之书'); SB.fx.burst(600);
+            cleanup(true, data); SB.toast('回忆已收进星屿之书'); SB.fx.burst(600);
           }}
         ],
         onClose(){ preview?.pause(); if(!done) cleanup(false); }
@@ -3449,16 +3519,16 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
         const row = SB.el('div','ed-slide' + (s.id && s.id === st.cover ? ' cover' : ''));
         const th = SB.el('div','ed-thumb');
         if(s.pending) th.textContent = s.step || '上传中';
-        else th.innerHTML = `<img alt="" src="${SB.esc(SB.store.url(s.id))}">${s.id === st.cover ? '<span class="star">★</span>' : ''}`;
+        else th.innerHTML = `<img alt="" src="${SB.esc(SB.store.url(s.id))}">${s.id === st.cover ? `<span class="star">${SB.icon('star')}</span>` : ''}`;
         const cap = SB.ui.input({multiline:true, maxlength:'120', placeholder:'这张照片的故事（放映时逐字出现）', 'aria-label':'照片描述'});
         cap.value = s.caption || ''; cap.disabled = !!s.pending; cap.addEventListener('input', () => s.caption = cap.value);
         const ops = SB.el('div','ed-ops');
-        const mk = (t, label, fn, on) => { const b = SB.el('button', on ? 'on' : ''); b.type = 'button'; b.textContent = t; b.title = label; b.setAttribute('aria-label', label); b.disabled = !!s.pending; b.addEventListener('click', fn); ops.appendChild(b); };
+        const mk = (t, label, fn, on) => { const b = SB.el('button', on ? 'on' : ''); b.type = 'button'; b.innerHTML = SB.icon(t); b.title = label; b.setAttribute('aria-label', label); b.disabled = !!s.pending; b.addEventListener('click', fn); ops.appendChild(b); };
         const at = () => st.slides.indexOf(s);
-        mk('↑', '上移', () => { const i = at(); if(i > 0){ [st.slides[i-1], st.slides[i]] = [st.slides[i], st.slides[i-1]]; renderList(); } });
-        mk('↓', '下移', () => { const i = at(); if(i < st.slides.length-1){ [st.slides[i+1], st.slides[i]] = [st.slides[i], st.slides[i+1]]; renderList(); } });
-        mk('★', '设为封面', () => { st.cover = s.id; renderList(); }, s.id === st.cover);
-        mk('✕', '移除', () => { st.slides.splice(at(), 1); if(st.cover === s.id) st.cover = st.slides.find(x => x.id)?.id || null; renderList(); });
+        mk('up', '上移', () => { const i = at(); if(i > 0){ [st.slides[i-1], st.slides[i]] = [st.slides[i], st.slides[i-1]]; renderList(); } });
+        mk('down', '下移', () => { const i = at(); if(i < st.slides.length-1){ [st.slides[i+1], st.slides[i]] = [st.slides[i], st.slides[i+1]]; renderList(); } });
+        mk('star', '设为封面', () => { st.cover = s.id; renderList(); }, s.id === st.cover);
+        mk('close', '移除', () => { st.slides.splice(at(), 1); if(st.cover === s.id) st.cover = st.slides.find(x => x.id)?.id || null; renderList(); });
         row.append(th, cap, ops);
         Object.defineProperty(s, '_row', {value:row, configurable:true, writable:true});
         Object.defineProperty(s, '_th', {value:th, configurable:true, writable:true});
@@ -3483,32 +3553,32 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 .ov-wrap{padding-block:calc(84px + var(--safe-t)) calc(50px + var(--safe-b));padding-left:max(16px,var(--safe-l));padding-right:max(16px,var(--safe-r));
   max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:34px;}
 .ov-head{text-align:center;display:flex;flex-direction:column;gap:6px;align-items:center;}
-.ov-head small{font-family:var(--f-rune);font-size:11px;letter-spacing:.45em;color:var(--gold-dim);}
-.ov-head h1{margin:0;font-family:var(--f-title);font-weight:400;font-size:clamp(36px,6vw,60px);letter-spacing:.28em;color:var(--gold-hi);text-shadow:0 0 30px rgba(244,184,96,.6);}
+.ov-head small{font-family:var(--f-rune);font-weight:500;font-size:11.5px;letter-spacing:.4em;padding-left:.4em;color:var(--gold-dim);}
+.ov-head h1{margin:0;padding-left:.26em;font-family:var(--f-display);font-weight:var(--fw-display);font-size:clamp(34px,6vw,58px);letter-spacing:.26em;color:var(--gold-hi);text-shadow:0 0 30px rgba(244,184,96,.6);}
 .ov-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
 .ov-stat{display:flex;flex-direction:column;align-items:center;gap:4px;padding:18px 8px;border-radius:14px;border:1px solid rgba(244,184,96,.25);
   background:radial-gradient(80% 80% at 50% 0%, rgba(244,184,96,.12), transparent 70%), rgba(14,14,40,.6);}
-.ov-stat b{font-family:var(--f-rune);font-weight:400;font-size:clamp(30px,5vw,48px);color:var(--gold-hi);text-shadow:0 0 22px rgba(244,184,96,.7);font-variant-numeric:tabular-nums;}
-.ov-stat span{font-family:var(--f-title);font-size:14px;letter-spacing:.2em;color:var(--text-dim);}
-.ov-sec h2{margin:0 0 14px;font-family:var(--f-title);font-weight:400;font-size:22px;letter-spacing:.2em;color:var(--gold-hi);display:flex;align-items:center;gap:12px;}
+.ov-stat b{font-family:var(--f-num);font-weight:600;font-size:clamp(38px,6vw,58px);line-height:1;color:var(--gold-hi);text-shadow:0 0 22px rgba(244,184,96,.7);font-variant-numeric:lining-nums tabular-nums;}
+.ov-stat span{font-family:var(--f-display);font-weight:var(--fw-display);font-size:13.5px;letter-spacing:.2em;padding-left:.2em;color:var(--text-dim);}
+.ov-sec h2{margin:0 0 14px;font-family:var(--f-display);font-weight:var(--fw-display);font-size:21px;letter-spacing:.18em;color:var(--gold-hi);display:flex;align-items:center;gap:12px;}
 .ov-sec h2::after{content:"";flex:1;height:1px;background:linear-gradient(90deg, var(--line), transparent);}
 .ov-recent{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin;}
 .ov-mem{flex:none;width:200px;border:0;padding:0;background:none;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:8px;}
 .ov-mem .im{aspect-ratio:4/3;border-radius:10px;overflow:hidden;background:#151230;box-shadow:inset 0 0 0 1px rgba(255,226,168,.5), 0 10px 24px rgba(0,0,0,.4);transition:box-shadow .3s, transform .3s;}
 .ov-mem:hover .im{transform:translateY(-3px);box-shadow:inset 0 0 0 1px rgba(255,226,168,.9), 0 0 24px rgba(244,184,96,.35);}
 .ov-mem img{width:100%;height:100%;object-fit:cover;display:block;}
-.ov-mem b{font-family:var(--f-title);font-weight:400;font-size:16px;color:var(--text);letter-spacing:.06em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ov-mem b{font-family:var(--f-display);font-weight:var(--fw-display);font-size:15.5px;color:var(--text);letter-spacing:.06em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .ov-mem span{font-size:12px;color:var(--text-dim);}
 .ov-tree{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;}
 .ov-country{padding:14px 16px;border-radius:14px;border:1px solid rgba(244,184,96,.22);background:rgba(14,14,40,.55);}
-.ov-country h3{margin:0 0 8px;font-family:var(--f-title);font-weight:400;font-size:20px;letter-spacing:.12em;color:var(--gold-hi);cursor:pointer;}
+.ov-country h3{margin:0 0 8px;font-family:var(--f-display);font-weight:var(--fw-display);font-size:19px;letter-spacing:.12em;color:var(--gold-hi);cursor:pointer;}
 .ov-region{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;padding:6px 0;border-top:1px dashed rgba(244,184,96,.15);}
 .ov-region > span{font-size:13px;color:var(--text-dim);min-width:4.5em;}
-.ov-region button{border:0;background:none;cursor:pointer;padding:2px 4px;font-family:var(--f-title);font-size:16px;color:var(--text);letter-spacing:.06em;border-radius:6px;}
+.ov-region button{border:0;background:none;cursor:pointer;padding:2px 4px;font-family:var(--f-display);font-weight:var(--fw-display);font-size:15.5px;display:inline-flex;align-items:center;gap:5px;color:var(--text);letter-spacing:.06em;border-radius:6px;}
 .ov-region button:hover{color:var(--gold-hi);background:rgba(244,184,96,.1);}
-.ov-region button::before{content:"★ ";color:var(--gold-hi);text-shadow:0 0 6px #f4b860;}
+.ov-region button::before{content:"";width:12px;height:12px;flex:none;background:var(--gold-hi);filter:drop-shadow(0 0 4px #f4b860);-webkit-mask:var(--ico-spark) center/contain no-repeat;mask:var(--ico-spark) center/contain no-repeat;}
 .ov-music{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:16px;border-radius:14px;border:1px solid rgba(244,184,96,.22);background:rgba(14,14,40,.55);}
-.ov-music .t{flex:1;min-width:200px;font-family:var(--f-title);font-size:17px;letter-spacing:.08em;}
+.ov-music .t{flex:1;min-width:200px;font-family:var(--f-display);font-weight:var(--fw-display);font-size:16.5px;letter-spacing:.08em;}
 @media (max-width:620px){ .ov-stats{grid-template-columns:repeat(2,1fr);} .ov-tree{grid-template-columns:1fr;} }
 </style>
 

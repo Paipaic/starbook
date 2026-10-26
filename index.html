@@ -1,23 +1,30 @@
-<!doctype html>
-<html lang="zh-CN">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0d0805">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="星屿之书">
-<link rel="icon" href="icon.png">
-<link rel="apple-touch-icon" href="icon.png">
-<style>html,body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
-</head>
-<body>
+<!-- ████ BLOCK 00-config START ████ -->
+<script>
+/* ── Starbook v1.5.2 · 公开客户端配置 ──
+   Publishable Key 设计上允许出现在浏览器；不要在此文件放 Secret / service_role / 数据库密码。 */
+window.STARBOOK_CONFIG = Object.freeze({
+  version: '1.5.2',
+  supabaseUrl: 'https://xowbbcumcxtsrrnulunb.supabase.co',
+  supabasePublishableKey: 'sb_publishable_SYGBrk2PiwwzRXZm03Patg_oDlYSIGd',
+  storageBucket: 'starbook-media',
+  signupEnabled: false,
+  signedUrlTtlSeconds: 21600,
+  defaults: Object.freeze({
+    relationshipType: 'romantic',
+    themeId: 'magic-celestial',
+    experienceId: 'world-map'
+  })
+});
+</script>
+<!-- ████ BLOCK 00-config END ████ -->
+
 <!-- ████ BLOCK 00-core START ████ -->
 <title>星屿之书</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Noto+Serif+SC:wght@400;600&family=ZCOOL+XiaoWei&display=swap">
+<!-- v1.5.2 「星文」字体系统：思源宋体超家族 + Cinzel 碑铭体 + Cormorant Garamond 数字；封面书名 900 字重单独按字子集加载 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Noto+Serif+SC:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&text=%E6%98%9F%E5%B1%BF%E4%B9%8B%E4%B9%A6&display=swap">
 <style>
 /* 布局概念：全屏叠放的"场景舞台"；一层共享的光、雾与粒子贯穿所有场景；唯一导航在左上角 */
 :root{
@@ -27,16 +34,42 @@
   --night:#070818; --night-2:#12153a; --aurora:#8fa4ff;
   --text:#f6e7cc; --text-dim:#bfa582; --danger:#e07a5f;
   --glass:rgba(24,14,8,.80); --glass-night:rgba(14,14,36,.82); --line:rgba(244,184,96,.38);
-  --f-title:"ZCOOL XiaoWei","Noto Serif SC","Songti SC","STSong",serif;
-  --f-body:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
-  --f-rune:"Cinzel Decorative","Cinzel","Times New Roman",serif;
+  /* ── 「星文」字体系统（v1.5.2）：每个字体栈都以思源宋体兜底中文，避免同一行混入两种字形 ── */
+  --f-cjk:"Noto Serif SC","Source Han Serif SC","Noto Serif CJK SC","Songti SC","STSong",serif;
+  --f-display:"Noto Serif SC","Source Han Serif SC","Noto Serif CJK SC","Songti SC","STSong",serif;
+  --f-title:var(--f-display);
+  --f-body:var(--f-cjk);
+  --f-rune:"Cinzel","Trajan Pro","Cormorant SC","Noto Serif SC","Source Han Serif SC","Songti SC",serif;
+  --f-num:"Cormorant Garamond","EB Garamond","Garamond","Noto Serif SC","Source Han Serif SC","Songti SC",serif;
+  --fw-display:600; --fw-body:400;
+  --fs-cap:12px; --fs-sm:13.5px; --fs-body:15.5px; --fs-lead:17px; --fs-h3:20px;
+  --fs-h2:clamp(22px,2.4vw,28px); --fs-h1:clamp(30px,5.2vw,56px); --fs-hero:clamp(38px,7vw,72px);
+  --lh-body:1.8; --lh-ui:1.45; --lh-title:1.25;
+  --tr-hero:.2em; --tr-title:.16em; --tr-ui:.08em; --tr-body:.02em; --tr-rune:.32em;
   --ease-soft:cubic-bezier(.45,.05,.25,1);
   --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
   --safe-l:env(safe-area-inset-left,0px); --safe-r:env(safe-area-inset-right,0px);
+  --ico-spark:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-10 -10 20 20'%3E%3Cpath d='M0-10C.9-3.2 3.2-.9 10 0 3.2.9.9 3.2 0 10-.9 3.2-3.2.9-10 0-3.2-.9-.9-3.2 0-10Z'/%3E%3C/svg%3E");
   color-scheme:dark;
 }
-html,body{height:100%;}
-body{background:var(--ink);color:var(--text);font-family:var(--f-body);overflow:hidden;-webkit-tap-highlight-color:transparent;}
+html,body{width:100%;height:100%;min-height:100%;overscroll-behavior:none;-webkit-text-size-adjust:100%;}
+body{min-height:100vh;min-height:100dvh;background:var(--ink);color:var(--text);font-family:var(--f-body);overflow:hidden;-webkit-tap-highlight-color:transparent;
+  font-size:var(--fs-body);font-weight:var(--fw-body);line-height:var(--lh-ui);letter-spacing:var(--tr-body);}
+/* ── 「星文」排版基础 ── */
+html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;font-kerning:normal;
+  font-synthesis:none;font-variant-numeric:lining-nums;}
+h1,h2,h3,h4{font-family:var(--f-display);font-weight:var(--fw-display);line-height:var(--lh-title);text-wrap:balance;}
+p{line-break:strict;text-wrap:pretty;}
+@supports (text-autospace:normal){ html{text-autospace:normal;} }
+@media (min-width:900px){ :root{--fs-body:16px;} }
+.sb-num{font-family:var(--f-num);font-variant-numeric:lining-nums tabular-nums;letter-spacing:.02em;}
+.sb-rune{font-family:var(--f-rune);font-weight:500;text-transform:uppercase;letter-spacing:var(--tr-rune);}
+/* 金色烫金文字：渐变填充 + 柔光（渐变文字不能使用 text-shadow） */
+.sb-foil{background:linear-gradient(176deg,#fff6dc 0%,#ffe2a8 30%,#f2b863 55%,#c98a3a 74%,#ffe7b8 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 14px rgba(244,184,96,.42)) drop-shadow(0 1px 0 rgba(60,30,8,.5));}
+/* 内联 SVG 图标：随文字颜色与字号缩放，替代依赖系统字体的符号 */
+.sb-ico{display:inline-block;width:1em;height:1em;flex:none;vertical-align:-.14em;overflow:visible;}
 *{box-sizing:border-box;}
 button,input,textarea,select{font:inherit;color:inherit;}
 :focus-visible{outline:2px solid var(--gold-hi);outline-offset:3px;border-radius:6px;}
@@ -72,7 +105,7 @@ body[data-world="night"] .sb-mist{background:radial-gradient(closest-side, rgba(
 #fx-front{position:fixed;inset:0;width:100%;height:100%;z-index:30;pointer-events:none;}
 
 /* ── 场景 ── */
-#sb-stage{position:fixed;inset:0;z-index:1;}
+#sb-stage{position:fixed;inset:0;z-index:1;height:100vh;height:100dvh;}
 .sb-scene{position:absolute;inset:0;display:none;overflow:hidden;}
 .sb-scene.is-active{display:block;}
 .sb-scene.is-entering{z-index:2;}
@@ -100,9 +133,12 @@ body.is-busy #sb-stage,body.is-busy #sb-nav{pointer-events:none;}
 #sb-toast{position:fixed;left:50%;bottom:calc(28px + var(--safe-b));z-index:90;
   transform:translate(-50%,12px);opacity:0;pointer-events:none;
   padding:10px 20px;border-radius:999px;background:var(--glass);border:1px solid var(--line);
-  color:var(--gold-hi);font-family:var(--f-title);font-size:15px;letter-spacing:.08em;
+  color:var(--gold-hi);font-family:var(--f-display);font-weight:var(--fw-display);font-size:15px;letter-spacing:var(--tr-ui);line-height:1.5;
   box-shadow:0 0 24px rgba(244,184,96,.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-  transition:opacity .4s, transform .4s var(--ease-soft);max-width:calc(100vw - 32px);text-align:center;}
+  transition:opacity .4s, transform .4s var(--ease-soft);max-width:calc(100vw - 32px);text-align:center;
+  display:flex;align-items:center;gap:10px;}
+#sb-toast::before{content:"";flex:none;width:14px;height:14px;background:var(--gold-hi);filter:drop-shadow(0 0 5px rgba(255,214,150,.9));
+  -webkit-mask:var(--ico-spark) center/contain no-repeat;mask:var(--ico-spark) center/contain no-repeat;}
 #sb-toast.show{opacity:1;transform:translate(-50%,0);}
 
 /* ── 通用组件：卷轴弹窗 / 表单 / 按钮 ── */
@@ -121,8 +157,8 @@ body.is-busy #sb-stage,body.is-busy #sb-nav{pointer-events:none;}
 .sb-modal.show .sb-scroll{transform:none;filter:none;}
 .sb-scroll.wide{width:min(760px,100%);}
 .sb-scroll > header{padding:20px 22px 10px;text-align:center;}
-.sb-scroll > header h3{margin:0;font-family:var(--f-title);font-weight:400;font-size:24px;letter-spacing:.14em;color:var(--gold-hi);text-shadow:0 0 14px rgba(244,184,96,.5);}
-.sb-scroll > header p{margin:6px 0 0;font-family:var(--f-rune);font-size:10px;letter-spacing:.3em;color:var(--gold-dim);}
+.sb-scroll > header h3{margin:0;padding-left:.14em;font-family:var(--f-display);font-weight:var(--fw-display);font-size:23px;letter-spacing:.14em;color:var(--gold-hi);text-shadow:0 0 14px rgba(244,184,96,.45);}
+.sb-scroll > header p{margin:8px 0 0;padding-left:var(--tr-rune);font-family:var(--f-rune);font-weight:500;font-size:10.5px;letter-spacing:var(--tr-rune);color:var(--gold-dim);}
 .sb-scroll > .body{padding:8px 22px 14px;overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:14px;}
 .sb-scroll > footer{padding:12px 22px 18px;display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;border-top:1px solid rgba(244,184,96,.15);}
 .sb-scroll > footer .spacer{flex:1;}
@@ -134,26 +170,33 @@ body.is-busy #sb-stage,body.is-busy #sb-nav{pointer-events:none;}
   .sb-scroll{width:100%;border-radius:18px 18px 0 0;max-height:calc(100dvh - 40px - var(--safe-t));transform:translateY(40px);padding-bottom:var(--safe-b);}
 }
 .sb-field{display:flex;flex-direction:column;gap:6px;}
-.sb-field > span{font-family:var(--f-title);font-size:14px;letter-spacing:.12em;color:var(--text-dim);}
+.sb-field > span{font-family:var(--f-display);font-weight:var(--fw-display);font-size:13.5px;letter-spacing:.12em;color:var(--text-dim);}
 .sb-input{width:100%;padding:10px 4px 8px;border:0;border-bottom:1px solid rgba(244,184,96,.4);background:transparent;
   color:var(--text);font-size:16px;outline:none;transition:border-color .3s, box-shadow .3s;}
 .sb-input:focus{border-color:var(--gold-hi);box-shadow:0 8px 14px -12px rgba(255,214,150,.9);}
 .sb-input::placeholder{color:rgba(191,165,130,.45);}
-textarea.sb-input{resize:vertical;min-height:64px;line-height:1.6;}
+textarea.sb-input{resize:vertical;min-height:64px;line-height:1.7;}
 .sb-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:8px 20px;border-radius:999px;cursor:pointer;
-  font-family:var(--f-title);font-size:16px;letter-spacing:.14em;border:1px solid var(--line);background:rgba(244,184,96,.06);color:var(--gold-hi);
+  font-family:var(--f-display);font-weight:var(--fw-display);font-size:15.5px;letter-spacing:.12em;line-height:1.3;border:1px solid var(--line);background:rgba(244,184,96,.06);color:var(--gold-hi);
   transition:box-shadow .3s, border-color .3s, transform .2s, opacity .3s;}
 .sb-btn:hover{border-color:rgba(255,226,168,.8);box-shadow:0 0 18px rgba(244,184,96,.3);}
 .sb-btn:active{transform:scale(.97);}
 .sb-btn.primary{border-color:transparent;color:#2a1608;background:linear-gradient(180deg,#ffe7b5,#f4b860 55%,#c98636);box-shadow:0 0 18px rgba(244,184,96,.35), inset 0 1px 0 rgba(255,255,255,.6);}
 .sb-btn.danger{color:#ffb39e;border-color:rgba(224,122,95,.5);background:rgba(224,122,95,.06);}
-.sb-btn.small{min-height:32px;padding:4px 14px;font-size:14px;}
+.sb-btn.small{min-height:32px;padding:4px 14px;font-size:14px;letter-spacing:.08em;}
+.sb-btn .sb-ico{width:.95em;height:.95em;}
 .sb-btn[disabled]{opacity:.45;pointer-events:none;}
-.sb-spin{display:flex;flex-direction:column;align-items:center;gap:14px;color:var(--gold-hi);font-family:var(--f-title);letter-spacing:.2em;}
+@media (pointer:coarse){
+  .sb-btn{min-height:44px;touch-action:manipulation;}
+  .sb-btn.small{min-height:40px;}
+  .sb-input{min-height:44px;}
+  button{touch-action:manipulation;}
+}
+.sb-spin{display:flex;flex-direction:column;align-items:center;gap:14px;color:var(--gold-hi);font-family:var(--f-display);font-weight:var(--fw-display);letter-spacing:.2em;padding-left:.2em;}
 .sb-spin svg{width:64px;height:64px;animation:sbSpin 6s linear infinite;filter:drop-shadow(0 0 8px rgba(244,184,96,.7));}
 .sb-spin svg .r2{transform-origin:50% 50%;animation:sbSpin 3s linear infinite reverse;}
 @keyframes sbSpin{to{transform:rotate(360deg)}}
-.sb-empty{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;color:var(--text-dim);font-family:var(--f-title);letter-spacing:.12em;line-height:1.8;}
+.sb-empty{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;color:var(--text-dim);font-family:var(--f-display);font-weight:var(--fw-display);letter-spacing:.12em;line-height:1.9;}
 
 @media (prefers-reduced-motion:reduce){ .sb-mist,.sb-rays{animation:none;} }
 </style>
@@ -185,20 +228,59 @@ window.SB = window.SB || {};
   SB.lerp = (a,b,t) => a + (b-a)*t;
   SB.clamp = (v,a,b) => Math.max(a, Math.min(b, v));
   SB.esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  /* ── 内联 SVG 图标（v1.5.2）：不依赖系统字体，任何手机都显示一致 ── */
+  const ICON_PATHS = {
+    spark:'<path d="M12 1.5c.9 6.4 3.1 8.6 10.5 10.5-7.4 1.9-9.6 4.1-10.5 10.5-.9-6.4-3.1-8.6-10.5-10.5C8.9 10.1 11.1 7.9 12 1.5Z" fill="currentColor"/>',
+    star:'<path d="M12 2.5c.8 5.4 2.6 7.4 8.2 9.5-5.6 2.1-7.4 4.1-8.2 9.5-.8-5.4-2.6-7.4-8.2-9.5 5.6-2.1 7.4-4.1 8.2-9.5Z" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="#fff8e6" opacity=".85"/>',
+    quill:'<path d="M20.5 3.5c-6.6.9-11.8 5.6-13.6 12.7l-1.6 4.3 4.2-1.7c6.9-2 11.3-7.6 11-15.3Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M6.8 17.2 14 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>',
+    close:'<path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+    reset:'<path d="M5.2 9.2A7.5 7.5 0 1 1 4.5 13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M4.2 4.6v4.9h4.9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+    plus:'<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+    minus:'<path d="M5 12h14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+    up:'<path d="M12 19V5M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+    down:'<path d="M12 5v14M6 13l6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+    chevron:'<path d="M9.5 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+    note:'<path d="M9 17.5V6l10-2v11.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="7" cy="17.5" r="2.3" fill="currentColor"/><circle cx="17" cy="15.5" r="2.3" fill="currentColor"/>'
+  };
+  SB.icon = (name, cls='') => `<svg class="sb-ico${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${ICON_PATHS[name] || ICON_PATHS.spark}</svg>`;
+  SB.icon.names = Object.keys(ICON_PATHS);
+
+  /* ── 字体就绪（只做预热与诊断，不隐藏文字） ── */
+  SB.type = { ready: Promise.resolve() };
+  if(document.fonts?.load){
+    const warm = [
+      "600 20px 'Noto Serif SC'", "400 16px 'Noto Serif SC'", "900 40px 'Noto Serif SC'",
+      "500 12px 'Cinzel'", "500 16px 'Cormorant Garamond'"
+    ];
+    SB.type.ready = Promise.race([
+      Promise.all(warm.map(f => document.fonts.load(f, '星屿之书回忆总览 ORBIS 2026').catch(() => null))),
+      new Promise(r => setTimeout(r, 4000))
+    ]).then(() => document.documentElement.classList.add('sb-fonts-ready'));
+  }
+
+  /* 标题排版：分隔点「·」与前文不断开，换行时只会出现在行尾，不会落在行首 */
+  SB.fmtTitle = t => String(t ?? '').replace(/\s*·\s*/g, '\u00a0· ');
+
   SB.el = (tag, cls, html) => { const e = document.createElement(tag); if(cls) e.className = cls; if(html != null) e.innerHTML = html; return e; };
   SB.uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
   /* ── 按顺序尝试加载脚本 ── */
   const loaded = {};
-  SB.loadScript = (urls) => {
+  SB.loadScript = (urls, options={}) => {
     const key = urls.join('|');
     if(loaded[key]) return loaded[key];
+    const timeoutMs = Math.max(2500, Number(options.timeoutMs) || 9000);
     return loaded[key] = new Promise((resolve, reject) => {
       let i = 0;
       const next = () => {
         if(i >= urls.length){ delete loaded[key]; reject(new Error('load_failed')); return; }
         const s = document.createElement('script'); s.src = urls[i++]; s.async = true;
-        s.onload = () => resolve(); s.onerror = () => { s.remove(); next(); };
+        let settled = false;
+        const timer = setTimeout(() => {
+          if(settled) return; settled = true; s.remove(); next();
+        }, timeoutMs);
+        s.onload = () => { if(settled) return; settled = true; clearTimeout(timer); resolve(); };
+        s.onerror = () => { if(settled) return; settled = true; clearTimeout(timer); s.remove(); next(); };
         document.head.appendChild(s);
       };
       next();
@@ -216,8 +298,10 @@ window.SB = window.SB || {};
       el.textContent = text; el.classList.add('show');
       clearTimeout(toastTimer); toastTimer = setTimeout(()=>el.classList.remove('show'), ms);
     },
-    button(text, kind='', onClick){
-      const b = SB.el('button', 'sb-btn ' + kind); b.type = 'button'; b.textContent = text;
+    button(text, kind='', onClick, icon){
+      const b = SB.el('button', 'sb-btn ' + kind); b.type = 'button';
+      if(icon){ b.innerHTML = SB.icon(icon); const t = SB.el('span'); t.textContent = text; b.appendChild(t); }
+      else b.textContent = text;
       if(onClick) b.addEventListener('click', onClick); return b;
     },
     field(label, input){
@@ -273,7 +357,7 @@ window.SB = window.SB || {};
   SB.toast = ui.toast;
 
   /* ── 场景管理器 ── */
-  const scenes = SB.scenes = { map:{}, current:null, params:{} };
+  const scenes = SB.scenes = { map:{}, current:null, params:{}, _pendingHistory:null };
   scenes.register = (id, hooks={}) => { scenes.map[id] = hooks; };
   scenes.el = id => document.querySelector(`.sb-scene[data-scene="${id}"]`);
   /* 魔法路径：沿着每个场景的 parent() 一路向上 */
@@ -289,21 +373,42 @@ window.SB = window.SB || {};
   };
   scenes.back = () => {
     const h = scenes.map[scenes.current]; const up = h?.parent?.(scenes.params);
-    if(up) scenes.go(up.id, up.params||{}, {transition: up.transition || 'veil', back:true});
+    if(!up) return;
+    const hs = history.state;
+    // 如果当前浏览器历史正是从父场景进入的，直接交给浏览器返回，避免制造“返回后又能回到子页”的假历史。
+    if(hs?.starbook && hs.from?.id === up.id && JSON.stringify(hs.from?.params||{}) === JSON.stringify(up.params||{})){
+      history.back(); return;
+    }
+    scenes.go(up.id, up.params||{}, {transition: up.transition || 'veil', back:true, replaceHistory:true});
   };
+  function syncHistory(id, params, opts, prev){
+    if(opts?.fromHistory) return;
+    try{
+      const url = scenes.map[id].hash === false ? location.pathname + location.search : '#'+id;
+      const state = {starbook:true, scene:id, params:params||{}, from:prev ? {id:prev.id, params:prev.params||{}} : null};
+      if(opts?.boot || opts?.replaceHistory) history.replaceState(state,'',url);
+      else history.pushState(state,'',url);
+    }catch(e){}
+  }
   function swap(id, params, opts){
-    const prev = scenes.current;
-    if(prev){ scenes.el(prev)?.classList.remove('is-active'); scenes.map[prev]?.leave?.(opts); }
+    const prev = scenes.current ? {id:scenes.current, params:scenes.params} : null;
+    if(prev){ scenes.el(prev.id)?.classList.remove('is-active'); scenes.map[prev.id]?.leave?.(opts); }
     scenes.current = id; scenes.params = params || {};
     document.body.dataset.scene = id;
     document.body.dataset.world = scenes.map[id].world || 'night';
     scenes.el(id)?.classList.add('is-active');
     scenes.map[id]?.enter?.(scenes.params, opts);
-    try{ history.replaceState(null,'', scenes.map[id].hash === false ? location.pathname : '#'+id); }catch(e){}
+    syncHistory(id,scenes.params,opts||{},prev);
     document.dispatchEvent(new CustomEvent('sb:scene', {detail:{id, params:scenes.params}}));
   }
   scenes.go = async (id, params={}, opts={}) => {
-    if(!scenes.map[id] || document.body.classList.contains('is-busy')) return;
+    if(!scenes.map[id]) return;
+    if(document.body.classList.contains('is-busy')){
+      // Android/浏览器可能在转场动画期间连续触发 popstate。
+      // 永远保留最后一次历史目标，动画结束后再追上，避免 URL 与画面不同步。
+      if(opts?.fromHistory) scenes._pendingHistory = {id, params:params||{}, opts:{...opts}};
+      return;
+    }
     if(id === scenes.current && JSON.stringify(params) === JSON.stringify(scenes.params) && !opts.force) return;
     const tr = opts.transition || 'veil';
     document.body.classList.add('is-busy');
@@ -343,19 +448,294 @@ window.SB = window.SB || {};
       }
     }finally{
       document.body.classList.remove('is-busy');
+      const pending = scenes._pendingHistory; scenes._pendingHistory = null;
+      if(pending && (pending.id !== scenes.current || JSON.stringify(pending.params||{}) !== JSON.stringify(scenes.params||{}))){
+        setTimeout(() => scenes.go(pending.id, pending.params||{}, {...pending.opts, force:true}), 0);
+      }
     }
   };
   scenes.boot = (fallback) => {
     // 各块的场景写在 <main> 之外，这里统一收进舞台，保证点击能落到场景上
     const stage = document.getElementById('sb-stage');
     document.querySelectorAll('.sb-scene').forEach(s => stage.appendChild(s));
-    const want = (location.hash||'').slice(1);
+    const hs = history.state;
+    const want = hs?.starbook ? hs.scene : (location.hash||'').slice(1);
     const h = scenes.map[want];
-    swap(h && h.deepLink ? want : fallback, {}, {boot:true});
+    const params = hs?.starbook && h ? (hs.params||{}) : {};
+    swap(h && h.deepLink ? want : fallback, params, {boot:true});
   };
+  window.addEventListener('popstate', e => {
+    const st = e.state;
+    if(!st?.starbook || !scenes.map[st.scene]) return;
+    scenes.go(st.scene, st.params||{}, {fromHistory:true, transition:'veil', force:true});
+  });
+  // 从系统返回 / bfcache 恢复时，清掉可能被冻结在动画中间的阻塞状态。
+  window.addEventListener('pageshow', e => {
+    if(!e.persisted) return;
+    document.body.classList.remove('is-busy');
+    const veil = document.getElementById('sb-veil'), flash = document.getElementById('sb-flash');
+    if(veil) veil.className = '';
+    if(flash) flash.className = '';
+  });
 })(window.SB);
 </script>
 <!-- ████ BLOCK 00-core END ████ -->
+
+<!-- ████ BLOCK 00-runtime START ████ -->
+<style>
+/* ── v1.5 · 登录 / 启动门：保持周年礼物体验，不暴露后台式 UI ── */
+#sb-gate{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:24px;
+  background:
+    radial-gradient(55% 38% at 50% 42%,rgba(88,95,196,.22),transparent 72%),
+    radial-gradient(42% 30% at 50% 58%,rgba(244,184,96,.13),transparent 72%),
+    linear-gradient(180deg,rgba(4,5,18,.96),rgba(8,5,10,.985));
+  transition:opacity .7s var(--ease-soft),visibility .7s;}
+#sb-gate[hidden]{display:none!important;} #sb-gate.leaving{opacity:0;visibility:hidden;pointer-events:none;}
+.sb-gate-stars{position:absolute;inset:0;overflow:hidden;pointer-events:none;opacity:.75;
+  background-image:radial-gradient(circle,rgba(255,239,201,.75) 0 1px,transparent 1.4px),radial-gradient(circle,rgba(143,164,255,.7) 0 1px,transparent 1.4px);
+  background-size:97px 97px,143px 143px;background-position:12px 25px,43px 67px;mask-image:radial-gradient(circle at 50% 45%,#000 0 35%,transparent 82%);}
+.sb-gate-card{position:relative;width:min(430px,100%);padding:34px 30px 28px;border-radius:20px;text-align:center;
+  border:1px solid rgba(244,184,96,.34);background:linear-gradient(180deg,rgba(30,20,18,.88),rgba(10,9,22,.9));
+  box-shadow:0 30px 90px rgba(0,0,0,.62),0 0 55px rgba(244,184,96,.11),inset 0 0 45px rgba(255,226,168,.025);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);}
+.sb-gate-rune{font-family:var(--f-rune);font-weight:500;font-size:10.5px;letter-spacing:var(--tr-rune);padding-left:var(--tr-rune);color:var(--gold-dim);margin:0 0 12px;}
+.sb-gate-card h1{font-family:var(--f-display);font-weight:var(--fw-display);letter-spacing:.2em;padding-left:.2em;color:var(--gold-hi);font-size:clamp(25px,7vw,34px);margin:0;text-shadow:0 0 20px rgba(244,184,96,.4);}
+.sb-gate-card .intro{font-size:13px;line-height:1.9;color:var(--text-dim);margin:12px auto 22px;max-width:330px;}
+.sb-gate-form{display:flex;flex-direction:column;gap:12px;text-align:left;}
+.sb-gate-form label{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--text-dim);letter-spacing:.08em;}
+.sb-gate-form input{width:100%;border:1px solid rgba(244,184,96,.28);border-radius:10px;background:rgba(3,4,14,.58);padding:11px 12px;color:var(--text);outline:none;}
+.sb-gate-form input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(244,184,96,.08);}
+.sb-gate-submit{margin-top:4px;width:100%;justify-content:center;min-height:44px;}
+.sb-gate-error{min-height:20px;margin:10px 0 0;color:#e7a493;font-size:12px;line-height:1.6;}
+.sb-gate-note{margin:12px 0 0;color:rgba(191,165,130,.7);font-size:11px;line-height:1.6;}
+.sb-gate-loading{display:grid;place-items:center;gap:13px;padding:8px 0;}
+.sb-gate-loading .sb-spin{margin:0;}
+.sb-gate-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:14px;}
+.sb-gate-actions .sb-btn{min-width:132px;}
+.sb-gate-retry{margin-top:0;}
+@media(max-width:480px){#sb-gate{padding:max(14px,var(--safe-t)) max(14px,var(--safe-r)) max(14px,var(--safe-b)) max(14px,var(--safe-l));}.sb-gate-card{padding:28px 20px 24px;border-radius:16px;max-height:calc(100dvh - 28px - var(--safe-t) - var(--safe-b));overflow:auto}.sb-gate-card .intro{font-size:12px}}
+</style>
+
+<div id="sb-gate" aria-live="polite">
+  <div class="sb-gate-stars" aria-hidden="true"></div>
+  <section class="sb-gate-card" aria-label="星屿之书登录">
+    <p class="sb-gate-rune">LIBER INSULARUM STELLARUM</p>
+    <h1>星屿之书</h1>
+    <p class="intro" id="sb-gate-intro">有些故事，值得被写进星辰。</p>
+    <div id="sb-gate-body"></div>
+  </section>
+</div>
+
+<script>
+/* ── v1.5 · Runtime Context：User / Book / Theme / Experience ── */
+(function(SB){
+  const cfg = window.STARBOOK_CONFIG || {};
+  const gate = document.getElementById('sb-gate');
+  const gateBody = document.getElementById('sb-gate-body');
+  const gateIntro = document.getElementById('sb-gate-intro');
+  const SUPABASE_CDNS = [
+    'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
+    'https://unpkg.com/@supabase/supabase-js@2'
+  ];
+
+  function showLoading(text='正在连接星海…'){
+    gate.hidden = false; gate.classList.remove('leaving');
+    gateIntro.textContent = '有些故事，值得被写进星辰。';
+    gateBody.innerHTML = '';
+    const box = SB.el('div','sb-gate-loading'); box.appendChild(SB.ui.spinner(text)); gateBody.appendChild(box);
+  }
+  function showFatal(text, detail, options={}){
+    gate.hidden = false; gate.classList.remove('leaving'); gateBody.innerHTML = '';
+    gateIntro.textContent = text || '星海暂时失去了连接。';
+    const p = SB.el('p','sb-gate-error'); p.textContent = detail || '请检查网络后重新尝试。';
+    const actions = SB.el('div','sb-gate-actions');
+
+    if(options.retry !== false){
+      const retryLabel = options.retryLabel || '重新连接';
+      const retryAction = typeof options.retry === 'function' ? options.retry : ()=>location.reload();
+      const retry = SB.ui.button(retryLabel,'primary sb-gate-retry',async()=>{
+        retry.disabled = true;
+        try{ await retryAction(); }
+        catch(e){ console.error('[Starbook retry]',e); retry.disabled = false; }
+      });
+      actions.appendChild(retry);
+    }
+
+    if(options.backToLogin){
+      const back = SB.ui.button(options.backLabel || '返回登录','',async()=>{
+        back.disabled = true;
+        try{ await returnToLogin(options.loginMessage || '请重新登录后再开启星屿。'); }
+        catch(e){ console.error('[Starbook back-to-login]',e); back.disabled = false; }
+      });
+      actions.appendChild(back);
+    }
+
+    gateBody.append(p,actions);
+  }
+  function hideGate(){
+    gate.classList.add('leaving');
+    setTimeout(()=>{ gate.hidden = true; gate.classList.remove('leaving'); },720);
+  }
+
+  const user = SB.user = {
+    current:null, session:null, ready:null,
+    async signIn(email,password){
+      const {data,error} = await SB.supabase.auth.signInWithPassword({email,password});
+      if(error) throw error;
+      user.session = data.session || null; user.current = data.user || data.session?.user || null;
+      return user.current;
+    },
+    async signOut(options={}){
+      const reload = options.reload !== false;
+      try{ await SB.supabase?.auth?.signOut(); }catch(e){ console.error(e); }
+      user.session = null; user.current = null;
+      if(SB.book){ SB.book.current = null; SB.book.memberships = []; SB.book.books = []; }
+      if(reload) location.reload();
+    }
+  };
+
+  async function returnToLogin(message=''){
+    try{ await user.signOut({reload:false}); }
+    catch(e){ console.error('[Starbook signout]',e); }
+    try{ localStorage.removeItem('sb-current-book'); }catch(e){}
+    showLogin(message);
+  }
+
+  const book = SB.book = {
+    current:null, memberships:[], books:[], ready:null,
+    async load(){
+      if(!user.current) throw new Error('not_authenticated');
+      const {data:memberships,error:mErr} = await SB.supabase.from('book_members')
+        .select('book_id,role,status,created_at').eq('user_id',user.current.id).eq('status','active');
+      if(mErr) throw mErr;
+      book.memberships = memberships || [];
+      const ids = book.memberships.map(x=>x.book_id);
+      if(!ids.length){ book.books = []; book.current = null; return null; }
+      const {data:books,error:bErr} = await SB.supabase.from('books')
+        .select('id,name,relationship_type,theme_id,experience_id,created_by,created_at,updated_at').in('id',ids);
+      if(bErr) throw bErr;
+      book.books = books || [];
+      let preferred = null; try{ preferred = localStorage.getItem('sb-current-book'); }catch(e){}
+      const chosen = book.books.find(x=>x.id===preferred) || book.books[0] || null;
+      return book.open(chosen?.id);
+    },
+    open(id){
+      const row = book.books.find(x=>x.id===id); if(!row){ book.current = null; return null; }
+      const member = book.memberships.find(x=>x.book_id===id);
+      book.current = {
+        id:row.id, name:row.name, role:member?.role || 'viewer', createdBy:row.created_by,
+        relationshipType:row.relationship_type || cfg.defaults?.relationshipType || 'romantic',
+        themeId:row.theme_id || cfg.defaults?.themeId || 'magic-celestial',
+        experienceId:row.experience_id || cfg.defaults?.experienceId || 'world-map'
+      };
+      try{ localStorage.setItem('sb-current-book',row.id); }catch(e){}
+      SB.theme.current = book.current.themeId;
+      SB.experience.current = book.current.experienceId;
+      document.documentElement.dataset.sbTheme = SB.theme.current;
+      document.documentElement.dataset.sbExperience = SB.experience.current;
+      document.dispatchEvent(new CustomEvent('sb:book',{detail:{book:book.current}}));
+      return book.current;
+    },
+    close(){ book.current = null; }
+  };
+
+  SB.theme = { current: cfg.defaults?.themeId || 'magic-celestial' };
+  SB.experience = { current: cfg.defaults?.experienceId || 'world-map' };
+  const runtime = SB.runtime = { ready:null, config:cfg, showLoading, showFatal };
+
+  let resolveReady, rejectReady;
+  runtime.ready = new Promise((res,rej)=>{ resolveReady=res; rejectReady=rej; });
+  user.ready = runtime.ready; book.ready = runtime.ready;
+
+  async function finishAuthenticated(){
+    showLoading('正在读取我们的世界…');
+    try{
+      const current = await book.load();
+      if(!current){
+        showFatal(
+          '这枚星钥还没有连接到一本书。',
+          '当前账号还没有《星屿之书》的访问权限。可以重新检查权限，或返回登录并使用其他账号。',
+          {
+            retryLabel:'重新检查权限',
+            retry:()=>finishAuthenticated(),
+            backToLogin:true,
+            loginMessage:'已退出当前账号，请使用拥有访问权限的账号登录。'
+          }
+        );
+        return;
+      }
+      hideGate(); resolveReady({user:user.current,book:current});
+    }catch(e){
+      console.error('[Starbook runtime]',e);
+      const msg=String(e?.message||'');
+      const permissionLike = /permission|row-level|rls|not authorized|unauthorized|forbidden|42501/i.test(msg);
+      showFatal(
+        permissionLike ? '这枚星钥暂时没有权限。' : '暂时没能翻开这本书。',
+        permissionLike
+          ? '当前账号没有读取这本书的权限。你可以重新检查权限，或返回登录并使用其他账号。'
+          : '数据库连接或权限配置暂时异常。你可以重新尝试，或返回登录。',
+        {
+          retryLabel:'重新尝试',
+          retry:()=>finishAuthenticated(),
+          backToLogin:true,
+          loginMessage:'已返回登录界面。'
+        }
+      );
+    }
+  }
+
+  function showLogin(message=''){
+    gate.hidden = false; gate.classList.remove('leaving'); gateBody.innerHTML='';
+    gateIntro.textContent = '这本书只向被邀请的人开启。';
+    const form = SB.el('form','sb-gate-form');
+    const email = SB.el('input'); email.type='email'; email.autocomplete='email'; email.placeholder='your@email.com'; email.required=true;
+    const password = SB.el('input'); password.type='password'; password.autocomplete='current-password'; password.placeholder='••••••••'; password.required=true;
+    const l1=SB.el('label'); l1.textContent='邮箱'; l1.appendChild(email);
+    const l2=SB.el('label'); l2.textContent='密码'; l2.appendChild(password);
+    const submit = SB.ui.button('开启星屿','primary sb-gate-submit'); submit.type='submit';
+    const err=SB.el('p','sb-gate-error'); err.textContent=message;
+    const note=SB.el('p','sb-gate-note'); note.textContent='当前周年版本暂不开放公开注册。';
+    form.append(l1,l2,submit,err,note); gateBody.appendChild(form);
+    form.addEventListener('submit',async e=>{
+      e.preventDefault(); err.textContent=''; submit.disabled=true; submit.textContent='正在开启…';
+      try{ await user.signIn(email.value.trim(),password.value); await finishAuthenticated(); }
+      catch(ex){
+        console.error('[Starbook auth]',ex);
+        const msg=String(ex?.message||'');
+        err.textContent = /invalid login|invalid credentials/i.test(msg) ? '邮箱或密码不正确。' : '暂时无法登录，请检查网络后再试。';
+        submit.disabled=false; submit.textContent='开启星屿';
+      }
+    });
+    if(!SB.perf.touch) setTimeout(()=>email.focus(),120);
+  }
+
+  async function bootRuntime(){
+    showLoading('正在连接星海…');
+    try{
+      if(!cfg.supabaseUrl || !cfg.supabasePublishableKey) throw new Error('missing_supabase_config');
+      if(!window.supabase?.createClient) await SB.loadScript(SUPABASE_CDNS);
+      if(!window.supabase?.createClient) throw new Error('supabase_client_unavailable');
+      SB.supabase = window.supabase.createClient(cfg.supabaseUrl,cfg.supabasePublishableKey,{
+        auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},
+        global:{headers:{'x-client-info':'starbook-v'+(cfg.version||'')}}
+      });
+      SB.supabase.auth.onAuthStateChange((event,session)=>{
+        user.session=session||null; user.current=session?.user||null;
+        if(event==='SIGNED_OUT' && !gate.hidden) return;
+        if(event==='SIGNED_OUT'){ showLogin('登录状态已结束，请重新开启星屿。'); }
+      });
+      const {data,error}=await SB.supabase.auth.getSession(); if(error) throw error;
+      user.session=data.session||null; user.current=data.session?.user||null;
+      if(user.current) await finishAuthenticated(); else showLogin();
+    }catch(e){
+      console.error('[Starbook boot]',e); rejectReady?.(e);
+      showFatal('星海暂时失去了连接。','Supabase 客户端未能加载。请检查网络后重新连接。');
+    }
+  }
+  bootRuntime();
+})(window.SB);
+</script>
+<!-- ████ BLOCK 00-runtime END ████ -->
 
 <!-- ████ BLOCK 01-ambient-fx START ████ -->
 <script>
@@ -566,7 +946,7 @@ window.SB = window.SB || {};
   transition:border-color .3s, box-shadow .3s, transform .3s var(--ease-soft), opacity .4s;}
 body[data-world="night"] #sb-nav-btn,body[data-world="night"] #sb-back{background:linear-gradient(180deg, rgba(26,24,58,.84), rgba(10,10,28,.84));}
 #sb-nav-btn{display:flex;align-items:center;gap:10px;padding:8px 18px 8px 10px;border-radius:999px;
-  font-family:var(--f-title);font-size:18px;letter-spacing:.14em;}
+  font-family:var(--f-display);font-weight:var(--fw-display);font-size:17px;letter-spacing:.14em;line-height:1.2;}
 #sb-nav-btn:hover,#sb-back:hover{border-color:rgba(255,226,168,.75);box-shadow:0 0 0 1px rgba(0,0,0,.4) inset,0 6px 24px rgba(0,0,0,.45),0 0 28px rgba(244,184,96,.35);}
 #sb-nav-btn:active,#sb-back:active{transform:scale(.96);}
 #sb-nav-btn .gem{width:26px;height:26px;flex:none;animation:sbGemBreath 4s ease-in-out infinite;}
@@ -589,14 +969,14 @@ body[data-world="night"] #sb-nav-btn,body[data-world="night"] #sb-back{backgroun
 body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%, rgba(244,184,96,.10), transparent 70%), var(--glass-night);}
 #sb-nav.open #sb-menu{opacity:1;transform:none;filter:none;pointer-events:auto;visibility:visible;
   transition:opacity .45s var(--ease-soft), transform .45s var(--ease-soft), filter .45s var(--ease-soft), visibility 0s;}
-#sb-menu .inscr{font-family:var(--f-rune);font-size:10px;letter-spacing:.32em;text-align:center;color:var(--gold-dim);margin:0 0 10px;}
+#sb-menu .inscr{font-family:var(--f-rune);font-weight:500;font-size:10px;letter-spacing:var(--tr-rune);padding-left:var(--tr-rune);text-align:center;color:var(--gold-dim);margin:0 0 10px;}
 .sb-crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:2px 4px;margin:0 6px 10px;padding:8px 10px;border-radius:10px;
-  background:rgba(244,184,96,.06);border:1px dashed rgba(244,184,96,.22);font-family:var(--f-title);font-size:14px;}
+  background:rgba(244,184,96,.06);border:1px dashed rgba(244,184,96,.22);font-family:var(--f-display);font-weight:var(--fw-display);font-size:13.5px;}
 .sb-crumbs[hidden]{display:none!important;}
 .sb-crumbs button{border:0;background:none;padding:2px 4px;cursor:pointer;color:var(--text-dim);border-radius:6px;}
 .sb-crumbs button:hover{color:var(--gold-hi);}
 .sb-crumbs button.cur{color:var(--gold-hi);text-shadow:0 0 10px rgba(244,184,96,.6);}
-.sb-crumbs i{font-style:normal;color:var(--gold-dim);font-size:11px;}
+.sb-crumbs i{font-style:normal;color:var(--gold-dim);font-size:12px;display:inline-flex;}
 #sb-menu ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;}
 .sb-mi{width:100%;display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;
   padding:9px 10px;border:0;border-radius:10px;background:transparent;cursor:pointer;text-align:left;transition:background .25s;}
@@ -605,24 +985,30 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
   border:1px solid rgba(244,184,96,.3);background:radial-gradient(circle, rgba(244,184,96,.15), transparent 70%);color:var(--gold);}
 .sb-mi .ic svg{width:18px;height:18px;}
 .sb-mi .tx{display:flex;flex-direction:column;gap:2px;min-width:0;}
-.sb-mi .nm{font-family:var(--f-title);font-size:17px;color:var(--text);letter-spacing:.06em;}
-.sb-mi .ds{font-size:12px;color:var(--text-dim);line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.sb-mi .tag{font-size:11px;color:var(--gold-dim);font-family:var(--f-title);letter-spacing:.1em;white-space:nowrap;}
+.sb-mi .nm{font-family:var(--f-display);font-weight:var(--fw-display);font-size:16.5px;color:var(--text);letter-spacing:.06em;line-height:1.35;}
+.sb-mi .ds{font-size:12.5px;color:var(--text-dim);line-height:1.45;letter-spacing:.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sb-mi .tag{font-size:11.5px;color:var(--gold-dim);font-family:var(--f-display);font-weight:var(--fw-display);letter-spacing:.1em;white-space:nowrap;}
 .sb-mi.is-current .nm{color:var(--gold-hi);}
 .sb-mi.is-current .ic{border-color:var(--gold);box-shadow:0 0 12px rgba(244,184,96,.4);}
 .sb-mi.off .nm,.sb-mi.off .ic{opacity:.5;}
 .sb-sub{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;padding:2px 6px 8px 54px;}
 .sb-sub[hidden]{display:none!important;}
 .sb-sub button{border:1px solid rgba(244,184,96,.2);background:rgba(244,184,96,.04);border-radius:8px;
-  padding:7px 8px;font-family:var(--f-title);font-size:14px;color:var(--text-dim);cursor:pointer;text-align:left;transition:all .25s;display:flex;justify-content:space-between;gap:6px;}
+  padding:7px 8px;font-family:var(--f-display);font-weight:var(--fw-display);font-size:14px;letter-spacing:.06em;color:var(--text-dim);cursor:pointer;text-align:left;transition:all .25s;display:flex;justify-content:space-between;gap:6px;}
 .sb-sub button:hover{color:var(--gold-hi);border-color:var(--line);}
-.sb-sub button b{font-weight:400;color:var(--gold);font-size:12px;}
+.sb-sub button b{font-weight:400;color:var(--gold);font-size:12.5px;font-family:var(--f-num);display:inline-flex;align-items:center;gap:3px;}
 .sb-divider{height:1px;margin:8px 10px;background:linear-gradient(90deg, transparent, var(--line), transparent);}
 .sb-seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;}
-.sb-seg span{padding:3px 10px;font-size:12px;font-family:var(--f-title);color:var(--text-dim);}
+.sb-seg span{padding:3px 10px;font-size:12px;font-family:var(--f-display);font-weight:var(--fw-display);letter-spacing:.06em;color:var(--text-dim);}
 .sb-seg span.on{background:rgba(244,184,96,.22);color:var(--gold-hi);}
 .sb-status{margin:8px 10px 0;font-size:11px;color:var(--text-dim);text-align:center;letter-spacing:.06em;opacity:.8;}
-@media (max-width:480px){ #sb-nav-btn{font-size:16px;padding:7px 15px 7px 8px;} #sb-back{width:40px;height:40px;} }
+@media (pointer:coarse){
+  #sb-nav-btn{min-height:44px;}
+  #sb-back{width:44px;height:44px;}
+  .sb-mi{min-height:50px;}
+  .sb-sub button{min-height:42px;}
+}
+@media (max-width:480px){ #sb-nav{top:calc(10px + var(--safe-t));left:calc(10px + var(--safe-l));gap:8px;} #sb-nav-btn{font-size:15px;padding:7px 12px 7px 8px;} #sb-nav-btn .gem{width:24px;height:24px;} #sb-menu{width:min(350px,calc(100vw - 20px - var(--safe-l) - var(--safe-r)));} }
 </style>
 
 <nav id="sb-nav" aria-label="星屿之书导航">
@@ -682,7 +1068,7 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
     crumbs.innerHTML = '';
     crumbs.hidden = path.length < 2;
     path.forEach((p, i) => {
-      if(i) { const s = SB.el('i'); s.textContent = '›'; crumbs.appendChild(s); }
+      if(i) { const s = SB.el('i', '', SB.icon('chevron')); crumbs.appendChild(s); }
       const b = SB.el('button', i === path.length-1 ? 'cur' : ''); b.type = 'button'; b.textContent = p.label;
       b.addEventListener('click', () => { if(i < path.length-1) SB.scenes.go(p.id, p.params, {transition:'veil'}); else menu.close(); });
       crumbs.appendChild(b);
@@ -708,7 +1094,7 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
         sub = SB.el('div','sb-sub'); sub.hidden = !it._expanded;
         for(const c of (typeof it.children === 'function' ? it.children() : it.children)){
           const cb = SB.el('button'); cb.type = 'button';
-          cb.innerHTML = `<span></span>${c.badge ? `<b>${SB.esc(c.badge)}</b>` : ''}`;
+          cb.innerHTML = `<span></span>${c.badge ? `<b>${SB.icon('star')}${SB.esc(c.badge)}</b>` : ''}`;
           cb.querySelector('span').textContent = c.label;
           cb.addEventListener('click', () => activate(c)); sub.appendChild(cb);
         }
@@ -753,6 +1139,22 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
 })(window.SB);
 </script>
 <!-- ████ BLOCK 02-menu END ████ -->
+
+<!-- ████ BLOCK 02z-account START ████ -->
+<script>
+/* ── v1.5 · 账户菜单：当前仅登录 / 退出；未来可升级为 Library / Profile ── */
+(function(SB){
+  SB.menu.icons.user = '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M5.5 19c.8-4 3-6 6.5-6s5.7 2 6.5 6" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>';
+  SB.menu.add({id:'account',order:95,icon:'user',label:'账户',
+    desc:()=>SB.user?.current?.email || '未登录',
+    tag:()=>SB.book?.current?.role ? `<span class="sb-seg"><span class="on">${SB.esc(SB.book.current.role)}</span></span>` : '',
+    hidden:()=>!SB.user?.current,
+    action:async()=>{ if(await SB.ui.confirm('退出当前账号？','退出','danger')) await SB.user.signOut(); }
+  });
+  document.addEventListener('sb:book',()=>SB.menu.refresh());
+})(window.SB);
+</script>
+<!-- ████ BLOCK 02z-account END ████ -->
 
 <!-- ████ BLOCK 03-magic-book START ████ -->
 <style>
@@ -819,8 +1221,8 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
     linear-gradient(90deg, rgba(90,50,20,.45), transparent 9%), var(--tex-paper) center/256px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4%;color:#5a3416;text-align:center;}
 .bk-page .emb{width:46%;opacity:.85;}
-.bk-page h2{margin:0;font-family:var(--f-title);font-weight:400;font-size:calc(var(--bw) * .07);letter-spacing:.2em;color:#6b3a12;}
-.bk-page p{margin:0;font-size:calc(var(--bw) * .03);letter-spacing:.12em;color:#7a4e24;}
+.bk-page h2{margin:0;padding-left:.2em;font-family:var(--f-display);font-weight:900;font-size:calc(var(--bw) * .07);letter-spacing:.2em;color:#6b3a12;}
+.bk-page p{margin:0;font-size:calc(var(--bw) * .03);font-weight:600;letter-spacing:.12em;padding-left:.12em;color:#7a4e24;}
 .bk-beam{position:absolute;left:50%;top:50%;width:140%;height:140%;transform:translate(-50%,-50%) scale(.2);opacity:0;pointer-events:none;
   background:repeating-conic-gradient(from 0deg, rgba(255,236,190,.0) 0deg 7deg, rgba(255,226,168,.5) 9deg 11deg, rgba(255,236,190,0) 13deg 22deg);
   -webkit-mask:radial-gradient(circle, #000 0%, transparent 62%);mask:radial-gradient(circle, #000 0%, transparent 62%);
@@ -900,7 +1302,7 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
 @keyframes bkSmoke{0%{opacity:0;transform:translate3d(0,40%,0) scale(.5,.7)}25%{opacity:1}100%{opacity:0;transform:translate3d(18%,-120%,0) scale(1.4,1.8) rotate(12deg)}}
 
 .bk-hint{position:absolute;left:50%;top:min(calc(50% + var(--bh) * .5 + 26px), calc(100% - 36px - var(--safe-b)));transform:translateX(-50%);
-  font-family:var(--f-title);font-size:15px;letter-spacing:.3em;color:var(--gold-hi);white-space:nowrap;
+  font-family:var(--f-display);font-weight:var(--fw-display);font-size:15px;letter-spacing:.3em;padding-left:.3em;color:var(--gold-hi);white-space:nowrap;
   text-shadow:0 0 12px rgba(244,184,96,.7);animation:bkHint 4s ease-in-out infinite;pointer-events:none;transition:opacity .5s;}
 @keyframes bkHint{0%,100%{opacity:.35}50%{opacity:.95}}
 .sb-scene[data-scene="book"].is-opening .bk-hint{opacity:0;animation:none;}
@@ -1071,8 +1473,8 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
       <rect x="34" y="34" width="532" height="732" rx="6" fill="none" stroke-width=".9"/>
       <g transform="translate(40 40)">${CORNER}</g><g transform="translate(560 40) scale(-1 1)">${CORNER}</g>
       <g transform="translate(40 760) scale(1 -1)">${CORNER}</g><g transform="translate(560 760) scale(-1 -1)">${CORNER}</g>
-      ${withText ? `<text x="300" y="140" text-anchor="middle" stroke="none" font-family="ZCOOL XiaoWei, Noto Serif SC, serif" font-size="66" letter-spacing="16">星屿之书</text>
-      <text x="300" y="178" text-anchor="middle" stroke="none" font-family="Cinzel Decorative, serif" font-size="13" letter-spacing="7" opacity=".9">THE BOOK OF STAR ISLES</text>` : ''}
+      ${withText ? `<text x="308" y="142" text-anchor="middle" stroke="none" font-family="'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', serif" font-weight="900" font-size="64" letter-spacing="16">星屿之书</text>
+      <text x="303.5" y="178" text-anchor="middle" stroke="none" font-family="Cinzel, 'Trajan Pro', serif" font-weight="500" font-size="13.5" letter-spacing="7" opacity=".92">THE BOOK OF STAR ISLES</text>` : ''}
       <path d="M190 196 H270 M330 196 H410" stroke-width=".9" fill="none"/><path d="M300 189 l6 7 -6 7 -6 -7z" stroke="none"/>
       <g fill="none">
         <circle cx="${cx}" cy="${cy}" r="236" stroke-width="1.8"/><circle cx="${cx}" cy="${cy}" r="228" stroke-width=".8"/>
@@ -1086,9 +1488,9 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
   function coverArt(id, glow){
     return FOIL(id, glow) + `<g filter="url(#${id}f)">${shapes(`stroke="url(#${id}g)" fill="url(#${id}g)"`, true)}
       <path id="${id}tp" d="M ${cx-214} ${cy} A 214 214 0 1 1 ${cx+214} ${cy} A 214 214 0 1 1 ${cx-214} ${cy}" fill="none" stroke="none"/>
-      <text fill="url(#${id}g)" font-family="Cinzel Decorative, serif" font-size="11.5" letter-spacing="3.2"><textPath href="#${id}tp">✦ AMOR VINCIT OMNIA ✦ PER ASPERA AD ASTRA ✦ TECUM UBIQUE DOMUS ✦ MEMORIA STELLARUM ✦ ITER NOSTRUM ✦</textPath></text>
-      <text x="300" y="726" text-anchor="middle" fill="url(#${id}g)" font-family="ZCOOL XiaoWei, Noto Serif SC, serif" font-size="22" letter-spacing="8">✦ 爱与远方的记忆 ✦</text>
-      <text x="300" y="752" text-anchor="middle" fill="url(#${id}g)" font-family="Cinzel Decorative, serif" font-size="10" letter-spacing="6" opacity=".75">MMXXVI · LIBER PRIMUS</text></g>`;
+      <text fill="url(#${id}g)" font-family="Cinzel, 'Trajan Pro', serif" font-weight="500" font-size="12" letter-spacing="3.4"><textPath href="#${id}tp">AMOR VINCIT OMNIA · PER ASPERA AD ASTRA · TECUM UBIQUE DOMUS · MEMORIA STELLARUM · ITER NOSTRUM ·</textPath></text>
+      <text x="304" y="727" text-anchor="middle" fill="url(#${id}g)" font-family="'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', serif" font-weight="600" font-size="21" letter-spacing="8">爱与远方的记忆</text><g fill="url(#${id}g)"><path d="M178 712C179.44 717.44 180.56 718.56 186 720 180.56 721.44 179.44 722.56 178 728 176.56 722.56 175.44 721.44 170 720 175.44 718.56 176.56 717.44 178 712Z" stroke="none"/><path d="M422 712C423.44 717.44 424.56 718.56 430 720 424.56 721.44 423.44 722.56 422 728 420.56 722.56 419.44 721.44 414 720 419.44 718.56 420.56 717.44 422 712Z" stroke="none"/></g>
+      <text x="303" y="754" text-anchor="middle" fill="url(#${id}g)" font-family="Cinzel, 'Trajan Pro', serif" font-weight="500" font-size="10.5" letter-spacing="6" opacity=".8">MMXXVI · LIBER PRIMUS</text></g>`;
   }
   $('cv-art').innerHTML = coverArt('ca', 1.6);
   $('cv-art-hot').innerHTML = coverArt('ch', 5.5);
@@ -1118,7 +1520,7 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
     <circle r="146" stroke-width="2.6"/><circle r="132" stroke-width="1.3"/>
     <path d="${ticks(140,146,120)}" stroke-width=".7"/><path d="${ticks(134,146,12)}" stroke-width="1.8"/>
     <path id="m1tp" d="M -137 0 A 137 137 0 1 1 137 0 A 137 137 0 1 1 -137 0" stroke="none"/>
-    <text fill="url(#m1g)" stroke="none" font-family="Cinzel Decorative, serif" font-size="7.2" letter-spacing="2.4"><textPath href="#m1tp">${runes+runes}</textPath></text></g>`;
+    <text fill="url(#m1g)" stroke="none" font-family="Cinzel, 'Trajan Pro', serif" font-weight="600" font-size="7.4" letter-spacing="2.4"><textPath href="#m1tp">${runes+runes}</textPath></text></g>`;
   $('mk-r2').innerHTML = FOIL('m2', 1.2) + `<path d="${gear(124,116,48)}" fill="#4a2c12"/><circle r="104" fill="#1c1009"/>
     <g filter="url(#m2f)" stroke="url(#m2g)">
     <path d="${gear(124,116,48)}" fill="none" stroke-width="1.3"/>
@@ -1176,15 +1578,15 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
   }
   let hovering = false;
   document.addEventListener('pointermove', e => {
-    if(SB.scenes.current !== 'book' || SB.book.busy) return;
+    if(SB.scenes.current !== 'book' || SB.magicBook.busy) return;
     if(fine){ state.tx = (e.clientX/innerWidth - .5)*2; state.ty = (e.clientY/innerHeight - .5)*2; }
     const h = nearGem(e.clientX, e.clientY);
     if(h !== hovering){ hovering = h; cover.classList.toggle('is-hover', h); state.spinTarget = h ? 1.8 : 1; scene.style.cursor = h ? 'pointer' : ''; }
   });
   /* 3D 层里的点击在部分浏览器上会落空，所以按"离宝石多近"判断 */
   document.addEventListener('click', e => {
-    if(SB.scenes.current !== 'book' || SB.book.busy || e.target.closest('#sb-nav')) return;
-    if(e.target === $('bk-gembtn') || nearGem(e.clientX, e.clientY)) SB.book.open?.();
+    if(SB.scenes.current !== 'book' || SB.magicBook.busy || e.target.closest('#sb-nav')) return;
+    if(e.target === $('bk-gembtn') || nearGem(e.clientX, e.clientY)) SB.magicBook.open?.();
   });
 
   function placeOrbit(){
@@ -1212,10 +1614,10 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
   function start(){ if(state.running) return; state.running = true; last = 0; requestAnimationFrame(loop); }
   function stop(){ state.running = false; }
   document.addEventListener('visibilitychange', () => { if(document.hidden) stop(); else if(SB.scenes.current === 'book') start(); });
-  addEventListener('resize', () => { if(SB.scenes.current === 'book' && !SB.book.busy) placeOrbit(); });
+  addEventListener('resize', () => { if(SB.scenes.current === 'book' && !SB.magicBook.busy) placeOrbit(); });
 
   const gemBtn = $('bk-gembtn');
-  SB.book = {
+  SB.magicBook = {
     busy:false, state, scene, cover, tilt, gemBtn, page:$('bk-page'),
     stage:$('bk-stage'), shocks:[$('bk-shock'), $('bk-shock2')], leaves:[$('bk-leaf1'),$('bk-leaf2'),$('bk-leaf3')],
     setSpin(v){ state.spinTarget = v; },
@@ -1232,7 +1634,7 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
   SB.scenes.register('book', {
     world:'book', deepLink:true,
     title:()=>'魔法书',
-    enter(){ SB.book.reset(); SB.fx.palette('warm'); SB.fx.calm(); SB.fx.orbitBoost(1); start(); requestAnimationFrame(placeOrbit); },
+    enter(){ SB.magicBook.reset(); SB.fx.palette('warm'); SB.fx.calm(); SB.fx.orbitBoost(1); start(); requestAnimationFrame(placeOrbit); },
     leave(){ stop(); SB.fx.orbit(null); }
   });
 })(window.SB);
@@ -1243,8 +1645,8 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
 <script>
 /* ── 块 04 · 开书动画：启动 → 共鸣 → 翻开 → 入界 ── */
 (function(SB){
-  SB.book.open = async function(){
-    const B = SB.book;
+  SB.magicBook.open = async function(){
+    const B = SB.magicBook;
     if(B.busy || document.body.classList.contains('is-busy')) return;
     B.busy = true; SB.menu.close();
     B.scene.classList.add('is-opening');
@@ -1291,353 +1693,295 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
 
 <!-- ████ BLOCK 05-store START ████ -->
 <script>
-/* ── 块 05 · 存储：GitHub 仓库（主用）/ Claude 云端 / 本机临时 三种后端，对外接口一致 ──
-   数据：{cities:{id:{…}}, memories:{id:{…}}, settings:{…}}
-   文件：照片和音乐，用文件 id 引用（GitHub 版里就是 media/ 下的文件名）
-   规则：每次修改都基于最新数据执行一个"修改函数"，保存后自动清理不再被引用的文件。 */
+/* ── 块 05 · v1.5 周年桥接存储：Supabase book_data(JSONB) + Private Storage ──
+   对外继续暴露 V1 的 cities / memories / settings API，让地图、编辑器、播放器无需大改。
+   book_data 是周年桥接层；V2 再正规化 memories / locations / assets 等表。 */
 (function(SB){
-  const MUXER = ['https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.3/build/mp4-muxer.min.js', 'https://unpkg.com/mp4-muxer@5.1.3/build/mp4-muxer.min.js'];
-  const LOCAL_KEY = 'sb-local-v1', GH_KEY = 'sb-gh-v1', API = 'https://api.github.com';
-  const st = SB.store = { mode:'connecting', canEdit:false, canUpload:false, cities:[], memories:[], settings:{}, ready:null };
+  const cfg = window.STARBOOK_CONFIG || {};
+  const BUCKET = cfg.storageBucket || 'starbook-media';
+  const SIGN_TTL = Math.max(900, Number(cfg.signedUrlTtlSeconds) || 21600);
+  const MAX_FILE = 25 * 1024 * 1024;
+  const st = SB.store = { mode:'connecting', role:'viewer', canEdit:false, canUpload:false, cities:[], memories:[], settings:{}, revision:0, ready:null };
   const emit = () => document.dispatchEvent(new CustomEvent('sb:data'));
   const now = () => new Date().toISOString();
   const empty = () => ({cities:{}, memories:{}, settings:{}});
+  const clone = o => JSON.parse(JSON.stringify(o));
   let data = empty(), dataSig = '';
-  const preview = {};            // 本机刚选的文件：id → 本地预览地址
-  const pending = {};            // GitHub：已上传为草稿、还没提交的文件：id → blob sha
-  let cloud = null, assets = null, gh = null;
+  const preview = Object.create(null);   // 本次浏览器会话刚上传的文件 path → object URL
+  const signed = Object.create(null);    // Private Storage path → {url, expiresAt}
+  const signing = new Set();             // 正在补签的 path，避免同一图片并发重复请求
 
+  function normalize(d){ return {cities:d?.cities || {}, memories:d?.memories || {}, settings:d?.settings || {}}; }
   function setData(d){
-    d = {cities:d?.cities || {}, memories:d?.memories || {}, settings:d?.settings || {}};
-    const sig = JSON.stringify(d); if(sig === dataSig) return; dataSig = sig; data = d;
+    d = normalize(d); const sig = JSON.stringify(d); data = d;
     st.cities = Object.entries(d.cities).map(([id,v]) => ({id, ...v}));
     st.memories = Object.entries(d.memories).map(([id,v]) => ({id, ...v}));
-    st.settings = d.settings; emit();
+    st.settings = d.settings;
+    if(sig !== dataSig){ dataSig = sig; emit(); }
   }
-  const clone = o => JSON.parse(JSON.stringify(o));
   function refs(d){
     const s = new Set();
-    for(const m of Object.values(d.memories || {})){ m.cover?.id && s.add(m.cover.id); (m.slides || []).forEach(x => x.id && s.add(x.id)); m.bgm?.id && s.add(m.bgm.id); }
-    d.settings?.bgm?.id && s.add(d.settings.bgm.id);
+    for(const m of Object.values(d?.memories || {})){
+      m.cover?.id && s.add(m.cover.id);
+      (m.slides || []).forEach(x => x.id && s.add(x.id));
+      m.bgm?.id && s.add(m.bgm.id);
+    }
+    d?.settings?.bgm?.id && s.add(d.settings.bgm.id);
     return s;
   }
-
   function errText(e){
-    const c = e?.code;
+    const c = e?.code || e?.statusCode || e?.status;
+    const raw = String(e?.message || e?.error || '');
     if(e?.msg) return e.msg;
-    if(c === 'no_key') return '这台设备还没有编辑钥匙，请在菜单「编辑钥匙」里输入';
-    if(c === 401 || c === 403) return '编辑钥匙无效或没有写入权限，请在菜单「编辑钥匙」里重新输入';
-    if(c === 404) return '找不到仓库，请检查「编辑钥匙」里的仓库名';
-    if(c === 'quota_exceeded' || c === 'quota_or_state') return '存储空间已满，请删除一些旧照片后再试';
-    if(c === 'invalid_argument' || c === 'not_granted') return '你目前只有查看权限，无法修改';
-    if(c === 'too_large') return '文件太大（单个文件最多 25MB）';
-    if(c === 'unsupported_type') return '不支持这种文件格式';
-    if(c === 'rate_limited' || c === 'resource_exhausted' || c === 429) return '操作太频繁，请稍等一会儿再试';
+    if(c === 'conflict') return '另一台设备刚刚更新了这本书，请稍后再保存一次';
+    if(c === 401 || /jwt|not authenticated/i.test(raw)) return '登录状态已失效，请重新登录';
+    if(c === 403 || /row-level security|permission|policy/i.test(raw)) return '你目前没有执行这个操作的权限';
+    if(c === 404) return '没有找到要读取的星屿数据';
+    if(c === 'too_large' || /maximum allowed size|too large/i.test(raw)) return '文件太大（单个文件最多 25MB）';
+    if(c === 'unsupported_type') return '暂不支持这种文件格式';
+    if(c === 'decode') return '这张照片暂时无法读取，请换成 JPG / PNG 后再试';
+    if(c === 429 || /rate limit|too many/i.test(raw)) return '操作有点频繁，请稍等一会儿再试';
     return '网络有点问题，没有保存成功，请再试一次';
   }
   st.errText = errText;
 
-  /* ════════ GitHub 后端 ════════ */
-  function ghConfig(){
-    let saved = {}; try{ saved = JSON.parse(localStorage.getItem(GH_KEY)) || {}; }catch(e){}
-    const host = location.hostname, seg = location.pathname.split('/').filter(Boolean);
-    const auto = host.endsWith('.github.io') ? { owner: host.split('.')[0], repo: seg[0] && !/\.html?$/.test(seg[0]) ? seg[0] : host } : {};
-    return { owner: saved.owner || auto.owner || '', repo: saved.repo || auto.repo || '', branch: saved.branch || 'main', token: saved.token || '' };
+  function bookId(){ return SB.book?.current?.id || ''; }
+  function bucket(){ return SB.supabase.storage.from(BUCKET); }
+  function mayEdit(role){ return role === 'owner' || role === 'editor'; }
+
+  async function readRow(){
+    const id = bookId(); if(!id) throw new Error('book_not_ready');
+    const {data:row,error} = await SB.supabase.from('book_data').select('payload,revision,updated_at').eq('book_id',id).maybeSingle();
+    if(error) throw error;
+    if(row) return {payload:normalize(row.payload), revision:Number(row.revision)||0, updated_at:row.updated_at};
+    if(!st.canEdit) throw {code:403,msg:'这本书还没有初始化数据'};
+    const seed = {book_id:id,schema_version:1,payload:empty(),revision:0};
+    const {data:created,error:createErr} = await SB.supabase.from('book_data').insert(seed).select('payload,revision,updated_at').single();
+    if(createErr) throw createErr;
+    return {payload:normalize(created.payload),revision:Number(created.revision)||0,updated_at:created.updated_at};
   }
-  function saveGhConfig(c){ try{ localStorage.setItem(GH_KEY, JSON.stringify(c)); }catch(e){} }
-  async function ghApi(path, opts={}){
-    const headers = { 'Accept':'application/vnd.github+json', 'X-GitHub-Api-Version':'2022-11-28', ...(opts.headers || {}) };
-    if(gh.token) headers.Authorization = 'Bearer ' + gh.token;
-    if(opts.body && typeof opts.body !== 'string'){ opts = {...opts, body: JSON.stringify(opts.body)}; headers['Content-Type'] = 'application/json'; }
-    const r = await fetch(API + path, {...opts, headers, cache:'no-store'});
-    if(!r.ok){ const e = {code:r.status}; try{ e.detail = (await r.json()).message; }catch(_){} throw e; }
-    return opts.raw ? r.text() : (r.status === 204 ? null : r.json());
-  }
-  const repoPath = p => `/repos/${gh.owner}/${gh.repo}${p}`;
-  async function ghReadDb(ref){
-    if(gh.token){
-      try{ const t = await ghApi(repoPath(`/contents/data/db.json?ref=${encodeURIComponent(ref || gh.branch)}`), {raw:true, headers:{Accept:'application/vnd.github.raw+json'}}); return JSON.parse(t); }
-      catch(e){ if(e.code === 404) return empty(); throw e; }
+
+  async function signPaths(paths,{notify=false}={}){
+    const soon = Date.now() + 5*60*1000;
+    const need = [...new Set((paths || []).filter(path => path && !preview[path] && !signing.has(path) && (!signed[path] || signed[path].expiresAt < soon)))];
+    if(!need.length) return true;
+    need.forEach(path => signing.add(path));
+    const expiresAt = Date.now() + SIGN_TTL*1000;
+    let changed = false;
+    try{
+      const b = bucket();
+      if(typeof b.createSignedUrls === 'function'){
+        const {data:rows,error} = await b.createSignedUrls(need,SIGN_TTL); if(error) throw error;
+        (rows || []).forEach((row,i) => {
+          const path = row?.path || need[i], url = row?.signedUrl || row?.signedURL;
+          if(path && url){ signed[path] = {url,expiresAt}; changed = true; }
+        });
+      }else{
+        for(const path of need){
+          const {data:row,error} = await b.createSignedUrl(path,SIGN_TTL); if(error) throw error;
+          const url = row?.signedUrl || row?.signedURL;
+          if(url){ signed[path] = {url,expiresAt}; changed = true; }
+        }
+      }
+      return true;
+    }catch(e){
+      console.error('[Starbook signed urls]',e);
+      return false;
+    }finally{
+      need.forEach(path => signing.delete(path));
+      if(changed && notify) emit();
     }
-    const r = await fetch('data/db.json?t=' + Date.now(), {cache:'no-store'});
-    if(r.status === 404) return empty();
-    if(!r.ok) throw {code:r.status};
-    return r.json();
   }
-  async function ghMutate(fn, message){
-    if(!gh.token) throw {code:'no_key'};
-    for(let attempt = 0; attempt < 4; attempt++){
-      const ref = await ghApi(repoPath(`/git/ref/heads/${gh.branch}`));
-      const head = ref.object.sha;
-      const commit = await ghApi(repoPath(`/git/commits/${head}`));
-      const cur = await ghReadDb(head);
-      const next = clone({cities:cur.cities || {}, memories:cur.memories || {}, settings:cur.settings || {}});
-      fn(next);
-      const before = refs(cur), after = refs(next), tree = [];
-      const dbBlob = await ghApi(repoPath('/git/blobs'), {method:'POST', body:{content: JSON.stringify(next, null, 1), encoding:'utf-8'}});
-      tree.push({path:'data/db.json', mode:'100644', type:'blob', sha:dbBlob.sha});
-      for(const id of after) if(!before.has(id) && pending[id]) tree.push({path:'media/' + id, mode:'100644', type:'blob', sha:pending[id]});
-      for(const id of before) if(!after.has(id)) tree.push({path:'media/' + id, mode:'100644', type:'blob', sha:null});
-      const t = await ghApi(repoPath('/git/trees'), {method:'POST', body:{base_tree:commit.tree.sha, tree}});
-      const c = await ghApi(repoPath('/git/commits'), {method:'POST', body:{message: message || '更新星屿之书', tree:t.sha, parents:[head]}});
-      try{ await ghApi(repoPath(`/git/refs/heads/${gh.branch}`), {method:'PATCH', body:{sha:c.sha}}); }
-      catch(e){ if(e.code === 422 || e.code === 409){ await SB.wait(400 + Math.random()*800); continue; } throw e; }
-      for(const id of after) delete pending[id];
-      setData(next); return;
-    }
-    throw {code:'conflict', msg:'另一台设备正在同时保存，请稍后再试'};
-  }
-  async function ghPutFile(blob, ext){
-    if(!gh.token) throw {code:'no_key'};
-    if(blob.size > 25*1024*1024) throw {code:'too_large'};
-    const b64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(blob); });
-    const id = SB.uid() + '.' + ext;
-    const out = await ghApi(repoPath('/git/blobs'), {method:'POST', body:{content:b64, encoding:'base64'}});
-    pending[id] = out.sha;
-    preview[id] = URL.createObjectURL(blob);
-    return id;
-  }
-  async function ghCheck(){
-    if(!gh.owner || !gh.repo) return {ok:false, msg:'还没有填写仓库'};
-    if(!gh.token) return {ok:false, msg:'只读浏览'};
-    try{ const r = await ghApi(repoPath('')); return r.permissions?.push ? {ok:true} : {ok:false, msg:'这把钥匙没有写入权限'}; }
-    catch(e){ return {ok:false, msg: e.code === 401 ? '钥匙无效或已过期' : e.code === 404 ? '找不到仓库（或钥匙没有授权这个仓库）' : '暂时无法连接 GitHub'}; }
-  }
-  async function ghStatus(){
-    const chk = await ghCheck();
-    st.canEdit = st.canUpload = chk.ok;
-    SB.menu?.status(chk.ok ? `GitHub 已连接 · ${gh.owner}/${gh.repo} · 可以编辑` : `只读浏览 · ${chk.msg === '只读浏览' ? '在菜单「编辑钥匙」输入钥匙后即可编辑' : chk.msg}`);
-    SB.menu?.refresh(); emit();
-    return chk;
-  }
-  let polling = 0;
-  function ghPoll(){
-    clearInterval(polling);
-    polling = setInterval(async () => { if(document.hidden || document.querySelector('.sb-modal')) return; try{ setData(await ghReadDb()); }catch(e){} }, 60000);
-    document.addEventListener('visibilitychange', async () => { if(!document.hidden && st.mode === 'gh'){ try{ setData(await ghReadDb()); }catch(e){} } });
+  async function warmUrls(d){ return signPaths([...refs(d)]); }
+
+  async function applyRemote(row){
+    st.revision = Number(row?.revision)||0;
+    await warmUrls(row?.payload || empty());
+    setData(row?.payload || empty());
   }
 
-  /* 编辑钥匙对话框 */
-  st.keyDialog = () => {
-    const c = ghConfig(); let owner, repo, branch, token, msg;
-    SB.ui.dialog({ title:'编辑钥匙', sub:'GITHUB ACCESS',
-      build(b){
-        const p = SB.el('p'); p.style.cssText = 'margin:0;font-size:13px;line-height:1.8;color:var(--text-dim)';
-        p.textContent = '输入 GitHub 访问令牌后，这台设备就可以添加城市、上传照片。钥匙只保存在这台设备的浏览器里，不会写进网页或仓库。';
-        owner = SB.ui.input({type:'text', value:c.owner, placeholder:'GitHub 用户名', autocapitalize:'off', autocomplete:'off', spellcheck:'false'});
-        repo = SB.ui.input({type:'text', value:c.repo, placeholder:'仓库名，例如 starbook', autocapitalize:'off', autocomplete:'off', spellcheck:'false'});
-        branch = SB.ui.input({type:'text', value:c.branch, placeholder:'main', autocapitalize:'off', autocomplete:'off'});
-        token = SB.ui.input({type:'password', value:c.token, placeholder:'github_pat_…', autocapitalize:'off', autocomplete:'off', spellcheck:'false'});
-        const row = SB.el('div','ed-row2'); row.append(SB.ui.field('用户名', owner), SB.ui.field('仓库名', repo));
-        msg = SB.el('p'); msg.style.cssText = 'margin:0;min-height:1.4em;font-size:14px;color:var(--gold-hi)';
-        b.append(p, row, SB.ui.field('钥匙（访问令牌）', token), SB.ui.field('分支', branch), msg);
-      },
-      actions:[
-        {text:'移除钥匙', kind:'danger', async onClick(){ const n = {...ghConfig(), token:''}; saveGhConfig(n); gh = n; await ghStatus(); SB.toast('已移除这台设备的钥匙'); }},
-        'spacer',
-        {text:'取消'},
-        {text:'验证并保存', kind:'primary', async onClick(close, btn){
-          btn.disabled = true; msg.textContent = '正在验证…';
-          const n = { owner:owner.value.trim(), repo:repo.value.trim(), branch:branch.value.trim() || 'main', token:token.value.trim() };
-          gh = n; const chk = await ghStatus(); btn.disabled = false;
-          if(!chk.ok){ msg.textContent = '✕ ' + chk.msg; return false; }
-          saveGhConfig(n); SB.toast('✦ 钥匙已生效，这台设备可以编辑了');
-          try{ setData(await ghReadDb()); }catch(e){}
-        }}
-      ]});
-  };
-
-  /* ════════ Claude 云端后端（在 Claude 里打开时使用） ════════ */
-  async function cloudInit(){
-    st.mode = 'cloud';
-    let user = null;
-    try{ user = await window.claude.use('user'); }catch(e){}
-    try{ const can = user ? await user.can('data.write') : null; st.canEdit = can !== false; }catch(e){ st.canEdit = true; }
-    try{ assets = await window.claude.use('assets'); }catch(e){ assets = null; }
-    st.canUpload = !!assets;
-    SB.menu?.status(st.canEdit ? (st.canUpload ? '已连接云端 · 实时同步' : '已连接云端 · 上传照片需要「编辑者」权限') : '已连接云端 · 只读浏览');
-    const live = empty(); let left = 3, resolve; const first = new Promise(r => resolve = r);
-    const done = () => { setData(live); if(--left === 0) resolve(); };
-    const onErr = e => { console.warn('db', e); SB.toast('云端连接中断，请刷新页面'); };
-    let a = 1, b = 1, c = 1;
-    cloud.collection('cities').onSnapshot(s => { live.cities = Object.fromEntries(s.docs.map(d => [d.id, d.data()])); if(a){ a = 0; done(); } else setData(clone(live)); }, onErr);
-    cloud.collection('memories').onSnapshot(s => { live.memories = Object.fromEntries(s.docs.map(d => [d.id, d.data()])); if(b){ b = 0; done(); } else setData(clone(live)); }, onErr);
-    cloud.doc('settings/main').onSnapshot(s => { live.settings = s.exists ? s.data() : {}; if(c){ c = 0; done(); } else setData(clone(live)); }, onErr);
-    await Promise.race([first, SB.wait(8000)]);
+  async function refreshRemote({silent=false}={}){
+    try{ await applyRemote(await readRow()); }
+    catch(e){ if(!silent) throw e; console.error('[Starbook refresh]',e); }
   }
-  async function cloudMutate(fn){
-    const cur = clone(data), next = clone(data); fn(next);
-    for(const col of ['cities','memories']){
-      for(const [id, v] of Object.entries(next[col])) if(JSON.stringify(v) !== JSON.stringify(cur[col][id])) await cloud.collection(col).doc(id).set(v);
-      for(const id of Object.keys(cur[col])) if(!next[col][id]) await cloud.collection(col).doc(id).delete();
-    }
-    if(JSON.stringify(next.settings) !== JSON.stringify(cur.settings)) await cloud.doc('settings/main').set(next.settings);
-    const after = refs(next); for(const id of refs(cur)) if(!after.has(id)) try{ await assets?.delete(id); }catch(e){}
-    setData(next);
-  }
+  st.refresh = refreshRemote;
 
-  /* ════════ 本机临时后端 ════════ */
-  const local = {
-    read(){ try{ return JSON.parse(localStorage.getItem(LOCAL_KEY)) || empty(); }catch(e){ return empty(); } },
-    write(d){ try{ localStorage.setItem(LOCAL_KEY, JSON.stringify(d)); }catch(e){} }
-  };
-
-  /* ════════ 启动：按环境选择后端 ════════ */
   async function init(){
-    if(window.claude?.use){ try{ cloud = await window.claude.use('db'); }catch(e){ cloud = null; } }
-    if(cloud) return cloudInit();
-    gh = ghConfig();
-    if(gh.owner && gh.repo){
-      st.mode = 'gh';
-      try{ setData(await ghReadDb()); }catch(e){ SB.toast('暂时读取不到数据，请检查网络后刷新'); }
-      await ghStatus(); ghPoll(); return;
-    }
-    st.mode = 'local'; st.canEdit = st.canUpload = true;
-    SB.menu?.status('本机预览：内容只保存在这台设备上');
-    setData(local.read());
+    await SB.runtime.ready;
+    st.mode = 'supabase';
+    st.role = SB.book.current?.role || 'viewer';
+    st.canEdit = mayEdit(st.role); st.canUpload = st.canEdit;
+    SB.menu?.status(`${SB.book.current?.name || '星屿之书'} · ${st.canEdit ? '可以编辑' : '只读浏览'}`);
+    SB.menu?.refresh();
+    await refreshRemote();
+    document.addEventListener('visibilitychange',()=>{
+      if(!document.hidden && st.mode==='supabase' && !document.querySelector('.sb-modal')) refreshRemote({silent:true});
+    });
   }
   st.ready = init();
+  st.isConnected = () => st.mode === 'supabase' && !!SB.user?.current && !!SB.book?.current;
 
-  /* 统一的"修改"入口 */
-  async function mutate(fn, message){
-    if(st.mode === 'gh') return ghMutate(fn, message);
-    if(st.mode === 'cloud') return cloudMutate(fn);
-    const next = clone(data); fn(next); local.write(next); setData(next);
+  async function removeObjects(paths){
+    paths = [...new Set(paths.filter(Boolean))]; if(!paths.length || !st.canUpload) return;
+    try{
+      const {error} = await bucket().remove(paths); if(error) throw error;
+      for(const id of paths){ if(preview[id]){ URL.revokeObjectURL(preview[id]); delete preview[id]; } delete signed[id]; }
+    }catch(e){ console.error('[Starbook storage cleanup]',e); }
   }
-  st.isConnected = () => st.mode !== 'connecting';
 
-  /* ── 业务操作 ── */
+  /* 基于 revision 的轻量冲突检测：保留 JSONB 桥接结构，同时避免两台设备静默覆盖。 */
+  async function mutate(fn){
+    if(!st.canEdit) throw {code:403};
+    for(let attempt=0; attempt<3; attempt++){
+      const cur = await readRow();
+      const next = clone(normalize(cur.payload)); fn(next);
+      const nextRevision = (Number(cur.revision)||0) + 1;
+      const {data:updated,error} = await SB.supabase.from('book_data')
+        .update({payload:next,revision:nextRevision,updated_at:now()})
+        .eq('book_id',bookId()).eq('revision',Number(cur.revision)||0)
+        .select('payload,revision,updated_at').maybeSingle();
+      if(error) throw error;
+      if(updated){
+        const removed = [...refs(cur.payload)].filter(id => !refs(next).has(id));
+        await applyRemote(updated);
+        if(removed.length) removeObjects(removed);
+        return;
+      }
+      await SB.wait(220 + Math.random()*360);
+    }
+    throw {code:'conflict'};
+  }
+
   const strip = o => { const c = {...o}; delete c.id; return JSON.parse(JSON.stringify(c)); };
   st.addCity = async (c) => {
     const name = String(c.name || '').trim();
-    if(!name) throw {code:'empty', msg:'请输入城市名'};
-    if(st.cities.some(x => x.region === c.region && x.name === name)) throw {code:'dup', msg:'这座城市已经点亮过了'};
+    if(!name) throw {code:'empty',msg:'请输入城市名'};
+    if(st.cities.some(x => x.region === c.region && x.name === name)) throw {code:'dup',msg:'这座城市已经点亮过了'};
     const id = SB.uid();
-    await mutate(d => { d.cities[id] = strip({...c, name, createdAt:now()}); }, `点亮 ${c.regionName} · ${name}`);
+    await mutate(d => { d.cities[id] = strip({...c,name,createdAt:now()}); });
     return id;
   };
-  st.updateCity = (id, patch) => mutate(d => { if(d.cities[id]) d.cities[id] = {...d.cities[id], ...patch, updatedAt:now()}; }, '修改城市');
-  st.removeCity = (id) => mutate(d => {
+  st.updateCity = (id,patch) => mutate(d => { if(d.cities[id]) d.cities[id] = {...d.cities[id],...patch,updatedAt:now()}; });
+  st.removeCity = id => mutate(d => {
     delete d.cities[id];
-    for(const [mid, m] of Object.entries(d.memories)) if(m.cityId === id) delete d.memories[mid];
-  }, '删除城市');
-  st.saveMemory = async (m) => {
+    for(const [mid,m] of Object.entries(d.memories)) if(m.cityId === id) delete d.memories[mid];
+  });
+  st.saveMemory = async m => {
     const id = m.id || SB.uid();
-    await mutate(d => { const prev = d.memories[id]; d.memories[id] = strip({...m, createdAt: prev?.createdAt || now(), updatedAt: now()}); }, `回忆 · ${m.title}`);
+    await mutate(d => { const prev=d.memories[id]; d.memories[id]=strip({...m,createdAt:prev?.createdAt||now(),updatedAt:now()}); });
     return id;
   };
-  st.removeMemory = (id) => mutate(d => { delete d.memories[id]; }, '删除回忆');
-  st.saveSettings = (patch) => mutate(d => { d.settings = strip({...d.settings, ...patch}); }, '更新设置');
-  /* 丢弃一个从未保存过的文件（取消编辑时） */
-  st.deleteFile = async (id) => {
-    if(!id) return;
-    if(st.mode === 'gh'){ delete pending[id]; return; }            // 已提交的文件由保存时自动清理
-    if(st.mode === 'cloud'){ if(!refs(data).has(id)) try{ await assets?.delete(id); }catch(e){} return; }
-    if(preview[id]){ URL.revokeObjectURL(preview[id]); delete preview[id]; }
+  st.removeMemory = id => mutate(d => { delete d.memories[id]; });
+  st.saveSettings = patch => mutate(d => { d.settings = strip({...d.settings,...patch}); });
+
+  /* ── Private Storage ── */
+  st.url = id => {
+    if(!id) return '';
+    if(preview[id]) return preview[id];
+    const hit = signed[id];
+    if(hit?.url){
+      if(hit.expiresAt < Date.now()+5*60*1000) signPaths([id],{notify:true});
+      return hit.url;
+    }
+    // 初次签名若曾因弱网失败，组件再次询问 URL 时自动补签；成功后 sb:data 会触发重绘。
+    signPaths([id],{notify:true});
+    return '';
   };
 
-  /* ── 文件 ── */
-  st.url = id => !id ? '' : preview[id] || (st.mode === 'gh' ? 'media/' + id : st.mode === 'cloud' ? '/_blob/' + id : '');
-  async function putFile(blob, ext, type){
-    if(st.mode === 'gh') return ghPutFile(blob, ext);
-    if(st.mode === 'cloud'){
-      if(!assets) throw {code:'not_granted'};
-      try{ return (await assets.upload(blob, {type})).id; }
-      catch(e){ if(e?.code === 'store_unavailable'){ await SB.wait(1200); return (await assets.upload(blob, {type})).id; } throw e; }
-    }
-    const id = 'local-' + SB.uid() + '.' + ext; preview[id] = URL.createObjectURL(blob); return id;
+  st.health = async () => {
+    const result = {
+      connected: st.isConnected(),
+      userId: SB.user?.current?.id || null,
+      bookId: bookId() || null,
+      role: st.role,
+      canEdit: st.canEdit,
+      revision: st.revision,
+      database: false,
+      storage: false
+    };
+    try{ await readRow(); result.database = true; }catch(e){ result.databaseError = errText(e); }
+    try{
+      const probe = `${bookId()}/.healthcheck-never-created`;
+      const {error} = await bucket().createSignedUrl(probe,60);
+      // 对不存在对象，Storage 可能返回错误；只要不是权限/RLS 类错误，就说明 Bucket API 已可访问。
+      if(!error) result.storage = true;
+      else{
+        const raw=String(error?.message||'');
+        result.storage = !/row-level security|permission|unauthorized|jwt/i.test(raw);
+        if(!result.storage) result.storageError = errText(error);
+      }
+    }catch(e){ result.storageError = errText(e); }
+    return result;
+  };
+
+  async function putFile(blob,ext,type,folder){
+    if(!st.canUpload) throw {code:403};
+    if(!blob || blob.size > MAX_FILE) throw {code:'too_large'};
+    const path = `${bookId()}/${folder}/${SB.uid()}.${ext}`;
+    const {error} = await bucket().upload(path,blob,{contentType:type||undefined,cacheControl:'3600',upsert:false});
+    if(error) throw error;
+    preview[path] = URL.createObjectURL(blob);
+    return path;
   }
+
+  st.deleteFile = async id => {
+    if(!id || refs(data).has(id)) return;
+    await removeObjects([id]);
+  };
+
   async function decodeImage(file){
-    try{ return await createImageBitmap(file, {imageOrientation:'from-image'}); }
+    try{ return await createImageBitmap(file,{imageOrientation:'from-image'}); }
     catch(e){
-      return await new Promise((res, rej) => { const img = new Image(); const u = URL.createObjectURL(file);
-        img.onload = () => res(img); img.onerror = () => rej({code:'decode'}); img.src = u; });
+      return await new Promise((res,rej)=>{
+        const img=new Image(),u=URL.createObjectURL(file);
+        img.onload=()=>{ URL.revokeObjectURL(u); res(img); };
+        img.onerror=()=>{ URL.revokeObjectURL(u); rej({code:'decode'}); };
+        img.src=u;
+      });
     }
   }
-  st.uploadImage = async (file, onStep) => {
+  st.uploadImage = async (file,onStep) => {
+    if(!file) throw {code:'unsupported_type'};
     onStep?.('读取中');
-    let img;
-    try{ img = await decodeImage(file); }
-    catch(e){ throw {code:'decode', msg:`「${file.name}」无法读取。iPhone 的 HEIC 照片请在手机上直接选择上传，或先转成 JPG`}; }
-    const w0 = img.width, h0 = img.height, k = Math.min(1, 2400/Math.max(w0, h0));
-    const w = Math.round(w0*k), h = Math.round(h0*k);
-    const c = document.createElement('canvas'); c.width = w; c.height = h;
-    c.getContext('2d').drawImage(img, 0, 0, w, h);
+    let img; try{ img=await decodeImage(file); }
+    catch(e){ throw {code:'decode',msg:`「${file.name}」无法读取。HEIC 如上传失败，请先在手机相册中导出为 JPG`}; }
+    const w0=img.width,h0=img.height,k=Math.min(1,2400/Math.max(w0,h0));
+    const w=Math.max(1,Math.round(w0*k)),h=Math.max(1,Math.round(h0*k));
+    const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
+    canvas.getContext('2d',{alpha:false}).drawImage(img,0,0,w,h); img.close?.();
     onStep?.('压缩中');
-    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', .86));
+    const blob=await new Promise(r=>canvas.toBlob(r,'image/jpeg',.86));
+    if(!blob) throw {code:'decode',msg:'照片压缩失败，请换一张照片后再试'};
     onStep?.('上传中');
-    const id = await putFile(blob, 'jpg', 'image/jpeg');
-    return {id, w, h};
+    return {id:await putFile(blob,'jpg','image/jpeg','images'),w,h};
   };
 
-  /* 音乐：GitHub 和本机直接保存原文件；Claude 云端只收 mp4/webm 容器，其他格式先转成 m4a */
-  async function transcode(file, onStep){
-    if(!window.AudioEncoder) throw {code:'no_encoder'};
-    onStep?.('解码音乐');
-    const buf = await file.arrayBuffer();
-    let ac; try{ ac = new AudioContext({sampleRate:44100}); }catch(e){ ac = new AudioContext(); }
-    const audio = await ac.decodeAudioData(buf); ac.close?.();
-    await SB.loadScript(MUXER);
-    const M = window.Mp4Muxer; if(!M) throw {code:'no_encoder'};
-    const ch = Math.min(2, audio.numberOfChannels), sr = audio.sampleRate;
-    const ok = await AudioEncoder.isConfigSupported({codec:'mp4a.40.2', sampleRate:sr, numberOfChannels:ch, bitrate:160000}).catch(() => ({supported:false}));
-    if(!ok.supported) throw {code:'no_encoder'};
-    const target = new M.ArrayBufferTarget();
-    const muxer = new M.Muxer({target, audio:{codec:'aac', numberOfChannels:ch, sampleRate:sr}, fastStart:'in-memory'});
-    let fail = null;
-    const enc = new AudioEncoder({ output:(chunk, meta) => muxer.addAudioChunk(chunk, meta), error:e => { fail = e; } });
-    enc.configure({codec:'mp4a.40.2', sampleRate:sr, numberOfChannels:ch, bitrate:160000});
-    const frames = 4096, total = audio.length, chans = Array.from({length:ch}, (_,i) => audio.getChannelData(i));
-    for(let off = 0; off < total; off += frames){
-      const n = Math.min(frames, total - off), buf2 = new Float32Array(n*ch);
-      for(let c = 0; c < ch; c++) buf2.set(chans[c].subarray(off, off+n), c*n);
-      enc.encode(new AudioData({format:'f32-planar', sampleRate:sr, numberOfFrames:n, numberOfChannels:ch, timestamp:Math.round(off/sr*1e6), data:buf2}));
-      if(off % (frames*64) === 0){ onStep?.(`转码 ${Math.round(off/total*100)}%`); await SB.wait(0); while(enc.encodeQueueSize > 32) await SB.wait(10); }
-      if(fail) throw {code:'no_encoder'};
-    }
-    await enc.flush(); enc.close(); muxer.finalize();
-    return new Blob([target.buffer], {type:'video/mp4'});
-  }
-  st.uploadAudio = async (file, onStep) => {
-    const name = file.name.replace(/\.[^.]+$/, '');
-    let ext = (file.name.split('.').pop() || '').toLowerCase();
-    if(!['mp3','m4a','aac','wav','mp4','webm'].includes(ext)) throw {code:'audio', msg:'请上传 mp3 或 m4a 格式的音乐'};
-    if(st.mode !== 'cloud'){
-      if(file.size > 25*1024*1024) throw {code:'too_large'};
-      onStep?.('上传中');
-      return {id: await putFile(file, ext, file.type), name};
-    }
-    let blob = file, type = ext === 'webm' ? 'video/webm' : 'video/mp4';
-    if(!['m4a','mp4','aac','webm'].includes(ext)){
-      try{ blob = await transcode(file, onStep); }
-      catch(e){ throw {code:'audio', msg:'这个浏览器无法转换这首歌的格式。请用电脑上的 Chrome 上传，或者上传 m4a 格式'}; }
-    }
-    if(blob.size > 20*1024*1024) throw {code:'too_large'};
+  st.uploadAudio = async (file,onStep) => {
+    if(!file) throw {code:'unsupported_type'};
+    let ext=(file.name.split('.').pop()||'').toLowerCase();
+    const types={mp3:'audio/mpeg',m4a:'audio/mp4',aac:'audio/aac',mp4:'audio/mp4',wav:'audio/wav'};
+    if(!types[ext]) throw {code:'unsupported_type',msg:'周年版本建议上传 mp3 或 m4a 音乐'};
+    if(file.size > 20*1024*1024) throw {code:'too_large',msg:'音乐文件请控制在 20MB 以内'};
     onStep?.('上传中');
-    return {id: await putFile(blob, 'm4a', type), name};
+    const name=file.name.replace(/\.[^.]+$/,'');
+    return {id:await putFile(file,ext,file.type||types[ext],'audio'),name};
   };
 
   /* ── 派生查询 ── */
   st.citiesIn = country => st.cities.filter(c => c.country === country);
-  st.citiesInRegion = region => st.cities.filter(c => c.region === region).sort((a,b) => (a.createdAt||'').localeCompare(b.createdAt||''));
+  st.citiesInRegion = region => st.cities.filter(c => c.region === region).sort((a,b)=>(a.createdAt||'').localeCompare(b.createdAt||''));
   st.city = id => st.cities.find(c => c.id === id);
   st.memory = id => st.memories.find(m => m.id === id);
-  st.memoriesOf = cityId => st.memories.filter(m => m.cityId === cityId).sort((a,b) => (a.date||'').localeCompare(b.date||'') || (a.createdAt||'').localeCompare(b.createdAt||''));
+  st.memoriesOf = cityId => st.memories.filter(m => m.cityId === cityId).sort((a,b)=>(a.date||'').localeCompare(b.date||'') || (a.createdAt||'').localeCompare(b.createdAt||''));
   st.visitedCountries = () => new Set(st.cities.map(c => c.country));
   st.visitedRegions = country => new Set(st.cities.filter(c => c.country === country).map(c => c.region));
   st.stats = () => ({
-    countries: new Set(st.cities.map(c => c.country)).size,
-    regions: new Set(st.cities.map(c => c.region)).size,
-    cities: st.cities.length,
-    memories: st.memories.length,
-    photos: st.memories.reduce((n,m) => n + (m.slides||[]).length, 0)
+    countries:new Set(st.cities.map(c=>c.country)).size,
+    regions:new Set(st.cities.map(c=>c.region)).size,
+    cities:st.cities.length,
+    memories:st.memories.length,
+    photos:st.memories.reduce((n,m)=>n+(m.slides||[]).length,0)
   });
-
-  /* 菜单：编辑钥匙（仅 GitHub 版显示） */
-  SB.menu.icons.key = '<svg viewBox="0 0 24 24"><circle cx="8" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M12 12h9M17.5 12v3.2M20.5 12v2.4" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>';
-  SB.menu.add({id:'key', order:80, icon:'key', label:'编辑钥匙', hidden:() => st.mode !== 'gh',
-    desc:() => st.canEdit ? '这台设备已经可以编辑' : '输入钥匙后才能添加和修改',
-    tag:() => st.canEdit ? '<span class="sb-seg"><span class="on">已连接</span></span>' : '', action:() => st.keyDialog()});
 })(window.SB);
 </script>
 <!-- ████ BLOCK 05-store END ████ -->
@@ -1781,33 +2125,34 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 #gl-canvas.dragging{cursor:grabbing;}
 .gl-head{position:absolute;left:50%;top:calc(18px + var(--safe-t));transform:translateX(-50%);text-align:center;pointer-events:none;
   display:flex;flex-direction:column;align-items:center;gap:4px;width:max-content;max-width:calc(100vw - 32px);}
-.gl-head h1{margin:0;font-family:var(--f-title);font-weight:400;font-size:clamp(24px,3.2vw,38px);letter-spacing:.34em;color:var(--gold-hi);
+.gl-head h1{margin:0;padding-left:.32em;font-family:var(--f-display);font-weight:var(--fw-display);font-size:clamp(24px,3.2vw,38px);letter-spacing:.32em;color:var(--gold-hi);
   text-shadow:0 0 22px rgba(244,184,96,.65);}
-.gl-head p{margin:0;font-size:13px;letter-spacing:.16em;color:#c9c6ea;}
-.gl-head small{font-family:var(--f-rune);font-size:10px;letter-spacing:.4em;color:var(--gold-dim);}
+.gl-head p{margin:0;font-size:13px;letter-spacing:.12em;color:#c9c6ea;}
+.gl-head small{font-family:var(--f-rune);font-weight:500;font-size:10.5px;letter-spacing:.4em;padding-left:.4em;color:var(--gold-dim);}
 .gl-labels{position:absolute;inset:0;pointer-events:none;}
 .gl-cont{position:absolute;left:0;top:0;pointer-events:auto;cursor:pointer;border:0;padding:0;background:none;
   display:flex;flex-direction:column;align-items:center;gap:2px;transition:opacity .3s;will-change:transform,opacity;}
 .gl-cont .orb{position:relative;display:flex;align-items:center;gap:6px;padding:6px 14px 6px 8px;border-radius:999px;
   background:linear-gradient(180deg, rgba(30,26,70,.78), rgba(10,10,30,.78));border:1px solid rgba(255,226,168,.55);
   box-shadow:0 0 18px rgba(244,184,96,.35), inset 0 0 10px rgba(244,184,96,.15);
-  font-family:var(--f-title);font-size:16px;letter-spacing:.18em;color:var(--gold-hi);white-space:nowrap;
+  font-family:var(--f-display);font-weight:var(--fw-display);font-size:15.5px;letter-spacing:.16em;color:var(--gold-hi);white-space:nowrap;
   backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);transition:transform .3s var(--ease-soft), box-shadow .3s;}
 .gl-cont .orb svg{width:18px;height:18px;animation:sbSpin 12s linear infinite;}
-.gl-cont .orb b{font-weight:400;font-size:11px;color:var(--gold);letter-spacing:0;margin-left:2px;}
+.gl-cont .orb b{font-weight:600;font-size:13px;font-family:var(--f-num);color:var(--gold);letter-spacing:0;margin-left:2px;display:inline-flex;align-items:center;gap:2px;}
 .gl-cont:hover .orb,.gl-cont:focus-visible .orb{transform:scale(1.08);box-shadow:0 0 30px rgba(244,184,96,.65), inset 0 0 14px rgba(244,184,96,.3);}
 .gl-cont .stem{width:1px;height:14px;background:linear-gradient(var(--gold), transparent);}
 .gl-cont .dot{width:6px;height:6px;border-radius:50%;background:var(--gold-hi);box-shadow:0 0 10px 3px rgba(244,184,96,.8);}
 .gl-tip{position:absolute;left:0;top:0;pointer-events:none;padding:6px 12px;border-radius:10px;
   background:rgba(12,12,34,.85);border:1px solid var(--line);color:var(--text);font-size:13px;letter-spacing:.08em;white-space:nowrap;
   opacity:0;transition:opacity .2s;box-shadow:0 0 16px rgba(244,184,96,.2);}
-.gl-tip b{font-family:var(--f-title);font-weight:400;font-size:16px;color:var(--gold-hi);margin-right:6px;}
+.gl-tip b{font-family:var(--f-display);font-weight:var(--fw-display);font-size:16px;color:var(--gold-hi);margin-right:6px;}
+.gl-tip .sb-ico{color:var(--gold-hi);margin:0 2px 0 4px;}
 .gl-tip.show{opacity:1;}
 .gl-dock{position:absolute;left:0;right:0;bottom:calc(12px + var(--safe-b));display:none;gap:8px;overflow-x:auto;scrollbar-width:none;
   padding:4px max(16px,var(--safe-l)) 4px max(16px,var(--safe-l));}
 .gl-dock::-webkit-scrollbar{display:none;}
 .gl-dock button{flex:none;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:rgba(14,14,40,.78);
-  color:var(--gold-hi);font-family:var(--f-title);font-size:15px;letter-spacing:.14em;cursor:pointer;}
+  color:var(--gold-hi);font-family:var(--f-display);font-weight:var(--fw-display);font-size:15px;letter-spacing:.12em;cursor:pointer;}
 .gl-hint{position:absolute;right:max(16px,var(--safe-r));bottom:calc(16px + var(--safe-b));font-size:12px;color:var(--text-dim);letter-spacing:.12em;opacity:.7;pointer-events:none;}
 .gl-load{position:absolute;inset:0;display:grid;place-items:center;}
 .gl-load[hidden]{display:none!important;}
@@ -1827,7 +2172,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 
 <script>
 (function(SB){
-  const THREE_URLS = ['https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js', 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js'];
+  const THREE_URLS = ['https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js', 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js', 'https://unpkg.com/three@0.128.0/build/three.min.js'];
   const $ = id => document.getElementById(id);
   const cv = $('gl-canvas'), labelsEl = $('gl-labels'), tip = $('gl-tip');
   let T, renderer, scene, camera, globe, earth, earthMat, texCanvas, tex, idCanvas, idTex, starMat, dustMats = [], cityGroup, starTexture;
@@ -2012,7 +2357,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
     const s = SB.store.stats();
     $('gl-stat').textContent = s.cities ? `已点亮 ${s.countries} 个国家 · ${s.cities} 座城市 · ${s.memories} 段回忆` : '还没有点亮任何地方 · 选一个大洲开始吧';
     const vis = SB.store.visitedCountries();
-    contBtns.forEach(({c, badge}) => { const n = SB.geo.inContinent(c.code).filter(x => vis.has(x.key)).length; badge.textContent = n ? '★' + n : ''; });
+    contBtns.forEach(({c, badge}) => { const n = SB.geo.inContinent(c.code).filter(x => vis.has(x.key)).length; badge.innerHTML = n ? SB.icon('star') + n : ''; });
   }
   document.addEventListener('sb:data', () => {
     refreshStats();
@@ -2047,6 +2392,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   }
   function bindControls(){
     const pts = new Map(); let pinch = 0, moved = 0, lastHover = 0;
+    const tapMoveLimit = SB.perf.touch ? 14 : 6;
     cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); pts.set(e.pointerId, {x:e.clientX, y:e.clientY}); moved = 0; view.idle = 0; cv.classList.add('dragging');
       if(pts.size === 2){ const [a,b] = [...pts.values()]; pinch = Math.hypot(a.x-b.x, a.y-b.y); } });
     cv.addEventListener('pointermove', e => {
@@ -2063,8 +2409,8 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
       setHover(null);
     });
     const up = e => {
-      pts.delete(e.pointerId); if(pts.size < 2) pinch = 0; cv.classList.remove('dragging');
-      if(moved < 6 && e.type === 'pointerup'){
+      pts.delete(e.pointerId); if(pts.size < 2) pinch = 0; if(!pts.size) cv.classList.remove('dragging');
+      if(moved < tapMoveLimit && e.type === 'pointerup'){
         const h = pick(e.clientX, e.clientY);
         if(h?.country){
           if(h.country.key === 'aq') SB.scenes.go('continent', {c:'an'});
@@ -2082,7 +2428,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
     earthMat.uniforms.hk.value = idx; earthMat.uniforms.hc.value = c ? (contIndex[c.cont] || -1) : -1;
     if(!c){ tip.classList.remove('show'); return; }
     const n = SB.store.citiesIn(c.key).length;
-    tip.innerHTML = `<b>${SB.esc(c.zh)}</b>${SB.esc(SB.geo.continent(c.cont)?.name || '')}${n ? ` · ★ ${n} 座城市` : ''}`;
+    tip.innerHTML = `<b>${SB.esc(c.zh)}</b>${SB.esc(SB.geo.continent(c.cont)?.name || '')}${n ? ` · ${SB.icon('star')}${n} 座城市` : ''}`;
     tip.style.transform = `translate(${Math.min(x + 16, innerWidth - tip.offsetWidth - 12)}px, ${y + 18}px)`;
     tip.classList.add('show');
   }
@@ -2147,7 +2493,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 
   SB.menu.add({id:'globe', order:20, icon:'globe', label:'世界星图', desc:'旋转地球，寻找我们的足迹',
     current:() => SB.scenes.current === 'globe',
-    action(){ if(SB.scenes.current === 'book') SB.book.open(); else SB.scenes.go('globe', {}, {transition:'flash'}); } });
+    action(){ if(SB.scenes.current === 'book') SB.magicBook.open(); else SB.scenes.go('globe', {}, {transition:'flash'}); } });
 })(window.SB);
 </script>
 <!-- ████ BLOCK 07-globe END ████ -->
@@ -2160,8 +2506,8 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   padding-left:max(16px,var(--safe-l));padding-right:max(16px,var(--safe-r));max-width:1280px;margin:0 auto;}
 .ct-sigil{position:fixed;left:50%;top:44%;width:120vmin;height:120vmin;margin:-60vmin 0 0 -60vmin;opacity:.08;pointer-events:none;animation:bkSpin 220s linear infinite;}
 .ct-head{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;margin-bottom:22px;}
-.ct-head small{font-family:var(--f-rune);font-size:11px;letter-spacing:.5em;color:var(--gold-dim);}
-.ct-head h1{margin:0;font-family:var(--f-title);font-weight:400;font-size:clamp(38px,6vw,64px);letter-spacing:.3em;color:var(--gold-hi);
+.ct-head small{font-family:var(--f-rune);font-weight:500;font-size:11px;letter-spacing:.42em;padding-left:.42em;color:var(--gold-dim);}
+.ct-head h1{margin:0;padding-left:.28em;font-family:var(--f-display);font-weight:var(--fw-display);font-size:clamp(36px,6vw,60px);letter-spacing:.28em;color:var(--gold-hi);
   text-shadow:0 0 30px rgba(244,184,96,.6), 0 0 2px rgba(255,240,210,.9);}
 .ct-head p{margin:0;color:#c9c6ea;letter-spacing:.14em;font-size:14px;}
 .ct-search{width:min(420px,100%);margin:6px auto 0;position:relative;}
@@ -2181,10 +2527,10 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 .ct-card.lit{border-color:rgba(255,214,150,.6);background:linear-gradient(180deg, rgba(60,44,40,.8), rgba(22,16,30,.8));animation:ctIn .7s var(--ease-soft) backwards, ctBreath 4s ease-in-out infinite;}
 @keyframes ctBreath{0%,100%{box-shadow:0 0 10px rgba(244,184,96,.15)}50%{box-shadow:0 0 26px rgba(244,184,96,.4)}}
 .ct-card canvas{width:100%;aspect-ratio:16/10;display:block;}
-.ct-card .nm{font-family:var(--f-title);font-size:18px;letter-spacing:.08em;color:var(--text);line-height:1.2;}
+.ct-card .nm{font-family:var(--f-display);font-weight:var(--fw-display);font-size:17px;letter-spacing:.08em;color:var(--text);line-height:1.3;}
 .ct-card.lit .nm{color:var(--gold-hi);}
-.ct-card .en{font-size:11px;color:var(--text-dim);letter-spacing:.06em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.ct-card .badge{position:absolute;top:10px;right:10px;padding:2px 9px;border-radius:999px;font-size:12px;color:#2a1608;
+.ct-card .en{font-family:var(--f-num);font-style:italic;font-size:12.5px;color:var(--text-dim);letter-spacing:.03em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ct-card .badge{position:absolute;top:10px;right:10px;padding:2px 9px;border-radius:999px;font-size:13px;font-weight:600;color:#2a1608;display:inline-flex;align-items:center;gap:3px;
   background:linear-gradient(180deg,#ffe7b5,#f4b860);box-shadow:0 0 12px rgba(244,184,96,.6);}
 .ct-none{grid-column:1/-1;padding:40px 0;}
 /* 南极洲：世界尽头 */
@@ -2274,7 +2620,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
       const n = SB.store.citiesIn(c.key).length, lit = n > 0;
       const card = SB.el('button','ct-card' + (lit ? ' lit' : '')); card.type = 'button';
       card.style.animationDelay = Math.min(i*30, 900) + 'ms';
-      card.innerHTML = `<canvas aria-hidden="true"></canvas><span class="nm"></span><span class="en"></span>${lit ? `<span class="badge">★ ${n}</span>` : ''}`;
+      card.innerHTML = `<canvas aria-hidden="true"></canvas><span class="nm"></span><span class="en"></span>${lit ? `<span class="badge sb-num">${SB.icon('star')}${n}</span>` : ''}`;
       card.querySelector('.nm').textContent = c.zh; card.querySelector('.en').textContent = c.en;
       card.addEventListener('click', e => SB.scenes.go('country', {k:c.key}, {transition:'portal', x:e.clientX, y:e.clientY}));
       grid.appendChild(card);
@@ -2296,7 +2642,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   SB.menu.add({id:'continents', order:30, icon:'compass', label:'七大洲', desc:'按大洲翻阅国家目录',
     children:() => { const vis = SB.store.visitedCountries();
       return SB.geo.CONTINENTS.map(c => { const n = SB.geo.inContinent(c.code).filter(x => vis.has(x.key)).length;
-        return {label:c.name, badge: n ? '★' + n : '', scene:'continent', params:{c:c.code}}; }); }});
+        return {label:c.name, badge: n ? String(n) : '', scene:'continent', params:{c:c.code}}; }); }});
 })(window.SB);
 </script>
 <!-- ████ BLOCK 08-continent END ████ -->
@@ -2306,9 +2652,9 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 /* ── 块 09 · 国家地图与省份星星 ── */
 .cm-head{position:absolute;left:50%;top:calc(16px + var(--safe-t));transform:translateX(-50%);text-align:center;pointer-events:none;z-index:3;
   display:flex;flex-direction:column;align-items:center;gap:4px;width:max-content;max-width:calc(100vw - 32px);}
-.cm-head small{font-family:var(--f-rune);font-size:10px;letter-spacing:.4em;color:var(--gold-dim);}
-.cm-head h1{margin:0;font-family:var(--f-title);font-weight:400;font-size:clamp(28px,4vw,46px);letter-spacing:.3em;color:var(--gold-hi);text-shadow:0 0 24px rgba(244,184,96,.65);}
-.cm-head p{margin:0;font-size:13px;letter-spacing:.14em;color:#c9c6ea;}
+.cm-head small{font-family:var(--f-rune);font-weight:500;font-size:10.5px;letter-spacing:.4em;padding-left:.4em;color:var(--gold-dim);}
+.cm-head h1{margin:0;padding-left:.28em;font-family:var(--f-display);font-weight:var(--fw-display);font-size:clamp(28px,4vw,46px);letter-spacing:.28em;color:var(--gold-hi);text-shadow:0 0 24px rgba(244,184,96,.65);}
+.cm-head p{margin:0;font-size:13px;letter-spacing:.1em;color:#c9c6ea;}
 .cm-stage{position:absolute;inset:0;touch-action:none;}
 .cm-halo{position:absolute;left:50%;top:54%;width:80vmin;height:60vmin;transform:translate(-50%,-50%);pointer-events:none;
   background:radial-gradient(closest-side, rgba(244,184,96,.16), rgba(80,90,200,.08) 60%, transparent);filter:blur(10px);}
@@ -2329,7 +2675,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 @keyframes cmPulse{0%,100%{transform:scale(.8);opacity:.75}50%{transform:scale(1.15);opacity:1}}
 @keyframes cmPop{0%{transform:scale(.2);opacity:0}40%{transform:scale(2.6);opacity:1}100%{transform:scale(1);opacity:1}}
 .cm-tools{position:absolute;right:max(16px,var(--safe-r));bottom:calc(16px + var(--safe-b));display:flex;flex-direction:column;gap:8px;z-index:3;}
-.cm-tools button{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:rgba(14,14,40,.8);color:var(--gold-hi);font-size:20px;cursor:pointer;display:grid;place-items:center;}
+.cm-tools button{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:rgba(14,14,40,.8);color:var(--gold-hi);font-size:19px;cursor:pointer;display:grid;place-items:center;}
 .cm-tools button:hover{box-shadow:0 0 16px rgba(244,184,96,.4);}
 .cm-load{position:absolute;inset:0;display:grid;place-items:center;z-index:4;}
 .cm-load[hidden]{display:none!important;}
@@ -2343,23 +2689,23 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   opacity:0;transform:translateY(6px) scale(.96);pointer-events:none;transition:opacity .25s var(--ease-soft), transform .25s var(--ease-soft);}
 .cm-pop.show{opacity:1;transform:none;pointer-events:auto;}
-.cm-pop h4{margin:0;font-family:var(--f-title);font-weight:400;font-size:22px;letter-spacing:.14em;color:var(--gold-hi);}
+.cm-pop h4{margin:0;font-family:var(--f-display);font-weight:var(--fw-display);font-size:21px;letter-spacing:.14em;color:var(--gold-hi);}
 .cm-pop .en{font-size:11px;color:var(--text-dim);letter-spacing:.08em;margin-top:2px;}
 .cm-pop ul{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:2px;max-height:240px;overflow:auto;}
 .cm-pop li{display:flex;align-items:center;gap:6px;}
 .cm-pop .city{flex:1;display:flex;align-items:center;gap:8px;padding:7px 8px;border:0;border-radius:8px;background:none;cursor:pointer;text-align:left;
-  font-family:var(--f-title);font-size:17px;letter-spacing:.08em;color:var(--text);min-width:0;}
+  font-family:var(--f-display);font-weight:var(--fw-display);font-size:16.5px;letter-spacing:.08em;color:var(--text);min-width:0;}
 .cm-pop .city:hover{background:rgba(244,184,96,.1);color:var(--gold-hi);}
 .cm-pop .city svg{width:16px;height:16px;flex:none;filter:drop-shadow(0 0 4px rgba(255,200,110,.9));}
 .cm-pop .city span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.cm-pop .city em{font-style:normal;font-size:11px;color:var(--text-dim);margin-left:auto;font-family:var(--f-body);}
-.cm-pop .edit{width:30px;height:30px;border-radius:50%;border:0;background:none;color:var(--text-dim);cursor:pointer;flex:none;}
+.cm-pop .city em{font-style:normal;font-size:11.5px;color:var(--text-dim);margin-left:auto;font-family:var(--f-body);font-weight:400;letter-spacing:.02em;}
+.cm-pop .edit{width:30px;height:30px;border-radius:50%;border:0;background:none;color:var(--text-dim);cursor:pointer;flex:none;display:grid;place-items:center;font-size:16px;}
 .cm-pop .edit:hover{color:var(--gold-hi);background:rgba(244,184,96,.1);}
 .cm-pop .none{margin:10px 0 0;font-size:13px;color:var(--text-dim);letter-spacing:.06em;}
 .cm-pop .add{margin-top:12px;display:flex;gap:8px;align-items:center;}
 .cm-pop .add .sb-input{font-size:15px;}
-.cm-pop .x{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;border:0;background:none;color:var(--text-dim);font-size:18px;cursor:pointer;display:none;}
-@media (pointer:coarse){ .cm-pop .x{display:block;} }
+.cm-pop .x{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;border:0;background:none;color:var(--text-dim);font-size:16px;cursor:pointer;display:none;place-items:center;}
+@media (pointer:coarse){ .cm-pop .x{display:grid;} }
 @media (max-width:700px){ .cm-head{top:calc(70px + var(--safe-t));} .cm-legend{display:none;} }
 </style>
 
@@ -2380,7 +2726,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   </div>
   <header class="cm-head"><small id="cm-en"></small><h1 id="cm-title"></h1><p id="cm-stat"></p></header>
   <div class="cm-legend"><span><i style="background:#ffe2a8;box-shadow:0 0 8px #f4b860"></i>去过</span><span><i style="background:#7d7466"></i>还没去</span></div>
-  <div class="cm-tools"><button type="button" id="cm-zin" aria-label="放大">＋</button><button type="button" id="cm-zout" aria-label="缩小">－</button><button type="button" id="cm-zreset" aria-label="复位" style="font-size:16px">⟲</button></div>
+  <div class="cm-tools"><button type="button" id="cm-zin" aria-label="放大"></button><button type="button" id="cm-zout" aria-label="缩小"></button><button type="button" id="cm-zreset" aria-label="复位"></button></div>
   <div class="cm-pop" id="cm-pop" role="dialog" aria-label="省份城市"></div>
   <div class="cm-load" id="cm-load" hidden></div>
 </section>
@@ -2391,6 +2737,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   const NS = 'http://www.w3.org/2000/svg';
   const svg = $('cm-svg'), view = $('cm-view'), pop = $('cm-pop');
   const STAR = '<svg viewBox="-10 -10 20 20" aria-hidden="true"><path d="M0 -10 L1.8 -1.8 L10 0 L1.8 1.8 L0 10 L-1.8 1.8 L-10 0 L-1.8 -1.8Z" fill="#ffe2a8"/></svg>';
+  $('cm-zin').innerHTML = SB.icon('plus'); $('cm-zout').innerHTML = SB.icon('minus'); $('cm-zreset').innerHTML = SB.icon('reset');
   const S = { k:null, country:null, map:null, regions:[], fit:null, vb:null, pathEls:{}, starEls:{}, hot:null, hideT:0, token:0 };
 
   /* ── 坐标拟合与缩放 ── */
@@ -2486,7 +2833,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   function buildPop(r){
     const cities = SB.store.citiesInRegion(r.key);
     pop.innerHTML = '';
-    const x = SB.el('button','x'); x.type = 'button'; x.setAttribute('aria-label','关闭'); x.textContent = '×'; x.addEventListener('click', () => hidePop(true));
+    const x = SB.el('button','x'); x.type = 'button'; x.setAttribute('aria-label','关闭'); x.innerHTML = SB.icon('close'); x.addEventListener('click', () => hidePop(true));
     const h = SB.el('h4'); h.textContent = r.name;
     pop.append(x, h);
     if(r.en && r.en !== r.name){ const en = SB.el('div','en'); en.textContent = r.en; pop.appendChild(en); }
@@ -2500,7 +2847,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
         b.addEventListener('click', e => { hidePop(true); SB.scenes.go('city', {id:c.id}, {transition:'portal', x:e.clientX, y:e.clientY}); });
         li.appendChild(b);
         if(SB.store.canEdit){
-          const ed = SB.el('button','edit'); ed.type = 'button'; ed.setAttribute('aria-label', '编辑 ' + c.name); ed.textContent = '✎';
+          const ed = SB.el('button','edit'); ed.type = 'button'; ed.setAttribute('aria-label', '编辑 ' + c.name); ed.innerHTML = SB.icon('quill');
           ed.addEventListener('click', () => editCity(c)); li.appendChild(ed);
         }
         ul.appendChild(li);
@@ -2509,7 +2856,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
     }else{ const p = SB.el('p','none'); p.textContent = '这里还没有我们的足迹'; pop.appendChild(p); }
     if(SB.store.canEdit){
       const add = SB.el('div','add');
-      const btn = SB.ui.button('＋ 添加城市', 'small');
+      const btn = SB.ui.button('添加城市', 'small', null, 'plus');
       btn.addEventListener('click', () => {
         add.innerHTML = '';
         const inp = SB.ui.input({type:'text', placeholder:'城市名，例如：成都', maxlength:'30', 'aria-label':'城市名'});
@@ -2519,7 +2866,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
           try{
             const lon = r.lonlat?.[0] ?? S.country.mid?.[0], lat = r.lonlat?.[1] ?? S.country.mid?.[1];
             await SB.store.addCity({country:S.k, countryName:S.country.zh, region:r.key, regionName:r.name, name:inp.value, lon, lat});
-            SB.toast(`✦ ${inp.value.trim()} 已点亮`);
+            SB.toast(`${inp.value.trim()} 已点亮`);
             SB.fx.burst(500);
             paint(r.key); buildPop(r);
           }catch(e){ SB.toast(e.msg || SB.store.errText(e)); ok.disabled = false; }
@@ -2551,6 +2898,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 
   /* ── 指针：悬停、点按、拖拽、缩放 ── */
   const ptrs = new Map(); let pinch = 0, moved = 0;
+  const tapMoveLimit = SB.perf.touch ? 14 : 6;
   svg.addEventListener('pointerover', e => {
     if(e.pointerType !== 'mouse' || ptrs.size) return;
     const key = e.target.dataset?.key; if(key) showPop(key);
@@ -2569,7 +2917,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   });
   const up = e => {
     const p = ptrs.get(e.pointerId); ptrs.delete(e.pointerId); if(ptrs.size < 2) pinch = 0; svg.classList.remove('dragging');
-    if(p && moved < 6 && e.type === 'pointerup'){
+    if(p && moved < tapMoveLimit && e.type === 'pointerup'){
       // 手机点按 / 鼠标点击：打开悬浮窗
       const el = document.elementFromPoint(e.clientX, e.clientY), key = el?.dataset?.key;
       if(key) showPop(key, e.pointerType === 'mouse' ? null : null); else hidePop(true);
@@ -2631,13 +2979,13 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 <style>
 /* ── 块 10 · 城市回忆目录（时间线） ── */
 .sb-scene[data-scene="city"]{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}
-.ca-ghost{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);font-family:var(--f-title);font-size:min(34vw,320px);line-height:1;white-space:nowrap;
+.ca-ghost{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);font-family:var(--f-display);font-weight:900;font-size:min(34vw,320px);line-height:1;white-space:nowrap;
   color:transparent;-webkit-text-stroke:1px rgba(244,184,96,.09);text-shadow:0 0 80px rgba(244,184,96,.06);pointer-events:none;letter-spacing:.1em;}
 .ca-wrap{position:relative;padding-block:calc(84px + var(--safe-t)) calc(50px + var(--safe-b));
   padding-left:max(16px,var(--safe-l));padding-right:max(16px,var(--safe-r));max-width:1100px;margin:0 auto;}
 .ca-head{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;margin-bottom:30px;}
-.ca-head small{font-family:var(--f-rune);font-size:11px;letter-spacing:.45em;color:var(--gold-dim);}
-.ca-head h1{margin:0;font-family:var(--f-title);font-weight:400;font-size:clamp(40px,7vw,72px);letter-spacing:.24em;color:var(--gold-hi);text-shadow:0 0 30px rgba(244,184,96,.6);}
+.ca-head small{font-family:var(--f-rune);font-weight:500;font-size:11.5px;letter-spacing:.36em;padding-left:.36em;color:var(--gold-dim);}
+.ca-head h1{margin:0;padding-left:.22em;font-family:var(--f-display);font-weight:var(--fw-display);font-size:var(--fs-hero);letter-spacing:.22em;color:var(--gold-hi);text-shadow:0 0 30px rgba(244,184,96,.6);}
 .ca-head p{margin:0;color:#c9c6ea;letter-spacing:.14em;font-size:14px;}
 .ca-line{position:relative;display:flex;flex-direction:column;gap:34px;}
 .ca-line::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:2px;transform:translateX(-50%);
@@ -2647,7 +2995,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 .ca-row.r > .ca-card{grid-column:3;justify-self:start;}
 .ca-node{grid-column:2;grid-row:1;justify-self:center;display:flex;flex-direction:column;align-items:center;gap:4px;z-index:1;}
 .ca-node i{width:14px;height:14px;transform:rotate(45deg);background:var(--gold-hi);box-shadow:0 0 14px 4px rgba(244,184,96,.7);}
-.ca-node span{font-family:var(--f-title);font-size:13px;letter-spacing:.1em;color:var(--gold);white-space:nowrap;background:rgba(10,10,28,.85);padding:2px 8px;border-radius:999px;}
+.ca-node span{font-family:var(--f-num);font-weight:600;font-size:14px;letter-spacing:.06em;color:var(--gold);white-space:nowrap;background:rgba(10,10,28,.85);padding:2px 8px;border-radius:999px;}
 .ca-card{position:relative;width:min(420px,100%);border-radius:14px;cursor:pointer;text-align:left;padding:12px;border:1px solid rgba(244,184,96,.3);
   background:linear-gradient(180deg, rgba(40,32,60,.8), rgba(14,12,30,.85));box-shadow:0 14px 34px rgba(0,0,0,.45);
   transition:transform .4s var(--ease-soft), box-shadow .4s, border-color .4s;animation:ctIn .8s var(--ease-soft) backwards;}
@@ -2658,20 +3006,21 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 .ca-card:hover .ca-cover img{transform:scale(1.06);}
 .ca-cover::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 1px rgba(255,226,168,.55), inset 0 0 40px rgba(0,0,0,.5);pointer-events:none;border-radius:8px;}
 .ca-meta{display:flex;flex-direction:column;gap:4px;padding:12px 4px 2px;}
-.ca-meta h3{margin:0;font-family:var(--f-title);font-weight:400;font-size:21px;letter-spacing:.08em;color:var(--gold-hi);line-height:1.35;}
-.ca-meta p{margin:0;font-size:13px;color:var(--text-dim);letter-spacing:.06em;display:flex;gap:12px;flex-wrap:wrap;}
+.ca-meta h3{margin:0;font-family:var(--f-display);font-weight:var(--fw-display);font-size:19px;letter-spacing:.06em;color:var(--gold-hi);line-height:1.45;}
+.ca-meta p{margin:0;font-size:13px;color:var(--text-dim);letter-spacing:.04em;display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+.ca-meta p span{display:inline-flex;align-items:center;gap:4px;}
 .ca-edit{position:absolute;top:18px;right:18px;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:rgba(10,10,28,.75);
   color:var(--gold-hi);cursor:pointer;display:grid;place-items:center;z-index:2;opacity:.85;}
 .ca-edit:hover{opacity:1;box-shadow:0 0 14px rgba(244,184,96,.5);}
 .ca-edit svg{width:18px;height:18px;}
 .ca-new{min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;border-style:dashed;
-  font-family:var(--f-title);letter-spacing:.18em;color:var(--gold-hi);font-size:20px;}
-.ca-new b{font-weight:400;font-size:44px;line-height:1;text-shadow:0 0 20px rgba(244,184,96,.8);}
+  font-family:var(--f-display);font-weight:var(--fw-display);letter-spacing:.18em;color:var(--gold-hi);font-size:19px;}
+.ca-new b{font-weight:400;font-size:40px;line-height:1;filter:drop-shadow(0 0 10px rgba(244,184,96,.8));display:grid;place-items:center;}
 .ca-empty{margin:20px auto 0;width:min(460px,100%);aspect-ratio:3/4;max-height:56vh;border-radius:6px 12px 12px 6px;
   background:radial-gradient(60% 45% at 50% 45%, rgba(255,232,176,.9), rgba(255,200,120,.35) 50%, transparent 80%), #e9d6aa;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:#6b3a12;text-align:center;padding:24px;
   box-shadow:0 20px 50px rgba(0,0,0,.5), 0 0 40px rgba(244,184,96,.25);}
-.ca-empty p{margin:0;font-family:var(--f-title);font-size:22px;letter-spacing:.14em;line-height:1.8;}
+.ca-empty p{margin:0;font-family:var(--f-display);font-weight:var(--fw-display);font-size:21px;letter-spacing:.14em;line-height:1.9;}
 @media (max-width:760px){
   .ca-line::before{left:14px;}
   .ca-row,.ca-row.r{grid-template-columns:28px 1fr;gap:0 12px;}
@@ -2708,14 +3057,14 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
       const e = SB.el('div','ca-empty');
       const p = SB.el('p'); p.innerHTML = '这里还没有回忆<br>写下第一页吧';
       e.appendChild(p);
-      if(SB.store.canEdit) e.appendChild(SB.ui.button('＋ 新的回忆', 'primary', () => SB.editor.open({cityId})));
+      if(SB.store.canEdit) e.appendChild(SB.ui.button('新的回忆', 'primary', () => SB.editor.open({cityId}), 'plus'));
       body.appendChild(e); return;
     }
     const line = SB.el('div','ca-line');
     if(SB.store.canEdit){
       const row = SB.el('div','ca-row');
       const n = SB.el('div','ca-node','<i></i><span>新的一页</span>');
-      const card = SB.el('button','ca-card ca-new','<b>＋</b>新的回忆'); card.type = 'button';
+      const card = SB.el('button','ca-card ca-new',`<b>${SB.icon('plus')}</b>新的回忆`); card.type = 'button';
       card.addEventListener('click', () => SB.editor.open({cityId}));
       row.append(card, n); line.appendChild(row);
     }
@@ -2726,8 +3075,8 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
       card.style.animationDelay = (i*80) + 'ms';
       const cover = m.cover?.id || m.slides?.[0]?.id;
       card.innerHTML = `<div class="ca-cover">${cover ? `<img alt="" loading="lazy" src="${SB.esc(SB.store.url(cover))}">` : ''}</div>
-        <div class="ca-meta"><h3></h3><p><span>${SB.esc(SB.fmtDate(m.date))}</span><span>${(m.slides||[]).length} 张照片</span>${m.bgm || m.bgmMode === 'global' ? '<span>♪ 背景音乐</span>' : ''}</p></div>`;
-      card.querySelector('h3').textContent = m.title;
+        <div class="ca-meta"><h3></h3><p><span>${SB.esc(SB.fmtDate(m.date))}</span><span>${(m.slides||[]).length} 张照片</span>${m.bgm || m.bgmMode === 'global' ? `<span>${SB.icon('note')}背景音乐</span>` : ''}</p></div>`;
+      card.querySelector('h3').textContent = SB.fmtTitle(m.title);
       const open = e => SB.scenes.go('player', {id:m.id}, {transition:'portal', x:e.clientX || innerWidth/2, y:e.clientY || innerHeight/2});
       card.addEventListener('click', open);
       card.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); open(e); } });
@@ -2772,16 +3121,16 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 @keyframes plDust{0%{opacity:0;transform:translateX(-40%)}30%{opacity:1}100%{opacity:0;transform:translateX(40%)}}
 .pl-vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 45%, transparent 55%, rgba(0,0,0,.7));}
 .pl-cap{position:absolute;left:50%;bottom:calc(86px + var(--safe-b));transform:translateX(-50%);width:min(820px, calc(100vw - 32px));text-align:center;
-  font-family:var(--f-title);font-size:clamp(18px,2.4vw,26px);letter-spacing:.12em;line-height:1.7;color:#fff6e4;
+  font-family:var(--f-display);font-weight:var(--fw-display);font-size:clamp(17px,2.3vw,25px);letter-spacing:.1em;line-height:1.75;color:#fff6e4;
   text-shadow:0 0 18px rgba(244,184,96,.7), 0 2px 8px rgba(0,0,0,.9);pointer-events:none;}
 .pl-cap span{opacity:0;animation:plChar .6s forwards;}
 @keyframes plChar{from{opacity:0;filter:blur(4px)}to{opacity:1;filter:none}}
 .pl-title{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:0 24px;
   opacity:0;transition:opacity 1.2s var(--ease-soft);pointer-events:none;}
 .pl-title.on{opacity:1;}
-.pl-title small{font-family:var(--f-rune);font-size:12px;letter-spacing:.5em;color:var(--gold);}
-.pl-title h2{margin:0;font-family:var(--f-title);font-weight:400;font-size:clamp(34px,6vw,64px);letter-spacing:.18em;color:var(--gold-hi);text-shadow:0 0 40px rgba(244,184,96,.7);}
-.pl-title p{margin:0;max-width:34em;color:#e9dcc4;line-height:1.9;letter-spacing:.08em;font-size:15px;}
+.pl-title small{font-family:var(--f-num);font-weight:600;font-size:15px;letter-spacing:.3em;padding-left:.3em;color:var(--gold);}
+.pl-title h2{margin:0;padding-left:.16em;font-family:var(--f-display);font-weight:var(--fw-display);font-size:clamp(30px,5.6vw,60px);letter-spacing:.16em;line-height:1.3;color:var(--gold-hi);text-shadow:0 0 40px rgba(244,184,96,.7);}
+.pl-title p{margin:0;max-width:30em;color:#e9dcc4;line-height:1.9;letter-spacing:.06em;font-size:15.5px;}
 .pl-title i{width:min(320px,60vw);height:1px;background:linear-gradient(90deg, transparent, var(--gold), transparent);}
 .pl-ui{position:absolute;left:0;right:0;bottom:0;padding:14px max(16px,var(--safe-r)) calc(16px + var(--safe-b)) max(16px,var(--safe-l));
   background:linear-gradient(transparent, rgba(0,0,0,.6));display:flex;flex-direction:column;gap:12px;transition:opacity .5s;z-index:3;}
@@ -2799,7 +3148,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 .pl-ctl svg{width:20px;height:20px;}
 .pl-top{position:absolute;top:calc(14px + var(--safe-t));right:max(14px,var(--safe-r));z-index:3;display:flex;gap:8px;transition:opacity .5s;}
 .pl-top .sb-btn{background:rgba(10,10,28,.6);}
-.pl-count{position:absolute;top:calc(22px + var(--safe-t));left:50%;transform:translateX(-50%);font-family:var(--f-rune);font-size:12px;letter-spacing:.3em;color:var(--gold);z-index:3;transition:opacity .5s;}
+.pl-count{position:absolute;top:calc(22px + var(--safe-t));left:50%;transform:translateX(-50%);font-family:var(--f-num);font-weight:600;font-size:15px;letter-spacing:.24em;color:var(--gold);z-index:3;transition:opacity .5s;}
 .sb-scene[data-scene="player"].idle .pl-count{opacity:0;}
 @media (max-width:600px){ .pl-img{padding:calc(64px + var(--safe-t)) 12px calc(170px + var(--safe-b));} }
 @media (prefers-reduced-motion:reduce){ .pl-img.on img{animation:none;} }
@@ -2949,8 +3298,8 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 
   function start(m){
     P.m = m; P.i = -1; P.last = 0;
-    $('pl-tdate').textContent = SB.fmtDate(m.date).toUpperCase();
-    $('pl-th').textContent = m.title; $('pl-tnote').textContent = m.note || '';
+    $('pl-tdate').textContent = SB.fmtDate(m.date);
+    $('pl-th').textContent = SB.fmtTitle(m.title); $('pl-tnote').textContent = m.note || '';
     const bars = $('pl-bars'); bars.innerHTML = '';
     (m.slides || []).forEach((s, k) => { const b = SB.el('b', '', '<i></i>'); b.addEventListener('click', () => { go(k); wake(); }); bars.appendChild(b); });
     const top = $('pl-top'); top.innerHTML = '';
@@ -2992,7 +3341,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 .ed-drop{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:20px;border-radius:12px;cursor:pointer;
   border:1.5px dashed rgba(244,184,96,.45);background:rgba(244,184,96,.04);text-align:center;transition:background .3s, border-color .3s;}
 .ed-drop:hover,.ed-drop.over{background:rgba(244,184,96,.1);border-color:var(--gold-hi);}
-.ed-drop b{font-family:var(--f-title);font-weight:400;font-size:18px;letter-spacing:.14em;color:var(--gold-hi);}
+.ed-drop b{font-family:var(--f-display);font-weight:var(--fw-display);font-size:17px;letter-spacing:.14em;color:var(--gold-hi);display:inline-flex;align-items:center;gap:8px;}
 .ed-drop span{font-size:12px;color:var(--text-dim);}
 .ed-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;}
 .ed-list{display:flex;flex-direction:column;gap:8px;}
@@ -3000,10 +3349,10 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 .ed-slide.cover{border-color:rgba(255,226,168,.7);box-shadow:0 0 14px rgba(244,184,96,.25);}
 .ed-thumb{position:relative;width:76px;height:76px;border-radius:8px;overflow:hidden;background:#151230;display:grid;place-items:center;font-size:11px;color:var(--text-dim);text-align:center;}
 .ed-thumb img{width:100%;height:100%;object-fit:cover;}
-.ed-thumb .star{position:absolute;top:3px;left:3px;font-size:12px;color:#2a1608;background:var(--gold-hi);border-radius:999px;padding:0 6px;}
+.ed-thumb .star{position:absolute;top:4px;left:4px;font-size:12px;line-height:1;color:#2a1608;background:var(--gold-hi);border-radius:999px;padding:3px 5px;display:grid;place-items:center;}
 .ed-slide textarea{min-height:52px;font-size:14px;}
 .ed-ops{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
-.ed-ops button{width:32px;height:32px;border-radius:8px;border:1px solid rgba(244,184,96,.25);background:none;color:var(--text-dim);cursor:pointer;font-size:14px;}
+.ed-ops button{width:32px;height:32px;border-radius:8px;border:1px solid rgba(244,184,96,.25);background:none;color:var(--text-dim);cursor:pointer;font-size:15px;display:grid;place-items:center;}
 .ed-ops button:hover{color:var(--gold-hi);border-color:var(--line);}
 .ed-ops button.on{color:#2a1608;background:var(--gold-hi);}
 .ed-music{display:flex;flex-direction:column;gap:8px;}
@@ -3054,7 +3403,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
           body.append(row, SB.ui.field('一段话', note));
 
           // 照片
-          const drop = SB.el('label','ed-drop', '<b>＋ 添加照片</b><span>点击选择或把照片拖到这里，可一次选多张；会自动压缩后上传</span>');
+          const drop = SB.el('label','ed-drop', `<b>${SB.icon('plus')}添加照片</b><span>点击选择或把照片拖到这里，可一次选多张；会自动压缩后上传</span>`);
           const fin = SB.el('input'); fin.type = 'file'; fin.accept = 'image/*'; fin.multiple = true; fin.setAttribute('aria-label','选择照片');
           drop.appendChild(fin);
           fin.addEventListener('change', () => { addFiles([...fin.files]); fin.value = ''; });
@@ -3084,7 +3433,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
             }
             if(SB.store.canUpload){
               const up = SB.el('label','sb-btn small'); up.style.position = 'relative'; up.textContent = st.bgm ? '换一首' : '上传音乐';
-              const ai = SB.el('input'); ai.type = 'file'; ai.accept = 'audio/*,.mp3,.m4a,.aac,.wav,.ogg,.flac'; ai.style.cssText = 'position:absolute;inset:0;opacity:0;cursor:pointer';
+              const ai = SB.el('input'); ai.type = 'file'; ai.accept = 'audio/*,.mp3,.m4a,.aac,.wav,.mp4'; ai.style.cssText = 'position:absolute;inset:0;opacity:0;cursor:pointer';
               ai.addEventListener('change', async () => {
                 const f = ai.files[0]; if(!f) return; ai.value = '';
                 st.uploading++; refresh();
@@ -3095,7 +3444,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
               });
               up.appendChild(ai); track.appendChild(up);
             }
-            const n = SB.el('p','ed-note'); n.style.width = '100%'; n.textContent = '支持 mp3、m4a 等常见格式，单首不超过 20MB；mp3 会在浏览器里自动转换。'; track.appendChild(n);
+            const n = SB.el('p','ed-note'); n.style.width = '100%'; n.textContent = '周年版本建议使用 mp3 或 m4a，单首不超过 20MB；上传后直接私密保存到星屿存储。'; track.appendChild(n);
           };
           renderTrack(); renderList();
         },
@@ -3116,7 +3465,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
               bgmMode: st.bgmMode, bgm: st.bgmMode === 'own' ? st.bgm : null };
             try{ await SB.store.saveMemory(data); }
             catch(e){ SB.toast(SB.store.errText(e)); btn.disabled = false; return false; }
-            cleanup(true, data); SB.toast('✦ 回忆已收进星屿之书'); SB.fx.burst(600);
+            cleanup(true, data); SB.toast('回忆已收进星屿之书'); SB.fx.burst(600);
           }}
         ],
         onClose(){ preview?.pause(); if(!done) cleanup(false); }
@@ -3155,16 +3504,16 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
         const row = SB.el('div','ed-slide' + (s.id && s.id === st.cover ? ' cover' : ''));
         const th = SB.el('div','ed-thumb');
         if(s.pending) th.textContent = s.step || '上传中';
-        else th.innerHTML = `<img alt="" src="${SB.esc(SB.store.url(s.id))}">${s.id === st.cover ? '<span class="star">★</span>' : ''}`;
+        else th.innerHTML = `<img alt="" src="${SB.esc(SB.store.url(s.id))}">${s.id === st.cover ? `<span class="star">${SB.icon('star')}</span>` : ''}`;
         const cap = SB.ui.input({multiline:true, maxlength:'120', placeholder:'这张照片的故事（放映时逐字出现）', 'aria-label':'照片描述'});
         cap.value = s.caption || ''; cap.disabled = !!s.pending; cap.addEventListener('input', () => s.caption = cap.value);
         const ops = SB.el('div','ed-ops');
-        const mk = (t, label, fn, on) => { const b = SB.el('button', on ? 'on' : ''); b.type = 'button'; b.textContent = t; b.title = label; b.setAttribute('aria-label', label); b.disabled = !!s.pending; b.addEventListener('click', fn); ops.appendChild(b); };
+        const mk = (t, label, fn, on) => { const b = SB.el('button', on ? 'on' : ''); b.type = 'button'; b.innerHTML = SB.icon(t); b.title = label; b.setAttribute('aria-label', label); b.disabled = !!s.pending; b.addEventListener('click', fn); ops.appendChild(b); };
         const at = () => st.slides.indexOf(s);
-        mk('↑', '上移', () => { const i = at(); if(i > 0){ [st.slides[i-1], st.slides[i]] = [st.slides[i], st.slides[i-1]]; renderList(); } });
-        mk('↓', '下移', () => { const i = at(); if(i < st.slides.length-1){ [st.slides[i+1], st.slides[i]] = [st.slides[i], st.slides[i+1]]; renderList(); } });
-        mk('★', '设为封面', () => { st.cover = s.id; renderList(); }, s.id === st.cover);
-        mk('✕', '移除', () => { st.slides.splice(at(), 1); if(st.cover === s.id) st.cover = st.slides.find(x => x.id)?.id || null; renderList(); });
+        mk('up', '上移', () => { const i = at(); if(i > 0){ [st.slides[i-1], st.slides[i]] = [st.slides[i], st.slides[i-1]]; renderList(); } });
+        mk('down', '下移', () => { const i = at(); if(i < st.slides.length-1){ [st.slides[i+1], st.slides[i]] = [st.slides[i], st.slides[i+1]]; renderList(); } });
+        mk('star', '设为封面', () => { st.cover = s.id; renderList(); }, s.id === st.cover);
+        mk('close', '移除', () => { st.slides.splice(at(), 1); if(st.cover === s.id) st.cover = st.slides.find(x => x.id)?.id || null; renderList(); });
         row.append(th, cap, ops);
         Object.defineProperty(s, '_row', {value:row, configurable:true, writable:true});
         Object.defineProperty(s, '_th', {value:th, configurable:true, writable:true});
@@ -3189,32 +3538,32 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 .ov-wrap{padding-block:calc(84px + var(--safe-t)) calc(50px + var(--safe-b));padding-left:max(16px,var(--safe-l));padding-right:max(16px,var(--safe-r));
   max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:34px;}
 .ov-head{text-align:center;display:flex;flex-direction:column;gap:6px;align-items:center;}
-.ov-head small{font-family:var(--f-rune);font-size:11px;letter-spacing:.45em;color:var(--gold-dim);}
-.ov-head h1{margin:0;font-family:var(--f-title);font-weight:400;font-size:clamp(36px,6vw,60px);letter-spacing:.28em;color:var(--gold-hi);text-shadow:0 0 30px rgba(244,184,96,.6);}
+.ov-head small{font-family:var(--f-rune);font-weight:500;font-size:11.5px;letter-spacing:.4em;padding-left:.4em;color:var(--gold-dim);}
+.ov-head h1{margin:0;padding-left:.26em;font-family:var(--f-display);font-weight:var(--fw-display);font-size:clamp(34px,6vw,58px);letter-spacing:.26em;color:var(--gold-hi);text-shadow:0 0 30px rgba(244,184,96,.6);}
 .ov-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
 .ov-stat{display:flex;flex-direction:column;align-items:center;gap:4px;padding:18px 8px;border-radius:14px;border:1px solid rgba(244,184,96,.25);
   background:radial-gradient(80% 80% at 50% 0%, rgba(244,184,96,.12), transparent 70%), rgba(14,14,40,.6);}
-.ov-stat b{font-family:var(--f-rune);font-weight:400;font-size:clamp(30px,5vw,48px);color:var(--gold-hi);text-shadow:0 0 22px rgba(244,184,96,.7);font-variant-numeric:tabular-nums;}
-.ov-stat span{font-family:var(--f-title);font-size:14px;letter-spacing:.2em;color:var(--text-dim);}
-.ov-sec h2{margin:0 0 14px;font-family:var(--f-title);font-weight:400;font-size:22px;letter-spacing:.2em;color:var(--gold-hi);display:flex;align-items:center;gap:12px;}
+.ov-stat b{font-family:var(--f-num);font-weight:600;font-size:clamp(38px,6vw,58px);line-height:1;color:var(--gold-hi);text-shadow:0 0 22px rgba(244,184,96,.7);font-variant-numeric:lining-nums tabular-nums;}
+.ov-stat span{font-family:var(--f-display);font-weight:var(--fw-display);font-size:13.5px;letter-spacing:.2em;padding-left:.2em;color:var(--text-dim);}
+.ov-sec h2{margin:0 0 14px;font-family:var(--f-display);font-weight:var(--fw-display);font-size:21px;letter-spacing:.18em;color:var(--gold-hi);display:flex;align-items:center;gap:12px;}
 .ov-sec h2::after{content:"";flex:1;height:1px;background:linear-gradient(90deg, var(--line), transparent);}
 .ov-recent{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin;}
 .ov-mem{flex:none;width:200px;border:0;padding:0;background:none;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:8px;}
 .ov-mem .im{aspect-ratio:4/3;border-radius:10px;overflow:hidden;background:#151230;box-shadow:inset 0 0 0 1px rgba(255,226,168,.5), 0 10px 24px rgba(0,0,0,.4);transition:box-shadow .3s, transform .3s;}
 .ov-mem:hover .im{transform:translateY(-3px);box-shadow:inset 0 0 0 1px rgba(255,226,168,.9), 0 0 24px rgba(244,184,96,.35);}
 .ov-mem img{width:100%;height:100%;object-fit:cover;display:block;}
-.ov-mem b{font-family:var(--f-title);font-weight:400;font-size:16px;color:var(--text);letter-spacing:.06em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ov-mem b{font-family:var(--f-display);font-weight:var(--fw-display);font-size:15.5px;color:var(--text);letter-spacing:.06em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .ov-mem span{font-size:12px;color:var(--text-dim);}
 .ov-tree{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;}
 .ov-country{padding:14px 16px;border-radius:14px;border:1px solid rgba(244,184,96,.22);background:rgba(14,14,40,.55);}
-.ov-country h3{margin:0 0 8px;font-family:var(--f-title);font-weight:400;font-size:20px;letter-spacing:.12em;color:var(--gold-hi);cursor:pointer;}
+.ov-country h3{margin:0 0 8px;font-family:var(--f-display);font-weight:var(--fw-display);font-size:19px;letter-spacing:.12em;color:var(--gold-hi);cursor:pointer;}
 .ov-region{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;padding:6px 0;border-top:1px dashed rgba(244,184,96,.15);}
 .ov-region > span{font-size:13px;color:var(--text-dim);min-width:4.5em;}
-.ov-region button{border:0;background:none;cursor:pointer;padding:2px 4px;font-family:var(--f-title);font-size:16px;color:var(--text);letter-spacing:.06em;border-radius:6px;}
+.ov-region button{border:0;background:none;cursor:pointer;padding:2px 4px;font-family:var(--f-display);font-weight:var(--fw-display);font-size:15.5px;display:inline-flex;align-items:center;gap:5px;color:var(--text);letter-spacing:.06em;border-radius:6px;}
 .ov-region button:hover{color:var(--gold-hi);background:rgba(244,184,96,.1);}
-.ov-region button::before{content:"★ ";color:var(--gold-hi);text-shadow:0 0 6px #f4b860;}
+.ov-region button::before{content:"";width:12px;height:12px;flex:none;background:var(--gold-hi);filter:drop-shadow(0 0 4px #f4b860);-webkit-mask:var(--ico-spark) center/contain no-repeat;mask:var(--ico-spark) center/contain no-repeat;}
 .ov-music{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:16px;border-radius:14px;border:1px solid rgba(244,184,96,.22);background:rgba(14,14,40,.55);}
-.ov-music .t{flex:1;min-width:200px;font-family:var(--f-title);font-size:17px;letter-spacing:.08em;}
+.ov-music .t{flex:1;min-width:200px;font-family:var(--f-display);font-weight:var(--fw-display);font-size:16.5px;letter-spacing:.08em;}
 @media (max-width:620px){ .ov-stats{grid-template-columns:repeat(2,1fr);} .ov-tree{grid-template-columns:1fr;} }
 </style>
 
@@ -3290,7 +3639,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
       previewA = SB.audio.preview(bgm.id); previewA.play().catch(()=>{}); e.target.textContent = '停止'; }));
     if(SB.store.canEdit && SB.store.canUpload){
       const up = SB.el('label','sb-btn small primary'); up.style.position = 'relative'; up.textContent = bgm ? '换一首' : '上传音乐';
-      const inp = SB.el('input'); inp.type = 'file'; inp.accept = 'audio/*,.mp3,.m4a,.aac,.wav,.ogg,.flac'; inp.style.cssText = 'position:absolute;inset:0;opacity:0;cursor:pointer';
+      const inp = SB.el('input'); inp.type = 'file'; inp.accept = 'audio/*,.mp3,.m4a,.aac,.wav,.mp4'; inp.style.cssText = 'position:absolute;inset:0;opacity:0;cursor:pointer';
       inp.setAttribute('aria-label','选择音乐文件');
       inp.addEventListener('change', async () => {
         const f = inp.files[0]; if(!f) return; inp.value = '';
@@ -3325,13 +3674,19 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 
 <!-- ████ BLOCK 99-boot START ████ -->
 <script>
-/* ── 块 99 · 启动：开始粒子，连接云端，按网址锚点进入场景（默认魔法书封面） ── */
+/* ── 块 99 · v1.5 启动：氛围可以先出现；认证、Book 与 Store 就绪后才真正开启书 ── */
 (function(SB){
   SB.fx.start();
-  SB.scenes.boot('book');
-  SB.store.ready.then(() => document.dispatchEvent(new CustomEvent('sb:data')));
+  (async()=>{
+    try{
+      await SB.store.ready;
+      SB.scenes.boot('book');
+      document.dispatchEvent(new CustomEvent('sb:data'));
+    }catch(e){
+      console.error('[Starbook start]',e);
+      SB.runtime?.showFatal?.('暂时没能翻开这本书。','请检查 Supabase 初始化与网络连接后重新尝试。');
+    }
+  })();
 })(window.SB);
 </script>
 <!-- ████ BLOCK 99-boot END ████ -->
-</body>
-</html>

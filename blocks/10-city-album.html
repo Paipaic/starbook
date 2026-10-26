@@ -1,13 +1,13 @@
 <style>
 /* ── 块 10 · 城市回忆目录（时间线） ── */
 .sb-scene[data-scene="city"]{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}
-.ca-ghost{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);font-family:var(--f-title);font-size:min(34vw,320px);line-height:1;white-space:nowrap;
+.ca-ghost{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);font-family:var(--f-display);font-weight:900;font-size:min(34vw,320px);line-height:1;white-space:nowrap;
   color:transparent;-webkit-text-stroke:1px rgba(244,184,96,.09);text-shadow:0 0 80px rgba(244,184,96,.06);pointer-events:none;letter-spacing:.1em;}
 .ca-wrap{position:relative;padding-block:calc(84px + var(--safe-t)) calc(50px + var(--safe-b));
   padding-left:max(16px,var(--safe-l));padding-right:max(16px,var(--safe-r));max-width:1100px;margin:0 auto;}
 .ca-head{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;margin-bottom:30px;}
-.ca-head small{font-family:var(--f-rune);font-size:11px;letter-spacing:.45em;color:var(--gold-dim);}
-.ca-head h1{margin:0;font-family:var(--f-title);font-weight:400;font-size:clamp(40px,7vw,72px);letter-spacing:.24em;color:var(--gold-hi);text-shadow:0 0 30px rgba(244,184,96,.6);}
+.ca-head small{font-family:var(--f-rune);font-weight:500;font-size:11.5px;letter-spacing:.36em;padding-left:.36em;color:var(--gold-dim);}
+.ca-head h1{margin:0;padding-left:.22em;font-family:var(--f-display);font-weight:var(--fw-display);font-size:var(--fs-hero);letter-spacing:.22em;color:var(--gold-hi);text-shadow:0 0 30px rgba(244,184,96,.6);}
 .ca-head p{margin:0;color:#c9c6ea;letter-spacing:.14em;font-size:14px;}
 .ca-line{position:relative;display:flex;flex-direction:column;gap:34px;}
 .ca-line::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:2px;transform:translateX(-50%);
@@ -17,7 +17,7 @@
 .ca-row.r > .ca-card{grid-column:3;justify-self:start;}
 .ca-node{grid-column:2;grid-row:1;justify-self:center;display:flex;flex-direction:column;align-items:center;gap:4px;z-index:1;}
 .ca-node i{width:14px;height:14px;transform:rotate(45deg);background:var(--gold-hi);box-shadow:0 0 14px 4px rgba(244,184,96,.7);}
-.ca-node span{font-family:var(--f-title);font-size:13px;letter-spacing:.1em;color:var(--gold);white-space:nowrap;background:rgba(10,10,28,.85);padding:2px 8px;border-radius:999px;}
+.ca-node span{font-family:var(--f-num);font-weight:600;font-size:14px;letter-spacing:.06em;color:var(--gold);white-space:nowrap;background:rgba(10,10,28,.85);padding:2px 8px;border-radius:999px;}
 .ca-card{position:relative;width:min(420px,100%);border-radius:14px;cursor:pointer;text-align:left;padding:12px;border:1px solid rgba(244,184,96,.3);
   background:linear-gradient(180deg, rgba(40,32,60,.8), rgba(14,12,30,.85));box-shadow:0 14px 34px rgba(0,0,0,.45);
   transition:transform .4s var(--ease-soft), box-shadow .4s, border-color .4s;animation:ctIn .8s var(--ease-soft) backwards;}
@@ -28,20 +28,21 @@
 .ca-card:hover .ca-cover img{transform:scale(1.06);}
 .ca-cover::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 1px rgba(255,226,168,.55), inset 0 0 40px rgba(0,0,0,.5);pointer-events:none;border-radius:8px;}
 .ca-meta{display:flex;flex-direction:column;gap:4px;padding:12px 4px 2px;}
-.ca-meta h3{margin:0;font-family:var(--f-title);font-weight:400;font-size:21px;letter-spacing:.08em;color:var(--gold-hi);line-height:1.35;}
-.ca-meta p{margin:0;font-size:13px;color:var(--text-dim);letter-spacing:.06em;display:flex;gap:12px;flex-wrap:wrap;}
+.ca-meta h3{margin:0;font-family:var(--f-display);font-weight:var(--fw-display);font-size:19px;letter-spacing:.06em;color:var(--gold-hi);line-height:1.45;}
+.ca-meta p{margin:0;font-size:13px;color:var(--text-dim);letter-spacing:.04em;display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+.ca-meta p span{display:inline-flex;align-items:center;gap:4px;}
 .ca-edit{position:absolute;top:18px;right:18px;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:rgba(10,10,28,.75);
   color:var(--gold-hi);cursor:pointer;display:grid;place-items:center;z-index:2;opacity:.85;}
 .ca-edit:hover{opacity:1;box-shadow:0 0 14px rgba(244,184,96,.5);}
 .ca-edit svg{width:18px;height:18px;}
 .ca-new{min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;border-style:dashed;
-  font-family:var(--f-title);letter-spacing:.18em;color:var(--gold-hi);font-size:20px;}
-.ca-new b{font-weight:400;font-size:44px;line-height:1;text-shadow:0 0 20px rgba(244,184,96,.8);}
+  font-family:var(--f-display);font-weight:var(--fw-display);letter-spacing:.18em;color:var(--gold-hi);font-size:19px;}
+.ca-new b{font-weight:400;font-size:40px;line-height:1;filter:drop-shadow(0 0 10px rgba(244,184,96,.8));display:grid;place-items:center;}
 .ca-empty{margin:20px auto 0;width:min(460px,100%);aspect-ratio:3/4;max-height:56vh;border-radius:6px 12px 12px 6px;
   background:radial-gradient(60% 45% at 50% 45%, rgba(255,232,176,.9), rgba(255,200,120,.35) 50%, transparent 80%), #e9d6aa;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:#6b3a12;text-align:center;padding:24px;
   box-shadow:0 20px 50px rgba(0,0,0,.5), 0 0 40px rgba(244,184,96,.25);}
-.ca-empty p{margin:0;font-family:var(--f-title);font-size:22px;letter-spacing:.14em;line-height:1.8;}
+.ca-empty p{margin:0;font-family:var(--f-display);font-weight:var(--fw-display);font-size:21px;letter-spacing:.14em;line-height:1.9;}
 @media (max-width:760px){
   .ca-line::before{left:14px;}
   .ca-row,.ca-row.r{grid-template-columns:28px 1fr;gap:0 12px;}
@@ -78,14 +79,14 @@
       const e = SB.el('div','ca-empty');
       const p = SB.el('p'); p.innerHTML = '这里还没有回忆<br>写下第一页吧';
       e.appendChild(p);
-      if(SB.store.canEdit) e.appendChild(SB.ui.button('＋ 新的回忆', 'primary', () => SB.editor.open({cityId})));
+      if(SB.store.canEdit) e.appendChild(SB.ui.button('新的回忆', 'primary', () => SB.editor.open({cityId}), 'plus'));
       body.appendChild(e); return;
     }
     const line = SB.el('div','ca-line');
     if(SB.store.canEdit){
       const row = SB.el('div','ca-row');
       const n = SB.el('div','ca-node','<i></i><span>新的一页</span>');
-      const card = SB.el('button','ca-card ca-new','<b>＋</b>新的回忆'); card.type = 'button';
+      const card = SB.el('button','ca-card ca-new',`<b>${SB.icon('plus')}</b>新的回忆`); card.type = 'button';
       card.addEventListener('click', () => SB.editor.open({cityId}));
       row.append(card, n); line.appendChild(row);
     }
@@ -96,8 +97,8 @@
       card.style.animationDelay = (i*80) + 'ms';
       const cover = m.cover?.id || m.slides?.[0]?.id;
       card.innerHTML = `<div class="ca-cover">${cover ? `<img alt="" loading="lazy" src="${SB.esc(SB.store.url(cover))}">` : ''}</div>
-        <div class="ca-meta"><h3></h3><p><span>${SB.esc(SB.fmtDate(m.date))}</span><span>${(m.slides||[]).length} 张照片</span>${m.bgm || m.bgmMode === 'global' ? '<span>♪ 背景音乐</span>' : ''}</p></div>`;
-      card.querySelector('h3').textContent = m.title;
+        <div class="ca-meta"><h3></h3><p><span>${SB.esc(SB.fmtDate(m.date))}</span><span>${(m.slides||[]).length} 张照片</span>${m.bgm || m.bgmMode === 'global' ? `<span>${SB.icon('note')}背景音乐</span>` : ''}</p></div>`;
+      card.querySelector('h3').textContent = SB.fmtTitle(m.title);
       const open = e => SB.scenes.go('player', {id:m.id}, {transition:'portal', x:e.clientX || innerWidth/2, y:e.clientY || innerHeight/2});
       card.addEventListener('click', open);
       card.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); open(e); } });

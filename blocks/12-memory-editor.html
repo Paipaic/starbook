@@ -6,7 +6,7 @@
 .ed-drop{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:20px;border-radius:12px;cursor:pointer;
   border:1.5px dashed rgba(244,184,96,.45);background:rgba(244,184,96,.04);text-align:center;transition:background .3s, border-color .3s;}
 .ed-drop:hover,.ed-drop.over{background:rgba(244,184,96,.1);border-color:var(--gold-hi);}
-.ed-drop b{font-family:var(--f-title);font-weight:400;font-size:18px;letter-spacing:.14em;color:var(--gold-hi);}
+.ed-drop b{font-family:var(--f-display);font-weight:var(--fw-display);font-size:17px;letter-spacing:.14em;color:var(--gold-hi);display:inline-flex;align-items:center;gap:8px;}
 .ed-drop span{font-size:12px;color:var(--text-dim);}
 .ed-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;}
 .ed-list{display:flex;flex-direction:column;gap:8px;}
@@ -14,10 +14,10 @@
 .ed-slide.cover{border-color:rgba(255,226,168,.7);box-shadow:0 0 14px rgba(244,184,96,.25);}
 .ed-thumb{position:relative;width:76px;height:76px;border-radius:8px;overflow:hidden;background:#151230;display:grid;place-items:center;font-size:11px;color:var(--text-dim);text-align:center;}
 .ed-thumb img{width:100%;height:100%;object-fit:cover;}
-.ed-thumb .star{position:absolute;top:3px;left:3px;font-size:12px;color:#2a1608;background:var(--gold-hi);border-radius:999px;padding:0 6px;}
+.ed-thumb .star{position:absolute;top:4px;left:4px;font-size:12px;line-height:1;color:#2a1608;background:var(--gold-hi);border-radius:999px;padding:3px 5px;display:grid;place-items:center;}
 .ed-slide textarea{min-height:52px;font-size:14px;}
 .ed-ops{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
-.ed-ops button{width:32px;height:32px;border-radius:8px;border:1px solid rgba(244,184,96,.25);background:none;color:var(--text-dim);cursor:pointer;font-size:14px;}
+.ed-ops button{width:32px;height:32px;border-radius:8px;border:1px solid rgba(244,184,96,.25);background:none;color:var(--text-dim);cursor:pointer;font-size:15px;display:grid;place-items:center;}
 .ed-ops button:hover{color:var(--gold-hi);border-color:var(--line);}
 .ed-ops button.on{color:#2a1608;background:var(--gold-hi);}
 .ed-music{display:flex;flex-direction:column;gap:8px;}
@@ -68,7 +68,7 @@
           body.append(row, SB.ui.field('一段话', note));
 
           // 照片
-          const drop = SB.el('label','ed-drop', '<b>＋ 添加照片</b><span>点击选择或把照片拖到这里，可一次选多张；会自动压缩后上传</span>');
+          const drop = SB.el('label','ed-drop', `<b>${SB.icon('plus')}添加照片</b><span>点击选择或把照片拖到这里，可一次选多张；会自动压缩后上传</span>`);
           const fin = SB.el('input'); fin.type = 'file'; fin.accept = 'image/*'; fin.multiple = true; fin.setAttribute('aria-label','选择照片');
           drop.appendChild(fin);
           fin.addEventListener('change', () => { addFiles([...fin.files]); fin.value = ''; });
@@ -130,7 +130,7 @@
               bgmMode: st.bgmMode, bgm: st.bgmMode === 'own' ? st.bgm : null };
             try{ await SB.store.saveMemory(data); }
             catch(e){ SB.toast(SB.store.errText(e)); btn.disabled = false; return false; }
-            cleanup(true, data); SB.toast('✦ 回忆已收进星屿之书'); SB.fx.burst(600);
+            cleanup(true, data); SB.toast('回忆已收进星屿之书'); SB.fx.burst(600);
           }}
         ],
         onClose(){ preview?.pause(); if(!done) cleanup(false); }
@@ -169,16 +169,16 @@
         const row = SB.el('div','ed-slide' + (s.id && s.id === st.cover ? ' cover' : ''));
         const th = SB.el('div','ed-thumb');
         if(s.pending) th.textContent = s.step || '上传中';
-        else th.innerHTML = `<img alt="" src="${SB.esc(SB.store.url(s.id))}">${s.id === st.cover ? '<span class="star">★</span>' : ''}`;
+        else th.innerHTML = `<img alt="" src="${SB.esc(SB.store.url(s.id))}">${s.id === st.cover ? `<span class="star">${SB.icon('star')}</span>` : ''}`;
         const cap = SB.ui.input({multiline:true, maxlength:'120', placeholder:'这张照片的故事（放映时逐字出现）', 'aria-label':'照片描述'});
         cap.value = s.caption || ''; cap.disabled = !!s.pending; cap.addEventListener('input', () => s.caption = cap.value);
         const ops = SB.el('div','ed-ops');
-        const mk = (t, label, fn, on) => { const b = SB.el('button', on ? 'on' : ''); b.type = 'button'; b.textContent = t; b.title = label; b.setAttribute('aria-label', label); b.disabled = !!s.pending; b.addEventListener('click', fn); ops.appendChild(b); };
+        const mk = (t, label, fn, on) => { const b = SB.el('button', on ? 'on' : ''); b.type = 'button'; b.innerHTML = SB.icon(t); b.title = label; b.setAttribute('aria-label', label); b.disabled = !!s.pending; b.addEventListener('click', fn); ops.appendChild(b); };
         const at = () => st.slides.indexOf(s);
-        mk('↑', '上移', () => { const i = at(); if(i > 0){ [st.slides[i-1], st.slides[i]] = [st.slides[i], st.slides[i-1]]; renderList(); } });
-        mk('↓', '下移', () => { const i = at(); if(i < st.slides.length-1){ [st.slides[i+1], st.slides[i]] = [st.slides[i], st.slides[i+1]]; renderList(); } });
-        mk('★', '设为封面', () => { st.cover = s.id; renderList(); }, s.id === st.cover);
-        mk('✕', '移除', () => { st.slides.splice(at(), 1); if(st.cover === s.id) st.cover = st.slides.find(x => x.id)?.id || null; renderList(); });
+        mk('up', '上移', () => { const i = at(); if(i > 0){ [st.slides[i-1], st.slides[i]] = [st.slides[i], st.slides[i-1]]; renderList(); } });
+        mk('down', '下移', () => { const i = at(); if(i < st.slides.length-1){ [st.slides[i+1], st.slides[i]] = [st.slides[i], st.slides[i+1]]; renderList(); } });
+        mk('star', '设为封面', () => { st.cover = s.id; renderList(); }, s.id === st.cover);
+        mk('close', '移除', () => { st.slides.splice(at(), 1); if(st.cover === s.id) st.cover = st.slides.find(x => x.id)?.id || null; renderList(); });
         row.append(th, cap, ops);
         Object.defineProperty(s, '_row', {value:row, configurable:true, writable:true});
         Object.defineProperty(s, '_th', {value:th, configurable:true, writable:true});
