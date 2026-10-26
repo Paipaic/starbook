@@ -1,7 +1,9 @@
 <title>星屿之书</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Noto+Serif+SC:wght@400;600&family=ZCOOL+XiaoWei&display=swap">
+<!-- v1.5.2 「星文」字体系统：思源宋体超家族 + Cinzel 碑铭体 + Cormorant Garamond 数字；封面书名 900 字重单独按字子集加载 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Noto+Serif+SC:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&text=%E6%98%9F%E5%B1%BF%E4%B9%8B%E4%B9%A6&display=swap">
 <style>
 /* 布局概念：全屏叠放的"场景舞台"；一层共享的光、雾与粒子贯穿所有场景；唯一导航在左上角 */
 :root{
@@ -11,16 +13,42 @@
   --night:#070818; --night-2:#12153a; --aurora:#8fa4ff;
   --text:#f6e7cc; --text-dim:#bfa582; --danger:#e07a5f;
   --glass:rgba(24,14,8,.80); --glass-night:rgba(14,14,36,.82); --line:rgba(244,184,96,.38);
-  --f-title:"ZCOOL XiaoWei","Noto Serif SC","Songti SC","STSong",serif;
-  --f-body:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
-  --f-rune:"Cinzel Decorative","Cinzel","Times New Roman",serif;
+  /* ── 「星文」字体系统（v1.5.2）：每个字体栈都以思源宋体兜底中文，避免同一行混入两种字形 ── */
+  --f-cjk:"Noto Serif SC","Source Han Serif SC","Noto Serif CJK SC","Songti SC","STSong",serif;
+  --f-display:"Noto Serif SC","Source Han Serif SC","Noto Serif CJK SC","Songti SC","STSong",serif;
+  --f-title:var(--f-display);
+  --f-body:var(--f-cjk);
+  --f-rune:"Cinzel","Trajan Pro","Cormorant SC","Noto Serif SC","Source Han Serif SC","Songti SC",serif;
+  --f-num:"Cormorant Garamond","EB Garamond","Garamond","Noto Serif SC","Source Han Serif SC","Songti SC",serif;
+  --fw-display:600; --fw-body:400;
+  --fs-cap:12px; --fs-sm:13.5px; --fs-body:15.5px; --fs-lead:17px; --fs-h3:20px;
+  --fs-h2:clamp(22px,2.4vw,28px); --fs-h1:clamp(30px,5.2vw,56px); --fs-hero:clamp(38px,7vw,72px);
+  --lh-body:1.8; --lh-ui:1.45; --lh-title:1.25;
+  --tr-hero:.2em; --tr-title:.16em; --tr-ui:.08em; --tr-body:.02em; --tr-rune:.32em;
   --ease-soft:cubic-bezier(.45,.05,.25,1);
   --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
   --safe-l:env(safe-area-inset-left,0px); --safe-r:env(safe-area-inset-right,0px);
+  --ico-spark:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-10 -10 20 20'%3E%3Cpath d='M0-10C.9-3.2 3.2-.9 10 0 3.2.9.9 3.2 0 10-.9 3.2-3.2.9-10 0-3.2-.9-.9-3.2 0-10Z'/%3E%3C/svg%3E");
   color-scheme:dark;
 }
 html,body{width:100%;height:100%;min-height:100%;overscroll-behavior:none;-webkit-text-size-adjust:100%;}
-body{min-height:100vh;min-height:100dvh;background:var(--ink);color:var(--text);font-family:var(--f-body);overflow:hidden;-webkit-tap-highlight-color:transparent;}
+body{min-height:100vh;min-height:100dvh;background:var(--ink);color:var(--text);font-family:var(--f-body);overflow:hidden;-webkit-tap-highlight-color:transparent;
+  font-size:var(--fs-body);font-weight:var(--fw-body);line-height:var(--lh-ui);letter-spacing:var(--tr-body);}
+/* ── 「星文」排版基础 ── */
+html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;font-kerning:normal;
+  font-synthesis:none;font-variant-numeric:lining-nums;}
+h1,h2,h3,h4{font-family:var(--f-display);font-weight:var(--fw-display);line-height:var(--lh-title);text-wrap:balance;}
+p{line-break:strict;text-wrap:pretty;}
+@supports (text-autospace:normal){ html{text-autospace:normal;} }
+@media (min-width:900px){ :root{--fs-body:16px;} }
+.sb-num{font-family:var(--f-num);font-variant-numeric:lining-nums tabular-nums;letter-spacing:.02em;}
+.sb-rune{font-family:var(--f-rune);font-weight:500;text-transform:uppercase;letter-spacing:var(--tr-rune);}
+/* 金色烫金文字：渐变填充 + 柔光（渐变文字不能使用 text-shadow） */
+.sb-foil{background:linear-gradient(176deg,#fff6dc 0%,#ffe2a8 30%,#f2b863 55%,#c98a3a 74%,#ffe7b8 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 14px rgba(244,184,96,.42)) drop-shadow(0 1px 0 rgba(60,30,8,.5));}
+/* 内联 SVG 图标：随文字颜色与字号缩放，替代依赖系统字体的符号 */
+.sb-ico{display:inline-block;width:1em;height:1em;flex:none;vertical-align:-.14em;overflow:visible;}
 *{box-sizing:border-box;}
 button,input,textarea,select{font:inherit;color:inherit;}
 :focus-visible{outline:2px solid var(--gold-hi);outline-offset:3px;border-radius:6px;}
@@ -84,9 +112,12 @@ body.is-busy #sb-stage,body.is-busy #sb-nav{pointer-events:none;}
 #sb-toast{position:fixed;left:50%;bottom:calc(28px + var(--safe-b));z-index:90;
   transform:translate(-50%,12px);opacity:0;pointer-events:none;
   padding:10px 20px;border-radius:999px;background:var(--glass);border:1px solid var(--line);
-  color:var(--gold-hi);font-family:var(--f-title);font-size:15px;letter-spacing:.08em;
+  color:var(--gold-hi);font-family:var(--f-display);font-weight:var(--fw-display);font-size:15px;letter-spacing:var(--tr-ui);line-height:1.5;
   box-shadow:0 0 24px rgba(244,184,96,.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-  transition:opacity .4s, transform .4s var(--ease-soft);max-width:calc(100vw - 32px);text-align:center;}
+  transition:opacity .4s, transform .4s var(--ease-soft);max-width:calc(100vw - 32px);text-align:center;
+  display:flex;align-items:center;gap:10px;}
+#sb-toast::before{content:"";flex:none;width:14px;height:14px;background:var(--gold-hi);filter:drop-shadow(0 0 5px rgba(255,214,150,.9));
+  -webkit-mask:var(--ico-spark) center/contain no-repeat;mask:var(--ico-spark) center/contain no-repeat;}
 #sb-toast.show{opacity:1;transform:translate(-50%,0);}
 
 /* ── 通用组件：卷轴弹窗 / 表单 / 按钮 ── */
@@ -105,8 +136,8 @@ body.is-busy #sb-stage,body.is-busy #sb-nav{pointer-events:none;}
 .sb-modal.show .sb-scroll{transform:none;filter:none;}
 .sb-scroll.wide{width:min(760px,100%);}
 .sb-scroll > header{padding:20px 22px 10px;text-align:center;}
-.sb-scroll > header h3{margin:0;font-family:var(--f-title);font-weight:400;font-size:24px;letter-spacing:.14em;color:var(--gold-hi);text-shadow:0 0 14px rgba(244,184,96,.5);}
-.sb-scroll > header p{margin:6px 0 0;font-family:var(--f-rune);font-size:10px;letter-spacing:.3em;color:var(--gold-dim);}
+.sb-scroll > header h3{margin:0;padding-left:.14em;font-family:var(--f-display);font-weight:var(--fw-display);font-size:23px;letter-spacing:.14em;color:var(--gold-hi);text-shadow:0 0 14px rgba(244,184,96,.45);}
+.sb-scroll > header p{margin:8px 0 0;padding-left:var(--tr-rune);font-family:var(--f-rune);font-weight:500;font-size:10.5px;letter-spacing:var(--tr-rune);color:var(--gold-dim);}
 .sb-scroll > .body{padding:8px 22px 14px;overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:14px;}
 .sb-scroll > footer{padding:12px 22px 18px;display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;border-top:1px solid rgba(244,184,96,.15);}
 .sb-scroll > footer .spacer{flex:1;}
@@ -118,20 +149,21 @@ body.is-busy #sb-stage,body.is-busy #sb-nav{pointer-events:none;}
   .sb-scroll{width:100%;border-radius:18px 18px 0 0;max-height:calc(100dvh - 40px - var(--safe-t));transform:translateY(40px);padding-bottom:var(--safe-b);}
 }
 .sb-field{display:flex;flex-direction:column;gap:6px;}
-.sb-field > span{font-family:var(--f-title);font-size:14px;letter-spacing:.12em;color:var(--text-dim);}
+.sb-field > span{font-family:var(--f-display);font-weight:var(--fw-display);font-size:13.5px;letter-spacing:.12em;color:var(--text-dim);}
 .sb-input{width:100%;padding:10px 4px 8px;border:0;border-bottom:1px solid rgba(244,184,96,.4);background:transparent;
   color:var(--text);font-size:16px;outline:none;transition:border-color .3s, box-shadow .3s;}
 .sb-input:focus{border-color:var(--gold-hi);box-shadow:0 8px 14px -12px rgba(255,214,150,.9);}
 .sb-input::placeholder{color:rgba(191,165,130,.45);}
-textarea.sb-input{resize:vertical;min-height:64px;line-height:1.6;}
+textarea.sb-input{resize:vertical;min-height:64px;line-height:1.7;}
 .sb-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:8px 20px;border-radius:999px;cursor:pointer;
-  font-family:var(--f-title);font-size:16px;letter-spacing:.14em;border:1px solid var(--line);background:rgba(244,184,96,.06);color:var(--gold-hi);
+  font-family:var(--f-display);font-weight:var(--fw-display);font-size:15.5px;letter-spacing:.12em;line-height:1.3;border:1px solid var(--line);background:rgba(244,184,96,.06);color:var(--gold-hi);
   transition:box-shadow .3s, border-color .3s, transform .2s, opacity .3s;}
 .sb-btn:hover{border-color:rgba(255,226,168,.8);box-shadow:0 0 18px rgba(244,184,96,.3);}
 .sb-btn:active{transform:scale(.97);}
 .sb-btn.primary{border-color:transparent;color:#2a1608;background:linear-gradient(180deg,#ffe7b5,#f4b860 55%,#c98636);box-shadow:0 0 18px rgba(244,184,96,.35), inset 0 1px 0 rgba(255,255,255,.6);}
 .sb-btn.danger{color:#ffb39e;border-color:rgba(224,122,95,.5);background:rgba(224,122,95,.06);}
-.sb-btn.small{min-height:32px;padding:4px 14px;font-size:14px;}
+.sb-btn.small{min-height:32px;padding:4px 14px;font-size:14px;letter-spacing:.08em;}
+.sb-btn .sb-ico{width:.95em;height:.95em;}
 .sb-btn[disabled]{opacity:.45;pointer-events:none;}
 @media (pointer:coarse){
   .sb-btn{min-height:44px;touch-action:manipulation;}
@@ -139,11 +171,11 @@ textarea.sb-input{resize:vertical;min-height:64px;line-height:1.6;}
   .sb-input{min-height:44px;}
   button{touch-action:manipulation;}
 }
-.sb-spin{display:flex;flex-direction:column;align-items:center;gap:14px;color:var(--gold-hi);font-family:var(--f-title);letter-spacing:.2em;}
+.sb-spin{display:flex;flex-direction:column;align-items:center;gap:14px;color:var(--gold-hi);font-family:var(--f-display);font-weight:var(--fw-display);letter-spacing:.2em;padding-left:.2em;}
 .sb-spin svg{width:64px;height:64px;animation:sbSpin 6s linear infinite;filter:drop-shadow(0 0 8px rgba(244,184,96,.7));}
 .sb-spin svg .r2{transform-origin:50% 50%;animation:sbSpin 3s linear infinite reverse;}
 @keyframes sbSpin{to{transform:rotate(360deg)}}
-.sb-empty{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;color:var(--text-dim);font-family:var(--f-title);letter-spacing:.12em;line-height:1.8;}
+.sb-empty{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;color:var(--text-dim);font-family:var(--f-display);font-weight:var(--fw-display);letter-spacing:.12em;line-height:1.9;}
 
 @media (prefers-reduced-motion:reduce){ .sb-mist,.sb-rays{animation:none;} }
 </style>
@@ -175,6 +207,39 @@ window.SB = window.SB || {};
   SB.lerp = (a,b,t) => a + (b-a)*t;
   SB.clamp = (v,a,b) => Math.max(a, Math.min(b, v));
   SB.esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  /* ── 内联 SVG 图标（v1.5.2）：不依赖系统字体，任何手机都显示一致 ── */
+  const ICON_PATHS = {
+    spark:'<path d="M12 1.5c.9 6.4 3.1 8.6 10.5 10.5-7.4 1.9-9.6 4.1-10.5 10.5-.9-6.4-3.1-8.6-10.5-10.5C8.9 10.1 11.1 7.9 12 1.5Z" fill="currentColor"/>',
+    star:'<path d="M12 2.5c.8 5.4 2.6 7.4 8.2 9.5-5.6 2.1-7.4 4.1-8.2 9.5-.8-5.4-2.6-7.4-8.2-9.5 5.6-2.1 7.4-4.1 8.2-9.5Z" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="#fff8e6" opacity=".85"/>',
+    quill:'<path d="M20.5 3.5c-6.6.9-11.8 5.6-13.6 12.7l-1.6 4.3 4.2-1.7c6.9-2 11.3-7.6 11-15.3Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M6.8 17.2 14 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>',
+    close:'<path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+    reset:'<path d="M5.2 9.2A7.5 7.5 0 1 1 4.5 13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M4.2 4.6v4.9h4.9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+    plus:'<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+    minus:'<path d="M5 12h14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+    up:'<path d="M12 19V5M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+    down:'<path d="M12 5v14M6 13l6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+    chevron:'<path d="M9.5 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+    note:'<path d="M9 17.5V6l10-2v11.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="7" cy="17.5" r="2.3" fill="currentColor"/><circle cx="17" cy="15.5" r="2.3" fill="currentColor"/>'
+  };
+  SB.icon = (name, cls='') => `<svg class="sb-ico${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${ICON_PATHS[name] || ICON_PATHS.spark}</svg>`;
+  SB.icon.names = Object.keys(ICON_PATHS);
+
+  /* ── 字体就绪（只做预热与诊断，不隐藏文字） ── */
+  SB.type = { ready: Promise.resolve() };
+  if(document.fonts?.load){
+    const warm = [
+      "600 20px 'Noto Serif SC'", "400 16px 'Noto Serif SC'", "900 40px 'Noto Serif SC'",
+      "500 12px 'Cinzel'", "500 16px 'Cormorant Garamond'"
+    ];
+    SB.type.ready = Promise.race([
+      Promise.all(warm.map(f => document.fonts.load(f, '星屿之书回忆总览 ORBIS 2026').catch(() => null))),
+      new Promise(r => setTimeout(r, 4000))
+    ]).then(() => document.documentElement.classList.add('sb-fonts-ready'));
+  }
+
+  /* 标题排版：分隔点「·」与前文不断开，换行时只会出现在行尾，不会落在行首 */
+  SB.fmtTitle = t => String(t ?? '').replace(/\s*·\s*/g, '\u00a0· ');
+
   SB.el = (tag, cls, html) => { const e = document.createElement(tag); if(cls) e.className = cls; if(html != null) e.innerHTML = html; return e; };
   SB.uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
@@ -212,8 +277,10 @@ window.SB = window.SB || {};
       el.textContent = text; el.classList.add('show');
       clearTimeout(toastTimer); toastTimer = setTimeout(()=>el.classList.remove('show'), ms);
     },
-    button(text, kind='', onClick){
-      const b = SB.el('button', 'sb-btn ' + kind); b.type = 'button'; b.textContent = text;
+    button(text, kind='', onClick, icon){
+      const b = SB.el('button', 'sb-btn ' + kind); b.type = 'button';
+      if(icon){ b.innerHTML = SB.icon(icon); const t = SB.el('span'); t.textContent = text; b.appendChild(t); }
+      else b.textContent = text;
       if(onClick) b.addEventListener('click', onClick); return b;
     },
     field(label, input){

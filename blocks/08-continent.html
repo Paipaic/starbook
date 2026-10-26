@@ -5,8 +5,8 @@
   padding-left:max(16px,var(--safe-l));padding-right:max(16px,var(--safe-r));max-width:1280px;margin:0 auto;}
 .ct-sigil{position:fixed;left:50%;top:44%;width:120vmin;height:120vmin;margin:-60vmin 0 0 -60vmin;opacity:.08;pointer-events:none;animation:bkSpin 220s linear infinite;}
 .ct-head{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;margin-bottom:22px;}
-.ct-head small{font-family:var(--f-rune);font-size:11px;letter-spacing:.5em;color:var(--gold-dim);}
-.ct-head h1{margin:0;font-family:var(--f-title);font-weight:400;font-size:clamp(38px,6vw,64px);letter-spacing:.3em;color:var(--gold-hi);
+.ct-head small{font-family:var(--f-rune);font-weight:500;font-size:11px;letter-spacing:.42em;padding-left:.42em;color:var(--gold-dim);}
+.ct-head h1{margin:0;padding-left:.28em;font-family:var(--f-display);font-weight:var(--fw-display);font-size:clamp(36px,6vw,60px);letter-spacing:.28em;color:var(--gold-hi);
   text-shadow:0 0 30px rgba(244,184,96,.6), 0 0 2px rgba(255,240,210,.9);}
 .ct-head p{margin:0;color:#c9c6ea;letter-spacing:.14em;font-size:14px;}
 .ct-search{width:min(420px,100%);margin:6px auto 0;position:relative;}
@@ -26,10 +26,10 @@
 .ct-card.lit{border-color:rgba(255,214,150,.6);background:linear-gradient(180deg, rgba(60,44,40,.8), rgba(22,16,30,.8));animation:ctIn .7s var(--ease-soft) backwards, ctBreath 4s ease-in-out infinite;}
 @keyframes ctBreath{0%,100%{box-shadow:0 0 10px rgba(244,184,96,.15)}50%{box-shadow:0 0 26px rgba(244,184,96,.4)}}
 .ct-card canvas{width:100%;aspect-ratio:16/10;display:block;}
-.ct-card .nm{font-family:var(--f-title);font-size:18px;letter-spacing:.08em;color:var(--text);line-height:1.2;}
+.ct-card .nm{font-family:var(--f-display);font-weight:var(--fw-display);font-size:17px;letter-spacing:.08em;color:var(--text);line-height:1.3;}
 .ct-card.lit .nm{color:var(--gold-hi);}
-.ct-card .en{font-size:11px;color:var(--text-dim);letter-spacing:.06em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.ct-card .badge{position:absolute;top:10px;right:10px;padding:2px 9px;border-radius:999px;font-size:12px;color:#2a1608;
+.ct-card .en{font-family:var(--f-num);font-style:italic;font-size:12.5px;color:var(--text-dim);letter-spacing:.03em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ct-card .badge{position:absolute;top:10px;right:10px;padding:2px 9px;border-radius:999px;font-size:13px;font-weight:600;color:#2a1608;display:inline-flex;align-items:center;gap:3px;
   background:linear-gradient(180deg,#ffe7b5,#f4b860);box-shadow:0 0 12px rgba(244,184,96,.6);}
 .ct-none{grid-column:1/-1;padding:40px 0;}
 /* 南极洲：世界尽头 */
@@ -119,7 +119,7 @@
       const n = SB.store.citiesIn(c.key).length, lit = n > 0;
       const card = SB.el('button','ct-card' + (lit ? ' lit' : '')); card.type = 'button';
       card.style.animationDelay = Math.min(i*30, 900) + 'ms';
-      card.innerHTML = `<canvas aria-hidden="true"></canvas><span class="nm"></span><span class="en"></span>${lit ? `<span class="badge">★ ${n}</span>` : ''}`;
+      card.innerHTML = `<canvas aria-hidden="true"></canvas><span class="nm"></span><span class="en"></span>${lit ? `<span class="badge sb-num">${SB.icon('star')}${n}</span>` : ''}`;
       card.querySelector('.nm').textContent = c.zh; card.querySelector('.en').textContent = c.en;
       card.addEventListener('click', e => SB.scenes.go('country', {k:c.key}, {transition:'portal', x:e.clientX, y:e.clientY}));
       grid.appendChild(card);
@@ -141,6 +141,6 @@
   SB.menu.add({id:'continents', order:30, icon:'compass', label:'七大洲', desc:'按大洲翻阅国家目录',
     children:() => { const vis = SB.store.visitedCountries();
       return SB.geo.CONTINENTS.map(c => { const n = SB.geo.inContinent(c.code).filter(x => vis.has(x.key)).length;
-        return {label:c.name, badge: n ? '★' + n : '', scene:'continent', params:{c:c.code}}; }); }});
+        return {label:c.name, badge: n ? String(n) : '', scene:'continent', params:{c:c.code}}; }); }});
 })(window.SB);
 </script>

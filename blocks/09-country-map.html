@@ -2,9 +2,9 @@
 /* ── 块 09 · 国家地图与省份星星 ── */
 .cm-head{position:absolute;left:50%;top:calc(16px + var(--safe-t));transform:translateX(-50%);text-align:center;pointer-events:none;z-index:3;
   display:flex;flex-direction:column;align-items:center;gap:4px;width:max-content;max-width:calc(100vw - 32px);}
-.cm-head small{font-family:var(--f-rune);font-size:10px;letter-spacing:.4em;color:var(--gold-dim);}
-.cm-head h1{margin:0;font-family:var(--f-title);font-weight:400;font-size:clamp(28px,4vw,46px);letter-spacing:.3em;color:var(--gold-hi);text-shadow:0 0 24px rgba(244,184,96,.65);}
-.cm-head p{margin:0;font-size:13px;letter-spacing:.14em;color:#c9c6ea;}
+.cm-head small{font-family:var(--f-rune);font-weight:500;font-size:10.5px;letter-spacing:.4em;padding-left:.4em;color:var(--gold-dim);}
+.cm-head h1{margin:0;padding-left:.28em;font-family:var(--f-display);font-weight:var(--fw-display);font-size:clamp(28px,4vw,46px);letter-spacing:.28em;color:var(--gold-hi);text-shadow:0 0 24px rgba(244,184,96,.65);}
+.cm-head p{margin:0;font-size:13px;letter-spacing:.1em;color:#c9c6ea;}
 .cm-stage{position:absolute;inset:0;touch-action:none;}
 .cm-halo{position:absolute;left:50%;top:54%;width:80vmin;height:60vmin;transform:translate(-50%,-50%);pointer-events:none;
   background:radial-gradient(closest-side, rgba(244,184,96,.16), rgba(80,90,200,.08) 60%, transparent);filter:blur(10px);}
@@ -25,7 +25,7 @@
 @keyframes cmPulse{0%,100%{transform:scale(.8);opacity:.75}50%{transform:scale(1.15);opacity:1}}
 @keyframes cmPop{0%{transform:scale(.2);opacity:0}40%{transform:scale(2.6);opacity:1}100%{transform:scale(1);opacity:1}}
 .cm-tools{position:absolute;right:max(16px,var(--safe-r));bottom:calc(16px + var(--safe-b));display:flex;flex-direction:column;gap:8px;z-index:3;}
-.cm-tools button{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:rgba(14,14,40,.8);color:var(--gold-hi);font-size:20px;cursor:pointer;display:grid;place-items:center;}
+.cm-tools button{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:rgba(14,14,40,.8);color:var(--gold-hi);font-size:19px;cursor:pointer;display:grid;place-items:center;}
 .cm-tools button:hover{box-shadow:0 0 16px rgba(244,184,96,.4);}
 .cm-load{position:absolute;inset:0;display:grid;place-items:center;z-index:4;}
 .cm-load[hidden]{display:none!important;}
@@ -39,23 +39,23 @@
   backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   opacity:0;transform:translateY(6px) scale(.96);pointer-events:none;transition:opacity .25s var(--ease-soft), transform .25s var(--ease-soft);}
 .cm-pop.show{opacity:1;transform:none;pointer-events:auto;}
-.cm-pop h4{margin:0;font-family:var(--f-title);font-weight:400;font-size:22px;letter-spacing:.14em;color:var(--gold-hi);}
+.cm-pop h4{margin:0;font-family:var(--f-display);font-weight:var(--fw-display);font-size:21px;letter-spacing:.14em;color:var(--gold-hi);}
 .cm-pop .en{font-size:11px;color:var(--text-dim);letter-spacing:.08em;margin-top:2px;}
 .cm-pop ul{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:2px;max-height:240px;overflow:auto;}
 .cm-pop li{display:flex;align-items:center;gap:6px;}
 .cm-pop .city{flex:1;display:flex;align-items:center;gap:8px;padding:7px 8px;border:0;border-radius:8px;background:none;cursor:pointer;text-align:left;
-  font-family:var(--f-title);font-size:17px;letter-spacing:.08em;color:var(--text);min-width:0;}
+  font-family:var(--f-display);font-weight:var(--fw-display);font-size:16.5px;letter-spacing:.08em;color:var(--text);min-width:0;}
 .cm-pop .city:hover{background:rgba(244,184,96,.1);color:var(--gold-hi);}
 .cm-pop .city svg{width:16px;height:16px;flex:none;filter:drop-shadow(0 0 4px rgba(255,200,110,.9));}
 .cm-pop .city span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.cm-pop .city em{font-style:normal;font-size:11px;color:var(--text-dim);margin-left:auto;font-family:var(--f-body);}
-.cm-pop .edit{width:30px;height:30px;border-radius:50%;border:0;background:none;color:var(--text-dim);cursor:pointer;flex:none;}
+.cm-pop .city em{font-style:normal;font-size:11.5px;color:var(--text-dim);margin-left:auto;font-family:var(--f-body);font-weight:400;letter-spacing:.02em;}
+.cm-pop .edit{width:30px;height:30px;border-radius:50%;border:0;background:none;color:var(--text-dim);cursor:pointer;flex:none;display:grid;place-items:center;font-size:16px;}
 .cm-pop .edit:hover{color:var(--gold-hi);background:rgba(244,184,96,.1);}
 .cm-pop .none{margin:10px 0 0;font-size:13px;color:var(--text-dim);letter-spacing:.06em;}
 .cm-pop .add{margin-top:12px;display:flex;gap:8px;align-items:center;}
 .cm-pop .add .sb-input{font-size:15px;}
-.cm-pop .x{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;border:0;background:none;color:var(--text-dim);font-size:18px;cursor:pointer;display:none;}
-@media (pointer:coarse){ .cm-pop .x{display:block;} }
+.cm-pop .x{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;border:0;background:none;color:var(--text-dim);font-size:16px;cursor:pointer;display:none;place-items:center;}
+@media (pointer:coarse){ .cm-pop .x{display:grid;} }
 @media (max-width:700px){ .cm-head{top:calc(70px + var(--safe-t));} .cm-legend{display:none;} }
 </style>
 
@@ -76,7 +76,7 @@
   </div>
   <header class="cm-head"><small id="cm-en"></small><h1 id="cm-title"></h1><p id="cm-stat"></p></header>
   <div class="cm-legend"><span><i style="background:#ffe2a8;box-shadow:0 0 8px #f4b860"></i>去过</span><span><i style="background:#7d7466"></i>还没去</span></div>
-  <div class="cm-tools"><button type="button" id="cm-zin" aria-label="放大">＋</button><button type="button" id="cm-zout" aria-label="缩小">－</button><button type="button" id="cm-zreset" aria-label="复位" style="font-size:16px">⟲</button></div>
+  <div class="cm-tools"><button type="button" id="cm-zin" aria-label="放大"></button><button type="button" id="cm-zout" aria-label="缩小"></button><button type="button" id="cm-zreset" aria-label="复位"></button></div>
   <div class="cm-pop" id="cm-pop" role="dialog" aria-label="省份城市"></div>
   <div class="cm-load" id="cm-load" hidden></div>
 </section>
@@ -87,6 +87,7 @@
   const NS = 'http://www.w3.org/2000/svg';
   const svg = $('cm-svg'), view = $('cm-view'), pop = $('cm-pop');
   const STAR = '<svg viewBox="-10 -10 20 20" aria-hidden="true"><path d="M0 -10 L1.8 -1.8 L10 0 L1.8 1.8 L0 10 L-1.8 1.8 L-10 0 L-1.8 -1.8Z" fill="#ffe2a8"/></svg>';
+  $('cm-zin').innerHTML = SB.icon('plus'); $('cm-zout').innerHTML = SB.icon('minus'); $('cm-zreset').innerHTML = SB.icon('reset');
   const S = { k:null, country:null, map:null, regions:[], fit:null, vb:null, pathEls:{}, starEls:{}, hot:null, hideT:0, token:0 };
 
   /* ── 坐标拟合与缩放 ── */
@@ -182,7 +183,7 @@
   function buildPop(r){
     const cities = SB.store.citiesInRegion(r.key);
     pop.innerHTML = '';
-    const x = SB.el('button','x'); x.type = 'button'; x.setAttribute('aria-label','关闭'); x.textContent = '×'; x.addEventListener('click', () => hidePop(true));
+    const x = SB.el('button','x'); x.type = 'button'; x.setAttribute('aria-label','关闭'); x.innerHTML = SB.icon('close'); x.addEventListener('click', () => hidePop(true));
     const h = SB.el('h4'); h.textContent = r.name;
     pop.append(x, h);
     if(r.en && r.en !== r.name){ const en = SB.el('div','en'); en.textContent = r.en; pop.appendChild(en); }
@@ -196,7 +197,7 @@
         b.addEventListener('click', e => { hidePop(true); SB.scenes.go('city', {id:c.id}, {transition:'portal', x:e.clientX, y:e.clientY}); });
         li.appendChild(b);
         if(SB.store.canEdit){
-          const ed = SB.el('button','edit'); ed.type = 'button'; ed.setAttribute('aria-label', '编辑 ' + c.name); ed.textContent = '✎';
+          const ed = SB.el('button','edit'); ed.type = 'button'; ed.setAttribute('aria-label', '编辑 ' + c.name); ed.innerHTML = SB.icon('quill');
           ed.addEventListener('click', () => editCity(c)); li.appendChild(ed);
         }
         ul.appendChild(li);
@@ -205,7 +206,7 @@
     }else{ const p = SB.el('p','none'); p.textContent = '这里还没有我们的足迹'; pop.appendChild(p); }
     if(SB.store.canEdit){
       const add = SB.el('div','add');
-      const btn = SB.ui.button('＋ 添加城市', 'small');
+      const btn = SB.ui.button('添加城市', 'small', null, 'plus');
       btn.addEventListener('click', () => {
         add.innerHTML = '';
         const inp = SB.ui.input({type:'text', placeholder:'城市名，例如：成都', maxlength:'30', 'aria-label':'城市名'});
@@ -215,7 +216,7 @@
           try{
             const lon = r.lonlat?.[0] ?? S.country.mid?.[0], lat = r.lonlat?.[1] ?? S.country.mid?.[1];
             await SB.store.addCity({country:S.k, countryName:S.country.zh, region:r.key, regionName:r.name, name:inp.value, lon, lat});
-            SB.toast(`✦ ${inp.value.trim()} 已点亮`);
+            SB.toast(`${inp.value.trim()} 已点亮`);
             SB.fx.burst(500);
             paint(r.key); buildPop(r);
           }catch(e){ SB.toast(e.msg || SB.store.errText(e)); ok.disabled = false; }

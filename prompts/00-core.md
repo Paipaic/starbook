@@ -5,7 +5,7 @@
 - 星图世界：`--night #070818`、`--night-2 #12153a`、`--aurora #8fa4ff`（只作冷色点缀）
 - 文字：`--text #f6e7cc`、`--text-dim #bfa582`
 - 浮层：`--glass rgba(24,14,8,.78)`、`--line rgba(244,184,96,.38)`
-- 字体：`--f-title` ZCOOL XiaoWei、`--f-body` Noto Serif SC、`--f-rune` Cinzel Decorative
+- 字体（v1.5.2 起）：见 `prompts/00-typography.md`「星文」字体系统 —— `--f-display`/`--f-body` 思源宋体（Noto Serif SC），`--f-rune` Cinzel，`--f-num` Cormorant Garamond；`--f-title` 为 `--f-display` 别名。图标用 `SB.icon(name)`，不再依赖系统符号字体。
 
 ## 全局背景层
 - 固定铺满的暖光渐变 + 暗角；切到星图世界（地球、大洲、地图、相册）时平滑过渡为靛蓝夜空色调。

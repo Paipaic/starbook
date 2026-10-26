@@ -89,15 +89,29 @@ if (Test-Path "tools/check_project.py") {
 }
 
 # Fail fast if a high-risk credential marker was accidentally built into site/.
+# Only inspect deployable text assets. Empty files (for example site/.nojekyll)
+# can make Get-Content -Raw return $null in Windows PowerShell, so guard them.
 $secretPatterns = @("sb_secret_", "github_pat_", "ghp_")
+$textExtensions = @(".html", ".htm", ".js", ".mjs", ".css", ".json", ".txt", ".xml", ".svg", ".webmanifest", ".md")
 $secretHits = @()
 Get-ChildItem -Path "site" -File -Recurse -ErrorAction Stop | ForEach-Object {
-    $path = $_.FullName
+    $file = $_
+    $extension = $file.Extension.ToLowerInvariant()
+    if ($textExtensions -notcontains $extension) {
+        return
+    }
+
+    $path = $file.FullName
     try {
         $text = Get-Content -LiteralPath $path -Raw -ErrorAction Stop
     } catch {
         return
     }
+
+    if ([string]::IsNullOrEmpty($text)) {
+        return
+    }
+
     foreach ($pattern in $secretPatterns) {
         if ($text.Contains($pattern)) {
             $secretHits += "$path contains $pattern"
