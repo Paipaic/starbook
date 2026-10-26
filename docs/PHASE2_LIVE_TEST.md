@@ -6,7 +6,7 @@
 
 - `001_anniversary_bridge.sql` 已成功执行。
 - `002_anniversary_owner.sql` 已成功执行。
-- 《我们的星屿》Seed 查询返回 1 行。
+- 《星屿之书》Seed 查询返回 1 行。
 - `starbook-media` 已确认 `public = false`。
 
 ## 1. 本地启动

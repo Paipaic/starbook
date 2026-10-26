@@ -170,7 +170,7 @@
       if(!current){
         showFatal(
           '这枚星钥还没有连接到一本书。',
-          '当前账号还没有《我们的星屿》的访问权限。可以重新检查权限，或返回登录并使用其他账号。',
+          '当前账号还没有《星屿之书》的访问权限。可以重新检查权限，或返回登录并使用其他账号。',
           {
             retryLabel:'重新检查权限',
             retry:()=>finishAuthenticated(),
@@ -233,7 +233,7 @@
       if(!window.supabase?.createClient) throw new Error('supabase_client_unavailable');
       SB.supabase = window.supabase.createClient(cfg.supabaseUrl,cfg.supabasePublishableKey,{
         auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},
-        global:{headers:{'x-client-info':'starbook-v1.5-anniversary'}}
+        global:{headers:{'x-client-info':'starbook-v1.5.1'}}
       });
       SB.supabase.auth.onAuthStateChange((event,session)=>{
         user.session=session||null; user.current=session?.user||null;
