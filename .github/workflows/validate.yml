@@ -1,0 +1,85 @@
+name: Validate Starbook
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-starbook:
+    name: validate-starbook
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - name: Verify release tracking files
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in VERSION CHANGELOG.md ROADMAP.md PROJECT_STATE.md; do
+            test -f "$file" || { echo "Missing required file: $file"; exit 1; }
+          done
+
+      - name: Build Starbook
+        run: python build.py
+
+      - name: Run project checks
+        run: python tools/check_project.py
+
+      - name: Check built site for high-risk secrets
+        shell: python
+        run: |
+          from pathlib import Path
+          import sys
+
+          root = Path("site")
+          forbidden = (
+              "sb_secret_",
+              "github_pat_",
+              "ghp_",
+          )
+          hits = []
+          for path in root.rglob("*"):
+              if not path.is_file():
+                  continue
+              try:
+                  text = path.read_text(encoding="utf-8")
+              except (UnicodeDecodeError, OSError):
+                  continue
+              for marker in forbidden:
+                  if marker in text:
+                      hits.append(f"{path}: contains {marker}")
+
+          if hits:
+              print("High-risk secret marker detected in deployed site:")
+              print("\n".join(hits))
+              sys.exit(1)
+
+          print("No high-risk secret markers found in site/.")
+
+      - name: Verify Pages entry point
+        shell: bash
+        run: |
+          test -f site/index.html || { echo "site/index.html was not generated"; exit 1; }
+          echo "Starbook validation passed."
