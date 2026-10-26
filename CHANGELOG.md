@@ -1,5 +1,41 @@
 # Changelog
 
+## [1.5.1] - 2026-10-26
+
+### Added
+- 根目录 `README.md`，为 GitHub 与人工阅读提供简短入口，并明确新 Agent 从 `AGENTS.md` 开始。
+- `supabase/migrations/002_v151_title_and_members.sql`：非破坏性更新当前 Book 标题，并加入两名 `editor` 成员。
+- 当前 Book 新增 editor：`11aa32fe-3875-4880-81fb-02a543dca853`。
+- 当前 Book 新增 editor：`62adee54-c59a-4844-abb5-1b5629da3bf9`。
+- 根目录 `AGENTS.md`，作为所有新 Agent / 新开发会话的强制上下文入口。
+- `docs/PROJECT_MANAGEMENT_FULL_CHAIN.md`，固化需求 → 分支 → 校验 → PR → main → Pages → 数据保留 → 回滚的完整项目链路。
+- `docs/ARCHITECTURE_EXTENSION_CONTRACT.md`，固化多用户、多 Book、多 Relationship、多 Theme、多 Experience 的长期扩展边界。
+- `docs/DATA_LIFECYCLE.md`，明确 Git/Pages 与 Supabase 数据生命周期分离以及向前 migration 原则。
+- `docs/PROJECT_DOCS_INDEX.md` 与 `docs/templates/RELEASE_RECORD_TEMPLATE.md`。
+- `docs/V151_OPERATOR_STEPS.md`，明确本次发布、Supabase migration 与 Production smoke test 的 Owner 操作。
+- `docs/releases/v1.5.1.md` 完整 Release Record。
+- 正式纳入 `validate.yml`、`deploy-pages.yml` 与 `publish.ps1` 的长期发布链路说明。
+
+### Changed
+- 当前 Anniversary Book 展示名称由《我们的星屿》统一为《星屿之书》，包括 Supabase `books.name`、登录权限提示、初始化 seed 与当前项目文档。
+- `main` 正式定义为唯一 Production branch；release/feature 分支只通过 PR 进入 main。
+- 每个版本必须记录 Product、Runtime、Architecture、Data、Auth/RLS、Storage、CI、Git/PR、Pages、Agent Governance 等链路变化；无变化也必须显式声明。
+- 发布检查升级为“代码 + 文档治理”双重校验。
+
+### Fixed
+- 修复 Windows PowerShell 下 `publish.ps1` 的 Secret 扫描：`site/.nojekyll` 等空文件会让 `Get-Content -Raw` 返回 `$null`，此前会在 `.Contains()` 处中断发布。现仅扫描文本资源并显式跳过空内容。
+
+### CI / Governance
+- `tools/check_project.py` 开始检查 VERSION、Release Record、CHANGELOG、PROJECT_STATE 和核心治理文档一致性。
+- `validate-starbook` 在 PR 上执行 build、项目检查和高风险 Secret 扫描。
+- `publish.ps1` 发布前要求当前版本文档完整，避免无记录发布。
+
+### Data
+- **无 schema 结构变化，`schema_version` 保持 1。**
+- 发布 v1.5.1 后需运行一次 `supabase/migrations/002_v151_title_and_members.sql`。
+- Migration 仅更新 `books.name` 并 upsert 两名 editor；**不会修改 `book_data.payload`，不会删除/重建 Storage，不需要重新导入城市/回忆/照片/BGM。**
+- Supabase 现有数据继续由同一 Book ID / Private Storage 承载。
+
 ## [1.5.0-anniversary] - 2026-10-26 (in progress)
 
 ### Added

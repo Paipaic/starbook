@@ -1,18 +1,23 @@
-<!doctype html>
-<html lang="zh-CN">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0d0805">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="星屿之书">
-<link rel="icon" href="icon.png">
-<link rel="apple-touch-icon" href="icon.png">
-<style>html,body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
-</head>
-<body>
+<!-- ████ BLOCK 00-config START ████ -->
+<script>
+/* ── Starbook v1.5.1 · 公开客户端配置 ──
+   Publishable Key 设计上允许出现在浏览器；不要在此文件放 Secret / service_role / 数据库密码。 */
+window.STARBOOK_CONFIG = Object.freeze({
+  version: '1.5.1',
+  supabaseUrl: 'https://xowbbcumcxtsrrnulunb.supabase.co',
+  supabasePublishableKey: 'sb_publishable_SYGBrk2PiwwzRXZm03Patg_oDlYSIGd',
+  storageBucket: 'starbook-media',
+  signupEnabled: false,
+  signedUrlTtlSeconds: 21600,
+  defaults: Object.freeze({
+    relationshipType: 'romantic',
+    themeId: 'magic-celestial',
+    experienceId: 'world-map'
+  })
+});
+</script>
+<!-- ████ BLOCK 00-config END ████ -->
+
 <!-- ████ BLOCK 00-core START ████ -->
 <title>星屿之书</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -35,8 +40,8 @@
   --safe-l:env(safe-area-inset-left,0px); --safe-r:env(safe-area-inset-right,0px);
   color-scheme:dark;
 }
-html,body{height:100%;}
-body{background:var(--ink);color:var(--text);font-family:var(--f-body);overflow:hidden;-webkit-tap-highlight-color:transparent;}
+html,body{width:100%;height:100%;min-height:100%;overscroll-behavior:none;-webkit-text-size-adjust:100%;}
+body{min-height:100vh;min-height:100dvh;background:var(--ink);color:var(--text);font-family:var(--f-body);overflow:hidden;-webkit-tap-highlight-color:transparent;}
 *{box-sizing:border-box;}
 button,input,textarea,select{font:inherit;color:inherit;}
 :focus-visible{outline:2px solid var(--gold-hi);outline-offset:3px;border-radius:6px;}
@@ -72,7 +77,7 @@ body[data-world="night"] .sb-mist{background:radial-gradient(closest-side, rgba(
 #fx-front{position:fixed;inset:0;width:100%;height:100%;z-index:30;pointer-events:none;}
 
 /* ── 场景 ── */
-#sb-stage{position:fixed;inset:0;z-index:1;}
+#sb-stage{position:fixed;inset:0;z-index:1;height:100vh;height:100dvh;}
 .sb-scene{position:absolute;inset:0;display:none;overflow:hidden;}
 .sb-scene.is-active{display:block;}
 .sb-scene.is-entering{z-index:2;}
@@ -149,6 +154,12 @@ textarea.sb-input{resize:vertical;min-height:64px;line-height:1.6;}
 .sb-btn.danger{color:#ffb39e;border-color:rgba(224,122,95,.5);background:rgba(224,122,95,.06);}
 .sb-btn.small{min-height:32px;padding:4px 14px;font-size:14px;}
 .sb-btn[disabled]{opacity:.45;pointer-events:none;}
+@media (pointer:coarse){
+  .sb-btn{min-height:44px;touch-action:manipulation;}
+  .sb-btn.small{min-height:40px;}
+  .sb-input{min-height:44px;}
+  button{touch-action:manipulation;}
+}
 .sb-spin{display:flex;flex-direction:column;align-items:center;gap:14px;color:var(--gold-hi);font-family:var(--f-title);letter-spacing:.2em;}
 .sb-spin svg{width:64px;height:64px;animation:sbSpin 6s linear infinite;filter:drop-shadow(0 0 8px rgba(244,184,96,.7));}
 .sb-spin svg .r2{transform-origin:50% 50%;animation:sbSpin 3s linear infinite reverse;}
@@ -190,15 +201,21 @@ window.SB = window.SB || {};
 
   /* ── 按顺序尝试加载脚本 ── */
   const loaded = {};
-  SB.loadScript = (urls) => {
+  SB.loadScript = (urls, options={}) => {
     const key = urls.join('|');
     if(loaded[key]) return loaded[key];
+    const timeoutMs = Math.max(2500, Number(options.timeoutMs) || 9000);
     return loaded[key] = new Promise((resolve, reject) => {
       let i = 0;
       const next = () => {
         if(i >= urls.length){ delete loaded[key]; reject(new Error('load_failed')); return; }
         const s = document.createElement('script'); s.src = urls[i++]; s.async = true;
-        s.onload = () => resolve(); s.onerror = () => { s.remove(); next(); };
+        let settled = false;
+        const timer = setTimeout(() => {
+          if(settled) return; settled = true; s.remove(); next();
+        }, timeoutMs);
+        s.onload = () => { if(settled) return; settled = true; clearTimeout(timer); resolve(); };
+        s.onerror = () => { if(settled) return; settled = true; clearTimeout(timer); s.remove(); next(); };
         document.head.appendChild(s);
       };
       next();
@@ -273,7 +290,7 @@ window.SB = window.SB || {};
   SB.toast = ui.toast;
 
   /* ── 场景管理器 ── */
-  const scenes = SB.scenes = { map:{}, current:null, params:{} };
+  const scenes = SB.scenes = { map:{}, current:null, params:{}, _pendingHistory:null };
   scenes.register = (id, hooks={}) => { scenes.map[id] = hooks; };
   scenes.el = id => document.querySelector(`.sb-scene[data-scene="${id}"]`);
   /* 魔法路径：沿着每个场景的 parent() 一路向上 */
@@ -289,21 +306,42 @@ window.SB = window.SB || {};
   };
   scenes.back = () => {
     const h = scenes.map[scenes.current]; const up = h?.parent?.(scenes.params);
-    if(up) scenes.go(up.id, up.params||{}, {transition: up.transition || 'veil', back:true});
+    if(!up) return;
+    const hs = history.state;
+    // 如果当前浏览器历史正是从父场景进入的，直接交给浏览器返回，避免制造“返回后又能回到子页”的假历史。
+    if(hs?.starbook && hs.from?.id === up.id && JSON.stringify(hs.from?.params||{}) === JSON.stringify(up.params||{})){
+      history.back(); return;
+    }
+    scenes.go(up.id, up.params||{}, {transition: up.transition || 'veil', back:true, replaceHistory:true});
   };
+  function syncHistory(id, params, opts, prev){
+    if(opts?.fromHistory) return;
+    try{
+      const url = scenes.map[id].hash === false ? location.pathname + location.search : '#'+id;
+      const state = {starbook:true, scene:id, params:params||{}, from:prev ? {id:prev.id, params:prev.params||{}} : null};
+      if(opts?.boot || opts?.replaceHistory) history.replaceState(state,'',url);
+      else history.pushState(state,'',url);
+    }catch(e){}
+  }
   function swap(id, params, opts){
-    const prev = scenes.current;
-    if(prev){ scenes.el(prev)?.classList.remove('is-active'); scenes.map[prev]?.leave?.(opts); }
+    const prev = scenes.current ? {id:scenes.current, params:scenes.params} : null;
+    if(prev){ scenes.el(prev.id)?.classList.remove('is-active'); scenes.map[prev.id]?.leave?.(opts); }
     scenes.current = id; scenes.params = params || {};
     document.body.dataset.scene = id;
     document.body.dataset.world = scenes.map[id].world || 'night';
     scenes.el(id)?.classList.add('is-active');
     scenes.map[id]?.enter?.(scenes.params, opts);
-    try{ history.replaceState(null,'', scenes.map[id].hash === false ? location.pathname : '#'+id); }catch(e){}
+    syncHistory(id,scenes.params,opts||{},prev);
     document.dispatchEvent(new CustomEvent('sb:scene', {detail:{id, params:scenes.params}}));
   }
   scenes.go = async (id, params={}, opts={}) => {
-    if(!scenes.map[id] || document.body.classList.contains('is-busy')) return;
+    if(!scenes.map[id]) return;
+    if(document.body.classList.contains('is-busy')){
+      // Android/浏览器可能在转场动画期间连续触发 popstate。
+      // 永远保留最后一次历史目标，动画结束后再追上，避免 URL 与画面不同步。
+      if(opts?.fromHistory) scenes._pendingHistory = {id, params:params||{}, opts:{...opts}};
+      return;
+    }
     if(id === scenes.current && JSON.stringify(params) === JSON.stringify(scenes.params) && !opts.force) return;
     const tr = opts.transition || 'veil';
     document.body.classList.add('is-busy');
@@ -343,19 +381,294 @@ window.SB = window.SB || {};
       }
     }finally{
       document.body.classList.remove('is-busy');
+      const pending = scenes._pendingHistory; scenes._pendingHistory = null;
+      if(pending && (pending.id !== scenes.current || JSON.stringify(pending.params||{}) !== JSON.stringify(scenes.params||{}))){
+        setTimeout(() => scenes.go(pending.id, pending.params||{}, {...pending.opts, force:true}), 0);
+      }
     }
   };
   scenes.boot = (fallback) => {
     // 各块的场景写在 <main> 之外，这里统一收进舞台，保证点击能落到场景上
     const stage = document.getElementById('sb-stage');
     document.querySelectorAll('.sb-scene').forEach(s => stage.appendChild(s));
-    const want = (location.hash||'').slice(1);
+    const hs = history.state;
+    const want = hs?.starbook ? hs.scene : (location.hash||'').slice(1);
     const h = scenes.map[want];
-    swap(h && h.deepLink ? want : fallback, {}, {boot:true});
+    const params = hs?.starbook && h ? (hs.params||{}) : {};
+    swap(h && h.deepLink ? want : fallback, params, {boot:true});
   };
+  window.addEventListener('popstate', e => {
+    const st = e.state;
+    if(!st?.starbook || !scenes.map[st.scene]) return;
+    scenes.go(st.scene, st.params||{}, {fromHistory:true, transition:'veil', force:true});
+  });
+  // 从系统返回 / bfcache 恢复时，清掉可能被冻结在动画中间的阻塞状态。
+  window.addEventListener('pageshow', e => {
+    if(!e.persisted) return;
+    document.body.classList.remove('is-busy');
+    const veil = document.getElementById('sb-veil'), flash = document.getElementById('sb-flash');
+    if(veil) veil.className = '';
+    if(flash) flash.className = '';
+  });
 })(window.SB);
 </script>
 <!-- ████ BLOCK 00-core END ████ -->
+
+<!-- ████ BLOCK 00-runtime START ████ -->
+<style>
+/* ── v1.5 · 登录 / 启动门：保持周年礼物体验，不暴露后台式 UI ── */
+#sb-gate{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:24px;
+  background:
+    radial-gradient(55% 38% at 50% 42%,rgba(88,95,196,.22),transparent 72%),
+    radial-gradient(42% 30% at 50% 58%,rgba(244,184,96,.13),transparent 72%),
+    linear-gradient(180deg,rgba(4,5,18,.96),rgba(8,5,10,.985));
+  transition:opacity .7s var(--ease-soft),visibility .7s;}
+#sb-gate[hidden]{display:none!important;} #sb-gate.leaving{opacity:0;visibility:hidden;pointer-events:none;}
+.sb-gate-stars{position:absolute;inset:0;overflow:hidden;pointer-events:none;opacity:.75;
+  background-image:radial-gradient(circle,rgba(255,239,201,.75) 0 1px,transparent 1.4px),radial-gradient(circle,rgba(143,164,255,.7) 0 1px,transparent 1.4px);
+  background-size:97px 97px,143px 143px;background-position:12px 25px,43px 67px;mask-image:radial-gradient(circle at 50% 45%,#000 0 35%,transparent 82%);}
+.sb-gate-card{position:relative;width:min(430px,100%);padding:34px 30px 28px;border-radius:20px;text-align:center;
+  border:1px solid rgba(244,184,96,.34);background:linear-gradient(180deg,rgba(30,20,18,.88),rgba(10,9,22,.9));
+  box-shadow:0 30px 90px rgba(0,0,0,.62),0 0 55px rgba(244,184,96,.11),inset 0 0 45px rgba(255,226,168,.025);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);}
+.sb-gate-rune{font-family:var(--f-rune);font-size:10px;letter-spacing:.34em;color:var(--gold-dim);margin:0 0 12px;}
+.sb-gate-card h1{font-family:var(--f-title);font-weight:400;letter-spacing:.16em;color:var(--gold-hi);font-size:clamp(25px,7vw,34px);margin:0;text-shadow:0 0 20px rgba(244,184,96,.4);}
+.sb-gate-card .intro{font-size:13px;line-height:1.9;color:var(--text-dim);margin:12px auto 22px;max-width:330px;}
+.sb-gate-form{display:flex;flex-direction:column;gap:12px;text-align:left;}
+.sb-gate-form label{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--text-dim);letter-spacing:.08em;}
+.sb-gate-form input{width:100%;border:1px solid rgba(244,184,96,.28);border-radius:10px;background:rgba(3,4,14,.58);padding:11px 12px;color:var(--text);outline:none;}
+.sb-gate-form input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(244,184,96,.08);}
+.sb-gate-submit{margin-top:4px;width:100%;justify-content:center;min-height:44px;}
+.sb-gate-error{min-height:20px;margin:10px 0 0;color:#e7a493;font-size:12px;line-height:1.6;}
+.sb-gate-note{margin:12px 0 0;color:rgba(191,165,130,.7);font-size:11px;line-height:1.6;}
+.sb-gate-loading{display:grid;place-items:center;gap:13px;padding:8px 0;}
+.sb-gate-loading .sb-spin{margin:0;}
+.sb-gate-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:14px;}
+.sb-gate-actions .sb-btn{min-width:132px;}
+.sb-gate-retry{margin-top:0;}
+@media(max-width:480px){#sb-gate{padding:max(14px,var(--safe-t)) max(14px,var(--safe-r)) max(14px,var(--safe-b)) max(14px,var(--safe-l));}.sb-gate-card{padding:28px 20px 24px;border-radius:16px;max-height:calc(100dvh - 28px - var(--safe-t) - var(--safe-b));overflow:auto}.sb-gate-card .intro{font-size:12px}}
+</style>
+
+<div id="sb-gate" aria-live="polite">
+  <div class="sb-gate-stars" aria-hidden="true"></div>
+  <section class="sb-gate-card" aria-label="星屿之书登录">
+    <p class="sb-gate-rune">LIBER INSULARUM STELLARUM</p>
+    <h1>星屿之书</h1>
+    <p class="intro" id="sb-gate-intro">有些故事，值得被写进星辰。</p>
+    <div id="sb-gate-body"></div>
+  </section>
+</div>
+
+<script>
+/* ── v1.5 · Runtime Context：User / Book / Theme / Experience ── */
+(function(SB){
+  const cfg = window.STARBOOK_CONFIG || {};
+  const gate = document.getElementById('sb-gate');
+  const gateBody = document.getElementById('sb-gate-body');
+  const gateIntro = document.getElementById('sb-gate-intro');
+  const SUPABASE_CDNS = [
+    'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
+    'https://unpkg.com/@supabase/supabase-js@2'
+  ];
+
+  function showLoading(text='正在连接星海…'){
+    gate.hidden = false; gate.classList.remove('leaving');
+    gateIntro.textContent = '有些故事，值得被写进星辰。';
+    gateBody.innerHTML = '';
+    const box = SB.el('div','sb-gate-loading'); box.appendChild(SB.ui.spinner(text)); gateBody.appendChild(box);
+  }
+  function showFatal(text, detail, options={}){
+    gate.hidden = false; gate.classList.remove('leaving'); gateBody.innerHTML = '';
+    gateIntro.textContent = text || '星海暂时失去了连接。';
+    const p = SB.el('p','sb-gate-error'); p.textContent = detail || '请检查网络后重新尝试。';
+    const actions = SB.el('div','sb-gate-actions');
+
+    if(options.retry !== false){
+      const retryLabel = options.retryLabel || '重新连接';
+      const retryAction = typeof options.retry === 'function' ? options.retry : ()=>location.reload();
+      const retry = SB.ui.button(retryLabel,'primary sb-gate-retry',async()=>{
+        retry.disabled = true;
+        try{ await retryAction(); }
+        catch(e){ console.error('[Starbook retry]',e); retry.disabled = false; }
+      });
+      actions.appendChild(retry);
+    }
+
+    if(options.backToLogin){
+      const back = SB.ui.button(options.backLabel || '返回登录','',async()=>{
+        back.disabled = true;
+        try{ await returnToLogin(options.loginMessage || '请重新登录后再开启星屿。'); }
+        catch(e){ console.error('[Starbook back-to-login]',e); back.disabled = false; }
+      });
+      actions.appendChild(back);
+    }
+
+    gateBody.append(p,actions);
+  }
+  function hideGate(){
+    gate.classList.add('leaving');
+    setTimeout(()=>{ gate.hidden = true; gate.classList.remove('leaving'); },720);
+  }
+
+  const user = SB.user = {
+    current:null, session:null, ready:null,
+    async signIn(email,password){
+      const {data,error} = await SB.supabase.auth.signInWithPassword({email,password});
+      if(error) throw error;
+      user.session = data.session || null; user.current = data.user || data.session?.user || null;
+      return user.current;
+    },
+    async signOut(options={}){
+      const reload = options.reload !== false;
+      try{ await SB.supabase?.auth?.signOut(); }catch(e){ console.error(e); }
+      user.session = null; user.current = null;
+      if(SB.book){ SB.book.current = null; SB.book.memberships = []; SB.book.books = []; }
+      if(reload) location.reload();
+    }
+  };
+
+  async function returnToLogin(message=''){
+    try{ await user.signOut({reload:false}); }
+    catch(e){ console.error('[Starbook signout]',e); }
+    try{ localStorage.removeItem('sb-current-book'); }catch(e){}
+    showLogin(message);
+  }
+
+  const book = SB.book = {
+    current:null, memberships:[], books:[], ready:null,
+    async load(){
+      if(!user.current) throw new Error('not_authenticated');
+      const {data:memberships,error:mErr} = await SB.supabase.from('book_members')
+        .select('book_id,role,status,created_at').eq('user_id',user.current.id).eq('status','active');
+      if(mErr) throw mErr;
+      book.memberships = memberships || [];
+      const ids = book.memberships.map(x=>x.book_id);
+      if(!ids.length){ book.books = []; book.current = null; return null; }
+      const {data:books,error:bErr} = await SB.supabase.from('books')
+        .select('id,name,relationship_type,theme_id,experience_id,created_by,created_at,updated_at').in('id',ids);
+      if(bErr) throw bErr;
+      book.books = books || [];
+      let preferred = null; try{ preferred = localStorage.getItem('sb-current-book'); }catch(e){}
+      const chosen = book.books.find(x=>x.id===preferred) || book.books[0] || null;
+      return book.open(chosen?.id);
+    },
+    open(id){
+      const row = book.books.find(x=>x.id===id); if(!row){ book.current = null; return null; }
+      const member = book.memberships.find(x=>x.book_id===id);
+      book.current = {
+        id:row.id, name:row.name, role:member?.role || 'viewer', createdBy:row.created_by,
+        relationshipType:row.relationship_type || cfg.defaults?.relationshipType || 'romantic',
+        themeId:row.theme_id || cfg.defaults?.themeId || 'magic-celestial',
+        experienceId:row.experience_id || cfg.defaults?.experienceId || 'world-map'
+      };
+      try{ localStorage.setItem('sb-current-book',row.id); }catch(e){}
+      SB.theme.current = book.current.themeId;
+      SB.experience.current = book.current.experienceId;
+      document.documentElement.dataset.sbTheme = SB.theme.current;
+      document.documentElement.dataset.sbExperience = SB.experience.current;
+      document.dispatchEvent(new CustomEvent('sb:book',{detail:{book:book.current}}));
+      return book.current;
+    },
+    close(){ book.current = null; }
+  };
+
+  SB.theme = { current: cfg.defaults?.themeId || 'magic-celestial' };
+  SB.experience = { current: cfg.defaults?.experienceId || 'world-map' };
+  const runtime = SB.runtime = { ready:null, config:cfg, showLoading, showFatal };
+
+  let resolveReady, rejectReady;
+  runtime.ready = new Promise((res,rej)=>{ resolveReady=res; rejectReady=rej; });
+  user.ready = runtime.ready; book.ready = runtime.ready;
+
+  async function finishAuthenticated(){
+    showLoading('正在读取我们的世界…');
+    try{
+      const current = await book.load();
+      if(!current){
+        showFatal(
+          '这枚星钥还没有连接到一本书。',
+          '当前账号还没有《星屿之书》的访问权限。可以重新检查权限，或返回登录并使用其他账号。',
+          {
+            retryLabel:'重新检查权限',
+            retry:()=>finishAuthenticated(),
+            backToLogin:true,
+            loginMessage:'已退出当前账号，请使用拥有访问权限的账号登录。'
+          }
+        );
+        return;
+      }
+      hideGate(); resolveReady({user:user.current,book:current});
+    }catch(e){
+      console.error('[Starbook runtime]',e);
+      const msg=String(e?.message||'');
+      const permissionLike = /permission|row-level|rls|not authorized|unauthorized|forbidden|42501/i.test(msg);
+      showFatal(
+        permissionLike ? '这枚星钥暂时没有权限。' : '暂时没能翻开这本书。',
+        permissionLike
+          ? '当前账号没有读取这本书的权限。你可以重新检查权限，或返回登录并使用其他账号。'
+          : '数据库连接或权限配置暂时异常。你可以重新尝试，或返回登录。',
+        {
+          retryLabel:'重新尝试',
+          retry:()=>finishAuthenticated(),
+          backToLogin:true,
+          loginMessage:'已返回登录界面。'
+        }
+      );
+    }
+  }
+
+  function showLogin(message=''){
+    gate.hidden = false; gate.classList.remove('leaving'); gateBody.innerHTML='';
+    gateIntro.textContent = '这本书只向被邀请的人开启。';
+    const form = SB.el('form','sb-gate-form');
+    const email = SB.el('input'); email.type='email'; email.autocomplete='email'; email.placeholder='your@email.com'; email.required=true;
+    const password = SB.el('input'); password.type='password'; password.autocomplete='current-password'; password.placeholder='••••••••'; password.required=true;
+    const l1=SB.el('label'); l1.textContent='邮箱'; l1.appendChild(email);
+    const l2=SB.el('label'); l2.textContent='密码'; l2.appendChild(password);
+    const submit = SB.ui.button('开启星屿','primary sb-gate-submit'); submit.type='submit';
+    const err=SB.el('p','sb-gate-error'); err.textContent=message;
+    const note=SB.el('p','sb-gate-note'); note.textContent='当前周年版本暂不开放公开注册。';
+    form.append(l1,l2,submit,err,note); gateBody.appendChild(form);
+    form.addEventListener('submit',async e=>{
+      e.preventDefault(); err.textContent=''; submit.disabled=true; submit.textContent='正在开启…';
+      try{ await user.signIn(email.value.trim(),password.value); await finishAuthenticated(); }
+      catch(ex){
+        console.error('[Starbook auth]',ex);
+        const msg=String(ex?.message||'');
+        err.textContent = /invalid login|invalid credentials/i.test(msg) ? '邮箱或密码不正确。' : '暂时无法登录，请检查网络后再试。';
+        submit.disabled=false; submit.textContent='开启星屿';
+      }
+    });
+    if(!SB.perf.touch) setTimeout(()=>email.focus(),120);
+  }
+
+  async function bootRuntime(){
+    showLoading('正在连接星海…');
+    try{
+      if(!cfg.supabaseUrl || !cfg.supabasePublishableKey) throw new Error('missing_supabase_config');
+      if(!window.supabase?.createClient) await SB.loadScript(SUPABASE_CDNS);
+      if(!window.supabase?.createClient) throw new Error('supabase_client_unavailable');
+      SB.supabase = window.supabase.createClient(cfg.supabaseUrl,cfg.supabasePublishableKey,{
+        auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},
+        global:{headers:{'x-client-info':'starbook-v1.5.1'}}
+      });
+      SB.supabase.auth.onAuthStateChange((event,session)=>{
+        user.session=session||null; user.current=session?.user||null;
+        if(event==='SIGNED_OUT' && !gate.hidden) return;
+        if(event==='SIGNED_OUT'){ showLogin('登录状态已结束，请重新开启星屿。'); }
+      });
+      const {data,error}=await SB.supabase.auth.getSession(); if(error) throw error;
+      user.session=data.session||null; user.current=data.session?.user||null;
+      if(user.current) await finishAuthenticated(); else showLogin();
+    }catch(e){
+      console.error('[Starbook boot]',e); rejectReady?.(e);
+      showFatal('星海暂时失去了连接。','Supabase 客户端未能加载。请检查网络后重新连接。');
+    }
+  }
+  bootRuntime();
+})(window.SB);
+</script>
+<!-- ████ BLOCK 00-runtime END ████ -->
 
 <!-- ████ BLOCK 01-ambient-fx START ████ -->
 <script>
@@ -622,7 +935,13 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
 .sb-seg span{padding:3px 10px;font-size:12px;font-family:var(--f-title);color:var(--text-dim);}
 .sb-seg span.on{background:rgba(244,184,96,.22);color:var(--gold-hi);}
 .sb-status{margin:8px 10px 0;font-size:11px;color:var(--text-dim);text-align:center;letter-spacing:.06em;opacity:.8;}
-@media (max-width:480px){ #sb-nav-btn{font-size:16px;padding:7px 15px 7px 8px;} #sb-back{width:40px;height:40px;} }
+@media (pointer:coarse){
+  #sb-nav-btn{min-height:44px;}
+  #sb-back{width:44px;height:44px;}
+  .sb-mi{min-height:50px;}
+  .sb-sub button{min-height:42px;}
+}
+@media (max-width:480px){ #sb-nav{top:calc(10px + var(--safe-t));left:calc(10px + var(--safe-l));gap:8px;} #sb-nav-btn{font-size:15px;padding:7px 12px 7px 8px;} #sb-nav-btn .gem{width:24px;height:24px;} #sb-menu{width:min(350px,calc(100vw - 20px - var(--safe-l) - var(--safe-r)));} }
 </style>
 
 <nav id="sb-nav" aria-label="星屿之书导航">
@@ -753,6 +1072,22 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
 })(window.SB);
 </script>
 <!-- ████ BLOCK 02-menu END ████ -->
+
+<!-- ████ BLOCK 02z-account START ████ -->
+<script>
+/* ── v1.5 · 账户菜单：当前仅登录 / 退出；未来可升级为 Library / Profile ── */
+(function(SB){
+  SB.menu.icons.user = '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M5.5 19c.8-4 3-6 6.5-6s5.7 2 6.5 6" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>';
+  SB.menu.add({id:'account',order:95,icon:'user',label:'账户',
+    desc:()=>SB.user?.current?.email || '未登录',
+    tag:()=>SB.book?.current?.role ? `<span class="sb-seg"><span class="on">${SB.esc(SB.book.current.role)}</span></span>` : '',
+    hidden:()=>!SB.user?.current,
+    action:async()=>{ if(await SB.ui.confirm('退出当前账号？','退出','danger')) await SB.user.signOut(); }
+  });
+  document.addEventListener('sb:book',()=>SB.menu.refresh());
+})(window.SB);
+</script>
+<!-- ████ BLOCK 02z-account END ████ -->
 
 <!-- ████ BLOCK 03-magic-book START ████ -->
 <style>
@@ -1176,15 +1511,15 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
   }
   let hovering = false;
   document.addEventListener('pointermove', e => {
-    if(SB.scenes.current !== 'book' || SB.book.busy) return;
+    if(SB.scenes.current !== 'book' || SB.magicBook.busy) return;
     if(fine){ state.tx = (e.clientX/innerWidth - .5)*2; state.ty = (e.clientY/innerHeight - .5)*2; }
     const h = nearGem(e.clientX, e.clientY);
     if(h !== hovering){ hovering = h; cover.classList.toggle('is-hover', h); state.spinTarget = h ? 1.8 : 1; scene.style.cursor = h ? 'pointer' : ''; }
   });
   /* 3D 层里的点击在部分浏览器上会落空，所以按"离宝石多近"判断 */
   document.addEventListener('click', e => {
-    if(SB.scenes.current !== 'book' || SB.book.busy || e.target.closest('#sb-nav')) return;
-    if(e.target === $('bk-gembtn') || nearGem(e.clientX, e.clientY)) SB.book.open?.();
+    if(SB.scenes.current !== 'book' || SB.magicBook.busy || e.target.closest('#sb-nav')) return;
+    if(e.target === $('bk-gembtn') || nearGem(e.clientX, e.clientY)) SB.magicBook.open?.();
   });
 
   function placeOrbit(){
@@ -1212,10 +1547,10 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
   function start(){ if(state.running) return; state.running = true; last = 0; requestAnimationFrame(loop); }
   function stop(){ state.running = false; }
   document.addEventListener('visibilitychange', () => { if(document.hidden) stop(); else if(SB.scenes.current === 'book') start(); });
-  addEventListener('resize', () => { if(SB.scenes.current === 'book' && !SB.book.busy) placeOrbit(); });
+  addEventListener('resize', () => { if(SB.scenes.current === 'book' && !SB.magicBook.busy) placeOrbit(); });
 
   const gemBtn = $('bk-gembtn');
-  SB.book = {
+  SB.magicBook = {
     busy:false, state, scene, cover, tilt, gemBtn, page:$('bk-page'),
     stage:$('bk-stage'), shocks:[$('bk-shock'), $('bk-shock2')], leaves:[$('bk-leaf1'),$('bk-leaf2'),$('bk-leaf3')],
     setSpin(v){ state.spinTarget = v; },
@@ -1232,7 +1567,7 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
   SB.scenes.register('book', {
     world:'book', deepLink:true,
     title:()=>'魔法书',
-    enter(){ SB.book.reset(); SB.fx.palette('warm'); SB.fx.calm(); SB.fx.orbitBoost(1); start(); requestAnimationFrame(placeOrbit); },
+    enter(){ SB.magicBook.reset(); SB.fx.palette('warm'); SB.fx.calm(); SB.fx.orbitBoost(1); start(); requestAnimationFrame(placeOrbit); },
     leave(){ stop(); SB.fx.orbit(null); }
   });
 })(window.SB);
@@ -1243,8 +1578,8 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
 <script>
 /* ── 块 04 · 开书动画：启动 → 共鸣 → 翻开 → 入界 ── */
 (function(SB){
-  SB.book.open = async function(){
-    const B = SB.book;
+  SB.magicBook.open = async function(){
+    const B = SB.magicBook;
     if(B.busy || document.body.classList.contains('is-busy')) return;
     B.busy = true; SB.menu.close();
     B.scene.classList.add('is-opening');
@@ -1291,353 +1626,295 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
 
 <!-- ████ BLOCK 05-store START ████ -->
 <script>
-/* ── 块 05 · 存储：GitHub 仓库（主用）/ Claude 云端 / 本机临时 三种后端，对外接口一致 ──
-   数据：{cities:{id:{…}}, memories:{id:{…}}, settings:{…}}
-   文件：照片和音乐，用文件 id 引用（GitHub 版里就是 media/ 下的文件名）
-   规则：每次修改都基于最新数据执行一个"修改函数"，保存后自动清理不再被引用的文件。 */
+/* ── 块 05 · v1.5 周年桥接存储：Supabase book_data(JSONB) + Private Storage ──
+   对外继续暴露 V1 的 cities / memories / settings API，让地图、编辑器、播放器无需大改。
+   book_data 是周年桥接层；V2 再正规化 memories / locations / assets 等表。 */
 (function(SB){
-  const MUXER = ['https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.3/build/mp4-muxer.min.js', 'https://unpkg.com/mp4-muxer@5.1.3/build/mp4-muxer.min.js'];
-  const LOCAL_KEY = 'sb-local-v1', GH_KEY = 'sb-gh-v1', API = 'https://api.github.com';
-  const st = SB.store = { mode:'connecting', canEdit:false, canUpload:false, cities:[], memories:[], settings:{}, ready:null };
+  const cfg = window.STARBOOK_CONFIG || {};
+  const BUCKET = cfg.storageBucket || 'starbook-media';
+  const SIGN_TTL = Math.max(900, Number(cfg.signedUrlTtlSeconds) || 21600);
+  const MAX_FILE = 25 * 1024 * 1024;
+  const st = SB.store = { mode:'connecting', role:'viewer', canEdit:false, canUpload:false, cities:[], memories:[], settings:{}, revision:0, ready:null };
   const emit = () => document.dispatchEvent(new CustomEvent('sb:data'));
   const now = () => new Date().toISOString();
   const empty = () => ({cities:{}, memories:{}, settings:{}});
+  const clone = o => JSON.parse(JSON.stringify(o));
   let data = empty(), dataSig = '';
-  const preview = {};            // 本机刚选的文件：id → 本地预览地址
-  const pending = {};            // GitHub：已上传为草稿、还没提交的文件：id → blob sha
-  let cloud = null, assets = null, gh = null;
+  const preview = Object.create(null);   // 本次浏览器会话刚上传的文件 path → object URL
+  const signed = Object.create(null);    // Private Storage path → {url, expiresAt}
+  const signing = new Set();             // 正在补签的 path，避免同一图片并发重复请求
 
+  function normalize(d){ return {cities:d?.cities || {}, memories:d?.memories || {}, settings:d?.settings || {}}; }
   function setData(d){
-    d = {cities:d?.cities || {}, memories:d?.memories || {}, settings:d?.settings || {}};
-    const sig = JSON.stringify(d); if(sig === dataSig) return; dataSig = sig; data = d;
+    d = normalize(d); const sig = JSON.stringify(d); data = d;
     st.cities = Object.entries(d.cities).map(([id,v]) => ({id, ...v}));
     st.memories = Object.entries(d.memories).map(([id,v]) => ({id, ...v}));
-    st.settings = d.settings; emit();
+    st.settings = d.settings;
+    if(sig !== dataSig){ dataSig = sig; emit(); }
   }
-  const clone = o => JSON.parse(JSON.stringify(o));
   function refs(d){
     const s = new Set();
-    for(const m of Object.values(d.memories || {})){ m.cover?.id && s.add(m.cover.id); (m.slides || []).forEach(x => x.id && s.add(x.id)); m.bgm?.id && s.add(m.bgm.id); }
-    d.settings?.bgm?.id && s.add(d.settings.bgm.id);
+    for(const m of Object.values(d?.memories || {})){
+      m.cover?.id && s.add(m.cover.id);
+      (m.slides || []).forEach(x => x.id && s.add(x.id));
+      m.bgm?.id && s.add(m.bgm.id);
+    }
+    d?.settings?.bgm?.id && s.add(d.settings.bgm.id);
     return s;
   }
-
   function errText(e){
-    const c = e?.code;
+    const c = e?.code || e?.statusCode || e?.status;
+    const raw = String(e?.message || e?.error || '');
     if(e?.msg) return e.msg;
-    if(c === 'no_key') return '这台设备还没有编辑钥匙，请在菜单「编辑钥匙」里输入';
-    if(c === 401 || c === 403) return '编辑钥匙无效或没有写入权限，请在菜单「编辑钥匙」里重新输入';
-    if(c === 404) return '找不到仓库，请检查「编辑钥匙」里的仓库名';
-    if(c === 'quota_exceeded' || c === 'quota_or_state') return '存储空间已满，请删除一些旧照片后再试';
-    if(c === 'invalid_argument' || c === 'not_granted') return '你目前只有查看权限，无法修改';
-    if(c === 'too_large') return '文件太大（单个文件最多 25MB）';
-    if(c === 'unsupported_type') return '不支持这种文件格式';
-    if(c === 'rate_limited' || c === 'resource_exhausted' || c === 429) return '操作太频繁，请稍等一会儿再试';
+    if(c === 'conflict') return '另一台设备刚刚更新了这本书，请稍后再保存一次';
+    if(c === 401 || /jwt|not authenticated/i.test(raw)) return '登录状态已失效，请重新登录';
+    if(c === 403 || /row-level security|permission|policy/i.test(raw)) return '你目前没有执行这个操作的权限';
+    if(c === 404) return '没有找到要读取的星屿数据';
+    if(c === 'too_large' || /maximum allowed size|too large/i.test(raw)) return '文件太大（单个文件最多 25MB）';
+    if(c === 'unsupported_type') return '暂不支持这种文件格式';
+    if(c === 'decode') return '这张照片暂时无法读取，请换成 JPG / PNG 后再试';
+    if(c === 429 || /rate limit|too many/i.test(raw)) return '操作有点频繁，请稍等一会儿再试';
     return '网络有点问题，没有保存成功，请再试一次';
   }
   st.errText = errText;
 
-  /* ════════ GitHub 后端 ════════ */
-  function ghConfig(){
-    let saved = {}; try{ saved = JSON.parse(localStorage.getItem(GH_KEY)) || {}; }catch(e){}
-    const host = location.hostname, seg = location.pathname.split('/').filter(Boolean);
-    const auto = host.endsWith('.github.io') ? { owner: host.split('.')[0], repo: seg[0] && !/\.html?$/.test(seg[0]) ? seg[0] : host } : {};
-    return { owner: saved.owner || auto.owner || '', repo: saved.repo || auto.repo || '', branch: saved.branch || 'main', token: saved.token || '' };
+  function bookId(){ return SB.book?.current?.id || ''; }
+  function bucket(){ return SB.supabase.storage.from(BUCKET); }
+  function mayEdit(role){ return role === 'owner' || role === 'editor'; }
+
+  async function readRow(){
+    const id = bookId(); if(!id) throw new Error('book_not_ready');
+    const {data:row,error} = await SB.supabase.from('book_data').select('payload,revision,updated_at').eq('book_id',id).maybeSingle();
+    if(error) throw error;
+    if(row) return {payload:normalize(row.payload), revision:Number(row.revision)||0, updated_at:row.updated_at};
+    if(!st.canEdit) throw {code:403,msg:'这本书还没有初始化数据'};
+    const seed = {book_id:id,schema_version:1,payload:empty(),revision:0};
+    const {data:created,error:createErr} = await SB.supabase.from('book_data').insert(seed).select('payload,revision,updated_at').single();
+    if(createErr) throw createErr;
+    return {payload:normalize(created.payload),revision:Number(created.revision)||0,updated_at:created.updated_at};
   }
-  function saveGhConfig(c){ try{ localStorage.setItem(GH_KEY, JSON.stringify(c)); }catch(e){} }
-  async function ghApi(path, opts={}){
-    const headers = { 'Accept':'application/vnd.github+json', 'X-GitHub-Api-Version':'2022-11-28', ...(opts.headers || {}) };
-    if(gh.token) headers.Authorization = 'Bearer ' + gh.token;
-    if(opts.body && typeof opts.body !== 'string'){ opts = {...opts, body: JSON.stringify(opts.body)}; headers['Content-Type'] = 'application/json'; }
-    const r = await fetch(API + path, {...opts, headers, cache:'no-store'});
-    if(!r.ok){ const e = {code:r.status}; try{ e.detail = (await r.json()).message; }catch(_){} throw e; }
-    return opts.raw ? r.text() : (r.status === 204 ? null : r.json());
-  }
-  const repoPath = p => `/repos/${gh.owner}/${gh.repo}${p}`;
-  async function ghReadDb(ref){
-    if(gh.token){
-      try{ const t = await ghApi(repoPath(`/contents/data/db.json?ref=${encodeURIComponent(ref || gh.branch)}`), {raw:true, headers:{Accept:'application/vnd.github.raw+json'}}); return JSON.parse(t); }
-      catch(e){ if(e.code === 404) return empty(); throw e; }
+
+  async function signPaths(paths,{notify=false}={}){
+    const soon = Date.now() + 5*60*1000;
+    const need = [...new Set((paths || []).filter(path => path && !preview[path] && !signing.has(path) && (!signed[path] || signed[path].expiresAt < soon)))];
+    if(!need.length) return true;
+    need.forEach(path => signing.add(path));
+    const expiresAt = Date.now() + SIGN_TTL*1000;
+    let changed = false;
+    try{
+      const b = bucket();
+      if(typeof b.createSignedUrls === 'function'){
+        const {data:rows,error} = await b.createSignedUrls(need,SIGN_TTL); if(error) throw error;
+        (rows || []).forEach((row,i) => {
+          const path = row?.path || need[i], url = row?.signedUrl || row?.signedURL;
+          if(path && url){ signed[path] = {url,expiresAt}; changed = true; }
+        });
+      }else{
+        for(const path of need){
+          const {data:row,error} = await b.createSignedUrl(path,SIGN_TTL); if(error) throw error;
+          const url = row?.signedUrl || row?.signedURL;
+          if(url){ signed[path] = {url,expiresAt}; changed = true; }
+        }
+      }
+      return true;
+    }catch(e){
+      console.error('[Starbook signed urls]',e);
+      return false;
+    }finally{
+      need.forEach(path => signing.delete(path));
+      if(changed && notify) emit();
     }
-    const r = await fetch('data/db.json?t=' + Date.now(), {cache:'no-store'});
-    if(r.status === 404) return empty();
-    if(!r.ok) throw {code:r.status};
-    return r.json();
   }
-  async function ghMutate(fn, message){
-    if(!gh.token) throw {code:'no_key'};
-    for(let attempt = 0; attempt < 4; attempt++){
-      const ref = await ghApi(repoPath(`/git/ref/heads/${gh.branch}`));
-      const head = ref.object.sha;
-      const commit = await ghApi(repoPath(`/git/commits/${head}`));
-      const cur = await ghReadDb(head);
-      const next = clone({cities:cur.cities || {}, memories:cur.memories || {}, settings:cur.settings || {}});
-      fn(next);
-      const before = refs(cur), after = refs(next), tree = [];
-      const dbBlob = await ghApi(repoPath('/git/blobs'), {method:'POST', body:{content: JSON.stringify(next, null, 1), encoding:'utf-8'}});
-      tree.push({path:'data/db.json', mode:'100644', type:'blob', sha:dbBlob.sha});
-      for(const id of after) if(!before.has(id) && pending[id]) tree.push({path:'media/' + id, mode:'100644', type:'blob', sha:pending[id]});
-      for(const id of before) if(!after.has(id)) tree.push({path:'media/' + id, mode:'100644', type:'blob', sha:null});
-      const t = await ghApi(repoPath('/git/trees'), {method:'POST', body:{base_tree:commit.tree.sha, tree}});
-      const c = await ghApi(repoPath('/git/commits'), {method:'POST', body:{message: message || '更新星屿之书', tree:t.sha, parents:[head]}});
-      try{ await ghApi(repoPath(`/git/refs/heads/${gh.branch}`), {method:'PATCH', body:{sha:c.sha}}); }
-      catch(e){ if(e.code === 422 || e.code === 409){ await SB.wait(400 + Math.random()*800); continue; } throw e; }
-      for(const id of after) delete pending[id];
-      setData(next); return;
-    }
-    throw {code:'conflict', msg:'另一台设备正在同时保存，请稍后再试'};
-  }
-  async function ghPutFile(blob, ext){
-    if(!gh.token) throw {code:'no_key'};
-    if(blob.size > 25*1024*1024) throw {code:'too_large'};
-    const b64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(blob); });
-    const id = SB.uid() + '.' + ext;
-    const out = await ghApi(repoPath('/git/blobs'), {method:'POST', body:{content:b64, encoding:'base64'}});
-    pending[id] = out.sha;
-    preview[id] = URL.createObjectURL(blob);
-    return id;
-  }
-  async function ghCheck(){
-    if(!gh.owner || !gh.repo) return {ok:false, msg:'还没有填写仓库'};
-    if(!gh.token) return {ok:false, msg:'只读浏览'};
-    try{ const r = await ghApi(repoPath('')); return r.permissions?.push ? {ok:true} : {ok:false, msg:'这把钥匙没有写入权限'}; }
-    catch(e){ return {ok:false, msg: e.code === 401 ? '钥匙无效或已过期' : e.code === 404 ? '找不到仓库（或钥匙没有授权这个仓库）' : '暂时无法连接 GitHub'}; }
-  }
-  async function ghStatus(){
-    const chk = await ghCheck();
-    st.canEdit = st.canUpload = chk.ok;
-    SB.menu?.status(chk.ok ? `GitHub 已连接 · ${gh.owner}/${gh.repo} · 可以编辑` : `只读浏览 · ${chk.msg === '只读浏览' ? '在菜单「编辑钥匙」输入钥匙后即可编辑' : chk.msg}`);
-    SB.menu?.refresh(); emit();
-    return chk;
-  }
-  let polling = 0;
-  function ghPoll(){
-    clearInterval(polling);
-    polling = setInterval(async () => { if(document.hidden || document.querySelector('.sb-modal')) return; try{ setData(await ghReadDb()); }catch(e){} }, 60000);
-    document.addEventListener('visibilitychange', async () => { if(!document.hidden && st.mode === 'gh'){ try{ setData(await ghReadDb()); }catch(e){} } });
+  async function warmUrls(d){ return signPaths([...refs(d)]); }
+
+  async function applyRemote(row){
+    st.revision = Number(row?.revision)||0;
+    await warmUrls(row?.payload || empty());
+    setData(row?.payload || empty());
   }
 
-  /* 编辑钥匙对话框 */
-  st.keyDialog = () => {
-    const c = ghConfig(); let owner, repo, branch, token, msg;
-    SB.ui.dialog({ title:'编辑钥匙', sub:'GITHUB ACCESS',
-      build(b){
-        const p = SB.el('p'); p.style.cssText = 'margin:0;font-size:13px;line-height:1.8;color:var(--text-dim)';
-        p.textContent = '输入 GitHub 访问令牌后，这台设备就可以添加城市、上传照片。钥匙只保存在这台设备的浏览器里，不会写进网页或仓库。';
-        owner = SB.ui.input({type:'text', value:c.owner, placeholder:'GitHub 用户名', autocapitalize:'off', autocomplete:'off', spellcheck:'false'});
-        repo = SB.ui.input({type:'text', value:c.repo, placeholder:'仓库名，例如 starbook', autocapitalize:'off', autocomplete:'off', spellcheck:'false'});
-        branch = SB.ui.input({type:'text', value:c.branch, placeholder:'main', autocapitalize:'off', autocomplete:'off'});
-        token = SB.ui.input({type:'password', value:c.token, placeholder:'github_pat_…', autocapitalize:'off', autocomplete:'off', spellcheck:'false'});
-        const row = SB.el('div','ed-row2'); row.append(SB.ui.field('用户名', owner), SB.ui.field('仓库名', repo));
-        msg = SB.el('p'); msg.style.cssText = 'margin:0;min-height:1.4em;font-size:14px;color:var(--gold-hi)';
-        b.append(p, row, SB.ui.field('钥匙（访问令牌）', token), SB.ui.field('分支', branch), msg);
-      },
-      actions:[
-        {text:'移除钥匙', kind:'danger', async onClick(){ const n = {...ghConfig(), token:''}; saveGhConfig(n); gh = n; await ghStatus(); SB.toast('已移除这台设备的钥匙'); }},
-        'spacer',
-        {text:'取消'},
-        {text:'验证并保存', kind:'primary', async onClick(close, btn){
-          btn.disabled = true; msg.textContent = '正在验证…';
-          const n = { owner:owner.value.trim(), repo:repo.value.trim(), branch:branch.value.trim() || 'main', token:token.value.trim() };
-          gh = n; const chk = await ghStatus(); btn.disabled = false;
-          if(!chk.ok){ msg.textContent = '✕ ' + chk.msg; return false; }
-          saveGhConfig(n); SB.toast('✦ 钥匙已生效，这台设备可以编辑了');
-          try{ setData(await ghReadDb()); }catch(e){}
-        }}
-      ]});
-  };
-
-  /* ════════ Claude 云端后端（在 Claude 里打开时使用） ════════ */
-  async function cloudInit(){
-    st.mode = 'cloud';
-    let user = null;
-    try{ user = await window.claude.use('user'); }catch(e){}
-    try{ const can = user ? await user.can('data.write') : null; st.canEdit = can !== false; }catch(e){ st.canEdit = true; }
-    try{ assets = await window.claude.use('assets'); }catch(e){ assets = null; }
-    st.canUpload = !!assets;
-    SB.menu?.status(st.canEdit ? (st.canUpload ? '已连接云端 · 实时同步' : '已连接云端 · 上传照片需要「编辑者」权限') : '已连接云端 · 只读浏览');
-    const live = empty(); let left = 3, resolve; const first = new Promise(r => resolve = r);
-    const done = () => { setData(live); if(--left === 0) resolve(); };
-    const onErr = e => { console.warn('db', e); SB.toast('云端连接中断，请刷新页面'); };
-    let a = 1, b = 1, c = 1;
-    cloud.collection('cities').onSnapshot(s => { live.cities = Object.fromEntries(s.docs.map(d => [d.id, d.data()])); if(a){ a = 0; done(); } else setData(clone(live)); }, onErr);
-    cloud.collection('memories').onSnapshot(s => { live.memories = Object.fromEntries(s.docs.map(d => [d.id, d.data()])); if(b){ b = 0; done(); } else setData(clone(live)); }, onErr);
-    cloud.doc('settings/main').onSnapshot(s => { live.settings = s.exists ? s.data() : {}; if(c){ c = 0; done(); } else setData(clone(live)); }, onErr);
-    await Promise.race([first, SB.wait(8000)]);
+  async function refreshRemote({silent=false}={}){
+    try{ await applyRemote(await readRow()); }
+    catch(e){ if(!silent) throw e; console.error('[Starbook refresh]',e); }
   }
-  async function cloudMutate(fn){
-    const cur = clone(data), next = clone(data); fn(next);
-    for(const col of ['cities','memories']){
-      for(const [id, v] of Object.entries(next[col])) if(JSON.stringify(v) !== JSON.stringify(cur[col][id])) await cloud.collection(col).doc(id).set(v);
-      for(const id of Object.keys(cur[col])) if(!next[col][id]) await cloud.collection(col).doc(id).delete();
-    }
-    if(JSON.stringify(next.settings) !== JSON.stringify(cur.settings)) await cloud.doc('settings/main').set(next.settings);
-    const after = refs(next); for(const id of refs(cur)) if(!after.has(id)) try{ await assets?.delete(id); }catch(e){}
-    setData(next);
-  }
+  st.refresh = refreshRemote;
 
-  /* ════════ 本机临时后端 ════════ */
-  const local = {
-    read(){ try{ return JSON.parse(localStorage.getItem(LOCAL_KEY)) || empty(); }catch(e){ return empty(); } },
-    write(d){ try{ localStorage.setItem(LOCAL_KEY, JSON.stringify(d)); }catch(e){} }
-  };
-
-  /* ════════ 启动：按环境选择后端 ════════ */
   async function init(){
-    if(window.claude?.use){ try{ cloud = await window.claude.use('db'); }catch(e){ cloud = null; } }
-    if(cloud) return cloudInit();
-    gh = ghConfig();
-    if(gh.owner && gh.repo){
-      st.mode = 'gh';
-      try{ setData(await ghReadDb()); }catch(e){ SB.toast('暂时读取不到数据，请检查网络后刷新'); }
-      await ghStatus(); ghPoll(); return;
-    }
-    st.mode = 'local'; st.canEdit = st.canUpload = true;
-    SB.menu?.status('本机预览：内容只保存在这台设备上');
-    setData(local.read());
+    await SB.runtime.ready;
+    st.mode = 'supabase';
+    st.role = SB.book.current?.role || 'viewer';
+    st.canEdit = mayEdit(st.role); st.canUpload = st.canEdit;
+    SB.menu?.status(`${SB.book.current?.name || '星屿之书'} · ${st.canEdit ? '可以编辑' : '只读浏览'}`);
+    SB.menu?.refresh();
+    await refreshRemote();
+    document.addEventListener('visibilitychange',()=>{
+      if(!document.hidden && st.mode==='supabase' && !document.querySelector('.sb-modal')) refreshRemote({silent:true});
+    });
   }
   st.ready = init();
+  st.isConnected = () => st.mode === 'supabase' && !!SB.user?.current && !!SB.book?.current;
 
-  /* 统一的"修改"入口 */
-  async function mutate(fn, message){
-    if(st.mode === 'gh') return ghMutate(fn, message);
-    if(st.mode === 'cloud') return cloudMutate(fn);
-    const next = clone(data); fn(next); local.write(next); setData(next);
+  async function removeObjects(paths){
+    paths = [...new Set(paths.filter(Boolean))]; if(!paths.length || !st.canUpload) return;
+    try{
+      const {error} = await bucket().remove(paths); if(error) throw error;
+      for(const id of paths){ if(preview[id]){ URL.revokeObjectURL(preview[id]); delete preview[id]; } delete signed[id]; }
+    }catch(e){ console.error('[Starbook storage cleanup]',e); }
   }
-  st.isConnected = () => st.mode !== 'connecting';
 
-  /* ── 业务操作 ── */
+  /* 基于 revision 的轻量冲突检测：保留 JSONB 桥接结构，同时避免两台设备静默覆盖。 */
+  async function mutate(fn){
+    if(!st.canEdit) throw {code:403};
+    for(let attempt=0; attempt<3; attempt++){
+      const cur = await readRow();
+      const next = clone(normalize(cur.payload)); fn(next);
+      const nextRevision = (Number(cur.revision)||0) + 1;
+      const {data:updated,error} = await SB.supabase.from('book_data')
+        .update({payload:next,revision:nextRevision,updated_at:now()})
+        .eq('book_id',bookId()).eq('revision',Number(cur.revision)||0)
+        .select('payload,revision,updated_at').maybeSingle();
+      if(error) throw error;
+      if(updated){
+        const removed = [...refs(cur.payload)].filter(id => !refs(next).has(id));
+        await applyRemote(updated);
+        if(removed.length) removeObjects(removed);
+        return;
+      }
+      await SB.wait(220 + Math.random()*360);
+    }
+    throw {code:'conflict'};
+  }
+
   const strip = o => { const c = {...o}; delete c.id; return JSON.parse(JSON.stringify(c)); };
   st.addCity = async (c) => {
     const name = String(c.name || '').trim();
-    if(!name) throw {code:'empty', msg:'请输入城市名'};
-    if(st.cities.some(x => x.region === c.region && x.name === name)) throw {code:'dup', msg:'这座城市已经点亮过了'};
+    if(!name) throw {code:'empty',msg:'请输入城市名'};
+    if(st.cities.some(x => x.region === c.region && x.name === name)) throw {code:'dup',msg:'这座城市已经点亮过了'};
     const id = SB.uid();
-    await mutate(d => { d.cities[id] = strip({...c, name, createdAt:now()}); }, `点亮 ${c.regionName} · ${name}`);
+    await mutate(d => { d.cities[id] = strip({...c,name,createdAt:now()}); });
     return id;
   };
-  st.updateCity = (id, patch) => mutate(d => { if(d.cities[id]) d.cities[id] = {...d.cities[id], ...patch, updatedAt:now()}; }, '修改城市');
-  st.removeCity = (id) => mutate(d => {
+  st.updateCity = (id,patch) => mutate(d => { if(d.cities[id]) d.cities[id] = {...d.cities[id],...patch,updatedAt:now()}; });
+  st.removeCity = id => mutate(d => {
     delete d.cities[id];
-    for(const [mid, m] of Object.entries(d.memories)) if(m.cityId === id) delete d.memories[mid];
-  }, '删除城市');
-  st.saveMemory = async (m) => {
+    for(const [mid,m] of Object.entries(d.memories)) if(m.cityId === id) delete d.memories[mid];
+  });
+  st.saveMemory = async m => {
     const id = m.id || SB.uid();
-    await mutate(d => { const prev = d.memories[id]; d.memories[id] = strip({...m, createdAt: prev?.createdAt || now(), updatedAt: now()}); }, `回忆 · ${m.title}`);
+    await mutate(d => { const prev=d.memories[id]; d.memories[id]=strip({...m,createdAt:prev?.createdAt||now(),updatedAt:now()}); });
     return id;
   };
-  st.removeMemory = (id) => mutate(d => { delete d.memories[id]; }, '删除回忆');
-  st.saveSettings = (patch) => mutate(d => { d.settings = strip({...d.settings, ...patch}); }, '更新设置');
-  /* 丢弃一个从未保存过的文件（取消编辑时） */
-  st.deleteFile = async (id) => {
-    if(!id) return;
-    if(st.mode === 'gh'){ delete pending[id]; return; }            // 已提交的文件由保存时自动清理
-    if(st.mode === 'cloud'){ if(!refs(data).has(id)) try{ await assets?.delete(id); }catch(e){} return; }
-    if(preview[id]){ URL.revokeObjectURL(preview[id]); delete preview[id]; }
+  st.removeMemory = id => mutate(d => { delete d.memories[id]; });
+  st.saveSettings = patch => mutate(d => { d.settings = strip({...d.settings,...patch}); });
+
+  /* ── Private Storage ── */
+  st.url = id => {
+    if(!id) return '';
+    if(preview[id]) return preview[id];
+    const hit = signed[id];
+    if(hit?.url){
+      if(hit.expiresAt < Date.now()+5*60*1000) signPaths([id],{notify:true});
+      return hit.url;
+    }
+    // 初次签名若曾因弱网失败，组件再次询问 URL 时自动补签；成功后 sb:data 会触发重绘。
+    signPaths([id],{notify:true});
+    return '';
   };
 
-  /* ── 文件 ── */
-  st.url = id => !id ? '' : preview[id] || (st.mode === 'gh' ? 'media/' + id : st.mode === 'cloud' ? '/_blob/' + id : '');
-  async function putFile(blob, ext, type){
-    if(st.mode === 'gh') return ghPutFile(blob, ext);
-    if(st.mode === 'cloud'){
-      if(!assets) throw {code:'not_granted'};
-      try{ return (await assets.upload(blob, {type})).id; }
-      catch(e){ if(e?.code === 'store_unavailable'){ await SB.wait(1200); return (await assets.upload(blob, {type})).id; } throw e; }
-    }
-    const id = 'local-' + SB.uid() + '.' + ext; preview[id] = URL.createObjectURL(blob); return id;
+  st.health = async () => {
+    const result = {
+      connected: st.isConnected(),
+      userId: SB.user?.current?.id || null,
+      bookId: bookId() || null,
+      role: st.role,
+      canEdit: st.canEdit,
+      revision: st.revision,
+      database: false,
+      storage: false
+    };
+    try{ await readRow(); result.database = true; }catch(e){ result.databaseError = errText(e); }
+    try{
+      const probe = `${bookId()}/.healthcheck-never-created`;
+      const {error} = await bucket().createSignedUrl(probe,60);
+      // 对不存在对象，Storage 可能返回错误；只要不是权限/RLS 类错误，就说明 Bucket API 已可访问。
+      if(!error) result.storage = true;
+      else{
+        const raw=String(error?.message||'');
+        result.storage = !/row-level security|permission|unauthorized|jwt/i.test(raw);
+        if(!result.storage) result.storageError = errText(error);
+      }
+    }catch(e){ result.storageError = errText(e); }
+    return result;
+  };
+
+  async function putFile(blob,ext,type,folder){
+    if(!st.canUpload) throw {code:403};
+    if(!blob || blob.size > MAX_FILE) throw {code:'too_large'};
+    const path = `${bookId()}/${folder}/${SB.uid()}.${ext}`;
+    const {error} = await bucket().upload(path,blob,{contentType:type||undefined,cacheControl:'3600',upsert:false});
+    if(error) throw error;
+    preview[path] = URL.createObjectURL(blob);
+    return path;
   }
+
+  st.deleteFile = async id => {
+    if(!id || refs(data).has(id)) return;
+    await removeObjects([id]);
+  };
+
   async function decodeImage(file){
-    try{ return await createImageBitmap(file, {imageOrientation:'from-image'}); }
+    try{ return await createImageBitmap(file,{imageOrientation:'from-image'}); }
     catch(e){
-      return await new Promise((res, rej) => { const img = new Image(); const u = URL.createObjectURL(file);
-        img.onload = () => res(img); img.onerror = () => rej({code:'decode'}); img.src = u; });
+      return await new Promise((res,rej)=>{
+        const img=new Image(),u=URL.createObjectURL(file);
+        img.onload=()=>{ URL.revokeObjectURL(u); res(img); };
+        img.onerror=()=>{ URL.revokeObjectURL(u); rej({code:'decode'}); };
+        img.src=u;
+      });
     }
   }
-  st.uploadImage = async (file, onStep) => {
+  st.uploadImage = async (file,onStep) => {
+    if(!file) throw {code:'unsupported_type'};
     onStep?.('读取中');
-    let img;
-    try{ img = await decodeImage(file); }
-    catch(e){ throw {code:'decode', msg:`「${file.name}」无法读取。iPhone 的 HEIC 照片请在手机上直接选择上传，或先转成 JPG`}; }
-    const w0 = img.width, h0 = img.height, k = Math.min(1, 2400/Math.max(w0, h0));
-    const w = Math.round(w0*k), h = Math.round(h0*k);
-    const c = document.createElement('canvas'); c.width = w; c.height = h;
-    c.getContext('2d').drawImage(img, 0, 0, w, h);
+    let img; try{ img=await decodeImage(file); }
+    catch(e){ throw {code:'decode',msg:`「${file.name}」无法读取。HEIC 如上传失败，请先在手机相册中导出为 JPG`}; }
+    const w0=img.width,h0=img.height,k=Math.min(1,2400/Math.max(w0,h0));
+    const w=Math.max(1,Math.round(w0*k)),h=Math.max(1,Math.round(h0*k));
+    const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
+    canvas.getContext('2d',{alpha:false}).drawImage(img,0,0,w,h); img.close?.();
     onStep?.('压缩中');
-    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', .86));
+    const blob=await new Promise(r=>canvas.toBlob(r,'image/jpeg',.86));
+    if(!blob) throw {code:'decode',msg:'照片压缩失败，请换一张照片后再试'};
     onStep?.('上传中');
-    const id = await putFile(blob, 'jpg', 'image/jpeg');
-    return {id, w, h};
+    return {id:await putFile(blob,'jpg','image/jpeg','images'),w,h};
   };
 
-  /* 音乐：GitHub 和本机直接保存原文件；Claude 云端只收 mp4/webm 容器，其他格式先转成 m4a */
-  async function transcode(file, onStep){
-    if(!window.AudioEncoder) throw {code:'no_encoder'};
-    onStep?.('解码音乐');
-    const buf = await file.arrayBuffer();
-    let ac; try{ ac = new AudioContext({sampleRate:44100}); }catch(e){ ac = new AudioContext(); }
-    const audio = await ac.decodeAudioData(buf); ac.close?.();
-    await SB.loadScript(MUXER);
-    const M = window.Mp4Muxer; if(!M) throw {code:'no_encoder'};
-    const ch = Math.min(2, audio.numberOfChannels), sr = audio.sampleRate;
-    const ok = await AudioEncoder.isConfigSupported({codec:'mp4a.40.2', sampleRate:sr, numberOfChannels:ch, bitrate:160000}).catch(() => ({supported:false}));
-    if(!ok.supported) throw {code:'no_encoder'};
-    const target = new M.ArrayBufferTarget();
-    const muxer = new M.Muxer({target, audio:{codec:'aac', numberOfChannels:ch, sampleRate:sr}, fastStart:'in-memory'});
-    let fail = null;
-    const enc = new AudioEncoder({ output:(chunk, meta) => muxer.addAudioChunk(chunk, meta), error:e => { fail = e; } });
-    enc.configure({codec:'mp4a.40.2', sampleRate:sr, numberOfChannels:ch, bitrate:160000});
-    const frames = 4096, total = audio.length, chans = Array.from({length:ch}, (_,i) => audio.getChannelData(i));
-    for(let off = 0; off < total; off += frames){
-      const n = Math.min(frames, total - off), buf2 = new Float32Array(n*ch);
-      for(let c = 0; c < ch; c++) buf2.set(chans[c].subarray(off, off+n), c*n);
-      enc.encode(new AudioData({format:'f32-planar', sampleRate:sr, numberOfFrames:n, numberOfChannels:ch, timestamp:Math.round(off/sr*1e6), data:buf2}));
-      if(off % (frames*64) === 0){ onStep?.(`转码 ${Math.round(off/total*100)}%`); await SB.wait(0); while(enc.encodeQueueSize > 32) await SB.wait(10); }
-      if(fail) throw {code:'no_encoder'};
-    }
-    await enc.flush(); enc.close(); muxer.finalize();
-    return new Blob([target.buffer], {type:'video/mp4'});
-  }
-  st.uploadAudio = async (file, onStep) => {
-    const name = file.name.replace(/\.[^.]+$/, '');
-    let ext = (file.name.split('.').pop() || '').toLowerCase();
-    if(!['mp3','m4a','aac','wav','mp4','webm'].includes(ext)) throw {code:'audio', msg:'请上传 mp3 或 m4a 格式的音乐'};
-    if(st.mode !== 'cloud'){
-      if(file.size > 25*1024*1024) throw {code:'too_large'};
-      onStep?.('上传中');
-      return {id: await putFile(file, ext, file.type), name};
-    }
-    let blob = file, type = ext === 'webm' ? 'video/webm' : 'video/mp4';
-    if(!['m4a','mp4','aac','webm'].includes(ext)){
-      try{ blob = await transcode(file, onStep); }
-      catch(e){ throw {code:'audio', msg:'这个浏览器无法转换这首歌的格式。请用电脑上的 Chrome 上传，或者上传 m4a 格式'}; }
-    }
-    if(blob.size > 20*1024*1024) throw {code:'too_large'};
+  st.uploadAudio = async (file,onStep) => {
+    if(!file) throw {code:'unsupported_type'};
+    let ext=(file.name.split('.').pop()||'').toLowerCase();
+    const types={mp3:'audio/mpeg',m4a:'audio/mp4',aac:'audio/aac',mp4:'audio/mp4',wav:'audio/wav'};
+    if(!types[ext]) throw {code:'unsupported_type',msg:'周年版本建议上传 mp3 或 m4a 音乐'};
+    if(file.size > 20*1024*1024) throw {code:'too_large',msg:'音乐文件请控制在 20MB 以内'};
     onStep?.('上传中');
-    return {id: await putFile(blob, 'm4a', type), name};
+    const name=file.name.replace(/\.[^.]+$/,'');
+    return {id:await putFile(file,ext,file.type||types[ext],'audio'),name};
   };
 
   /* ── 派生查询 ── */
   st.citiesIn = country => st.cities.filter(c => c.country === country);
-  st.citiesInRegion = region => st.cities.filter(c => c.region === region).sort((a,b) => (a.createdAt||'').localeCompare(b.createdAt||''));
+  st.citiesInRegion = region => st.cities.filter(c => c.region === region).sort((a,b)=>(a.createdAt||'').localeCompare(b.createdAt||''));
   st.city = id => st.cities.find(c => c.id === id);
   st.memory = id => st.memories.find(m => m.id === id);
-  st.memoriesOf = cityId => st.memories.filter(m => m.cityId === cityId).sort((a,b) => (a.date||'').localeCompare(b.date||'') || (a.createdAt||'').localeCompare(b.createdAt||''));
+  st.memoriesOf = cityId => st.memories.filter(m => m.cityId === cityId).sort((a,b)=>(a.date||'').localeCompare(b.date||'') || (a.createdAt||'').localeCompare(b.createdAt||''));
   st.visitedCountries = () => new Set(st.cities.map(c => c.country));
   st.visitedRegions = country => new Set(st.cities.filter(c => c.country === country).map(c => c.region));
   st.stats = () => ({
-    countries: new Set(st.cities.map(c => c.country)).size,
-    regions: new Set(st.cities.map(c => c.region)).size,
-    cities: st.cities.length,
-    memories: st.memories.length,
-    photos: st.memories.reduce((n,m) => n + (m.slides||[]).length, 0)
+    countries:new Set(st.cities.map(c=>c.country)).size,
+    regions:new Set(st.cities.map(c=>c.region)).size,
+    cities:st.cities.length,
+    memories:st.memories.length,
+    photos:st.memories.reduce((n,m)=>n+(m.slides||[]).length,0)
   });
-
-  /* 菜单：编辑钥匙（仅 GitHub 版显示） */
-  SB.menu.icons.key = '<svg viewBox="0 0 24 24"><circle cx="8" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M12 12h9M17.5 12v3.2M20.5 12v2.4" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>';
-  SB.menu.add({id:'key', order:80, icon:'key', label:'编辑钥匙', hidden:() => st.mode !== 'gh',
-    desc:() => st.canEdit ? '这台设备已经可以编辑' : '输入钥匙后才能添加和修改',
-    tag:() => st.canEdit ? '<span class="sb-seg"><span class="on">已连接</span></span>' : '', action:() => st.keyDialog()});
 })(window.SB);
 </script>
 <!-- ████ BLOCK 05-store END ████ -->
@@ -1827,7 +2104,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 
 <script>
 (function(SB){
-  const THREE_URLS = ['https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js', 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js'];
+  const THREE_URLS = ['https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js', 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js', 'https://unpkg.com/three@0.128.0/build/three.min.js'];
   const $ = id => document.getElementById(id);
   const cv = $('gl-canvas'), labelsEl = $('gl-labels'), tip = $('gl-tip');
   let T, renderer, scene, camera, globe, earth, earthMat, texCanvas, tex, idCanvas, idTex, starMat, dustMats = [], cityGroup, starTexture;
@@ -2047,6 +2324,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   }
   function bindControls(){
     const pts = new Map(); let pinch = 0, moved = 0, lastHover = 0;
+    const tapMoveLimit = SB.perf.touch ? 14 : 6;
     cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); pts.set(e.pointerId, {x:e.clientX, y:e.clientY}); moved = 0; view.idle = 0; cv.classList.add('dragging');
       if(pts.size === 2){ const [a,b] = [...pts.values()]; pinch = Math.hypot(a.x-b.x, a.y-b.y); } });
     cv.addEventListener('pointermove', e => {
@@ -2063,8 +2341,8 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
       setHover(null);
     });
     const up = e => {
-      pts.delete(e.pointerId); if(pts.size < 2) pinch = 0; cv.classList.remove('dragging');
-      if(moved < 6 && e.type === 'pointerup'){
+      pts.delete(e.pointerId); if(pts.size < 2) pinch = 0; if(!pts.size) cv.classList.remove('dragging');
+      if(moved < tapMoveLimit && e.type === 'pointerup'){
         const h = pick(e.clientX, e.clientY);
         if(h?.country){
           if(h.country.key === 'aq') SB.scenes.go('continent', {c:'an'});
@@ -2147,7 +2425,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 
   SB.menu.add({id:'globe', order:20, icon:'globe', label:'世界星图', desc:'旋转地球，寻找我们的足迹',
     current:() => SB.scenes.current === 'globe',
-    action(){ if(SB.scenes.current === 'book') SB.book.open(); else SB.scenes.go('globe', {}, {transition:'flash'}); } });
+    action(){ if(SB.scenes.current === 'book') SB.magicBook.open(); else SB.scenes.go('globe', {}, {transition:'flash'}); } });
 })(window.SB);
 </script>
 <!-- ████ BLOCK 07-globe END ████ -->
@@ -2551,6 +2829,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 
   /* ── 指针：悬停、点按、拖拽、缩放 ── */
   const ptrs = new Map(); let pinch = 0, moved = 0;
+  const tapMoveLimit = SB.perf.touch ? 14 : 6;
   svg.addEventListener('pointerover', e => {
     if(e.pointerType !== 'mouse' || ptrs.size) return;
     const key = e.target.dataset?.key; if(key) showPop(key);
@@ -2569,7 +2848,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   });
   const up = e => {
     const p = ptrs.get(e.pointerId); ptrs.delete(e.pointerId); if(ptrs.size < 2) pinch = 0; svg.classList.remove('dragging');
-    if(p && moved < 6 && e.type === 'pointerup'){
+    if(p && moved < tapMoveLimit && e.type === 'pointerup'){
       // 手机点按 / 鼠标点击：打开悬浮窗
       const el = document.elementFromPoint(e.clientX, e.clientY), key = el?.dataset?.key;
       if(key) showPop(key, e.pointerType === 'mouse' ? null : null); else hidePop(true);
@@ -3084,7 +3363,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
             }
             if(SB.store.canUpload){
               const up = SB.el('label','sb-btn small'); up.style.position = 'relative'; up.textContent = st.bgm ? '换一首' : '上传音乐';
-              const ai = SB.el('input'); ai.type = 'file'; ai.accept = 'audio/*,.mp3,.m4a,.aac,.wav,.ogg,.flac'; ai.style.cssText = 'position:absolute;inset:0;opacity:0;cursor:pointer';
+              const ai = SB.el('input'); ai.type = 'file'; ai.accept = 'audio/*,.mp3,.m4a,.aac,.wav,.mp4'; ai.style.cssText = 'position:absolute;inset:0;opacity:0;cursor:pointer';
               ai.addEventListener('change', async () => {
                 const f = ai.files[0]; if(!f) return; ai.value = '';
                 st.uploading++; refresh();
@@ -3095,7 +3374,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
               });
               up.appendChild(ai); track.appendChild(up);
             }
-            const n = SB.el('p','ed-note'); n.style.width = '100%'; n.textContent = '支持 mp3、m4a 等常见格式，单首不超过 20MB；mp3 会在浏览器里自动转换。'; track.appendChild(n);
+            const n = SB.el('p','ed-note'); n.style.width = '100%'; n.textContent = '周年版本建议使用 mp3 或 m4a，单首不超过 20MB；上传后直接私密保存到星屿存储。'; track.appendChild(n);
           };
           renderTrack(); renderList();
         },
@@ -3290,7 +3569,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
       previewA = SB.audio.preview(bgm.id); previewA.play().catch(()=>{}); e.target.textContent = '停止'; }));
     if(SB.store.canEdit && SB.store.canUpload){
       const up = SB.el('label','sb-btn small primary'); up.style.position = 'relative'; up.textContent = bgm ? '换一首' : '上传音乐';
-      const inp = SB.el('input'); inp.type = 'file'; inp.accept = 'audio/*,.mp3,.m4a,.aac,.wav,.ogg,.flac'; inp.style.cssText = 'position:absolute;inset:0;opacity:0;cursor:pointer';
+      const inp = SB.el('input'); inp.type = 'file'; inp.accept = 'audio/*,.mp3,.m4a,.aac,.wav,.mp4'; inp.style.cssText = 'position:absolute;inset:0;opacity:0;cursor:pointer';
       inp.setAttribute('aria-label','选择音乐文件');
       inp.addEventListener('change', async () => {
         const f = inp.files[0]; if(!f) return; inp.value = '';
@@ -3325,13 +3604,19 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 
 <!-- ████ BLOCK 99-boot START ████ -->
 <script>
-/* ── 块 99 · 启动：开始粒子，连接云端，按网址锚点进入场景（默认魔法书封面） ── */
+/* ── 块 99 · v1.5 启动：氛围可以先出现；认证、Book 与 Store 就绪后才真正开启书 ── */
 (function(SB){
   SB.fx.start();
-  SB.scenes.boot('book');
-  SB.store.ready.then(() => document.dispatchEvent(new CustomEvent('sb:data')));
+  (async()=>{
+    try{
+      await SB.store.ready;
+      SB.scenes.boot('book');
+      document.dispatchEvent(new CustomEvent('sb:data'));
+    }catch(e){
+      console.error('[Starbook start]',e);
+      SB.runtime?.showFatal?.('暂时没能翻开这本书。','请检查 Supabase 初始化与网络连接后重新尝试。');
+    }
+  })();
 })(window.SB);
 </script>
 <!-- ████ BLOCK 99-boot END ████ -->
-</body>
-</html>

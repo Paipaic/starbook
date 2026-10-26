@@ -1,12 +1,20 @@
 # Starbook Roadmap
 
+## Project Governance — v1.5.1
+
+- **GOV-001 · Agent Handoff** — `DONE` — 根目录 `AGENTS.md` + 必读顺序。
+- **GOV-002 · Full-chain documentation** — `DONE` — 项目开发、CI/CD、数据、回滚、交接链路固化。
+- **GOV-003 · Release record enforcement** — `DONE` — 每个版本强制记录多维链路变化。
+- **GOV-004 · Documentation-aware validation** — `DONE` — 本地 checker + PR CI 校验版本治理文件一致性。
+- **GOV-005 · Production branch rule** — `DONE` — `main` 为唯一 Production branch，Pages 只由 main 部署。
+
 ## Anniversary P0 — 2026-10-29 前
 
 - **ANN-010 · Runtime / MagicBook 命名冲突** — `DONE` — `SB.book` 保留给数据 Book Context，视觉魔法书改为 `SB.magicBook`。
-- **ANN-001 · Supabase 实际初始化** — `IN_PROGRESS` — migration + owner seed + Private Bucket 已验证；待真实前端登录完成 RLS 端到端验证。
+- **ANN-001 · Supabase 实际初始化** — `DONE` — migration + owner seed + Private Bucket + Auth/RLS 前端访问链路已验证。
 - **ANN-002 · Private Storage 实机验证** — `TODO` — 上传照片、刷新、重新签名 URL、删除。
-- **ANN-003 · 手机端稳定性** — `IN_PROGRESS` — 100dvh / safe-area / coarse pointer / 误触阈值已加固；待真实 iPhone/Android 验证。
-- **ANN-004 · 浏览器/Android 返回测试** — `IN_PROGRESS` — 已加入连续 popstate pending queue 与 bfcache 恢复保护；待实机 back 验证。
+- **ANN-003 · 手机端稳定性** — `DONE` — 100dvh / safe-area / coarse pointer / 误触阈值已加固并完成当前实机验证。
+- **ANN-004 · 浏览器/Android 返回测试** — `DONE` — 连续 popstate pending queue 与 bfcache 恢复保护已完成当前实机验证。
 - **ANN-005 · 核心 CDN 可靠性** — `IN_PROGRESS` — 动态脚本增加超时 fallback，Three.js 三 CDN；本地 vendor 化不再阻塞周年交付。
 - **ANN-006 · 统一错误恢复细化** — `IN_PROGRESS` — 登录/无权限错误已加入可恢复路径与返回登录；业务操作错误状态继续检查。
 - **ANN-007 · 周年内容填充** — `TODO` — 城市、回忆、照片、BGM、文案。
