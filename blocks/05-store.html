@@ -1,0 +1,292 @@
+<script>
+/* ── 块 05 · v1.5 周年桥接存储：Supabase book_data(JSONB) + Private Storage ──
+   对外继续暴露 V1 的 cities / memories / settings API，让地图、编辑器、播放器无需大改。
+   book_data 是周年桥接层；V2 再正规化 memories / locations / assets 等表。 */
+(function(SB){
+  const cfg = window.STARBOOK_CONFIG || {};
+  const BUCKET = cfg.storageBucket || 'starbook-media';
+  const SIGN_TTL = Math.max(900, Number(cfg.signedUrlTtlSeconds) || 21600);
+  const MAX_FILE = 25 * 1024 * 1024;
+  const st = SB.store = { mode:'connecting', role:'viewer', canEdit:false, canUpload:false, cities:[], memories:[], settings:{}, revision:0, ready:null };
+  const emit = () => document.dispatchEvent(new CustomEvent('sb:data'));
+  const now = () => new Date().toISOString();
+  const empty = () => ({cities:{}, memories:{}, settings:{}});
+  const clone = o => JSON.parse(JSON.stringify(o));
+  let data = empty(), dataSig = '';
+  const preview = Object.create(null);   // 本次浏览器会话刚上传的文件 path → object URL
+  const signed = Object.create(null);    // Private Storage path → {url, expiresAt}
+  const signing = new Set();             // 正在补签的 path，避免同一图片并发重复请求
+
+  function normalize(d){ return {cities:d?.cities || {}, memories:d?.memories || {}, settings:d?.settings || {}}; }
+  function setData(d){
+    d = normalize(d); const sig = JSON.stringify(d); data = d;
+    st.cities = Object.entries(d.cities).map(([id,v]) => ({id, ...v}));
+    st.memories = Object.entries(d.memories).map(([id,v]) => ({id, ...v}));
+    st.settings = d.settings;
+    if(sig !== dataSig){ dataSig = sig; emit(); }
+  }
+  function refs(d){
+    const s = new Set();
+    for(const m of Object.values(d?.memories || {})){
+      m.cover?.id && s.add(m.cover.id);
+      (m.slides || []).forEach(x => x.id && s.add(x.id));
+      m.bgm?.id && s.add(m.bgm.id);
+    }
+    d?.settings?.bgm?.id && s.add(d.settings.bgm.id);
+    return s;
+  }
+  function errText(e){
+    const c = e?.code || e?.statusCode || e?.status;
+    const raw = String(e?.message || e?.error || '');
+    if(e?.msg) return e.msg;
+    if(c === 'conflict') return '另一台设备刚刚更新了这本书，请稍后再保存一次';
+    if(c === 401 || /jwt|not authenticated/i.test(raw)) return '登录状态已失效，请重新登录';
+    if(c === 403 || /row-level security|permission|policy/i.test(raw)) return '你目前没有执行这个操作的权限';
+    if(c === 404) return '没有找到要读取的星屿数据';
+    if(c === 'too_large' || /maximum allowed size|too large/i.test(raw)) return '文件太大（单个文件最多 25MB）';
+    if(c === 'unsupported_type') return '暂不支持这种文件格式';
+    if(c === 'decode') return '这张照片暂时无法读取，请换成 JPG / PNG 后再试';
+    if(c === 429 || /rate limit|too many/i.test(raw)) return '操作有点频繁，请稍等一会儿再试';
+    return '网络有点问题，没有保存成功，请再试一次';
+  }
+  st.errText = errText;
+
+  function bookId(){ return SB.book?.current?.id || ''; }
+  function bucket(){ return SB.supabase.storage.from(BUCKET); }
+  function mayEdit(role){ return role === 'owner' || role === 'editor'; }
+
+  async function readRow(){
+    const id = bookId(); if(!id) throw new Error('book_not_ready');
+    const {data:row,error} = await SB.supabase.from('book_data').select('payload,revision,updated_at').eq('book_id',id).maybeSingle();
+    if(error) throw error;
+    if(row) return {payload:normalize(row.payload), revision:Number(row.revision)||0, updated_at:row.updated_at};
+    if(!st.canEdit) throw {code:403,msg:'这本书还没有初始化数据'};
+    const seed = {book_id:id,schema_version:1,payload:empty(),revision:0};
+    const {data:created,error:createErr} = await SB.supabase.from('book_data').insert(seed).select('payload,revision,updated_at').single();
+    if(createErr) throw createErr;
+    return {payload:normalize(created.payload),revision:Number(created.revision)||0,updated_at:created.updated_at};
+  }
+
+  async function signPaths(paths,{notify=false}={}){
+    const soon = Date.now() + 5*60*1000;
+    const need = [...new Set((paths || []).filter(path => path && !preview[path] && !signing.has(path) && (!signed[path] || signed[path].expiresAt < soon)))];
+    if(!need.length) return true;
+    need.forEach(path => signing.add(path));
+    const expiresAt = Date.now() + SIGN_TTL*1000;
+    let changed = false;
+    try{
+      const b = bucket();
+      if(typeof b.createSignedUrls === 'function'){
+        const {data:rows,error} = await b.createSignedUrls(need,SIGN_TTL); if(error) throw error;
+        (rows || []).forEach((row,i) => {
+          const path = row?.path || need[i], url = row?.signedUrl || row?.signedURL;
+          if(path && url){ signed[path] = {url,expiresAt}; changed = true; }
+        });
+      }else{
+        for(const path of need){
+          const {data:row,error} = await b.createSignedUrl(path,SIGN_TTL); if(error) throw error;
+          const url = row?.signedUrl || row?.signedURL;
+          if(url){ signed[path] = {url,expiresAt}; changed = true; }
+        }
+      }
+      return true;
+    }catch(e){
+      console.error('[Starbook signed urls]',e);
+      return false;
+    }finally{
+      need.forEach(path => signing.delete(path));
+      if(changed && notify) emit();
+    }
+  }
+  async function warmUrls(d){ return signPaths([...refs(d)]); }
+
+  async function applyRemote(row){
+    st.revision = Number(row?.revision)||0;
+    await warmUrls(row?.payload || empty());
+    setData(row?.payload || empty());
+  }
+
+  async function refreshRemote({silent=false}={}){
+    try{ await applyRemote(await readRow()); }
+    catch(e){ if(!silent) throw e; console.error('[Starbook refresh]',e); }
+  }
+  st.refresh = refreshRemote;
+
+  async function init(){
+    await SB.runtime.ready;
+    st.mode = 'supabase';
+    st.role = SB.book.current?.role || 'viewer';
+    st.canEdit = mayEdit(st.role); st.canUpload = st.canEdit;
+    SB.menu?.status(`${SB.book.current?.name || '星屿之书'} · ${st.canEdit ? '可以编辑' : '只读浏览'}`);
+    SB.menu?.refresh();
+    await refreshRemote();
+    document.addEventListener('visibilitychange',()=>{
+      if(!document.hidden && st.mode==='supabase' && !document.querySelector('.sb-modal')) refreshRemote({silent:true});
+    });
+  }
+  st.ready = init();
+  st.isConnected = () => st.mode === 'supabase' && !!SB.user?.current && !!SB.book?.current;
+
+  async function removeObjects(paths){
+    paths = [...new Set(paths.filter(Boolean))]; if(!paths.length || !st.canUpload) return;
+    try{
+      const {error} = await bucket().remove(paths); if(error) throw error;
+      for(const id of paths){ if(preview[id]){ URL.revokeObjectURL(preview[id]); delete preview[id]; } delete signed[id]; }
+    }catch(e){ console.error('[Starbook storage cleanup]',e); }
+  }
+
+  /* 基于 revision 的轻量冲突检测：保留 JSONB 桥接结构，同时避免两台设备静默覆盖。 */
+  async function mutate(fn){
+    if(!st.canEdit) throw {code:403};
+    for(let attempt=0; attempt<3; attempt++){
+      const cur = await readRow();
+      const next = clone(normalize(cur.payload)); fn(next);
+      const nextRevision = (Number(cur.revision)||0) + 1;
+      const {data:updated,error} = await SB.supabase.from('book_data')
+        .update({payload:next,revision:nextRevision,updated_at:now()})
+        .eq('book_id',bookId()).eq('revision',Number(cur.revision)||0)
+        .select('payload,revision,updated_at').maybeSingle();
+      if(error) throw error;
+      if(updated){
+        const removed = [...refs(cur.payload)].filter(id => !refs(next).has(id));
+        await applyRemote(updated);
+        if(removed.length) removeObjects(removed);
+        return;
+      }
+      await SB.wait(220 + Math.random()*360);
+    }
+    throw {code:'conflict'};
+  }
+
+  const strip = o => { const c = {...o}; delete c.id; return JSON.parse(JSON.stringify(c)); };
+  st.addCity = async (c) => {
+    const name = String(c.name || '').trim();
+    if(!name) throw {code:'empty',msg:'请输入城市名'};
+    if(st.cities.some(x => x.region === c.region && x.name === name)) throw {code:'dup',msg:'这座城市已经点亮过了'};
+    const id = SB.uid();
+    await mutate(d => { d.cities[id] = strip({...c,name,createdAt:now()}); });
+    return id;
+  };
+  st.updateCity = (id,patch) => mutate(d => { if(d.cities[id]) d.cities[id] = {...d.cities[id],...patch,updatedAt:now()}; });
+  st.removeCity = id => mutate(d => {
+    delete d.cities[id];
+    for(const [mid,m] of Object.entries(d.memories)) if(m.cityId === id) delete d.memories[mid];
+  });
+  st.saveMemory = async m => {
+    const id = m.id || SB.uid();
+    await mutate(d => { const prev=d.memories[id]; d.memories[id]=strip({...m,createdAt:prev?.createdAt||now(),updatedAt:now()}); });
+    return id;
+  };
+  st.removeMemory = id => mutate(d => { delete d.memories[id]; });
+  st.saveSettings = patch => mutate(d => { d.settings = strip({...d.settings,...patch}); });
+
+  /* ── Private Storage ── */
+  st.url = id => {
+    if(!id) return '';
+    if(preview[id]) return preview[id];
+    const hit = signed[id];
+    if(hit?.url){
+      if(hit.expiresAt < Date.now()+5*60*1000) signPaths([id],{notify:true});
+      return hit.url;
+    }
+    // 初次签名若曾因弱网失败，组件再次询问 URL 时自动补签；成功后 sb:data 会触发重绘。
+    signPaths([id],{notify:true});
+    return '';
+  };
+
+  st.health = async () => {
+    const result = {
+      connected: st.isConnected(),
+      userId: SB.user?.current?.id || null,
+      bookId: bookId() || null,
+      role: st.role,
+      canEdit: st.canEdit,
+      revision: st.revision,
+      database: false,
+      storage: false
+    };
+    try{ await readRow(); result.database = true; }catch(e){ result.databaseError = errText(e); }
+    try{
+      const probe = `${bookId()}/.healthcheck-never-created`;
+      const {error} = await bucket().createSignedUrl(probe,60);
+      // 对不存在对象，Storage 可能返回错误；只要不是权限/RLS 类错误，就说明 Bucket API 已可访问。
+      if(!error) result.storage = true;
+      else{
+        const raw=String(error?.message||'');
+        result.storage = !/row-level security|permission|unauthorized|jwt/i.test(raw);
+        if(!result.storage) result.storageError = errText(error);
+      }
+    }catch(e){ result.storageError = errText(e); }
+    return result;
+  };
+
+  async function putFile(blob,ext,type,folder){
+    if(!st.canUpload) throw {code:403};
+    if(!blob || blob.size > MAX_FILE) throw {code:'too_large'};
+    const path = `${bookId()}/${folder}/${SB.uid()}.${ext}`;
+    const {error} = await bucket().upload(path,blob,{contentType:type||undefined,cacheControl:'3600',upsert:false});
+    if(error) throw error;
+    preview[path] = URL.createObjectURL(blob);
+    return path;
+  }
+
+  st.deleteFile = async id => {
+    if(!id || refs(data).has(id)) return;
+    await removeObjects([id]);
+  };
+
+  async function decodeImage(file){
+    try{ return await createImageBitmap(file,{imageOrientation:'from-image'}); }
+    catch(e){
+      return await new Promise((res,rej)=>{
+        const img=new Image(),u=URL.createObjectURL(file);
+        img.onload=()=>{ URL.revokeObjectURL(u); res(img); };
+        img.onerror=()=>{ URL.revokeObjectURL(u); rej({code:'decode'}); };
+        img.src=u;
+      });
+    }
+  }
+  st.uploadImage = async (file,onStep) => {
+    if(!file) throw {code:'unsupported_type'};
+    onStep?.('读取中');
+    let img; try{ img=await decodeImage(file); }
+    catch(e){ throw {code:'decode',msg:`「${file.name}」无法读取。HEIC 如上传失败，请先在手机相册中导出为 JPG`}; }
+    const w0=img.width,h0=img.height,k=Math.min(1,2400/Math.max(w0,h0));
+    const w=Math.max(1,Math.round(w0*k)),h=Math.max(1,Math.round(h0*k));
+    const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
+    canvas.getContext('2d',{alpha:false}).drawImage(img,0,0,w,h); img.close?.();
+    onStep?.('压缩中');
+    const blob=await new Promise(r=>canvas.toBlob(r,'image/jpeg',.86));
+    if(!blob) throw {code:'decode',msg:'照片压缩失败，请换一张照片后再试'};
+    onStep?.('上传中');
+    return {id:await putFile(blob,'jpg','image/jpeg','images'),w,h};
+  };
+
+  st.uploadAudio = async (file,onStep) => {
+    if(!file) throw {code:'unsupported_type'};
+    let ext=(file.name.split('.').pop()||'').toLowerCase();
+    const types={mp3:'audio/mpeg',m4a:'audio/mp4',aac:'audio/aac',mp4:'audio/mp4',wav:'audio/wav'};
+    if(!types[ext]) throw {code:'unsupported_type',msg:'周年版本建议上传 mp3 或 m4a 音乐'};
+    if(file.size > 20*1024*1024) throw {code:'too_large',msg:'音乐文件请控制在 20MB 以内'};
+    onStep?.('上传中');
+    const name=file.name.replace(/\.[^.]+$/,'');
+    return {id:await putFile(file,ext,file.type||types[ext],'audio'),name};
+  };
+
+  /* ── 派生查询 ── */
+  st.citiesIn = country => st.cities.filter(c => c.country === country);
+  st.citiesInRegion = region => st.cities.filter(c => c.region === region).sort((a,b)=>(a.createdAt||'').localeCompare(b.createdAt||''));
+  st.city = id => st.cities.find(c => c.id === id);
+  st.memory = id => st.memories.find(m => m.id === id);
+  st.memoriesOf = cityId => st.memories.filter(m => m.cityId === cityId).sort((a,b)=>(a.date||'').localeCompare(b.date||'') || (a.createdAt||'').localeCompare(b.createdAt||''));
+  st.visitedCountries = () => new Set(st.cities.map(c => c.country));
+  st.visitedRegions = country => new Set(st.cities.filter(c => c.country === country).map(c => c.region));
+  st.stats = () => ({
+    countries:new Set(st.cities.map(c=>c.country)).size,
+    regions:new Set(st.cities.map(c=>c.region)).size,
+    cities:st.cities.length,
+    memories:st.memories.length,
+    photos:st.memories.reduce((n,m)=>n+(m.slides||[]).length,0)
+  });
+})(window.SB);
+</script>

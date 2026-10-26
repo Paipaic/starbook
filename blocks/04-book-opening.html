@@ -1,0 +1,47 @@
+<script>
+/* ── 块 04 · 开书动画：启动 → 共鸣 → 翻开 → 入界 ── */
+(function(SB){
+  SB.magicBook.open = async function(){
+    const B = SB.magicBook;
+    if(B.busy || document.body.classList.contains('is-busy')) return;
+    B.busy = true; SB.menu.close();
+    B.scene.classList.add('is-opening');
+    B.cover.classList.remove('is-hover');
+    SB.audio?.unlock?.();
+    if(SB.perf.level === 'reduced'){ await SB.scenes.go('globe', {}, {transition:'flash'}); return; }
+
+    // 1 启动
+    B.setSpin(10);
+    B.cover.classList.add('is-charging', 'is-lit');
+    const g = B.gemCenter(); SB.fx.gather(g.x, g.y); SB.fx.orbitBoost(6);
+    await SB.wait(1000);
+
+    // 2 共鸣
+    B.shocks.forEach(s => { s.classList.remove('go'); void s.offsetWidth; s.classList.add('go'); });
+    SB.fx.burst(500);
+    B.stage.style.transition = 'transform .5s var(--ease-soft)';
+    B.stage.style.transform = 'scale(1.04)';
+    await SB.wait(400);
+
+    // 3 翻开
+    B.cover.classList.add('is-open');
+    B.setSpin(4); B.page.classList.add('lit');
+    const z = 'translateZ(calc(var(--bt) / 2 - 2px))';
+    B.leaves.forEach((l, i) => setTimeout(() => {
+      l.style.transition = 'transform 1.1s cubic-bezier(.4,0,.3,1), opacity .4s';
+      l.style.opacity = '1'; l.style.transform = `${z} rotateY(${-28 - i*14}deg)`;
+      setTimeout(() => { l.style.transition = 'transform 1s cubic-bezier(.4,0,.3,1), opacity .9s .2s'; l.style.transform = `${z} rotateY(0deg)`; l.style.opacity = '0'; }, 900);
+    }, 600 + i*180));
+    const r = document.getElementById('bk-float').getBoundingClientRect();
+    setTimeout(() => SB.fx.gather(r.left + r.width/2, r.top + r.height/2), 700);
+    await SB.wait(1800);
+
+    // 4 入界
+    SB.fx.warp(true); SB.fx.orbit(null);
+    B.stage.style.transition = 'transform 1.5s cubic-bezier(.6,0,.35,1), opacity 1.3s ease-in';
+    B.stage.style.transform = 'scale(2.6)'; B.stage.style.opacity = '0';
+    await SB.wait(700);
+    await SB.scenes.go('globe', {fromBook:true}, {transition:'flash'});
+  };
+})(window.SB);
+</script>

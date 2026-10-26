@@ -1,0 +1,16 @@
+<script>
+/* ── 块 99 · v1.5 启动：氛围可以先出现；认证、Book 与 Store 就绪后才真正开启书 ── */
+(function(SB){
+  SB.fx.start();
+  (async()=>{
+    try{
+      await SB.store.ready;
+      SB.scenes.boot('book');
+      document.dispatchEvent(new CustomEvent('sb:data'));
+    }catch(e){
+      console.error('[Starbook start]',e);
+      SB.runtime?.showFatal?.('暂时没能翻开这本书。','请检查 Supabase 初始化与网络连接后重新尝试。');
+    }
+  })();
+})(window.SB);
+</script>

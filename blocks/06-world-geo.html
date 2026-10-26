@@ -1,0 +1,119 @@
+<script>
+/* ── 块 06b · 地理工具：大洲、国家、中文名、点在国家内判断、省级地图加载 ── */
+(function(SB){
+  const RAW = SB.WORLD_RAW, Q = RAW.q || 20;
+  const MAP_CDN = v => k => `https://cdn.jsdelivr.net/npm/@highcharts/map-collection@${v}/countries/${k}/${k}-all.js`;
+  const MAP_URLS = k => [MAP_CDN('2.3.3')(k), MAP_CDN('2.3.2')(k), `https://unpkg.com/@highcharts/map-collection@2.3.3/countries/${k}/${k}-all.js`];
+
+  const CONTINENTS = [
+    {code:'as', name:'亚洲',   en:'ASIA',          center:[95, 38]},
+    {code:'eu', name:'欧洲',   en:'EUROPA',        center:[18, 52]},
+    {code:'na', name:'北美洲', en:'AMERICA BOREALIS', center:[-100, 46]},
+    {code:'sa', name:'南美洲', en:'AMERICA AUSTRALIS', center:[-60, -16]},
+    {code:'af', name:'非洲',   en:'AFRICA',        center:[20, 6]},
+    {code:'oc', name:'大洋洲', en:'OCEANIA',       center:[140, -24]},
+    {code:'an', name:'南极洲', en:'ANTARCTICA',    center:[30, -80]}
+  ];
+  let zhName;
+  try{ const dn = new Intl.DisplayNames(['zh-Hans-CN','zh-CN','zh'], {type:'region'}); zhName = a2 => { try{ return dn.of(a2); }catch(e){ return null; } }; }
+  catch(e){ zhName = () => null; }
+  const NAME_FIX = { kv:'科索沃', 'nc':'北塞浦路斯', cnm:'塞浦路斯缓冲区', so:'索马里', sx:'荷属圣马丁', tw:'中国台湾' };
+
+  /* 解码国家轮廓 */
+  const countries = RAW.countries.map(c => {
+    const rings = c.p.map(enc => { const pts = new Float32Array(enc.length); let x = 0, y = 0;
+      for(let i = 0; i < enc.length; i += 2){ x += enc[i]; y += enc[i+1]; if(i === 0){ x = enc[0]; y = enc[1]; } pts[i] = x/Q; pts[i+1] = y/Q; }
+      return pts; });
+    // 修正第一个点（编码首点为绝对值）
+    let b = [180, 90, -180, -90];
+    for(const r of rings) for(let i = 0; i < r.length; i += 2){ b[0] = Math.min(b[0], r[i]); b[1] = Math.min(b[1], r[i+1]); b[2] = Math.max(b[2], r[i]); b[3] = Math.max(b[3], r[i+1]); }
+    const zh = NAME_FIX[c.k] || (c.a2 && zhName(c.a2)) || c.n;
+    return { key:c.k, a2:c.a2, en:c.n, zh: zh && zh !== c.a2 ? zh : c.n, cont:c.c, mid:c.m, rings, bbox:b, hasMap: RAW.maps.includes(c.k) };
+  });
+  const byKey = Object.fromEntries(countries.map(c => [c.key, c]));
+
+  /* 南极大陆（手绘近似轮廓） */
+  const ant = []; for(let lon = -180; lon <= 180; lon += 4){
+    let lat = -70 + 3.2*Math.sin(lon*Math.PI/45) + 1.8*Math.cos(lon*Math.PI/23);
+    if(lon > -75 && lon < -55) lat = SB.lerp(lat, -63.5, Math.sin((lon+75)/20*Math.PI));   // 南极半岛
+    if(lon > 160 || lon < -150) lat = Math.min(lat, -76);                                  // 罗斯海
+    if(lon > -60 && lon < -25) lat = Math.min(lat, -76.5);                                 // 威德尔海
+    ant.push(lon, lat); }
+  ant.push(180, -90, -180, -90);
+  const antarctica = { key:'aq', a2:'AQ', en:'Antarctica', zh:'南极洲', cont:'an', mid:[30,-80], rings:[new Float32Array(ant)], bbox:[-180,-90,180,-60], hasMap:false };
+  countries.push(antarctica); byKey.aq = antarctica;
+
+  function inRing(r, x, y){
+    let ins = false;
+    for(let i = 0, j = r.length - 2; i < r.length; j = i, i += 2){
+      const xi = r[i], yi = r[i+1], xj = r[j], yj = r[j+1];
+      if(((yi > y) !== (yj > y)) && (x < (xj - xi)*(y - yi)/(yj - yi) + xi)) ins = !ins;
+    }
+    return ins;
+  }
+
+  /* 省级中文名 */
+  const CN = {bj:'北京',tj:'天津',he:'河北',sx:'山西',nm:'内蒙古',ln:'辽宁',jl:'吉林',hl:'黑龙江',sh:'上海',js:'江苏',zj:'浙江',ah:'安徽',fj:'福建',jx:'江西',sd:'山东',ha:'河南',hb:'湖北',hn:'湖南',gd:'广东',gx:'广西',hi:'海南',cq:'重庆',sc:'四川',gz:'贵州',yn:'云南',xz:'西藏',sn:'陕西',gs:'甘肃',qh:'青海',nx:'宁夏',xj:'新疆',tw:'台湾',hk:'香港',mo:'澳门'};
+  const US = {al:'亚拉巴马',ak:'阿拉斯加',az:'亚利桑那',ar:'阿肯色',ca:'加利福尼亚',co:'科罗拉多',ct:'康涅狄格',de:'特拉华',dc:'华盛顿特区',fl:'佛罗里达',ga:'佐治亚',hi:'夏威夷',id:'爱达荷',il:'伊利诺伊',in:'印第安纳',ia:'艾奥瓦',ks:'堪萨斯',ky:'肯塔基',la:'路易斯安那',me:'缅因',md:'马里兰',ma:'马萨诸塞',mi:'密歇根',mn:'明尼苏达',ms:'密西西比',mo:'密苏里',mt:'蒙大拿',ne:'内布拉斯加',nv:'内华达',nh:'新罕布什尔',nj:'新泽西',nm:'新墨西哥',ny:'纽约',nc:'北卡罗来纳',nd:'北达科他',oh:'俄亥俄',ok:'俄克拉何马',or:'俄勒冈',pa:'宾夕法尼亚',ri:'罗得岛',sc:'南卡罗来纳',sd:'南达科他',tn:'田纳西',tx:'得克萨斯',ut:'犹他',vt:'佛蒙特',va:'弗吉尼亚',wa:'华盛顿',wv:'西弗吉尼亚',wi:'威斯康星',wy:'怀俄明'};
+  const JP = {Hokkaido:'北海道',Aomori:'青森',Iwate:'岩手',Miyagi:'宫城',Akita:'秋田',Yamagata:'山形',Fukushima:'福岛',Ibaraki:'茨城',Tochigi:'栃木',Gunma:'群马',Saitama:'埼玉',Chiba:'千叶',Tokyo:'东京',Kanagawa:'神奈川',Niigata:'新潟',Toyama:'富山',Ishikawa:'石川',Fukui:'福井',Yamanashi:'山梨',Nagano:'长野',Gifu:'岐阜',Shizuoka:'静冈',Aichi:'爱知',Mie:'三重',Shiga:'滋贺',Kyoto:'京都',Osaka:'大阪',Hyogo:'兵库',Nara:'奈良',Wakayama:'和歌山',Tottori:'鸟取',Shimane:'岛根',Okayama:'冈山',Hiroshima:'广岛',Yamaguchi:'山口',Tokushima:'德岛',Kagawa:'香川',Ehime:'爱媛',Kochi:'高知',Fukuoka:'福冈',Saga:'佐贺',Nagasaki:'长崎',Kumamoto:'熊本',Oita:'大分',Miyazaki:'宫崎',Kagoshima:'鹿儿岛',Okinawa:'冲绳'};
+  function regionZh(country, key, en){
+    const short = (key||'').split('-').slice(1).join('-');
+    if(country === 'cn' && CN[short]) return CN[short];
+    if(country === 'us' && US[short]) return US[short];
+    if(country === 'jp' && JP[en]) return JP[en];
+    return en || key;
+  }
+
+  /* 省级地图：加载 → 统一成 {regions:[{key, name, polys:[[x,y,...]], mid:[x,y]}], lines:[], planar} */
+  const mapCache = {};
+  async function loadCountryMap(k){
+    if(mapCache[k]) return mapCache[k];
+    window.Highcharts = window.Highcharts || {}; window.Highcharts.maps = window.Highcharts.maps || {};
+    await SB.loadScript(MAP_URLS(k));
+    const raw = window.Highcharts.maps[`countries/${k}/${k}-all`];
+    if(!raw) throw new Error('no_map');
+    const planar = !!(raw['hc-transform'] || raw.crs);
+    const regions = [], lines = [];
+    // 跨越 180° 经线的国家（俄罗斯、斐济等）把西经部分平移 360°
+    let shift = false;
+    if(!planar){ let mn = 999, mx = -999; for(const f of raw.features){ const g = f.geometry; if(!g) continue;
+        const walk = a => typeof a[0] === 'number' ? (mn = Math.min(mn, a[0]), mx = Math.max(mx, a[0])) : a.forEach(walk); walk(g.coordinates); }
+      shift = mx - mn > 180; }
+    const R = Math.PI/180;
+    const proj = planar ? (x, y) => [x, -y] : (lon, lat) => { if(shift && lon < 0) lon += 360; lat = SB.clamp(lat, -85, 85); return [lon, -Math.log(Math.tan(Math.PI/4 + lat*R/2))/R]; };
+    for(const f of raw.features){
+      const p = f.properties || {}, g = f.geometry; if(!g) continue;
+      if(p['hc-group'] === '__separator_lines__'){ const ls = g.type === 'MultiLineString' ? g.coordinates : [g.coordinates];
+        ls.forEach(l => lines.push(l.flatMap(([x,y]) => proj(x,y)))); continue; }
+      const polys = (g.type === 'MultiPolygon' ? g.coordinates : [g.coordinates]).map(poly => poly.map(r => r.flatMap(([x,y]) => proj(x,y))));
+      let b = [Infinity, Infinity, -Infinity, -Infinity];
+      polys.forEach(pl => pl.forEach(r => { for(let i = 0; i < r.length; i += 2){ b[0] = Math.min(b[0], r[i]); b[1] = Math.min(b[1], r[i+1]); b[2] = Math.max(b[2], r[i]); b[3] = Math.max(b[3], r[i+1]); } }));
+      let mid;
+      if(p['hc-middle-lon'] != null && !planar) mid = proj(p['hc-middle-lon'], p['hc-middle-lat']);
+      else if(p['hc-middle-x'] != null) mid = [b[0] + (b[2]-b[0])*p['hc-middle-x'], b[1] + (b[3]-b[1])*p['hc-middle-y']];
+      else mid = [(b[0]+b[2])/2, (b[1]+b[3])/2];
+      const key = p['hc-key'] || ('r' + regions.length);
+      const lonlat = (p['hc-middle-lon'] != null) ? [p['hc-middle-lon'], p['hc-middle-lat']] : (p.longitude ? [+p.longitude, +p.latitude] : null);
+      regions.push({ key, en:p.name || '', name: regionZh(k, key, p.name) || '未命名地区', polys, bbox:b, mid, lonlat });
+    }
+    return mapCache[k] = { regions, lines, planar };
+  }
+
+  SB.geo = {
+    CONTINENTS, countries, antarctica,
+    continent: code => CONTINENTS.find(c => c.code === code),
+    country: k => byKey[k],
+    // 争议地带和无人区的小块不作为单独国家列出（地球上仍然绘制）
+    inContinent: code => countries.filter(c => c.cont === code && !['sp','sw','jk','cnm','nc'].includes(c.key)),
+    hasMap: k => !!byKey[k]?.hasMap,
+    countryAt(lon, lat){
+      for(const c of countries){
+        const b = c.bbox; if(lon < b[0] || lon > b[2] || lat < b[1] || lat > b[3]) continue;
+        for(const r of c.rings) if(inRing(r, lon, lat)) return c;
+      }
+      return null;
+    },
+    loadCountryMap, regionZh
+  };
+})(window.SB);
+</script>

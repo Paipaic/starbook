@@ -1,0 +1,376 @@
+<style>
+/* ── 块 07 · 3D 世界星图地球仪 ── */
+#gl-canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab;display:block;}
+#gl-canvas.dragging{cursor:grabbing;}
+.gl-head{position:absolute;left:50%;top:calc(18px + var(--safe-t));transform:translateX(-50%);text-align:center;pointer-events:none;
+  display:flex;flex-direction:column;align-items:center;gap:4px;width:max-content;max-width:calc(100vw - 32px);}
+.gl-head h1{margin:0;font-family:var(--f-title);font-weight:400;font-size:clamp(24px,3.2vw,38px);letter-spacing:.34em;color:var(--gold-hi);
+  text-shadow:0 0 22px rgba(244,184,96,.65);}
+.gl-head p{margin:0;font-size:13px;letter-spacing:.16em;color:#c9c6ea;}
+.gl-head small{font-family:var(--f-rune);font-size:10px;letter-spacing:.4em;color:var(--gold-dim);}
+.gl-labels{position:absolute;inset:0;pointer-events:none;}
+.gl-cont{position:absolute;left:0;top:0;pointer-events:auto;cursor:pointer;border:0;padding:0;background:none;
+  display:flex;flex-direction:column;align-items:center;gap:2px;transition:opacity .3s;will-change:transform,opacity;}
+.gl-cont .orb{position:relative;display:flex;align-items:center;gap:6px;padding:6px 14px 6px 8px;border-radius:999px;
+  background:linear-gradient(180deg, rgba(30,26,70,.78), rgba(10,10,30,.78));border:1px solid rgba(255,226,168,.55);
+  box-shadow:0 0 18px rgba(244,184,96,.35), inset 0 0 10px rgba(244,184,96,.15);
+  font-family:var(--f-title);font-size:16px;letter-spacing:.18em;color:var(--gold-hi);white-space:nowrap;
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);transition:transform .3s var(--ease-soft), box-shadow .3s;}
+.gl-cont .orb svg{width:18px;height:18px;animation:sbSpin 12s linear infinite;}
+.gl-cont .orb b{font-weight:400;font-size:11px;color:var(--gold);letter-spacing:0;margin-left:2px;}
+.gl-cont:hover .orb,.gl-cont:focus-visible .orb{transform:scale(1.08);box-shadow:0 0 30px rgba(244,184,96,.65), inset 0 0 14px rgba(244,184,96,.3);}
+.gl-cont .stem{width:1px;height:14px;background:linear-gradient(var(--gold), transparent);}
+.gl-cont .dot{width:6px;height:6px;border-radius:50%;background:var(--gold-hi);box-shadow:0 0 10px 3px rgba(244,184,96,.8);}
+.gl-tip{position:absolute;left:0;top:0;pointer-events:none;padding:6px 12px;border-radius:10px;
+  background:rgba(12,12,34,.85);border:1px solid var(--line);color:var(--text);font-size:13px;letter-spacing:.08em;white-space:nowrap;
+  opacity:0;transition:opacity .2s;box-shadow:0 0 16px rgba(244,184,96,.2);}
+.gl-tip b{font-family:var(--f-title);font-weight:400;font-size:16px;color:var(--gold-hi);margin-right:6px;}
+.gl-tip.show{opacity:1;}
+.gl-dock{position:absolute;left:0;right:0;bottom:calc(12px + var(--safe-b));display:none;gap:8px;overflow-x:auto;scrollbar-width:none;
+  padding:4px max(16px,var(--safe-l)) 4px max(16px,var(--safe-l));}
+.gl-dock::-webkit-scrollbar{display:none;}
+.gl-dock button{flex:none;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:rgba(14,14,40,.78);
+  color:var(--gold-hi);font-family:var(--f-title);font-size:15px;letter-spacing:.14em;cursor:pointer;}
+.gl-hint{position:absolute;right:max(16px,var(--safe-r));bottom:calc(16px + var(--safe-b));font-size:12px;color:var(--text-dim);letter-spacing:.12em;opacity:.7;pointer-events:none;}
+.gl-load{position:absolute;inset:0;display:grid;place-items:center;}
+.gl-load[hidden]{display:none!important;}
+@media (pointer:coarse), (max-width:700px){ .gl-dock{display:flex;} .gl-hint{display:none;} .gl-cont .orb{font-size:14px;padding:5px 11px 5px 7px;} }
+@media (max-width:700px){ .gl-head{top:calc(72px + var(--safe-t));} }
+</style>
+
+<section class="sb-scene" data-scene="globe" aria-label="世界星图">
+  <canvas id="gl-canvas"></canvas>
+  <div class="gl-labels" id="gl-labels"></div>
+  <div class="gl-tip" id="gl-tip"></div>
+  <header class="gl-head"><small>ORBIS STELLARUM</small><h1>世界星图</h1><p id="gl-stat"></p></header>
+  <nav class="gl-dock" id="gl-dock" aria-label="七大洲"></nav>
+  <div class="gl-hint">拖动旋转 · 滚轮缩放 · 点击国家直达地图</div>
+  <div class="gl-load" id="gl-load" hidden></div>
+</section>
+
+<script>
+(function(SB){
+  const THREE_URLS = ['https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js', 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js', 'https://unpkg.com/three@0.128.0/build/three.min.js'];
+  const $ = id => document.getElementById(id);
+  const cv = $('gl-canvas'), labelsEl = $('gl-labels'), tip = $('gl-tip');
+  let T, renderer, scene, camera, globe, earth, earthMat, texCanvas, tex, idCanvas, idTex, starMat, dustMats = [], cityGroup, starTexture;
+  let ready = false, running = false, last = 0, time = 0;
+  const view = { rotX:.35, rotY:-1.9, vx:0, vy:0, dist:3.2, distT:3.2, base:3.2, zoom:1, zoomT:1, idle:0, intro:0 };
+  const contIndex = Object.fromEntries(SB.geo.CONTINENTS.map((c,i) => [c.code, i+1]));
+  const hover = { country:-1, cont:-1 };
+
+  /* ── 七大洲按钮 ── */
+  const RUNE = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1"/><path d="M12 3 L14 12 L12 21 L10 12Z M3 12 L12 10 L21 12 L12 14Z" fill="currentColor" opacity=".8"/></svg>';
+  const contBtns = SB.geo.CONTINENTS.map(c => {
+    const b = SB.el('button','gl-cont'); b.type = 'button'; b.setAttribute('aria-label', c.name + '的国家目录');
+    b.innerHTML = `<span class="orb">${RUNE}<span>${c.name}</span><b></b></span><span class="stem"></span><span class="dot"></span>`;
+    b.addEventListener('click', e => { e.stopPropagation(); SB.scenes.go('continent', {c:c.code}); });
+    labelsEl.appendChild(b); return {c, b, badge:b.querySelector('b')};
+  });
+  SB.geo.CONTINENTS.forEach(c => { const b = SB.el('button'); b.type = 'button'; b.textContent = c.name; b.addEventListener('click', () => SB.scenes.go('continent', {c:c.code})); $('gl-dock').appendChild(b); });
+
+  /* ── 纹理：星光地图 + 国家编号图（用于悬停高亮） ── */
+  function unwrap(r){
+    const out = new Float32Array(r.length); let off = 0;
+    for(let i = 0; i < r.length; i += 2){ if(i){ const d = r[i] - r[i-2]; if(d > 180) off -= 360; else if(d < -180) off += 360; } out[i] = r[i] + off; out[i+1] = r[i+1]; }
+    return out;
+  }
+  function trace(g, r, W, H, shift){
+    g.moveTo((r[0]+180+shift)/360*W, (90-r[1])/180*H);
+    for(let i = 2; i < r.length; i += 2) g.lineTo((r[i]+180+shift)/360*W, (90-r[i+1])/180*H);
+    g.closePath();
+  }
+  function eachShift(r, fn){ let mn = 999, mx = -999; for(let i = 0; i < r.length; i += 2){ mn = Math.min(mn, r[i]); mx = Math.max(mx, r[i]); }
+    fn(0); if(mn < -180) fn(360); if(mx > 180) fn(-360); }
+  const rings = SB.geo.countries.map(c => c.rings.map(unwrap));
+
+  function drawTexture(){
+    const W = texCanvas.width, H = texCanvas.height, g = texCanvas.getContext('2d'), u = W/4096;
+    const sea = g.createLinearGradient(0, 0, 0, H);
+    sea.addColorStop(0, '#0d1440'); sea.addColorStop(.5, '#121a52'); sea.addColorStop(1, '#0b1136');
+    g.fillStyle = sea; g.fillRect(0, 0, W, H);
+    // 海面星尘
+    for(let i = 0; i < 2600*u; i++){ g.fillStyle = `rgba(${Math.random()<.3?'255,214,150':'170,186,255'},${Math.random()*.35})`; const s = Math.random()*2.2*u + .4; g.fillRect(Math.random()*W, Math.random()*H, s, s); }
+    // 经纬网
+    g.strokeStyle = 'rgba(244,184,96,.13)'; g.lineWidth = 1.2*u;
+    for(let lon = -180; lon <= 180; lon += 15){ const x = (lon+180)/360*W; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
+    for(let lat = -75; lat <= 75; lat += 15){ const y = (90-lat)/180*H; g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+    const visited = SB.store.visitedCountries();
+    const land = g.createLinearGradient(0, 0, 0, H);
+    land.addColorStop(0, '#4a3826'); land.addColorStop(.5, '#3c2c20'); land.addColorStop(1, '#4a3a2c');
+    SB.geo.countries.forEach((c, i) => {
+      const lit = visited.has(c.key);
+      rings[i].forEach(r => eachShift(r, sh => {
+        g.beginPath(); trace(g, r, W, H, sh);
+        if(lit){
+          g.fillStyle = '#e9a64e'; g.fill();
+          g.strokeStyle = 'rgba(255,214,140,.35)'; g.lineWidth = 9*u; g.stroke();
+        }else{ g.fillStyle = c.key === 'aq' ? '#5a5670' : land; g.fill(); }
+        g.strokeStyle = 'rgba(255,200,120,.28)'; g.lineWidth = 4.5*u; g.stroke();
+        g.strokeStyle = lit ? '#fff2cc' : 'rgba(255,214,150,.85)'; g.lineWidth = 1.4*u; g.stroke();
+      }));
+    });
+    tex.needsUpdate = true;
+  }
+  function drawIds(){
+    const W = idCanvas.width, H = idCanvas.height, g = idCanvas.getContext('2d');
+    g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+    SB.geo.countries.forEach((c, i) => {
+      g.fillStyle = `rgb(${i+1},${contIndex[c.cont]||0},255)`;
+      rings[i].forEach(r => eachShift(r, sh => { g.beginPath(); trace(g, r, W, H, sh); g.fill(); }));
+    });
+    idTex.needsUpdate = true;
+  }
+
+  /* ── 着色器 ── */
+  const earthVS = `varying vec2 vUv; varying vec3 vN; void main(){ vUv = uv; vN = normalize(normalMatrix*normal); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }`;
+  const earthFS = `uniform sampler2D map; uniform sampler2D idMap; uniform float hc; uniform float hk; uniform float t; uniform vec3 L;
+    varying vec2 vUv; varying vec3 vN;
+    void main(){
+      vec3 n = normalize(vN);
+      vec3 col = texture2D(map, vUv).rgb;
+      float diff = clamp(dot(n, normalize(L))*.55 + .62, .38, 1.18);
+      col *= diff;
+      vec4 id = texture2D(idMap, vUv);
+      if(id.b > .99){
+        float cid = floor(id.r*255.0 + .5), cn = floor(id.g*255.0 + .5);
+        if(cid == hk) col += vec3(.34,.24,.08)*(.85 + .15*sin(t*4.0));
+        else if(cn == hc) col += vec3(.12,.09,.04);
+      }
+      float fr = pow(1.0 - max(dot(n, vec3(0.,0.,1.)), 0.0), 2.6);
+      col += mix(vec3(.45,.55,1.0), vec3(1.0,.74,.38), .5)*fr*.45;
+      gl_FragColor = vec4(col, 1.0);
+    }`;
+  const atmoVS = `varying vec3 vN; void main(){ vN = normalize(normalMatrix*normal); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }`;
+  const atmoFS = `varying vec3 vN; void main(){ float i = pow(max(0., .66 - dot(vN, vec3(0.,0.,1.))), 2.6); vec3 c = mix(vec3(.36,.46,1.0), vec3(1.0,.66,.26), .6);
+    gl_FragColor = vec4(c*i*.62, i*.6); }`;
+  const ptsVS = `attribute float size; attribute float seed; uniform float t; uniform float px; varying float vA; varying float vS;
+    void main(){ vec4 mv = modelViewMatrix*vec4(position,1.0); vS = seed;
+      vA = .45 + .55*sin(t*(1.0 + seed*2.0) + seed*40.0);
+      gl_PointSize = size*px*(3.0/-mv.z); gl_Position = projectionMatrix*mv; }`;
+  const ptsFS = `uniform vec3 c1; uniform vec3 c2; varying float vA; varying float vS;
+    void main(){ vec2 p = gl_PointCoord - .5; float d = length(p); if(d > .5) discard;
+      float core = smoothstep(.5, .0, d); float cross = max(0., 1. - abs(p.x)*14.) * smoothstep(.5,.0,abs(p.y)) + max(0., 1. - abs(p.y)*14.) * smoothstep(.5,.0,abs(p.x));
+      vec3 c = mix(c1, c2, step(.7, vS));
+      gl_FragColor = vec4(c, (core*core + cross*.35*step(.85, vS))*vA); }`;
+
+  function pointsMat(c1, c2){
+    return new T.ShaderMaterial({ uniforms:{ t:{value:0}, px:{value:renderer.getPixelRatio()}, c1:{value:new T.Color(c1)}, c2:{value:new T.Color(c2)} },
+      vertexShader:ptsVS, fragmentShader:ptsFS, transparent:true, depthWrite:false, blending:T.AdditiveBlending });
+  }
+  function pointsGeo(n, place){
+    const pos = new Float32Array(n*3), size = new Float32Array(n), seed = new Float32Array(n);
+    for(let i = 0; i < n; i++){ const p = place(i); pos.set(p.slice(0,3), i*3); size[i] = p[3]; seed[i] = Math.random(); }
+    const g = new T.BufferGeometry();
+    g.setAttribute('position', new T.BufferAttribute(pos, 3)); g.setAttribute('size', new T.BufferAttribute(size, 1)); g.setAttribute('seed', new T.BufferAttribute(seed, 1));
+    return g;
+  }
+  function rdir(){ const u = Math.random()*2 - 1, a = Math.random()*Math.PI*2, s = Math.sqrt(1 - u*u); return new T.Vector3(s*Math.cos(a), u, s*Math.sin(a)); }
+  function lonLatToVec(lon, lat, r){
+    const u = (lon + 180)/360, v = (lat + 90)/180, phi = u*Math.PI*2, theta = (1 - v)*Math.PI;
+    return new T.Vector3(-Math.cos(phi)*Math.sin(theta)*r, Math.cos(theta)*r, Math.sin(phi)*Math.sin(theta)*r);
+  }
+  function makeStarTexture(){
+    const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+    const gr = g.createRadialGradient(64,64,0,64,64,64); gr.addColorStop(0,'rgba(255,250,230,1)'); gr.addColorStop(.15,'rgba(255,214,140,.9)'); gr.addColorStop(.4,'rgba(255,170,70,.25)'); gr.addColorStop(1,'rgba(0,0,0,0)');
+    g.fillStyle = gr; g.fillRect(0,0,128,128);
+    g.globalCompositeOperation = 'lighter';
+    for(const [w,h] of [[128,5],[5,128]]){ const l = g.createLinearGradient(64-w/2,64-h/2,64+w/2,64+h/2); l.addColorStop(0,'rgba(0,0,0,0)'); l.addColorStop(.5,'rgba(255,248,220,1)'); l.addColorStop(1,'rgba(0,0,0,0)'); g.fillStyle = l; g.fillRect(64-w/2,64-h/2,w,h); }
+    return new T.CanvasTexture(c);
+  }
+
+  async function init(){
+    if(ready) return;
+    const load = $('gl-load'); load.hidden = false; load.innerHTML = ''; load.appendChild(SB.ui.spinner('正在描绘星图'));
+    try{ await SB.loadScript(THREE_URLS); }
+    catch(e){ load.innerHTML = ''; const d = SB.el('div','sb-empty'); d.textContent = '星图引擎没有加载成功，请检查网络后刷新页面'; load.appendChild(d); throw e; }
+    T = window.THREE;
+    renderer = new T.WebGLRenderer({canvas:cv, antialias:true, alpha:true, powerPreference:'high-performance'});
+    renderer.setClearColor(0x000000, 0);
+    scene = new T.Scene();
+    camera = new T.PerspectiveCamera(38, 1, .1, 200);
+    globe = new T.Group(); scene.add(globe);
+    const hi = SB.perf.level === 'high';
+    texCanvas = document.createElement('canvas'); texCanvas.width = hi ? 4096 : 2048; texCanvas.height = texCanvas.width/2;
+    idCanvas = document.createElement('canvas'); idCanvas.width = 2048; idCanvas.height = 1024;
+    tex = new T.CanvasTexture(texCanvas); tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    idTex = new T.CanvasTexture(idCanvas); idTex.magFilter = idTex.minFilter = T.NearestFilter; idTex.generateMipmaps = false;
+    earthMat = new T.ShaderMaterial({ uniforms:{ map:{value:tex}, idMap:{value:idTex}, hc:{value:-1}, hk:{value:-1}, t:{value:0}, L:{value:new T.Vector3(-.6,.45,.75)} }, vertexShader:earthVS, fragmentShader:earthFS });
+    earth = new T.Mesh(new T.SphereGeometry(1, 96, 64), earthMat); globe.add(earth);
+    const atmo = new T.Mesh(new T.SphereGeometry(1.12, 64, 48), new T.ShaderMaterial({vertexShader:atmoVS, fragmentShader:atmoFS, side:T.BackSide, blending:T.AdditiveBlending, transparent:true, depthWrite:false}));
+    scene.add(atmo);
+    // 背景星海
+    starMat = pointsMat(0xdfe6ff, 0xffd690);
+    scene.add(new T.Points(pointsGeo(hi ? 2600 : 1200, () => { const v = rdir().multiplyScalar(30 + Math.random()*40); return [v.x, v.y, v.z, 1.5 + Math.random()*3]; }), starMat));
+    // 两条环绕光尘带
+    [[1.42, .38, 1500], [1.62, -.52, 1100]].forEach(([R, tilt, n]) => {
+      const m = pointsMat(0xffd690, 0xfff4d8); dustMats.push(m);
+      const ring = new T.Points(pointsGeo(hi ? n : n/2, () => { const a = Math.random()*Math.PI*2, r = R + (Math.random()-.5)*.16*(Math.random()+.3); return [Math.cos(a)*r, (Math.random()-.5)*.05, Math.sin(a)*r, .8 + Math.random()*2.2]; }), m);
+      const holder = new T.Group(); holder.rotation.z = tilt; holder.rotation.x = .25; holder.add(ring); scene.add(holder); m.userData.ring = ring;
+    });
+    // 上升的光点
+    const riseMat = pointsMat(0xffd690, 0xbfd0ff); dustMats.push(riseMat);
+    const rise = new T.Points(pointsGeo(hi ? 360 : 160, () => { const v = rdir().multiplyScalar(1.15 + Math.random()*.9); return [v.x, v.y, v.z, 1 + Math.random()*2]; }), riseMat);
+    rise.userData.rise = true; scene.add(rise); riseMat.userData.rise = rise;
+    starTexture = makeStarTexture();
+    cityGroup = new T.Group(); globe.add(cityGroup);
+    drawIds(); drawTexture(); buildCities();
+    resize(); bindControls();
+    load.hidden = true; ready = true;
+  }
+
+  function buildCities(){
+    if(!cityGroup) return;
+    while(cityGroup.children.length) cityGroup.remove(cityGroup.children[0]);
+    const seen = new Set();
+    for(const c of SB.store.cities){
+      if(c.lon == null || c.lat == null) continue;
+      const key = Math.round(c.lon*10) + ',' + Math.round(c.lat*10); if(seen.has(key)) continue; seen.add(key);
+      const s = new T.Sprite(new T.SpriteMaterial({map:starTexture, blending:T.AdditiveBlending, depthWrite:false, transparent:true}));
+      s.position.copy(lonLatToVec(c.lon, c.lat, 1.015)); s.scale.setScalar(.07); s.userData.ph = Math.random()*6;
+      cityGroup.add(s);
+    }
+  }
+  function refreshStats(){
+    const s = SB.store.stats();
+    $('gl-stat').textContent = s.cities ? `已点亮 ${s.countries} 个国家 · ${s.cities} 座城市 · ${s.memories} 段回忆` : '还没有点亮任何地方 · 选一个大洲开始吧';
+    const vis = SB.store.visitedCountries();
+    contBtns.forEach(({c, badge}) => { const n = SB.geo.inContinent(c.code).filter(x => vis.has(x.key)).length; badge.textContent = n ? '★' + n : ''; });
+  }
+  document.addEventListener('sb:data', () => {
+    refreshStats();
+    if(!ready) return;
+    const sig = [...SB.store.visitedCountries()].sort().join() + '|' + SB.store.cities.length;
+    if(sig !== drawTexture.sig){ drawTexture.sig = sig; drawTexture(); buildCities(); }
+  });
+
+  function resize(){
+    if(!renderer) return;
+    const W = innerWidth, H = innerHeight;
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, SB.perf.level === 'high' ? 1.75 : 1.25));
+    renderer.setSize(W, H, false);
+    camera.aspect = W/H; camera.updateProjectionMatrix();
+    const frac = .72*Math.min(W, H)/H;
+    view.base = 1/(frac*Math.tan(camera.fov*Math.PI/360));
+    [starMat, ...dustMats].forEach(m => m.uniforms.px.value = renderer.getPixelRatio()*(H/900));
+  }
+  addEventListener('resize', () => { if(SB.scenes.current === 'globe') resize(); });
+
+  /* ── 交互：拖拽旋转、惯性、缩放、悬停、点击 ── */
+  const ray = { rc:null, v:null };
+  function pick(x, y){
+    if(!ray.rc){ ray.rc = new T.Raycaster(); ray.v = new T.Vector2(); }
+    const r = cv.getBoundingClientRect();
+    ray.v.set((x - r.left)/r.width*2 - 1, -(y - r.top)/r.height*2 + 1);
+    ray.rc.setFromCamera(ray.v, camera);
+    const hit = ray.rc.intersectObject(earth)[0];
+    if(!hit) return null;
+    const lon = hit.uv.x*360 - 180, lat = hit.uv.y*180 - 90;
+    return { lon, lat, country: SB.geo.countryAt(lon, lat) };
+  }
+  function bindControls(){
+    const pts = new Map(); let pinch = 0, moved = 0, lastHover = 0;
+    const tapMoveLimit = SB.perf.touch ? 14 : 6;
+    cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); pts.set(e.pointerId, {x:e.clientX, y:e.clientY}); moved = 0; view.idle = 0; cv.classList.add('dragging');
+      if(pts.size === 2){ const [a,b] = [...pts.values()]; pinch = Math.hypot(a.x-b.x, a.y-b.y); } });
+    cv.addEventListener('pointermove', e => {
+      const p = pts.get(e.pointerId);
+      if(!p){ // 悬停
+        if(SB.perf.touch || performance.now() - lastHover < 60) return; lastHover = performance.now();
+        const h = pick(e.clientX, e.clientY); setHover(h, e.clientX, e.clientY); return;
+      }
+      const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY; moved += Math.abs(dx) + Math.abs(dy);
+      if(pts.size === 2){ const [a,b] = [...pts.values()]; const d = Math.hypot(a.x-b.x, a.y-b.y); if(pinch){ view.zoomT = SB.clamp(view.zoomT*pinch/d, .58, 1.9); } pinch = d; return; }
+      const k = 2.6/Math.min(innerWidth, innerHeight)*view.zoom;
+      view.vy = dx*k; view.vx = dy*k;
+      view.rotY += dx*k; view.rotX = SB.clamp(view.rotX + dy*k, -1.25, 1.25);
+      setHover(null);
+    });
+    const up = e => {
+      pts.delete(e.pointerId); if(pts.size < 2) pinch = 0; if(!pts.size) cv.classList.remove('dragging');
+      if(moved < tapMoveLimit && e.type === 'pointerup'){
+        const h = pick(e.clientX, e.clientY);
+        if(h?.country){
+          if(h.country.key === 'aq') SB.scenes.go('continent', {c:'an'});
+          else SB.scenes.go('country', {k:h.country.key}, {transition:'portal', x:e.clientX, y:e.clientY});
+        }
+      }
+    };
+    cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+    cv.addEventListener('pointerleave', () => setHover(null));
+    cv.addEventListener('wheel', e => { e.preventDefault(); view.zoomT = SB.clamp(view.zoomT*(1 + Math.sign(e.deltaY)*.12), .58, 1.9); view.idle = 0; }, {passive:false});
+  }
+  function setHover(h, x, y){
+    const c = h?.country;
+    const idx = c ? SB.geo.countries.indexOf(c) + 1 : -1;
+    earthMat.uniforms.hk.value = idx; earthMat.uniforms.hc.value = c ? (contIndex[c.cont] || -1) : -1;
+    if(!c){ tip.classList.remove('show'); return; }
+    const n = SB.store.citiesIn(c.key).length;
+    tip.innerHTML = `<b>${SB.esc(c.zh)}</b>${SB.esc(SB.geo.continent(c.cont)?.name || '')}${n ? ` · ★ ${n} 座城市` : ''}`;
+    tip.style.transform = `translate(${Math.min(x + 16, innerWidth - tip.offsetWidth - 12)}px, ${y + 18}px)`;
+    tip.classList.add('show');
+  }
+
+  /* ── 渲染循环 ── */
+  const tmpV = { v:null, n:null, cam:null };
+  function loop(now){
+    if(!running) return;
+    const dt = Math.min(.05, (now - (last || now))/1000); last = now; time += dt;
+    view.idle += dt;
+    // 惯性 + 闲置自转
+    view.vx *= Math.pow(.05, dt); view.vy *= Math.pow(.05, dt);
+    view.rotY += view.vy*dt*8 + (view.idle > 4 ? dt*.06*Math.min(1, (view.idle-4)/2) : 0);
+    view.rotX = SB.clamp(view.rotX + view.vx*dt*8, -1.25, 1.25);
+    globe.rotation.set(view.rotX, view.rotY, 0);
+    // 进场飞入
+    view.intro = Math.min(1, view.intro + dt/2.4);
+    const ease = 1 - Math.pow(1 - view.intro, 3);
+    view.zoom = SB.lerp(view.zoom, view.zoomT, Math.min(1, dt*6));
+    camera.position.set(0, 0, SB.lerp(14, view.base, ease)*view.zoom);
+    camera.lookAt(0, 0, 0);
+    earthMat.uniforms.t.value = time;
+    starMat.uniforms.t.value = time;
+    dustMats.forEach((m, i) => { m.uniforms.t.value = time; if(m.userData.ring) m.userData.ring.rotation.y += dt*(i ? -.05 : .07); if(m.userData.rise){ m.userData.rise.rotation.y += dt*.02; m.userData.rise.position.y = Math.sin(time*.2)*.05; } });
+    cityGroup.children.forEach(s => s.scale.setScalar(.06 + .02*Math.sin(time*2.4 + s.userData.ph)));
+    // 大洲按钮跟随地球
+    if(!tmpV.v){ tmpV.v = new T.Vector3(); tmpV.n = new T.Vector3(); }
+    globe.updateMatrixWorld();
+    const W = innerWidth, H = innerHeight;
+    contBtns.forEach(({c, b}) => {
+      const p = lonLatToVec(c.center[0], c.center[1], 1.02).applyMatrix4(globe.matrixWorld);
+      tmpV.n.copy(p).normalize();
+      const facing = tmpV.n.dot(tmpV.v.copy(camera.position).sub(p).normalize());
+      p.project(camera);
+      const x = (p.x*.5 + .5)*W, y = (-p.y*.5 + .5)*H;
+      const a = SB.clamp((facing - .1)*3, 0, 1)*ease;
+      b.style.opacity = a.toFixed(2); b.style.pointerEvents = a > .3 ? 'auto' : 'none';
+      b.style.transform = `translate(${(x - b.offsetWidth/2).toFixed(1)}px, ${(y - b.offsetHeight + 3).toFixed(1)}px)`;
+    });
+    renderer.render(scene, camera);
+    requestAnimationFrame(loop);
+  }
+  function start(){ if(running || !ready) return; running = true; last = 0; requestAnimationFrame(loop); }
+  function stop(){ running = false; }
+  document.addEventListener('visibilitychange', () => { if(document.hidden) stop(); else if(SB.scenes.current === 'globe') start(); });
+
+  SB.scenes.register('globe', {
+    world:'night', deepLink:true,
+    title:()=>'世界星图',
+    parent:()=>null,
+    async enter(p){
+      SB.fx.palette('night'); SB.fx.orbit(null);
+      setTimeout(() => SB.fx.warp(false), p?.fromBook ? 900 : 0);
+      setTimeout(() => SB.fx.calm(), 1400);
+      refreshStats();
+      view.intro = p?.fromBook ? 0 : .55;
+      try{ await init(); }catch(e){ return; }
+      resize(); view.zoomT = 1; start();
+    },
+    leave(){ stop(); setHover(null); }
+  });
+
+  SB.menu.add({id:'globe', order:20, icon:'globe', label:'世界星图', desc:'旋转地球，寻找我们的足迹',
+    current:() => SB.scenes.current === 'globe',
+    action(){ if(SB.scenes.current === 'book') SB.magicBook.open(); else SB.scenes.go('globe', {}, {transition:'flash'}); } });
+})(window.SB);
+</script>

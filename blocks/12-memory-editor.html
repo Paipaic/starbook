@@ -1,0 +1,196 @@
+<style>
+/* ── 块 12 · 回忆编辑器 ── */
+.ed-row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.ed-date{display:flex;gap:8px;}
+.ed-date select{flex:1;padding:9px 8px;border-radius:8px;border:1px solid rgba(244,184,96,.35);background:rgba(10,8,20,.6);color:var(--text);font-size:15px;}
+.ed-drop{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:20px;border-radius:12px;cursor:pointer;
+  border:1.5px dashed rgba(244,184,96,.45);background:rgba(244,184,96,.04);text-align:center;transition:background .3s, border-color .3s;}
+.ed-drop:hover,.ed-drop.over{background:rgba(244,184,96,.1);border-color:var(--gold-hi);}
+.ed-drop b{font-family:var(--f-title);font-weight:400;font-size:18px;letter-spacing:.14em;color:var(--gold-hi);}
+.ed-drop span{font-size:12px;color:var(--text-dim);}
+.ed-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.ed-list{display:flex;flex-direction:column;gap:8px;}
+.ed-slide{display:grid;grid-template-columns:76px 1fr auto;gap:10px;align-items:center;padding:8px;border-radius:10px;border:1px solid rgba(244,184,96,.18);background:rgba(0,0,0,.18);}
+.ed-slide.cover{border-color:rgba(255,226,168,.7);box-shadow:0 0 14px rgba(244,184,96,.25);}
+.ed-thumb{position:relative;width:76px;height:76px;border-radius:8px;overflow:hidden;background:#151230;display:grid;place-items:center;font-size:11px;color:var(--text-dim);text-align:center;}
+.ed-thumb img{width:100%;height:100%;object-fit:cover;}
+.ed-thumb .star{position:absolute;top:3px;left:3px;font-size:12px;color:#2a1608;background:var(--gold-hi);border-radius:999px;padding:0 6px;}
+.ed-slide textarea{min-height:52px;font-size:14px;}
+.ed-ops{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
+.ed-ops button{width:32px;height:32px;border-radius:8px;border:1px solid rgba(244,184,96,.25);background:none;color:var(--text-dim);cursor:pointer;font-size:14px;}
+.ed-ops button:hover{color:var(--gold-hi);border-color:var(--line);}
+.ed-ops button.on{color:#2a1608;background:var(--gold-hi);}
+.ed-music{display:flex;flex-direction:column;gap:8px;}
+.ed-radios{display:flex;flex-wrap:wrap;gap:8px;}
+.ed-radios label{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;border:1px solid rgba(244,184,96,.3);cursor:pointer;font-size:14px;}
+.ed-radios label:has(input:checked){border-color:var(--gold-hi);background:rgba(244,184,96,.14);color:var(--gold-hi);}
+.ed-radios input{accent-color:#f4b860;}
+.ed-track{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--text);}
+.ed-note{font-size:12px;color:var(--text-dim);line-height:1.6;margin:0;}
+@media (max-width:560px){ .ed-row2{grid-template-columns:1fr;} .ed-slide{grid-template-columns:64px 1fr;} .ed-thumb{width:64px;height:64px;} .ed-ops{grid-column:1/-1;display:flex;justify-content:flex-end;} }
+</style>
+
+<script>
+(function(SB){
+  const IMG_TYPES = /^image\//;
+  SB.editor = {
+    open({cityId, memory}){
+      const city = SB.store.city(cityId);
+      if(!SB.store.canEdit){ SB.toast('你目前只有查看权限'); return; }
+      const orig = memory ? JSON.parse(JSON.stringify(memory)) : null;
+      const now = new Date();
+      const st = {
+        title: orig?.title || '', note: orig?.note || '',
+        year: (orig?.date || '').split('-')[0] || String(now.getFullYear()),
+        month: (orig?.date || '').split('-')[1] || String(now.getMonth() + 1).padStart(2, '0'),
+        slides: (orig?.slides || []).map(s => ({...s})),
+        cover: orig?.cover?.id || orig?.slides?.[0]?.id || null,
+        bgmMode: orig?.bgmMode || (orig?.bgm ? 'own' : 'global'),
+        bgm: orig?.bgm || null,
+        uploading: 0, sessionFiles: []
+      };
+      let list, saveBtn, preview, done = false;
+      const dlg = SB.ui.dialog({
+        title: memory ? '编辑回忆' : '新的回忆', sub: `${city?.name || ''} · ${city?.regionName || ''}`.toUpperCase(), wide:true,
+        build(body){
+          const title = SB.ui.input({type:'text', maxlength:'40', placeholder:'例如：2026 年 5 月 · 宽窄巷子的雨', value:st.title});
+          title.addEventListener('input', () => st.title = title.value);
+          const yr = SB.el('select'); yr.setAttribute('aria-label','年份');
+          for(let y = now.getFullYear() + 1; y >= 2000; y--){ const o = SB.el('option'); o.value = String(y); o.textContent = y + ' 年'; yr.appendChild(o); }
+          const mo = SB.el('select'); mo.setAttribute('aria-label','月份');
+          for(let m = 1; m <= 12; m++){ const o = SB.el('option'); o.value = String(m).padStart(2,'0'); o.textContent = m + ' 月'; mo.appendChild(o); }
+          yr.value = st.year; mo.value = st.month;
+          yr.addEventListener('change', () => st.year = yr.value); mo.addEventListener('change', () => st.month = mo.value);
+          const date = SB.el('div','ed-date'); date.append(yr, mo);
+          const row = SB.el('div','ed-row2'); row.append(SB.ui.field('标题', title), SB.ui.field('时间', date));
+          const note = SB.ui.input({multiline:true, maxlength:'300', placeholder:'写一段话，会出现在放映的扉页（可不填）'}); note.value = st.note;
+          note.addEventListener('input', () => st.note = note.value);
+          body.append(row, SB.ui.field('一段话', note));
+
+          // 照片
+          const drop = SB.el('label','ed-drop', '<b>＋ 添加照片</b><span>点击选择或把照片拖到这里，可一次选多张；会自动压缩后上传</span>');
+          const fin = SB.el('input'); fin.type = 'file'; fin.accept = 'image/*'; fin.multiple = true; fin.setAttribute('aria-label','选择照片');
+          drop.appendChild(fin);
+          fin.addEventListener('change', () => { addFiles([...fin.files]); fin.value = ''; });
+          drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+          drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+          drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); addFiles([...e.dataTransfer.files]); });
+          list = SB.el('div','ed-list');
+          const ph = SB.el('div','sb-field'); const lab = SB.el('span'); lab.textContent = '照片（★ 为封面）'; ph.append(lab, drop, list);
+          if(!SB.store.canUpload){ drop.style.display = 'none'; const n = SB.el('p','ed-note'); n.textContent = '上传照片需要「编辑者」权限，请让网页的主人在分享设置里把你设为编辑者。'; ph.appendChild(n); }
+          body.appendChild(ph);
+
+          // 音乐
+          const mus = SB.el('div','sb-field'); const ml = SB.el('span'); ml.textContent = '专属背景音乐';
+          const radios = SB.el('div','ed-radios');
+          [['global','使用全站音乐'],['own','这段回忆专属'],['none','不放音乐']].forEach(([v,t]) => {
+            const l = SB.el('label'); const r = SB.el('input'); r.type = 'radio'; r.name = 'ed-bgm'; r.value = v; r.checked = st.bgmMode === v;
+            r.addEventListener('change', () => { st.bgmMode = v; renderTrack(); }); l.append(r, document.createTextNode(t)); radios.appendChild(l);
+          });
+          const track = SB.el('div','ed-track');
+          mus.append(ml, radios, track); body.appendChild(mus);
+          const renderTrack = () => {
+            track.innerHTML = '';
+            if(st.bgmMode !== 'own'){ if(st.bgmMode === 'global'){ const s = SB.el('span'); s.style.color = 'var(--text-dim)'; s.textContent = SB.store.settings?.bgm ? '♪ ' + SB.store.settings.bgm.name : '还没有设置全站音乐（可在「回忆总览」上传）'; track.appendChild(s); } return; }
+            if(st.bgm){
+              const s = SB.el('span'); s.textContent = '♪ ' + st.bgm.name; track.appendChild(s);
+              track.appendChild(SB.ui.button('试听', 'small', (e) => { if(preview && !preview.paused){ preview.pause(); e.target.textContent = '试听'; return; } preview = SB.audio.preview(st.bgm.id); preview.play(); e.target.textContent = '停止'; }));
+            }
+            if(SB.store.canUpload){
+              const up = SB.el('label','sb-btn small'); up.style.position = 'relative'; up.textContent = st.bgm ? '换一首' : '上传音乐';
+              const ai = SB.el('input'); ai.type = 'file'; ai.accept = 'audio/*,.mp3,.m4a,.aac,.wav,.mp4'; ai.style.cssText = 'position:absolute;inset:0;opacity:0;cursor:pointer';
+              ai.addEventListener('change', async () => {
+                const f = ai.files[0]; if(!f) return; ai.value = '';
+                st.uploading++; refresh();
+                const s = SB.el('span'); s.style.color = 'var(--gold)'; track.appendChild(s);
+                try{ const r = await SB.store.uploadAudio(f, t => s.textContent = t); st.sessionFiles.push(r.id); st.bgm = r; }
+                catch(e){ SB.toast(e.msg || SB.store.errText(e), 4200); }
+                st.uploading--; refresh(); renderTrack();
+              });
+              up.appendChild(ai); track.appendChild(up);
+            }
+            const n = SB.el('p','ed-note'); n.style.width = '100%'; n.textContent = '周年版本建议使用 mp3 或 m4a，单首不超过 20MB；上传后直接私密保存到星屿存储。'; track.appendChild(n);
+          };
+          renderTrack(); renderList();
+        },
+        actions:[
+          ...(memory ? [{text:'删除这段回忆', kind:'danger', async onClick(close){
+            if(!await SB.ui.confirm(`确定删除「${memory.title}」吗？它的照片也会一起删除，无法恢复。`, '删除')) return false;
+            try{ await SB.store.removeMemory(memory.id); SB.toast('已删除'); if(SB.scenes.current === 'player') SB.scenes.back(); }
+            catch(e){ SB.toast(SB.store.errText(e)); return false; } }}, 'spacer'] : []),
+          {text:'取消', onClick(){ cleanup(false); }},
+          {text:'保存', kind:'primary', id:'save', async onClick(close, btn){
+            if(st.uploading){ SB.toast('照片还在上传，请稍等'); return false; }
+            if(!st.title.trim()){ SB.toast('请写一个标题'); return false; }
+            if(!st.slides.length){ SB.toast('至少添加一张照片'); return false; }
+            btn.disabled = true;
+            const data = { id: memory?.id, cityId, title: st.title.trim(), date: `${st.year}-${st.month}`, note: st.note.trim(),
+              slides: st.slides.map(s => ({id:s.id, w:s.w, h:s.h, caption:(s.caption || '').trim()})),
+              cover: {id: st.slides.some(s => s.id === st.cover) ? st.cover : st.slides[0].id},
+              bgmMode: st.bgmMode, bgm: st.bgmMode === 'own' ? st.bgm : null };
+            try{ await SB.store.saveMemory(data); }
+            catch(e){ SB.toast(SB.store.errText(e)); btn.disabled = false; return false; }
+            cleanup(true, data); SB.toast('✦ 回忆已收进星屿之书'); SB.fx.burst(600);
+          }}
+        ],
+        onClose(){ preview?.pause(); if(!done) cleanup(false); }
+      });
+      saveBtn = dlg.footer.querySelector('[data-act="save"]');
+      function refresh(){ if(saveBtn){ saveBtn.disabled = st.uploading > 0; saveBtn.textContent = st.uploading ? `上传中（${st.uploading}）` : '保存'; } }
+      function cleanup(saved, data){
+        if(done) return; done = true;
+        // 删除这次上传但没有用上的文件，以及编辑时被移除的旧文件
+        const keep = new Set(saved ? [...data.slides.map(s => s.id), data.cover.id, data.bgm?.id].filter(Boolean) : []);
+        const used = new Set();
+        for(const o of SB.store.memories) if(o.id !== memory?.id){ (o.slides||[]).forEach(s => used.add(s.id)); o.cover?.id && used.add(o.cover.id); o.bgm?.id && used.add(o.bgm.id); }
+        SB.store.settings?.bgm?.id && used.add(SB.store.settings.bgm.id);
+        const candidates = [...st.sessionFiles, ...(saved && orig ? [...(orig.slides||[]).map(s => s.id), orig.bgm?.id] : [])].filter(Boolean);
+        for(const id of new Set(candidates)) if(!keep.has(id) && !used.has(id)) SB.store.deleteFile(id);
+      }
+      async function addFiles(files){
+        files = files.filter(f => IMG_TYPES.test(f.type) || /\.(heic|heif)$/i.test(f.name));
+        if(!files.length) return;
+        for(const f of files){
+          const ph = { pending:true, name:f.name, step:'等待中' }; st.slides.push(ph); st.uploading++;
+        }
+        refresh(); renderList();
+        for(const f of files){
+          const ph = st.slides.find(s => s.pending && s.name === f.name && !s.started); if(!ph) continue; ph.started = true;
+          try{
+            // 只更新这一行的进度文字，不打断正在输入的描述
+            const r = await SB.store.uploadImage(f, t => { ph.step = t; if(ph._th) ph._th.textContent = t; });
+            Object.assign(ph, r, {pending:false, caption:''}); delete ph.step; st.sessionFiles.push(r.id);
+            if(!st.cover){ st.cover = r.id; renderList(); } else replaceRow(ph);
+          }catch(e){ st.slides.splice(st.slides.indexOf(ph), 1); ph._row?.remove(); SB.toast(e.msg || SB.store.errText(e), 4200); }
+          st.uploading--; refresh();
+        }
+      }
+      function buildRow(s){
+        const row = SB.el('div','ed-slide' + (s.id && s.id === st.cover ? ' cover' : ''));
+        const th = SB.el('div','ed-thumb');
+        if(s.pending) th.textContent = s.step || '上传中';
+        else th.innerHTML = `<img alt="" src="${SB.esc(SB.store.url(s.id))}">${s.id === st.cover ? '<span class="star">★</span>' : ''}`;
+        const cap = SB.ui.input({multiline:true, maxlength:'120', placeholder:'这张照片的故事（放映时逐字出现）', 'aria-label':'照片描述'});
+        cap.value = s.caption || ''; cap.disabled = !!s.pending; cap.addEventListener('input', () => s.caption = cap.value);
+        const ops = SB.el('div','ed-ops');
+        const mk = (t, label, fn, on) => { const b = SB.el('button', on ? 'on' : ''); b.type = 'button'; b.textContent = t; b.title = label; b.setAttribute('aria-label', label); b.disabled = !!s.pending; b.addEventListener('click', fn); ops.appendChild(b); };
+        const at = () => st.slides.indexOf(s);
+        mk('↑', '上移', () => { const i = at(); if(i > 0){ [st.slides[i-1], st.slides[i]] = [st.slides[i], st.slides[i-1]]; renderList(); } });
+        mk('↓', '下移', () => { const i = at(); if(i < st.slides.length-1){ [st.slides[i+1], st.slides[i]] = [st.slides[i], st.slides[i+1]]; renderList(); } });
+        mk('★', '设为封面', () => { st.cover = s.id; renderList(); }, s.id === st.cover);
+        mk('✕', '移除', () => { st.slides.splice(at(), 1); if(st.cover === s.id) st.cover = st.slides.find(x => x.id)?.id || null; renderList(); });
+        row.append(th, cap, ops);
+        Object.defineProperty(s, '_row', {value:row, configurable:true, writable:true});
+        Object.defineProperty(s, '_th', {value:th, configurable:true, writable:true});
+        return row;
+      }
+      function replaceRow(s){ const old = s._row; const row = buildRow(s); old ? old.replaceWith(row) : list.appendChild(row); }
+      function renderList(){
+        if(!list) return;
+        list.innerHTML = '';
+        st.slides.forEach(s => list.appendChild(buildRow(s)));
+      }
+    }
+  };
+})(window.SB);
+</script>

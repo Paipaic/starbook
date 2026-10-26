@@ -1,0 +1,253 @@
+<style>
+/* ── v1.5 · 登录 / 启动门：保持周年礼物体验，不暴露后台式 UI ── */
+#sb-gate{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:24px;
+  background:
+    radial-gradient(55% 38% at 50% 42%,rgba(88,95,196,.22),transparent 72%),
+    radial-gradient(42% 30% at 50% 58%,rgba(244,184,96,.13),transparent 72%),
+    linear-gradient(180deg,rgba(4,5,18,.96),rgba(8,5,10,.985));
+  transition:opacity .7s var(--ease-soft),visibility .7s;}
+#sb-gate[hidden]{display:none!important;} #sb-gate.leaving{opacity:0;visibility:hidden;pointer-events:none;}
+.sb-gate-stars{position:absolute;inset:0;overflow:hidden;pointer-events:none;opacity:.75;
+  background-image:radial-gradient(circle,rgba(255,239,201,.75) 0 1px,transparent 1.4px),radial-gradient(circle,rgba(143,164,255,.7) 0 1px,transparent 1.4px);
+  background-size:97px 97px,143px 143px;background-position:12px 25px,43px 67px;mask-image:radial-gradient(circle at 50% 45%,#000 0 35%,transparent 82%);}
+.sb-gate-card{position:relative;width:min(430px,100%);padding:34px 30px 28px;border-radius:20px;text-align:center;
+  border:1px solid rgba(244,184,96,.34);background:linear-gradient(180deg,rgba(30,20,18,.88),rgba(10,9,22,.9));
+  box-shadow:0 30px 90px rgba(0,0,0,.62),0 0 55px rgba(244,184,96,.11),inset 0 0 45px rgba(255,226,168,.025);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);}
+.sb-gate-rune{font-family:var(--f-rune);font-size:10px;letter-spacing:.34em;color:var(--gold-dim);margin:0 0 12px;}
+.sb-gate-card h1{font-family:var(--f-title);font-weight:400;letter-spacing:.16em;color:var(--gold-hi);font-size:clamp(25px,7vw,34px);margin:0;text-shadow:0 0 20px rgba(244,184,96,.4);}
+.sb-gate-card .intro{font-size:13px;line-height:1.9;color:var(--text-dim);margin:12px auto 22px;max-width:330px;}
+.sb-gate-form{display:flex;flex-direction:column;gap:12px;text-align:left;}
+.sb-gate-form label{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--text-dim);letter-spacing:.08em;}
+.sb-gate-form input{width:100%;border:1px solid rgba(244,184,96,.28);border-radius:10px;background:rgba(3,4,14,.58);padding:11px 12px;color:var(--text);outline:none;}
+.sb-gate-form input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(244,184,96,.08);}
+.sb-gate-submit{margin-top:4px;width:100%;justify-content:center;min-height:44px;}
+.sb-gate-error{min-height:20px;margin:10px 0 0;color:#e7a493;font-size:12px;line-height:1.6;}
+.sb-gate-note{margin:12px 0 0;color:rgba(191,165,130,.7);font-size:11px;line-height:1.6;}
+.sb-gate-loading{display:grid;place-items:center;gap:13px;padding:8px 0;}
+.sb-gate-loading .sb-spin{margin:0;}
+.sb-gate-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:14px;}
+.sb-gate-actions .sb-btn{min-width:132px;}
+.sb-gate-retry{margin-top:0;}
+@media(max-width:480px){#sb-gate{padding:max(14px,var(--safe-t)) max(14px,var(--safe-r)) max(14px,var(--safe-b)) max(14px,var(--safe-l));}.sb-gate-card{padding:28px 20px 24px;border-radius:16px;max-height:calc(100dvh - 28px - var(--safe-t) - var(--safe-b));overflow:auto}.sb-gate-card .intro{font-size:12px}}
+</style>
+
+<div id="sb-gate" aria-live="polite">
+  <div class="sb-gate-stars" aria-hidden="true"></div>
+  <section class="sb-gate-card" aria-label="星屿之书登录">
+    <p class="sb-gate-rune">LIBER INSULARUM STELLARUM</p>
+    <h1>星屿之书</h1>
+    <p class="intro" id="sb-gate-intro">有些故事，值得被写进星辰。</p>
+    <div id="sb-gate-body"></div>
+  </section>
+</div>
+
+<script>
+/* ── v1.5 · Runtime Context：User / Book / Theme / Experience ── */
+(function(SB){
+  const cfg = window.STARBOOK_CONFIG || {};
+  const gate = document.getElementById('sb-gate');
+  const gateBody = document.getElementById('sb-gate-body');
+  const gateIntro = document.getElementById('sb-gate-intro');
+  const SUPABASE_CDNS = [
+    'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
+    'https://unpkg.com/@supabase/supabase-js@2'
+  ];
+
+  function showLoading(text='正在连接星海…'){
+    gate.hidden = false; gate.classList.remove('leaving');
+    gateIntro.textContent = '有些故事，值得被写进星辰。';
+    gateBody.innerHTML = '';
+    const box = SB.el('div','sb-gate-loading'); box.appendChild(SB.ui.spinner(text)); gateBody.appendChild(box);
+  }
+  function showFatal(text, detail, options={}){
+    gate.hidden = false; gate.classList.remove('leaving'); gateBody.innerHTML = '';
+    gateIntro.textContent = text || '星海暂时失去了连接。';
+    const p = SB.el('p','sb-gate-error'); p.textContent = detail || '请检查网络后重新尝试。';
+    const actions = SB.el('div','sb-gate-actions');
+
+    if(options.retry !== false){
+      const retryLabel = options.retryLabel || '重新连接';
+      const retryAction = typeof options.retry === 'function' ? options.retry : ()=>location.reload();
+      const retry = SB.ui.button(retryLabel,'primary sb-gate-retry',async()=>{
+        retry.disabled = true;
+        try{ await retryAction(); }
+        catch(e){ console.error('[Starbook retry]',e); retry.disabled = false; }
+      });
+      actions.appendChild(retry);
+    }
+
+    if(options.backToLogin){
+      const back = SB.ui.button(options.backLabel || '返回登录','',async()=>{
+        back.disabled = true;
+        try{ await returnToLogin(options.loginMessage || '请重新登录后再开启星屿。'); }
+        catch(e){ console.error('[Starbook back-to-login]',e); back.disabled = false; }
+      });
+      actions.appendChild(back);
+    }
+
+    gateBody.append(p,actions);
+  }
+  function hideGate(){
+    gate.classList.add('leaving');
+    setTimeout(()=>{ gate.hidden = true; gate.classList.remove('leaving'); },720);
+  }
+
+  const user = SB.user = {
+    current:null, session:null, ready:null,
+    async signIn(email,password){
+      const {data,error} = await SB.supabase.auth.signInWithPassword({email,password});
+      if(error) throw error;
+      user.session = data.session || null; user.current = data.user || data.session?.user || null;
+      return user.current;
+    },
+    async signOut(options={}){
+      const reload = options.reload !== false;
+      try{ await SB.supabase?.auth?.signOut(); }catch(e){ console.error(e); }
+      user.session = null; user.current = null;
+      if(SB.book){ SB.book.current = null; SB.book.memberships = []; SB.book.books = []; }
+      if(reload) location.reload();
+    }
+  };
+
+  async function returnToLogin(message=''){
+    try{ await user.signOut({reload:false}); }
+    catch(e){ console.error('[Starbook signout]',e); }
+    try{ localStorage.removeItem('sb-current-book'); }catch(e){}
+    showLogin(message);
+  }
+
+  const book = SB.book = {
+    current:null, memberships:[], books:[], ready:null,
+    async load(){
+      if(!user.current) throw new Error('not_authenticated');
+      const {data:memberships,error:mErr} = await SB.supabase.from('book_members')
+        .select('book_id,role,status,created_at').eq('user_id',user.current.id).eq('status','active');
+      if(mErr) throw mErr;
+      book.memberships = memberships || [];
+      const ids = book.memberships.map(x=>x.book_id);
+      if(!ids.length){ book.books = []; book.current = null; return null; }
+      const {data:books,error:bErr} = await SB.supabase.from('books')
+        .select('id,name,relationship_type,theme_id,experience_id,created_by,created_at,updated_at').in('id',ids);
+      if(bErr) throw bErr;
+      book.books = books || [];
+      let preferred = null; try{ preferred = localStorage.getItem('sb-current-book'); }catch(e){}
+      const chosen = book.books.find(x=>x.id===preferred) || book.books[0] || null;
+      return book.open(chosen?.id);
+    },
+    open(id){
+      const row = book.books.find(x=>x.id===id); if(!row){ book.current = null; return null; }
+      const member = book.memberships.find(x=>x.book_id===id);
+      book.current = {
+        id:row.id, name:row.name, role:member?.role || 'viewer', createdBy:row.created_by,
+        relationshipType:row.relationship_type || cfg.defaults?.relationshipType || 'romantic',
+        themeId:row.theme_id || cfg.defaults?.themeId || 'magic-celestial',
+        experienceId:row.experience_id || cfg.defaults?.experienceId || 'world-map'
+      };
+      try{ localStorage.setItem('sb-current-book',row.id); }catch(e){}
+      SB.theme.current = book.current.themeId;
+      SB.experience.current = book.current.experienceId;
+      document.documentElement.dataset.sbTheme = SB.theme.current;
+      document.documentElement.dataset.sbExperience = SB.experience.current;
+      document.dispatchEvent(new CustomEvent('sb:book',{detail:{book:book.current}}));
+      return book.current;
+    },
+    close(){ book.current = null; }
+  };
+
+  SB.theme = { current: cfg.defaults?.themeId || 'magic-celestial' };
+  SB.experience = { current: cfg.defaults?.experienceId || 'world-map' };
+  const runtime = SB.runtime = { ready:null, config:cfg, showLoading, showFatal };
+
+  let resolveReady, rejectReady;
+  runtime.ready = new Promise((res,rej)=>{ resolveReady=res; rejectReady=rej; });
+  user.ready = runtime.ready; book.ready = runtime.ready;
+
+  async function finishAuthenticated(){
+    showLoading('正在读取我们的世界…');
+    try{
+      const current = await book.load();
+      if(!current){
+        showFatal(
+          '这枚星钥还没有连接到一本书。',
+          '当前账号还没有《我们的星屿》的访问权限。可以重新检查权限，或返回登录并使用其他账号。',
+          {
+            retryLabel:'重新检查权限',
+            retry:()=>finishAuthenticated(),
+            backToLogin:true,
+            loginMessage:'已退出当前账号，请使用拥有访问权限的账号登录。'
+          }
+        );
+        return;
+      }
+      hideGate(); resolveReady({user:user.current,book:current});
+    }catch(e){
+      console.error('[Starbook runtime]',e);
+      const msg=String(e?.message||'');
+      const permissionLike = /permission|row-level|rls|not authorized|unauthorized|forbidden|42501/i.test(msg);
+      showFatal(
+        permissionLike ? '这枚星钥暂时没有权限。' : '暂时没能翻开这本书。',
+        permissionLike
+          ? '当前账号没有读取这本书的权限。你可以重新检查权限，或返回登录并使用其他账号。'
+          : '数据库连接或权限配置暂时异常。你可以重新尝试，或返回登录。',
+        {
+          retryLabel:'重新尝试',
+          retry:()=>finishAuthenticated(),
+          backToLogin:true,
+          loginMessage:'已返回登录界面。'
+        }
+      );
+    }
+  }
+
+  function showLogin(message=''){
+    gate.hidden = false; gate.classList.remove('leaving'); gateBody.innerHTML='';
+    gateIntro.textContent = '这本书只向被邀请的人开启。';
+    const form = SB.el('form','sb-gate-form');
+    const email = SB.el('input'); email.type='email'; email.autocomplete='email'; email.placeholder='your@email.com'; email.required=true;
+    const password = SB.el('input'); password.type='password'; password.autocomplete='current-password'; password.placeholder='••••••••'; password.required=true;
+    const l1=SB.el('label'); l1.textContent='邮箱'; l1.appendChild(email);
+    const l2=SB.el('label'); l2.textContent='密码'; l2.appendChild(password);
+    const submit = SB.ui.button('开启星屿','primary sb-gate-submit'); submit.type='submit';
+    const err=SB.el('p','sb-gate-error'); err.textContent=message;
+    const note=SB.el('p','sb-gate-note'); note.textContent='当前周年版本暂不开放公开注册。';
+    form.append(l1,l2,submit,err,note); gateBody.appendChild(form);
+    form.addEventListener('submit',async e=>{
+      e.preventDefault(); err.textContent=''; submit.disabled=true; submit.textContent='正在开启…';
+      try{ await user.signIn(email.value.trim(),password.value); await finishAuthenticated(); }
+      catch(ex){
+        console.error('[Starbook auth]',ex);
+        const msg=String(ex?.message||'');
+        err.textContent = /invalid login|invalid credentials/i.test(msg) ? '邮箱或密码不正确。' : '暂时无法登录，请检查网络后再试。';
+        submit.disabled=false; submit.textContent='开启星屿';
+      }
+    });
+    if(!SB.perf.touch) setTimeout(()=>email.focus(),120);
+  }
+
+  async function bootRuntime(){
+    showLoading('正在连接星海…');
+    try{
+      if(!cfg.supabaseUrl || !cfg.supabasePublishableKey) throw new Error('missing_supabase_config');
+      if(!window.supabase?.createClient) await SB.loadScript(SUPABASE_CDNS);
+      if(!window.supabase?.createClient) throw new Error('supabase_client_unavailable');
+      SB.supabase = window.supabase.createClient(cfg.supabaseUrl,cfg.supabasePublishableKey,{
+        auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},
+        global:{headers:{'x-client-info':'starbook-v1.5-anniversary'}}
+      });
+      SB.supabase.auth.onAuthStateChange((event,session)=>{
+        user.session=session||null; user.current=session?.user||null;
+        if(event==='SIGNED_OUT' && !gate.hidden) return;
+        if(event==='SIGNED_OUT'){ showLogin('登录状态已结束，请重新开启星屿。'); }
+      });
+      const {data,error}=await SB.supabase.auth.getSession(); if(error) throw error;
+      user.session=data.session||null; user.current=data.session?.user||null;
+      if(user.current) await finishAuthenticated(); else showLogin();
+    }catch(e){
+      console.error('[Starbook boot]',e); rejectReady?.(e);
+      showFatal('星海暂时失去了连接。','Supabase 客户端未能加载。请检查网络后重新连接。');
+    }
+  }
+  bootRuntime();
+})(window.SB);
+</script>
