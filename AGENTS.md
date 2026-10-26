@@ -7,7 +7,7 @@
 ## 1. 当前项目身份
 
 - Project: **Starbook / 星屿之书**
-- Current version: **1.5.2**
+- Current version: **1.6.0**
 - Production branch: **`main`**
 - Production deploy: **GitHub Pages via GitHub Actions**
 - Runtime backend: **Supabase Anniversary Bridge**

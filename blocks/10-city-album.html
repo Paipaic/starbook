@@ -34,6 +34,12 @@
 .ca-edit{position:absolute;top:18px;right:18px;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:rgba(10,10,28,.75);
   color:var(--gold-hi);cursor:pointer;display:grid;place-items:center;z-index:2;opacity:.85;}
 .ca-edit:hover{opacity:1;box-shadow:0 0 14px rgba(244,184,96,.5);}
+/* v1.6.0：卡片上的「放映」按钮，直接开始放映（跳过放映厅） */
+.ca-play{position:absolute;right:12px;bottom:12px;width:50px;height:50px;border-radius:50%;border:0;cursor:pointer;z-index:2;
+  display:grid;place-items:center;color:#2a1608;background:radial-gradient(circle at 35% 30%,#fff3d1,#f4b860 55%,#b8762c);
+  box-shadow:0 0 0 4px rgba(10,8,20,.45),0 0 22px rgba(244,184,96,.55);transition:transform .3s var(--ease-soft), box-shadow .3s;}
+.ca-play svg{width:20px;height:20px;margin-left:3px;}
+.ca-play:hover,.ca-play:focus-visible{transform:scale(1.08);box-shadow:0 0 0 4px rgba(10,8,20,.45),0 0 34px rgba(244,184,96,.85);}
 .ca-edit svg{width:18px;height:18px;}
 .ca-new{min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;border-style:dashed;
   font-family:var(--f-display);font-weight:var(--fw-display);letter-spacing:.18em;color:var(--gold-hi);font-size:19px;}
@@ -93,7 +99,7 @@
     list.forEach((m, i) => {
       const row = SB.el('div','ca-row' + ((i + (SB.store.canEdit ? 1 : 0)) % 2 ? ' r' : ''));
       const node = SB.el('div','ca-node','<i></i><span></span>'); node.querySelector('span').textContent = SB.fmtDate(m.date);
-      const card = SB.el('div','ca-card'); card.tabIndex = 0; card.setAttribute('role','button'); card.setAttribute('aria-label','放映：' + m.title);
+      const card = SB.el('div','ca-card'); card.tabIndex = 0; card.setAttribute('role','button'); card.setAttribute('aria-label','打开放映厅：' + m.title);
       card.style.animationDelay = (i*80) + 'ms';
       const cover = m.cover?.id || m.slides?.[0]?.id;
       card.innerHTML = `<div class="ca-cover">${cover ? `<img alt="" loading="lazy" src="${SB.esc(SB.store.url(cover))}">` : ''}</div>
@@ -101,6 +107,10 @@
       card.querySelector('h3').textContent = SB.fmtTitle(m.title);
       const open = e => SB.scenes.go('player', {id:m.id}, {transition:'portal', x:e.clientX || innerWidth/2, y:e.clientY || innerHeight/2});
       card.addEventListener('click', open);
+      const play = SB.el('button','ca-play','<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15L19.5 12Z" fill="currentColor"/></svg>');
+      play.type = 'button'; play.setAttribute('aria-label','放映：' + m.title); play.title = '放映';
+      play.addEventListener('click', e => { e.stopPropagation(); SB.scenes.go('player', {id:m.id, autoplay:true}, {transition:'portal', x:e.clientX || innerWidth/2, y:e.clientY || innerHeight/2}); });
+      card.querySelector('.ca-cover').appendChild(play);
       card.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); open(e); } });
       if(SB.store.canEdit){
         const ed = SB.el('button','ca-edit', QUILL); ed.type = 'button'; ed.setAttribute('aria-label','编辑这段回忆');

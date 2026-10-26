@@ -1,6 +1,6 @@
 # 星屿之书 Starbook
 
-当前正式项目版本：**v1.5.2**。
+当前正式项目版本：**v1.6.0**。
 
 这是一个以沉浸式“记忆书”为核心的私人数字记忆项目。当前生产形态是 `romantic + magic-celestial + world-map`，但底层架构已经为多用户、多 Book、多关系类型、多 Theme、多 Experience 的后续扩展保留边界。
 

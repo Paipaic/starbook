@@ -62,7 +62,16 @@
 - 情感剪辑：只用最好的素材、开场给出主题、交叉溶解与硬切结合；**光漏要克制**，放在场景开始/结束或情绪高点，颜色与画面光一致，运动要轻。
 - 字幕：电影式下方居中、逐字/逐行柔和出现，留足阅读时间。
 
-## 6. 参考来源
+## 6. v1.6.0 调研：电影式放映的具体参数
+
+- **字幕**（Netflix 简体中文字幕规范）：成人节目阅读速度上限 9 字/秒；每行最多 16 个汉字；最多两行，两行时上短下长（金字塔形）；字幕不应遮挡画面关键内容，连续字幕保持同一位置。→ 本项目抒情字幕采用 7 字/秒、单条最短 1.8 秒，按标点切分长描述。
+- **溶解**（Wikipedia: Dissolve）：溶解与淡入淡出通常 1–2 秒（24–48 帧），表达时间流逝或进入闪回；6–12 帧的短溶解用于柔化硬切。→ 自动放映 1.6 秒，手动翻页 0.8 秒。
+- **Ken Burns**（PTE AV Studio 文档）：线性关键帧会显得生硬，应改为平滑曲线；深度放大需要足够分辨率（放大 2 倍需要 2 倍像素）。→ 本项目使用正弦缓动，放大上限 1.12（照片长边 2400px）。
+- **静态照片成片**（No Film School / Vashi Nedomansky）：每一张静帧都要在它的时刻成立，一张放错的照片会破坏节奏；剪辑理论（库里肖夫效应）同样适用于静帧蒙太奇。→ 保持用户排定的顺序，镜头语言按照片比例选择，转场以溶解为主。
+- **光漏**（MotionElements）：少即是多；放在场景开始/结束或情绪高点；颜色与画面光一致；运动要轻。→ 每 4 个镜头最多一次，并用于最后一个镜头前。
+- **冥想盆**（sinema.sg）：墨滴入水作为进入回忆的转场；回忆画面像隔着水，有机流动。→ 开场「墨滴入水」涟漪与第一张照片的墨渍揭幕。
+
+## 7. 参考来源
 
 - Typotheque — Typesetting principles of CJK text: https://www.typotheque.com/articles/typesetting-cjk-text
 - TheOneRing.net — The Lord of the Fonts: https://www.theonering.net/torwp/2014/06/26/90498-the-lord-of-the-fonts-a-guide-to-fonts-in-the-hobbit-and-the-lord-of-the-rings/3/
@@ -72,3 +81,7 @@
 - Wikipedia — Ken Burns effect: https://en.wikipedia.org/wiki/Ken_Burns_effect
 - PremiumBeat — 5 tips for editing cinematic wedding highlight videos: https://www.premiumbeat.com/blog/5-tips-editing-cinematic-wedding-highlight-videos
 - MotionElements — Mastering light leaks: https://www.motionelements.com/blog/articles/mastering-light-leaks-adding-cinematic-magic-to-your-videos
+- Netflix — Simplified Chinese (PRC) Timed Text Style Guide: https://partnerhelp.netflixstudios.com/hc/en-us/articles/215986007-Chinese-Simplified-Timed-Text-Style-Guide
+- Wikipedia — Dissolve (filmmaking): https://en.wikipedia.org/wiki/Dissolve_(filmmaking)
+- PTE AV Studio — Ken Burns Effect: https://docs.pteavstudio.com/en-us/9.0/techniques/kenburns
+- No Film School — Making films with still images: https://nofilmschool.com/2013/12/if-youre-making-films-with-still-images-here-are-a-few-things-to-consider

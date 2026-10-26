@@ -2,11 +2,11 @@
 
 ## Current Release
 
-- Version: `1.5.2` (Typography System「星文」)
+- Version: `1.6.0` (Cinematic Player「冥想盆放映厅」)
 - Deadline: `2026-10-29`
 - Delivery goal: 私密、稳定、手机可用的周年纪念礼物。
 - Base: V1 `blocks + build.py + site/index.html`。
-- Runtime config version: `1.5.2`。
+- Runtime config version: `1.6.0`。
 
 ## Current Architecture
 
@@ -110,6 +110,14 @@ release/vX.X.X or feature/*
 - 图标统一用 `SB.icon(name)` 内联 SVG，不依赖系统符号字体。
 - 视觉升级后续版本计划：`docs/design/VISUAL_UPGRADE_PLAN.md`（v1.6.0 电影式放映、v1.6.1 转场、v1.6.2 魔法书/地球特效）。
 
+## Visual / Cinematic Player (v1.6.0)
+
+- 回忆放映 = 放映厅（海报 + 放映按钮）→ 开场（熄灯、银幕黑边、墨滴涟漪、扉页）→ 镜头（推/拉/横摇/纵摇/悬浮相片，溶解 / 光漏 / 墨滴揭幕转场，电影字幕）→ 终章（闪白、「终 · FINIS」、再放一遍）。
+- 由单一时钟驱动，暂停即冻结；只读现有 memory 字段（title / date / note / cover / slides / bgm / bgmMode），无数据变化。
+- 相册卡片右下角「放映」按钮直接开始放映；点卡片其他位置进入放映厅。
+- `SB.audio.duck(level, ms)`：终章音乐渐弱到 30%；`SB.player`：调试/测试用的 play / seek / jump / state。
+- 提示词：`prompts/11-memory-player.md`；调研：`docs/design/VISUAL_UPGRADE_PLAN.md` 第 6 节。
+
 ## Known Technical Debt
 
 - `book_data.payload` 是整体 JSONB，后续需要正规化。
@@ -170,8 +178,8 @@ Confirmed by owner on 2026-10-26:
 
 ## Highest Priority Next
 
-1. 发布 v1.5.2（release/v1.5.2 → PR → validate → main → Pages），在手机上确认「回忆总览」等文字显示正常。
-1a. 继续视觉升级：v1.6.0 电影式放映 → v1.6.1 转场 → v1.6.2 魔法书/地球特效（10/28 Feature Freeze 前；后两版可顺延）。
+1. 发布 v1.6.0（release/v1.6.0 → PR → validate → main → Pages），在手机上用真实回忆完整放映一遍，确认照片加载、字幕、音乐。
+1a. 继续视觉升级：v1.6.1 转场 → v1.6.2 魔法书/地球特效（10/28 Feature Freeze 前；可顺延到周年之后）。
 2. 完成 Private Storage 正式照片与 BGM 的实际内容填充。
 3. 核心稳定后实现周年扉页 / 献词 / 结尾（ANN-008）。
 4. 进行最终手机端 Production URL 验收。
