@@ -1,17 +1,5 @@
 {
- "cities": {
-  "mvp80dnk0ktpl2": {
-   "country": "cn",
-   "countryName": "中国大陆",
-   "region": "cn-ah",
-   "regionName": "安徽",
-   "name": "合肥",
-   "lon": 117.261,
-   "lat": 32.024,
-   "createdAt": "2026-10-26T12:16:15.359Z",
-   "updatedAt": "2026-10-26T12:16:30.816Z"
-  }
- },
+ "cities": {},
  "memories": {},
  "settings": {}
 }
