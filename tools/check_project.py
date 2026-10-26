@@ -61,6 +61,11 @@ if fallback_symbols:
 if 'SB.icon = ' not in block_text.get('00-core.html', ''):
     print('ERROR: SB.icon helper missing from 00-core.html')
     sys.exit(1)
+player_text = block_text.get('11-memory-player.html', '')
+for marker in ('duck(', 'SB.player = '):
+    if marker not in player_text:
+        print(f'ERROR: cinematic player marker {marker!r} missing from 11-memory-player.html')
+        sys.exit(1)
 
 if 'api.github.com' in html or 'github token' in html.lower() or 'mp4-muxer' in html.lower():
     print('warning: legacy GitHub/mp4-muxer marker found in built site')

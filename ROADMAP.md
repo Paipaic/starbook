@@ -3,7 +3,7 @@
 ## Visual Upgrade — Magic Celestial Theme（计划见 `docs/design/VISUAL_UPGRADE_PLAN.md`）
 
 - **VIS-001 · 「星文」字体系统 / 乱码修复** — `DONE` (v1.5.2)
-- **VIS-004 · 「冥想盆放映厅」电影式回忆放映 + 放映按钮** — `PLANNED` (v1.6.0)
+- **VIS-004 · 「冥想盆放映厅」电影式回忆放映 + 放映按钮** — `DONE` (v1.6.0)
 - **VIS-002 · 「秘境之门」奇幻转场系统** — `PLANNED` (v1.6.1)
 - **VIS-003 · 「星辉层次」魔法书与地球特效** — `PLANNED` (v1.6.2)
 - 版本号按交付顺序递增；若 Feature Freeze 前时间不足，v1.6.1 / v1.6.2 可顺延到周年之后。

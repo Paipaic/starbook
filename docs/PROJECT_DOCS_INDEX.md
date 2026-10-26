@@ -16,6 +16,7 @@
 
 - `design/VISUAL_UPGRADE_PLAN.md` — v1.5.2 → v1.6.2 视觉升级总计划、乱码根因实测、奇幻电影与电影式剪辑调研及来源。
 - `../prompts/00-typography.md` — 「星文」字体系统提示词（v1.5.2）。
+- `../prompts/11-memory-player.md` — 「冥想盆放映厅」电影式回忆放映提示词（v1.6.0）。
 
 ## 发布与 CI
 
