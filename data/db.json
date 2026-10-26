@@ -1,0 +1,16 @@
+{
+ "cities": {
+  "mvp25dlaku0gxn": {
+   "country": "cn",
+   "countryName": "中国大陆",
+   "region": "cn-ah",
+   "regionName": "安徽",
+   "name": "合肥",
+   "lon": 117.261,
+   "lat": 32.024,
+   "createdAt": "2026-10-26T09:32:10.315Z"
+  }
+ },
+ "memories": {},
+ "settings": {}
+}
