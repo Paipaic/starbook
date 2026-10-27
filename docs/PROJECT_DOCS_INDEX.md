@@ -18,6 +18,7 @@
 - `../prompts/00-typography.md` — 「星文」字体系统提示词（v1.5.2）。
 - `../prompts/11-memory-player.md` — 「光影放映」多图编排放映、三种放映风格与四季主题提示词（v1.7.0，取代 v1.6.0 版本）。
 - `../prompts/12-memory-editor.md` — 回忆编辑器「星屿手稿」提示词（v1.7.0）。
+- `../prompts/10-city-album.md` — 城市回忆目录页「星屿手稿 · 目录页」提示词（v1.7.1）。
 
 ## 发布与 CI
 

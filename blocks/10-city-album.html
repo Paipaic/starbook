@@ -1,67 +1,135 @@
 <style>
-/* ── 块 10 · 城市回忆目录（时间线） ── */
+/* ── 块 10 · 城市回忆目录（v1.7.1「星屿手稿 · 目录页」）──
+   页眉（法阵 + 城市名 + 统计 + 新的回忆）→ 单列金色时间线（罗马数字章节徽记）→ 章节卡片（海报 + 信息 + 缩影 + 放映操作）。
+   视觉语言与回忆编辑器「星屿手稿」一致。 */
 .sb-scene[data-scene="city"]{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}
 .ca-ghost{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);font-family:var(--f-display);font-weight:900;font-size:min(34vw,320px);line-height:1;white-space:nowrap;
-  color:transparent;-webkit-text-stroke:1px rgba(244,184,96,.09);text-shadow:0 0 80px rgba(244,184,96,.06);pointer-events:none;letter-spacing:.1em;}
-.ca-wrap{position:relative;padding-block:calc(84px + var(--safe-t)) calc(50px + var(--safe-b));
-  padding-left:max(16px,var(--safe-l));padding-right:max(16px,var(--safe-r));max-width:1100px;margin:0 auto;}
-.ca-head{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;margin-bottom:30px;}
-.ca-head small{font-family:var(--f-rune);font-weight:500;font-size:11.5px;letter-spacing:.36em;padding-left:.36em;color:var(--gold-dim);}
-.ca-head h1{margin:0;padding-left:.22em;font-family:var(--f-display);font-weight:var(--fw-display);font-size:var(--fs-hero);letter-spacing:.22em;color:var(--gold-hi);text-shadow:0 0 30px rgba(244,184,96,.6);}
-.ca-head p{margin:0;color:#c9c6ea;letter-spacing:.14em;font-size:14px;}
-.ca-line{position:relative;display:flex;flex-direction:column;gap:34px;}
-.ca-line::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:2px;transform:translateX(-50%);
-  background:linear-gradient(transparent, rgba(244,184,96,.7) 6%, rgba(244,184,96,.7) 94%, transparent);box-shadow:0 0 12px rgba(244,184,96,.5);}
-.ca-row{position:relative;display:grid;grid-template-columns:1fr 70px 1fr;align-items:center;}
-.ca-row > .ca-card{grid-column:1;justify-self:end;}
-.ca-row.r > .ca-card{grid-column:3;justify-self:start;}
-.ca-node{grid-column:2;grid-row:1;justify-self:center;display:flex;flex-direction:column;align-items:center;gap:4px;z-index:1;}
-.ca-node i{width:14px;height:14px;transform:rotate(45deg);background:var(--gold-hi);box-shadow:0 0 14px 4px rgba(244,184,96,.7);}
-.ca-node span{font-family:var(--f-num);font-weight:600;font-size:14px;letter-spacing:.06em;color:var(--gold);white-space:nowrap;background:rgba(10,10,28,.85);padding:2px 8px;border-radius:999px;}
-.ca-card{position:relative;width:min(420px,100%);border-radius:14px;cursor:pointer;text-align:left;padding:12px;border:1px solid rgba(244,184,96,.3);
-  background:linear-gradient(180deg, rgba(40,32,60,.8), rgba(14,12,30,.85));box-shadow:0 14px 34px rgba(0,0,0,.45);
-  transition:transform .4s var(--ease-soft), box-shadow .4s, border-color .4s;animation:ctIn .8s var(--ease-soft) backwards;}
-.ca-card:hover,.ca-card:focus-visible{transform:translateY(-5px);border-color:rgba(255,226,168,.75);box-shadow:0 18px 40px rgba(0,0,0,.5), 0 0 30px rgba(244,184,96,.3);}
-.ca-cover{position:relative;aspect-ratio:4/3;border-radius:8px;overflow:hidden;background:#151230;
-  box-shadow:inset 0 0 0 1px rgba(255,226,168,.55), inset 0 0 0 5px rgba(10,8,20,.6), inset 0 0 0 6px rgba(244,184,96,.35);}
-.ca-cover img{width:100%;height:100%;object-fit:cover;display:block;filter:sepia(.15) saturate(1.05);transition:transform 1.2s var(--ease-soft);}
-.ca-card:hover .ca-cover img{transform:scale(1.06);}
-.ca-cover::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 1px rgba(255,226,168,.55), inset 0 0 40px rgba(0,0,0,.5);pointer-events:none;border-radius:8px;}
-.ca-meta{display:flex;flex-direction:column;gap:4px;padding:12px 4px 2px;}
-.ca-meta h3{margin:0;font-family:var(--f-display);font-weight:var(--fw-display);font-size:19px;letter-spacing:.06em;color:var(--gold-hi);line-height:1.45;}
-.ca-meta p{margin:0;font-size:13px;color:var(--text-dim);letter-spacing:.04em;display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
-.ca-meta p span{display:inline-flex;align-items:center;gap:4px;}
-.ca-edit{position:absolute;top:18px;right:18px;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:rgba(10,10,28,.75);
-  color:var(--gold-hi);cursor:pointer;display:grid;place-items:center;z-index:2;opacity:.85;}
-.ca-edit:hover{opacity:1;box-shadow:0 0 14px rgba(244,184,96,.5);}
-/* v1.6.0：卡片上的「放映」按钮，直接开始放映（跳过放映厅） */
-.ca-play{position:absolute;right:12px;bottom:12px;width:50px;height:50px;border-radius:50%;border:0;cursor:pointer;z-index:2;
-  display:grid;place-items:center;color:#2a1608;background:radial-gradient(circle at 35% 30%,#fff3d1,#f4b860 55%,#b8762c);
-  box-shadow:0 0 0 4px rgba(10,8,20,.45),0 0 22px rgba(244,184,96,.55);transition:transform .3s var(--ease-soft), box-shadow .3s;}
-.ca-play svg{width:20px;height:20px;margin-left:3px;}
-.ca-play:hover,.ca-play:focus-visible{transform:scale(1.08);box-shadow:0 0 0 4px rgba(10,8,20,.45),0 0 34px rgba(244,184,96,.85);}
-.ca-edit svg{width:18px;height:18px;}
-.ca-new{min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;border-style:dashed;
-  font-family:var(--f-display);font-weight:var(--fw-display);letter-spacing:.18em;color:var(--gold-hi);font-size:19px;}
-.ca-new b{font-weight:400;font-size:40px;line-height:1;filter:drop-shadow(0 0 10px rgba(244,184,96,.8));display:grid;place-items:center;}
-.ca-empty{margin:20px auto 0;width:min(460px,100%);aspect-ratio:3/4;max-height:56vh;border-radius:6px 12px 12px 6px;
-  background:radial-gradient(60% 45% at 50% 45%, rgba(255,232,176,.9), rgba(255,200,120,.35) 50%, transparent 80%), #e9d6aa;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:#6b3a12;text-align:center;padding:24px;
-  box-shadow:0 20px 50px rgba(0,0,0,.5), 0 0 40px rgba(244,184,96,.25);}
-.ca-empty p{margin:0;font-family:var(--f-display);font-weight:var(--fw-display);font-size:21px;letter-spacing:.14em;line-height:1.9;}
+  color:transparent;-webkit-text-stroke:1px rgba(244,184,96,.08);text-shadow:0 0 80px rgba(244,184,96,.05);pointer-events:none;letter-spacing:.1em;}
+.ca-wrap{position:relative;padding-block:calc(78px + var(--safe-t)) calc(56px + var(--safe-b));
+  padding-left:max(16px,var(--safe-l));padding-right:max(16px,var(--safe-r));max-width:960px;margin:0 auto;}
+
+/* 页眉 */
+.ca-head{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;margin-bottom:38px;}
+.ca-sigil{position:absolute;left:50%;top:50%;width:min(440px,92vw);aspect-ratio:1;transform:translate(-50%,-52%);pointer-events:none;color:rgba(244,184,96,.16);z-index:-1;}
+.ca-sigil svg{width:100%;height:100%;animation:sbSpin 120s linear infinite;}
+.ca-head small{font-family:var(--f-rune);font-weight:500;font-size:11px;letter-spacing:.42em;padding-left:.42em;color:var(--gold-dim);}
+.ca-head h1{margin:0;padding-left:.22em;font-family:var(--f-display);font-weight:900;font-size:clamp(46px,7vw,76px);line-height:1.15;letter-spacing:.22em;
+  color:var(--gold-hi);text-shadow:0 0 34px rgba(244,184,96,.55),0 2px 0 rgba(60,30,8,.5);}
+.ca-rule{display:flex;align-items:center;gap:12px;width:min(360px,70vw);color:var(--gold-hi);}
+.ca-rule::before,.ca-rule::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(244,184,96,.75));}
+.ca-rule::after{background:linear-gradient(90deg,rgba(244,184,96,.75),transparent);}
+.ca-rule .sb-ico{width:14px;height:14px;filter:drop-shadow(0 0 6px rgba(255,214,150,.9));}
+.ca-stats{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:4px;}
+.ca-stats span{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;border:1px solid rgba(244,184,96,.26);background:rgba(10,8,22,.5);
+  font-size:13px;letter-spacing:.1em;color:#d9cfee;}
+.ca-stats b{font-family:var(--f-num);font-weight:600;font-size:15px;color:var(--gold-hi);letter-spacing:.04em;}
+.ca-head .sb-btn{margin-top:10px;}
+
+/* 时间线 */
+.ca-line{position:relative;display:flex;flex-direction:column;gap:30px;padding-left:76px;}
+.ca-line::before{content:"";position:absolute;left:29px;top:6px;bottom:6px;width:1px;
+  background:linear-gradient(transparent,rgba(244,184,96,.75) 5%,rgba(244,184,96,.75) 95%,transparent);box-shadow:0 0 10px rgba(244,184,96,.45);}
+.ca-ch{position:relative;}
+.ca-node{position:absolute;left:-76px;top:18px;width:60px;display:flex;flex-direction:column;align-items:center;gap:8px;}
+.ca-node .num{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-rune);font-size:13px;color:var(--gold-hi);
+  background:#0d0a1c;border:1px solid rgba(244,184,96,.7);box-shadow:0 0 14px rgba(244,184,96,.35), inset 0 0 8px rgba(244,184,96,.2);}
+.ca-node .num .sb-ico{width:16px;height:16px;}
+.ca-node .ym{writing-mode:vertical-rl;font-family:var(--f-num);font-weight:600;font-size:13px;letter-spacing:.18em;color:var(--gold);
+  background:rgba(10,8,22,.8);padding:6px 2px;border-radius:999px;}
+
+/* 章节卡片 */
+.ca-card{position:relative;display:grid;grid-template-columns:220px minmax(0,1fr);gap:22px;padding:16px;border-radius:16px;cursor:pointer;
+  background:radial-gradient(120% 70% at 0% 0%,rgba(244,184,96,.08),transparent 60%),linear-gradient(180deg,rgba(32,24,48,.82),rgba(12,10,26,.88));
+  border:1px solid rgba(244,184,96,.24);box-shadow:0 16px 40px rgba(0,0,0,.45);
+  transition:transform .45s var(--ease-soft), box-shadow .45s, border-color .45s;animation:caIn .9s var(--ease-soft) backwards;}
+.ca-card::before,.ca-card::after{content:"";position:absolute;width:14px;height:14px;border:1px solid rgba(244,184,96,.55);pointer-events:none;}
+.ca-card::before{left:7px;top:7px;border-right:0;border-bottom:0;} .ca-card::after{right:7px;bottom:7px;border-left:0;border-top:0;}
+.ca-card:hover,.ca-card:focus-visible{transform:translateY(-4px);border-color:rgba(255,226,168,.7);box-shadow:0 22px 50px rgba(0,0,0,.5),0 0 34px rgba(244,184,96,.22);outline:none;}
+@keyframes caIn{from{opacity:0;transform:translateY(16px);filter:blur(4px)}}
+
+/* 海报（与编辑器预览同款） */
+.ca-poster{position:relative;aspect-ratio:4/5;border-radius:5px;overflow:hidden;background:radial-gradient(120% 80% at 50% 0%,#2a1e4a,#0d0a1c);align-self:start;
+  box-shadow:0 0 0 1px rgba(255,226,168,.7),0 0 0 5px rgba(16,10,6,.8),0 0 0 6px rgba(244,184,96,.42),0 16px 34px rgba(0,0,0,.5);}
+.ca-poster img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform 1.4s var(--ease-soft);}
+.ca-card:hover .ca-poster img{transform:scale(1.06);}
+.ca-poster .grade{position:absolute;inset:0;mix-blend-mode:soft-light;opacity:.55;pointer-events:none;}
+.ca-poster::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 38%,rgba(255,240,210,.22) 50%,transparent 62%);
+  transform:translateX(-80%);transition:transform 1.2s var(--ease-soft);pointer-events:none;}
+.ca-card:hover .ca-poster::after{transform:translateX(80%);}
+.ca-badges{position:absolute;left:8px;right:8px;top:8px;display:flex;justify-content:space-between;gap:6px;pointer-events:none;}
+.ca-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:rgba(8,6,18,.72);border:1px solid rgba(244,184,96,.4);
+  font-family:var(--f-rune);font-size:9px;letter-spacing:.2em;color:var(--gold-hi);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
+.ca-badge .sb-ico{width:11px;height:11px;}
+
+/* 信息 */
+.ca-info{display:flex;flex-direction:column;gap:10px;min-width:0;padding:4px 4px 2px 0;}
+.ca-kicker{font-family:var(--f-rune);font-size:10px;letter-spacing:.36em;color:var(--gold-dim);}
+.ca-kicker em{font-style:normal;font-family:var(--f-num);font-weight:600;font-size:13px;letter-spacing:.12em;color:var(--gold);margin-left:6px;}
+.ca-info h2{margin:0;font-family:var(--f-display);font-weight:600;font-size:clamp(20px,2.4vw,26px);line-height:1.4;letter-spacing:.08em;color:var(--gold-hi);
+  text-shadow:0 0 16px rgba(244,184,96,.3);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.ca-facts{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;letter-spacing:.06em;color:#cfc6e6;}
+.ca-facts span{display:inline-flex;align-items:center;gap:5px;}
+.ca-facts .sb-ico{width:13px;height:13px;color:var(--gold);}
+.ca-note{margin:0;font-size:14px;line-height:1.8;color:rgba(234,223,200,.82);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.ca-strip{display:flex;gap:8px;}
+.ca-strip i{position:relative;flex:0 0 auto;width:68px;aspect-ratio:4/3;border-radius:4px;overflow:hidden;background:#151230;
+  box-shadow:0 0 0 1px rgba(244,184,96,.3);}
+.ca-strip i img{width:100%;height:100%;object-fit:cover;display:block;}
+.ca-strip i.more{display:grid;place-items:center;font-style:normal;font-family:var(--f-num);font-weight:600;font-size:15px;color:var(--gold-hi);background:rgba(244,184,96,.08);}
+.ca-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:4px;}
+.ca-acts .sb-btn{background-color:rgba(10,8,22,.4);}
+.ca-acts .sb-btn.primary{background:linear-gradient(180deg,#ffe7b5,#f4b860 55%,#c98636);}
+.ca-acts .play svg{width:14px;height:14px;}
+
+/* 新的一页 */
+.ca-new{display:flex;align-items:center;gap:18px;padding:22px 24px;border-radius:16px;cursor:pointer;text-align:left;color:var(--text);font:inherit;width:100%;
+  border:1.5px dashed rgba(244,184,96,.45);background:radial-gradient(80% 120% at 0% 50%,rgba(244,184,96,.1),transparent 70%);
+  transition:border-color .3s, box-shadow .3s, background .3s;animation:caIn .9s var(--ease-soft) backwards;}
+.ca-new:hover,.ca-new:focus-visible{border-color:var(--gold-hi);box-shadow:0 0 24px rgba(244,184,96,.2);outline:none;}
+.ca-new .ring{flex:none;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;color:var(--gold-hi);border:1px solid rgba(244,184,96,.55);box-shadow:0 0 16px rgba(244,184,96,.25);}
+.ca-new .ring .sb-ico{width:22px;height:22px;}
+.ca-new b{display:block;font-family:var(--f-display);font-weight:600;font-size:18px;letter-spacing:.16em;color:var(--gold-hi);}
+.ca-new span{display:block;margin-top:4px;font-size:13px;color:var(--text-dim);letter-spacing:.04em;}
+
+/* 空状态 */
+.ca-empty{position:relative;margin:10px auto 0;width:min(480px,100%);padding:44px 28px 36px;border-radius:16px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px;
+  background:radial-gradient(90% 60% at 50% 0%,rgba(244,184,96,.12),transparent 70%),linear-gradient(180deg,rgba(32,24,48,.85),rgba(12,10,26,.9));
+  border:1px solid rgba(244,184,96,.35);box-shadow:0 0 0 5px rgba(14,10,22,.7),0 0 0 6px rgba(244,184,96,.25),0 24px 60px rgba(0,0,0,.5);}
+.ca-empty .big{font-family:var(--f-rune);font-size:84px;line-height:1;color:transparent;-webkit-text-stroke:1px rgba(255,226,168,.75);text-shadow:0 0 30px rgba(244,184,96,.35);}
+.ca-empty p{margin:0;font-family:var(--f-display);font-weight:600;font-size:19px;letter-spacing:.16em;line-height:1.9;color:var(--gold-hi);}
+.ca-empty small{font-family:var(--f-rune);font-size:10px;letter-spacing:.42em;color:var(--gold-dim);}
+
+@media (prefers-reduced-motion:reduce){ .ca-sigil svg{animation:none;} .ca-card,.ca-new{animation:none;} }
 @media (max-width:760px){
-  .ca-line::before{left:14px;}
-  .ca-row,.ca-row.r{grid-template-columns:28px 1fr;gap:0 12px;}
-  .ca-row > .ca-card,.ca-row.r > .ca-card{grid-column:2;justify-self:stretch;width:100%;}
-  .ca-node{grid-column:1;align-self:start;margin-top:16px;}
-  .ca-node span{position:absolute;left:24px;top:-22px;}
+  .ca-wrap{padding-top:calc(70px + var(--safe-t));}
+  .ca-head{margin-bottom:28px;}
+  .ca-line{padding-left:40px;gap:22px;}
+  .ca-line::before{left:15px;}
+  .ca-node{left:-40px;width:32px;top:12px;}
+  .ca-node .num{width:30px;height:30px;font-size:11px;}
+  .ca-node .ym{display:none;}
+  .ca-card{grid-template-columns:1fr;gap:14px;padding:12px;}
+  .ca-poster{aspect-ratio:16/9;}
+  .ca-strip i{width:58px;}
+  .ca-strip i:nth-child(n+5){display:none;}
+  .ca-acts .sb-btn{min-height:44px;}
+  .ca-acts .play{flex:1 1 100%;}
+  .ca-acts .sb-btn:not(.play){flex:1 1 0;}
+  .ca-new{padding:16px;}
 }
 </style>
 
 <section class="sb-scene" data-scene="city" aria-label="城市回忆">
   <div class="ca-ghost" id="ca-ghost" aria-hidden="true"></div>
   <div class="ca-wrap">
-    <header class="ca-head"><small id="ca-en"></small><h1 id="ca-title"></h1><p id="ca-stat"></p></header>
+    <header class="ca-head">
+      <div class="ca-sigil" aria-hidden="true"><svg viewBox="-100 -100 200 200"><g fill="none" stroke="currentColor">
+        <circle r="96" stroke-width=".6"/><circle r="90" stroke-width=".4" stroke-dasharray="1 3"/><circle r="62" stroke-width=".5"/>
+        <path d="M0-88 L18-18 88 0 18 18 0 88-18 18-88 0-18-18Z" stroke-width=".6"/><path d="M-62-62 62 62M62-62-62 62" stroke-width=".35"/>
+        <path d="M0-62 L44-44 62 0 44 44 0 62-44 44-62 0-44-44Z" stroke-width=".4"/></g></svg></div>
+      <small id="ca-en"></small><h1 id="ca-title"></h1><div class="ca-rule" id="ca-rule"></div>
+      <div class="ca-stats" id="ca-stats"></div><div id="ca-cta"></div>
+    </header>
     <div id="ca-body"></div>
   </div>
 </section>
@@ -69,57 +137,88 @@
 <script>
 (function(SB){
   const $ = id => document.getElementById(id);
-  const QUILL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 3c-6 1-11 6-13 13l-2 5 5-2c7-2 12-7 13-13z M7 16l6-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>';
-  let cityId = null;
+  const PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15L19.5 12Z" fill="currentColor"/></svg>';
+  const GRADE = {spring:'rgba(255,170,195,.6)', summer:'rgba(255,205,120,.6)', autumn:'rgba(235,120,40,.65)', winter:'rgba(150,190,255,.65)'};
+  let cityId = null, revealT = 0;
   SB.fmtDate = d => { if(!d) return '未标注时间'; const [y,m] = d.split('-'); return m ? `${y} 年 ${+m} 月` : `${y} 年`; };
+  const roman = n => { const R = [[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']]; let s = ''; for(const [v,r] of R) while(n >= v){ s += r; n -= v; } return s; };
+  const ROMAN = n => n <= 39 ? roman(n) : String(n);
+  const fmtDur = ms => { const s = Math.round(ms/1000); return s < 60 ? `约 ${s} 秒` : `约 ${Math.floor(s/60)} 分${s % 60 ? ' ' + s % 60 + ' 秒' : ''}`; };
+  const img = (id, eager) => { const u = id ? SB.store.url(id) : ''; return u ? `<img alt="" ${eager ? '' : 'loading="lazy" '}decoding="async" src="${SB.esc(u)}">` : ''; };
+  const go = (e, m, autoplay) => SB.scenes.go('player', autoplay ? {id:m.id, autoplay:true} : {id:m.id},
+    {transition:'portal', x:e?.clientX || innerWidth/2, y:e?.clientY || innerHeight/2});
+
+  function chapter(m, k){
+    const ch = SB.el('article', 'ca-ch'); ch.setAttribute('role', 'article');
+    ch.innerHTML = `<div class="ca-node" aria-hidden="true"><span class="num">${ROMAN(k + 1)}</span><span class="ym">${SB.esc((m.date || '').replace('-', ' · '))}</span></div>`;
+    const card = SB.el('div', 'ca-card'); card.tabIndex = 0; card.style.animationDelay = (k*90) + 'ms';
+    card.setAttribute('aria-label', '打开放映厅：' + m.title);
+    const C = SB.cinema, style = C?.styleOf(m) || 'cinema', sty = C?.styles.find(s => s.id === style);
+    const season = C ? C.resolveSeason(C.seasonPref(m), m.date) : 'none', sea = C?.seasons.find(s => s.id === season);
+    const slides = (m.slides || []).filter(s => s.id), cover = m.cover?.id || slides[0]?.id;
+    let dur = ''; try{ if(slides.length && SB.player?.estimate) dur = fmtDur(SB.player.estimate(m, style)); }catch(e){}
+    const music = m.bgmMode !== 'none' && (m.bgm || SB.store.settings?.bgm);
+    const thumbs = slides.slice(0, 5).map((s, i) => i === 4 && slides.length > 5 ? `<i class="more">+${slides.length - 4}</i>` : `<i>${img(s.id)}</i>`).join('');
+    card.innerHTML = `
+      <div class="ca-poster">${img(cover, k < 3)}<div class="grade" style="background:${GRADE[season] || 'transparent'}"></div>
+        <div class="ca-badges">${sty ? `<span class="ca-badge">${C.icon(style)}${sty.en}</span>` : '<span></span>'}${season !== 'none' && sea ? `<span class="ca-badge">${C.icon(season)}${sea.en}</span>` : ''}</div></div>
+      <div class="ca-info">
+        <div class="ca-kicker">CHAPTER ${ROMAN(k + 1)}<em>${SB.esc(SB.fmtDate(m.date))}</em></div>
+        <h2></h2>
+        <div class="ca-facts"><span>${SB.icon('star')}${slides.length} 张照片</span>${dur ? `<span>${PLAY.replace('<svg', '<svg class="sb-ico"')}${dur}</span>` : ''}${sty ? `<span>${C.icon(style)}${sty.name}${season !== 'none' && sea ? ' · ' + sea.name : ''}</span>` : ''}${music ? `<span>${SB.icon('note')}配乐</span>` : ''}</div>
+        ${m.note ? '<p class="ca-note"></p>' : ''}
+        ${thumbs ? `<div class="ca-strip" aria-hidden="true">${thumbs}</div>` : ''}
+        <div class="ca-acts"></div>
+      </div>`;
+    card.querySelector('h2').textContent = SB.fmtTitle(m.title);
+    if(m.note) card.querySelector('.ca-note').textContent = m.note;
+    const acts = card.querySelector('.ca-acts');
+    const play = SB.ui.button('放映', 'primary play', e => { e.stopPropagation(); go(e, m, true); });
+    play.innerHTML = PLAY + '<span>放映</span>'; play.setAttribute('aria-label', '放映：' + m.title);
+    const hall = SB.ui.button('放映厅', 'small', e => { e.stopPropagation(); go(e, m, false); }); hall.setAttribute('aria-label', '打开放映厅：' + m.title);
+    acts.append(play, hall);
+    if(SB.store.canEdit){ const ed = SB.ui.button('编辑', 'small', e => { e.stopPropagation(); SB.editor.open({cityId, memory:m}); }, 'quill'); ed.setAttribute('aria-label', '编辑：' + m.title); acts.appendChild(ed); }
+    card.addEventListener('click', e => go(e, m, false));
+    card.addEventListener('keydown', e => { if(e.target === card && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); go(null, m, false); } });
+    ch.appendChild(card);
+    return ch;
+  }
 
   function render(){
     const c = SB.store.city(cityId);
-    const body = $('ca-body'); body.innerHTML = '';
+    const body = $('ca-body'); body.innerHTML = ''; $('ca-stats').innerHTML = ''; $('ca-cta').innerHTML = '';
     if(!c){ const e = SB.el('div','sb-empty'); e.textContent = '这座城市已经不在星图上了'; body.appendChild(e); return; }
     $('ca-title').textContent = c.name; $('ca-ghost').textContent = c.name;
-    $('ca-en').textContent = `${c.countryName} · ${c.regionName}`;
+    $('ca-en').textContent = [c.countryName, c.regionName].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(' · ');
+    $('ca-rule').innerHTML = SB.icon('spark');
     const list = SB.store.memoriesOf(cityId);
-    $('ca-stat').textContent = list.length ? `${list.length} 段回忆 · ${list.reduce((n,m)=>n+(m.slides||[]).length,0)} 张照片` : '';
+    if(list.length){
+      const photos = list.reduce((n, m) => n + (m.slides || []).length, 0);
+      const dates = list.map(m => m.date).filter(Boolean).sort();
+      const span = dates.length ? (dates[0] === dates[dates.length - 1] ? SB.fmtDate(dates[0]) : `${SB.fmtDate(dates[0])} — ${SB.fmtDate(dates[dates.length - 1])}`) : '';
+      $('ca-stats').innerHTML = `<span><b>${list.length}</b>段回忆</span><span><b>${photos}</b>张照片</span>${span ? `<span>${SB.esc(span)}</span>` : ''}`;
+      if(SB.store.canEdit) $('ca-cta').appendChild(SB.ui.button('新的回忆', 'primary', () => SB.editor.open({cityId}), 'plus'));
+    }
     if(!list.length){
       const e = SB.el('div','ca-empty');
-      const p = SB.el('p'); p.innerHTML = '这里还没有回忆<br>写下第一页吧';
-      e.appendChild(p);
+      e.innerHTML = '<span class="big" aria-hidden="true">I</span><small>CHAPTER ONE</small><p>这里还没有回忆<br>写下第一章吧</p>';
       if(SB.store.canEdit) e.appendChild(SB.ui.button('新的回忆', 'primary', () => SB.editor.open({cityId}), 'plus'));
       body.appendChild(e); return;
     }
     const line = SB.el('div','ca-line');
+    list.forEach((m, k) => line.appendChild(chapter(m, k)));
     if(SB.store.canEdit){
-      const row = SB.el('div','ca-row');
-      const n = SB.el('div','ca-node','<i></i><span>新的一页</span>');
-      const card = SB.el('button','ca-card ca-new',`<b>${SB.icon('plus')}</b>新的回忆`); card.type = 'button';
-      card.addEventListener('click', () => SB.editor.open({cityId}));
-      row.append(card, n); line.appendChild(row);
+      const ch = SB.el('div', 'ca-ch');
+      ch.innerHTML = `<div class="ca-node" aria-hidden="true"><span class="num">${SB.icon('spark')}</span></div>`;
+      const b = SB.el('button', 'ca-new', `<span class="ring">${SB.icon('plus')}</span><span><b>写下第 ${ROMAN(list.length + 1)} 章</b><span>新的一页：添加照片、写下它们的故事，选好放映风格与季节</span></span>`);
+      b.type = 'button'; b.style.animationDelay = (list.length*90) + 'ms';
+      b.addEventListener('click', () => SB.editor.open({cityId}));
+      ch.appendChild(b); line.appendChild(ch);
     }
-    list.forEach((m, i) => {
-      const row = SB.el('div','ca-row' + ((i + (SB.store.canEdit ? 1 : 0)) % 2 ? ' r' : ''));
-      const node = SB.el('div','ca-node','<i></i><span></span>'); node.querySelector('span').textContent = SB.fmtDate(m.date);
-      const card = SB.el('div','ca-card'); card.tabIndex = 0; card.setAttribute('role','button'); card.setAttribute('aria-label','打开放映厅：' + m.title);
-      card.style.animationDelay = (i*80) + 'ms';
-      const cover = m.cover?.id || m.slides?.[0]?.id;
-      card.innerHTML = `<div class="ca-cover">${cover ? `<img alt="" loading="lazy" src="${SB.esc(SB.store.url(cover))}">` : ''}</div>
-        <div class="ca-meta"><h3></h3><p><span>${SB.esc(SB.fmtDate(m.date))}</span><span>${(m.slides||[]).length} 张照片</span>${m.bgm || m.bgmMode === 'global' ? `<span>${SB.icon('note')}背景音乐</span>` : ''}</p></div>`;
-      card.querySelector('h3').textContent = SB.fmtTitle(m.title);
-      const open = e => SB.scenes.go('player', {id:m.id}, {transition:'portal', x:e.clientX || innerWidth/2, y:e.clientY || innerHeight/2});
-      card.addEventListener('click', open);
-      const play = SB.el('button','ca-play','<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15L19.5 12Z" fill="currentColor"/></svg>');
-      play.type = 'button'; play.setAttribute('aria-label','放映：' + m.title); play.title = '放映';
-      play.addEventListener('click', e => { e.stopPropagation(); SB.scenes.go('player', {id:m.id, autoplay:true}, {transition:'portal', x:e.clientX || innerWidth/2, y:e.clientY || innerHeight/2}); });
-      card.querySelector('.ca-cover').appendChild(play);
-      card.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); open(e); } });
-      if(SB.store.canEdit){
-        const ed = SB.el('button','ca-edit', QUILL); ed.type = 'button'; ed.setAttribute('aria-label','编辑这段回忆');
-        ed.addEventListener('click', e => { e.stopPropagation(); SB.editor.open({cityId, memory:m}); });
-        card.appendChild(ed);
-      }
-      row.append(card, node); line.appendChild(row);
-    });
     body.appendChild(line);
+    // 保险：入场动画结束（或在个别设备上没有启动）后移除动画，保证卡片一定可见
+    const n = line.children.length;
+    clearTimeout(revealT); revealT = setTimeout(() => line.querySelectorAll('.ca-card,.ca-new').forEach(e => { e.style.animation = 'none'; }), 1000 + n*90);
   }
   document.addEventListener('sb:data', () => { if(SB.scenes.current === 'city') render(); });
 
