@@ -1,19 +1,19 @@
 <style>
-/* ── 块 11 · v1.6.0 「冥想盆放映厅」电影式回忆放映 + 背景音乐 ──
-   四幕：放映厅（海报 + 放映按钮）→ 开场（熄灯、银幕框、墨滴入水、扉页）→ 镜头（推拉摇移 + 溶解/光漏/墨滴转场 + 电影字幕）→ 终章。
-   一个时钟驱动所有画面：暂停 = 停止时钟。 */
+/* ── 块 11 · v1.7.0 「光影放映」多图编排放映 + 三种放映风格 + 四季主题 + 背景音乐 ──
+   放映厅（海报 + 风格 / 季节 + 放映按钮）→ 开场（熄灯、墨滴入水、扉页）→ 导演时间线（多图接力、转场库、风格字幕）→ 终章。
+   一个时钟驱动所有画面：暂停 = 停止时钟；任何时刻都可以 seek。 */
 .sb-scene[data-scene="player"]{background:#04030a;--bar:0px;}
 .pl-ambient{position:absolute;inset:-8%;background-size:cover;background-position:center;filter:blur(38px) brightness(.38) saturate(1.15);
   transform:scale(1.08);animation:plBreath 14s ease-in-out infinite alternate;transition:opacity 1.2s var(--ease-soft);}
 @keyframes plBreath{from{transform:scale(1.08)}to{transform:scale(1.16)}}
 .sb-scene[data-scene="player"].showing .pl-ambient{opacity:0;}
 
-/* ── 第一幕 · 放映厅 ── */
-.pl-lobby{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:safe center;overflow-y:auto;gap:clamp(14px,2.6vh,26px);
+/* ── 放映厅 ── */
+.pl-lobby{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:safe center;overflow-y:auto;gap:clamp(12px,2.2vh,22px);
   padding:calc(64px + var(--safe-t)) max(18px,var(--safe-r)) calc(28px + var(--safe-b)) max(18px,var(--safe-l));text-align:center;
   transition:opacity .8s var(--ease-soft), transform 1s var(--ease-soft), filter .8s var(--ease-soft);}
 .sb-scene[data-scene="player"].showing .pl-lobby{opacity:0;transform:scale(.96);filter:blur(6px);pointer-events:none;}
-.pl-poster{position:relative;width:min(280px,62vw,27vh);aspect-ratio:4/5;flex:none;border-radius:6px;overflow:hidden;background:#151230;
+.pl-poster{position:relative;width:min(260px,58vw,24vh);aspect-ratio:4/5;flex:none;border-radius:6px;overflow:hidden;background:#151230;
   box-shadow:0 0 0 1px rgba(255,226,168,.7),0 0 0 7px rgba(16,10,6,.75),0 0 0 8px rgba(244,184,96,.45),0 30px 70px rgba(0,0,0,.65),0 0 60px rgba(244,184,96,.2);
   animation:plPosterIn 1.2s var(--ease-soft) backwards;}
 .pl-poster img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .8s;}
@@ -29,10 +29,20 @@
 .pl-meta .place{margin:0;font-size:13px;letter-spacing:.2em;padding-left:.2em;color:var(--text-dim);}
 .pl-meta .stat{margin:0;font-size:13px;letter-spacing:.08em;color:#c9c0e6;display:flex;gap:10px;align-items:center;}
 .pl-meta .stat i{width:3px;height:3px;border-radius:50%;background:var(--gold-dim);}
-.pl-start{position:relative;width:118px;height:118px;flex:none;border:0;border-radius:50%;cursor:pointer;background:none;color:#2a1608;
+.pl-opts{display:flex;flex-direction:column;gap:8px;align-items:center;animation:plPosterIn 1.2s var(--ease-soft) .22s backwards;}
+.pl-opt-row{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;}
+.pl-opt-row > span{font-family:var(--f-rune);font-size:10px;letter-spacing:.4em;color:var(--gold-dim);margin-right:4px;}
+.pl-chip{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:4px 12px;border-radius:999px;border:1px solid rgba(244,184,96,.28);
+  background:rgba(10,8,24,.5);color:var(--text-dim);font-family:var(--f-display);font-weight:var(--fw-display);font-size:13.5px;letter-spacing:.1em;cursor:pointer;
+  transition:color .3s, border-color .3s, background .3s, box-shadow .3s;-webkit-tap-highlight-color:transparent;}
+.pl-chip .sb-ico{width:15px;height:15px;}
+.pl-chip:hover{color:var(--gold-hi);border-color:rgba(255,226,168,.6);}
+.pl-chip.on{color:#2a1608;border-color:transparent;background:linear-gradient(180deg,#ffe7b5,#f4b860 60%,#d0913e);box-shadow:0 0 16px rgba(244,184,96,.4);}
+@media (pointer:coarse){ .pl-chip{min-height:38px;} }
+.pl-start{position:relative;width:112px;height:112px;flex:none;border:0;border-radius:50%;cursor:pointer;background:none;color:#2a1608;
   display:grid;place-items:center;animation:plPosterIn 1.2s var(--ease-soft) .3s backwards;-webkit-tap-highlight-color:transparent;}
 .pl-start .ring{position:absolute;inset:0;width:100%;height:100%;animation:sbSpin 40s linear infinite;color:var(--gold);filter:drop-shadow(0 0 6px rgba(244,184,96,.6));}
-.pl-start .core{position:relative;width:76px;height:76px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+.pl-start .core{position:relative;width:74px;height:74px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
   background:radial-gradient(circle at 35% 30%,#fff3d1,#f4b860 55%,#b8762c);box-shadow:0 0 30px rgba(244,184,96,.55),inset 0 1px 0 rgba(255,255,255,.7);
   transition:transform .35s var(--ease-soft), box-shadow .35s;}
 .pl-start .core svg{width:22px;height:22px;margin-left:3px;}
@@ -45,49 +55,93 @@
 .pl-lobby-acts{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;animation:plPosterIn 1.2s var(--ease-soft) .45s backwards;}
 .pl-lobby-acts .sb-btn{background:rgba(10,10,28,.55);}
 .pl-wait{font-size:13px;letter-spacing:.14em;color:var(--text-dim);min-height:1.4em;}
+@media (max-width:600px){ .pl-start{width:100px;height:100px;} .pl-start .core{width:66px;height:66px;} }
 
-/* ── 银幕 ── */
+/* ── 银幕与舞台 ── */
 .pl-screen{position:absolute;inset:0;overflow:hidden;opacity:0;pointer-events:none;transition:opacity .9s var(--ease-soft);}
 .sb-scene[data-scene="player"].showing .pl-screen{opacity:1;pointer-events:auto;}
-.pl-shots{position:absolute;left:0;right:0;top:var(--bar);bottom:var(--bar);overflow:hidden;}
-.pl-shot{position:absolute;inset:0;overflow:hidden;will-change:opacity,filter;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
-  -webkit-mask-position:center;mask-position:center;}
-.pl-shot .fill{position:absolute;inset:-6%;width:112%;height:112%;object-fit:cover;filter:blur(30px) brightness(.42) saturate(1.2);}
-.pl-shot.lite .fill{filter:brightness(.3);}
-.pl-shot .cam{position:absolute;left:0;top:0;transform-origin:50% 50%;will-change:transform;}
-.pl-shot .cam img{display:block;width:100%;height:100%;object-fit:cover;}
-.pl-shot .cam.print{border-radius:3px;box-shadow:0 0 0 1px rgba(255,226,168,.75),0 0 0 8px rgba(18,12,8,.7),0 0 0 9px rgba(244,184,96,.42),0 34px 80px rgba(0,0,0,.7),0 0 70px rgba(244,184,96,.16);}
-.pl-leak{position:absolute;left:-60%;top:var(--bar);bottom:var(--bar);width:220%;pointer-events:none;opacity:0;mix-blend-mode:screen;
-  background:radial-gradient(40% 70% at 30% 50%,rgba(255,170,80,.75),transparent 70%),radial-gradient(28% 60% at 52% 40%,rgba(255,226,160,.55),transparent 70%),
-    radial-gradient(30% 80% at 70% 60%,rgba(255,120,60,.35),transparent 70%);}
-.pl-dust{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
-.pl-flash{position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(circle at 50% 50%,#fffaf0,#ffe6b8 45%,#f4c27a);}
+.pl-frame{position:absolute;left:0;right:0;top:var(--bar);bottom:var(--bar);overflow:hidden;}
+.pl-stage{position:absolute;inset:0;overflow:hidden;isolation:isolate;z-index:0;transition:filter 1.4s var(--ease-soft);}
+.pl-stage[data-style="constellation"]{background:radial-gradient(90% 70% at 70% 20%,rgba(70,52,130,.35),transparent 70%),radial-gradient(80% 60% at 15% 85%,rgba(120,60,90,.22),transparent 70%),linear-gradient(180deg,#07061a,#0b0920 60%,#06050f);}
+.pl-stage[data-style="journal"]{background:#160e09;}
+.pl-sky,.pl-season,.pl-dust{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+.pl-desk{position:absolute;inset:-4%;pointer-events:none;
+  background:radial-gradient(60% 55% at 22% 8%,rgba(255,190,110,.32),transparent 70%),radial-gradient(70% 60% at 85% 100%,rgba(120,60,30,.25),transparent 70%),
+    repeating-linear-gradient(97deg,rgba(255,220,180,.025) 0 2px,transparent 2px 9px),linear-gradient(160deg,#2a1a10,#1a100a 55%,#0f0906);}
+.pl-desk::after{content:"";position:absolute;inset:0;background:radial-gradient(55% 50% at 25% 12%,rgba(255,200,120,.22),transparent 70%);animation:plCandle 5.3s ease-in-out infinite;}
+@keyframes plCandle{0%,100%{opacity:.85}17%{opacity:1}31%{opacity:.78}52%{opacity:.95}68%{opacity:.82}83%{opacity:1}}
+.pl-cam{position:absolute;left:0;top:0;width:100%;height:100%;transform-origin:0 0;}
+.pl-flat{position:absolute;inset:0;}
+
+/* 照片元素 */
+.pl-ph{position:absolute;left:0;top:0;contain:layout;will-change:transform,opacity;backface-visibility:hidden;}
+.pl-ph .im{position:absolute;inset:0;overflow:hidden;}
+.pl-ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transform-origin:50% 45%;will-change:transform;}
+.pl-ph.fill .im img{filter:blur(28px) brightness(.4) saturate(1.2);transform:scale(1.15);}
+.pl-ph.fill.lite .im img{filter:brightness(.3);}
+.pl-ph.gilt .im{border-radius:2px;}
+.pl-ph.gilt{box-shadow:0 0 0 1px rgba(255,226,168,.8),0 0 0 6px rgba(14,10,22,.85),0 0 0 7px rgba(244,184,96,.5),0 26px 60px rgba(0,0,0,.6),0 0 46px rgba(244,184,96,.16);border-radius:2px;}
+.pl-ph.framed{box-shadow:0 0 0 1px rgba(255,226,168,.75),0 0 0 8px rgba(18,12,8,.7),0 0 0 9px rgba(244,184,96,.42),0 34px 80px rgba(0,0,0,.7);}
+.pl-ph.print{background:linear-gradient(170deg,#f6efe2,#e9dfcc);border-radius:2px;}
+.pl-ph.print .im{box-shadow:inset 0 0 0 1px rgba(60,40,20,.18);}
+.pl-ph.print::after{content:"";position:absolute;inset:0;background:linear-gradient(125deg,rgba(255,255,255,.18),transparent 40%);pointer-events:none;}
+.pl-ph .seal{position:absolute;width:13%;aspect-ratio:1;right:-3%;top:-3%;border-radius:50%;display:grid;place-items:center;color:#5a2d0c;
+  background:radial-gradient(circle at 35% 30%,#ffe2a0,#e0a04a 55%,#a8631f);box-shadow:0 2px 6px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.5);}
+.pl-ph .seal .sb-ico{width:58%;height:58%;}
+.pl-lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;}
+.pl-lines line{stroke:rgba(255,226,168,.85);stroke-width:1;stroke-linecap:round;filter:drop-shadow(0 0 3px rgba(244,184,96,.9));}
+.pl-leak{position:absolute;left:-60%;top:0;bottom:0;width:220%;pointer-events:none;opacity:0;mix-blend-mode:screen;
+  background:radial-gradient(40% 70% at 30% 50%,rgba(255,170,80,.7),transparent 70%),radial-gradient(28% 60% at 52% 40%,rgba(255,226,160,.5),transparent 70%),
+    radial-gradient(30% 80% at 70% 60%,rgba(255,120,60,.32),transparent 70%);}
+
+/* 四季调色层 */
+.pl-grade{position:absolute;inset:0;pointer-events:none;mix-blend-mode:soft-light;opacity:0;transition:opacity 1.4s var(--ease-soft), background-color 1.4s;}
+.pl-tint{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity 1.4s var(--ease-soft);}
+.pl-rays{position:absolute;right:-30%;top:-45%;width:110%;aspect-ratio:1;pointer-events:none;opacity:0;transition:opacity 1.6s var(--ease-soft);mix-blend-mode:screen;
+  background:repeating-conic-gradient(from 0deg at 50% 50%,rgba(255,236,180,.16) 0deg 4deg,transparent 4deg 13deg);
+  -webkit-mask:radial-gradient(closest-side,#000,transparent);mask:radial-gradient(closest-side,#000,transparent);}
+.pl-tint[data-s="spring"]{background:radial-gradient(80% 50% at 50% 0%,rgba(255,200,220,.28),transparent 70%),radial-gradient(60% 40% at 0% 100%,rgba(255,170,200,.18),transparent 70%);}
+.pl-tint[data-s="summer"]{background:radial-gradient(55% 45% at 92% 0%,rgba(255,236,170,.42),transparent 70%),linear-gradient(0deg,rgba(255,170,90,.10),transparent 40%);}
+.pl-tint[data-s="autumn"]{background:radial-gradient(90% 60% at 50% 110%,rgba(200,80,20,.32),transparent 70%),radial-gradient(60% 40% at 100% 0%,rgba(255,170,80,.18),transparent 70%);}
+.pl-tint[data-s="winter"]{background:radial-gradient(120% 90% at 50% 50%,transparent 55%,rgba(200,225,255,.30)),linear-gradient(180deg,rgba(190,215,255,.16),transparent 35%);}
+
+/* 文字层 */
+.pl-texts{position:absolute;inset:0;pointer-events:none;}
+.pl-tx{position:absolute;left:0;top:0;pointer-events:none;z-index:900;}
+.pl-tx span{display:inline-block;white-space:pre;}
+.pl-tx.cinema{font-family:var(--f-display);font-weight:600;color:#fff6e6;text-align:center;line-height:1.5;
+  text-shadow:0 2px 6px rgba(0,0,0,.9),0 0 26px rgba(0,0,0,.55),0 0 30px rgba(244,184,96,.25);}
+.pl-tx.cinema .ln{display:block;white-space:nowrap;}
+.pl-tx.cinema .rule{display:block;height:1px;margin:.45em auto 0;width:min(46%,320px);background:linear-gradient(90deg,transparent,var(--gold-hi),transparent);transform:scaleX(0);}
+.pl-tx.cinema.v{writing-mode:vertical-rl;text-orientation:upright;line-height:1.2;}
+.pl-tx.cinema.v .rule{width:1px;height:3.2em;margin:0 .5em 0 0;background:linear-gradient(180deg,transparent,var(--gold-hi),transparent);transform:scaleY(0);}
+.pl-scrim{position:absolute;left:0;right:0;bottom:0;height:42%;pointer-events:none;opacity:0;background:linear-gradient(transparent,rgba(4,3,10,.62));transition:opacity .8s;}
+.pl-tx.editorial{font-family:var(--f-display);font-weight:600;color:#fff3dc;text-align:left;line-height:1.55;text-shadow:0 2px 10px rgba(0,0,0,.75);}
+.pl-tx.editorial .idx{display:block;font-family:var(--f-num);font-weight:600;font-size:2.2em;line-height:1;letter-spacing:.06em;color:transparent;
+  -webkit-text-stroke:1px rgba(255,226,168,.85);text-shadow:0 0 18px rgba(244,184,96,.35);margin-bottom:.12em;}
+.pl-tx.editorial .rule{display:block;height:1px;width:4.2em;margin:.2em 0 .5em;background:linear-gradient(90deg,var(--gold-hi),transparent);transform-origin:0 50%;transform:scaleX(0);}
+.pl-tx.editorial .ln{display:block;overflow:hidden;padding:.06em 0;}
+.pl-tx.editorial .ln > b{display:block;font-weight:inherit;white-space:nowrap;}
+.pl-tx.editorial.c{text-align:center;} .pl-tx.editorial.c .rule{margin-left:auto;margin-right:auto;transform-origin:50% 50%;background:linear-gradient(90deg,transparent,var(--gold-hi),transparent);}
+.pl-tx.ink{font-family:var(--f-display);font-weight:600;color:#e8b868;line-height:1.6;text-shadow:0 1px 0 rgba(40,20,5,.8),0 0 12px rgba(244,184,96,.25);}
+.pl-tx.ink .ln{display:block;white-space:nowrap;}
+.pl-tx.ink.c{text-align:center;}
 
 /* 扉页 + 墨滴涟漪 */
 .pl-title{position:absolute;left:0;right:0;top:var(--bar);bottom:var(--bar);display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:14px;padding:0 max(22px,var(--safe-l));text-align:center;pointer-events:none;}
+  gap:16px;padding:0 max(22px,var(--safe-l));text-align:center;pointer-events:none;}
 .pl-ripples{position:absolute;left:50%;top:50%;width:0;height:0;}
 .pl-ripples i{position:absolute;left:0;top:0;width:60vmin;height:60vmin;margin:-30vmin 0 0 -30vmin;border-radius:50%;opacity:0;
   border:1px solid rgba(255,226,168,.7);box-shadow:0 0 18px rgba(244,184,96,.45), inset 0 0 18px rgba(244,184,96,.25);}
 .pl-ripples b{position:absolute;left:-4px;top:-4px;width:8px;height:8px;border-radius:50%;background:#fff3d6;opacity:0;
   box-shadow:0 0 14px 6px rgba(255,214,150,.9), 0 0 40px 14px rgba(244,184,96,.5);}
 .pl-title small:empty{display:none;}
-.pl-title small{font-family:var(--f-num);font-weight:600;font-size:16px;letter-spacing:.3em;padding-left:.3em;color:var(--gold);}
-.pl-title h2{margin:0;font-size:clamp(28px,5.2vw,58px);letter-spacing:.14em;padding-left:.14em;line-height:1.35;max-width:16em;}
+.pl-title small{font-family:var(--f-num);font-weight:600;font-size:17px;letter-spacing:.3em;padding-left:.3em;color:var(--gold);}
+.pl-title h2{margin:0;font-size:clamp(30px,5.6vw,64px);letter-spacing:.14em;padding-left:.14em;line-height:1.35;max-width:16em;}
 .pl-title h2 .pl-nb{white-space:nowrap;font-weight:inherit;}
 .pl-title h2 span{display:inline-block;white-space:pre;color:var(--gold-hi);text-shadow:0 0 24px rgba(244,184,96,.55),0 1px 0 rgba(60,30,8,.6);}
-.pl-title .rule{width:min(340px,62vw);height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);transform:scaleX(0);}
-.pl-title p{margin:0;max-width:26em;font-size:clamp(14.5px,1.6vw,17px);line-height:1.95;letter-spacing:.06em;color:#eadfc8;}
-
-/* 字幕 */
-.pl-sub{position:absolute;left:50%;bottom:calc(var(--bar) + clamp(18px,5vh,54px));transform:translateX(-50%);width:min(900px,calc(100vw - 32px));
-  display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;pointer-events:none;}
-.pl-sub::before{content:"";position:absolute;left:50%;top:50%;width:150%;height:260%;transform:translate(-50%,-50%);z-index:-1;
-  background:radial-gradient(50% 50% at 50% 50%,rgba(4,3,10,.62),transparent 75%);}
-.pl-sub div{font-family:var(--f-body);font-weight:400;font-size:clamp(17px,2.2vw,24px);letter-spacing:.08em;line-height:1.6;color:#fff7e8;
-  text-shadow:0 1px 3px rgba(0,0,0,.95),0 0 18px rgba(0,0,0,.6),0 0 22px rgba(244,184,96,.22);}
-.pl-sub span{display:inline-block;white-space:pre;}
-.pl-shade{position:absolute;left:0;right:0;bottom:var(--bar);height:34%;pointer-events:none;background:linear-gradient(transparent,rgba(4,3,10,.55));}
+.pl-title .rule{width:min(360px,62vw);height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);transform:scaleX(0);}
+.pl-title p{margin:0;max-width:24em;font-size:clamp(16px,1.9vw,21px);line-height:1.9;letter-spacing:.08em;color:#eadfc8;}
 
 /* 终章 */
 .pl-end{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;pointer-events:none;padding:0 20px;}
@@ -98,13 +152,18 @@
 .pl-end .acts{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:14px;}
 .pl-end .acts.on{pointer-events:auto;}
 
-/* 胶片质感 */
+/* 质感 */
 .pl-grain{position:absolute;inset:-50px;pointer-events:none;opacity:.07;mix-blend-mode:overlay;background-size:160px 160px;animation:plGrain .9s steps(6) infinite;}
 .pl-grain.off{display:none;}
 @keyframes plGrain{0%{transform:translate(0,0)}20%{transform:translate(-30px,18px)}40%{transform:translate(22px,-26px)}60%{transform:translate(-14px,-34px)}80%{transform:translate(34px,12px)}100%{transform:translate(0,0)}}
 .pl-vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(125% 95% at 50% 48%,transparent 58%,rgba(0,0,0,.62));}
+.pl-flash{position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(circle at 50% 50%,#fffaf0,#ffe6b8 45%,#f4c27a);}
+.pl-cut{position:absolute;inset:0;pointer-events:none;background:#04030a;opacity:0;}
+.pl-cut.go{animation:plCut .5s var(--ease-soft);}
+@keyframes plCut{from{opacity:.92}to{opacity:0}}
 .pl-flicker{animation:plFlicker .32s steps(4) 1;}
 @keyframes plFlicker{0%{opacity:.75}25%{opacity:1}50%{opacity:.85}100%{opacity:1}}
+.pl-live{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}
 
 /* 银幕黑边 */
 .pl-bar{position:absolute;left:0;right:0;height:var(--bar);background:#000;z-index:2;pointer-events:none;transition:transform 1s var(--ease-soft);}
@@ -121,6 +180,7 @@
   letter-spacing:.24em;color:var(--gold);opacity:0;transition:opacity .5s;pointer-events:none;}
 .sb-scene[data-scene="player"].showing.awake .pl-ui{opacity:1;pointer-events:auto;}
 .sb-scene[data-scene="player"].showing.awake .pl-count{opacity:1;}
+@media (max-width:600px){ .pl-count{display:none;} }
 .sb-scene[data-scene="player"]:not(.showing) .pl-top{display:none;}
 .sb-scene[data-scene="player"].showing:not(.awake) .pl-top{opacity:0;pointer-events:none;}
 .sb-scene[data-scene="player"].showing:not(.awake){cursor:none;}
@@ -129,14 +189,18 @@
 .pl-bars b::before{content:"";position:absolute;left:0;right:0;top:5.5px;height:3px;border-radius:2px;background:rgba(255,226,168,.22);}
 .pl-bars b i{position:absolute;left:0;top:5.5px;height:3px;width:0;border-radius:2px;background:linear-gradient(90deg,#f4b860,#fff1cc);box-shadow:0 0 8px #f4b860;}
 .pl-bars b.t{flex:.6;}
-.pl-ctl{display:flex;justify-content:center;align-items:center;gap:10px;}
+.pl-ctl{position:relative;display:flex;justify-content:center;align-items:center;gap:10px;}
 .pl-ctl button{width:46px;height:46px;border-radius:50%;border:1px solid var(--line);background:rgba(10,10,28,.6);color:var(--gold-hi);cursor:pointer;display:grid;place-items:center;font-size:20px;}
 .pl-ctl button:hover{box-shadow:0 0 16px rgba(244,184,96,.45);}
 .pl-ctl button.big{width:58px;height:58px;font-size:22px;}
 .pl-ctl button.off{opacity:.45;}
+.pl-seasons{position:absolute;bottom:calc(100% + 12px);left:50%;transform:translate(-50%,8px);display:flex;gap:6px;padding:8px;border-radius:999px;
+  background:rgba(10,8,24,.82);border:1px solid var(--line);box-shadow:0 10px 30px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .3s, transform .3s var(--ease-soft);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+.pl-seasons.open{opacity:1;transform:translate(-50%,0);pointer-events:auto;}
+.pl-seasons .pl-chip{min-height:34px;}
 .pl-buffer{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;opacity:0;transition:opacity .4s;pointer-events:none;}
 .pl-buffer.on{opacity:1;}
-@media (max-width:600px){ .pl-start{width:104px;height:104px;} .pl-start .core{width:68px;height:68px;} }
 </style>
 
 <section class="sb-scene" data-scene="player" aria-label="回忆放映">
@@ -149,6 +213,10 @@
       <p class="place" id="pl-l-place"></p>
       <p class="stat" id="pl-l-stat"></p>
     </div>
+    <div class="pl-opts">
+      <div class="pl-opt-row" id="pl-o-style" role="radiogroup" aria-label="放映风格"></div>
+      <div class="pl-opt-row" id="pl-o-season" role="radiogroup" aria-label="季节主题"></div>
+    </div>
     <button type="button" class="pl-start" id="pl-start" aria-label="开始放映">
       <svg class="ring" viewBox="-60 -60 120 120" aria-hidden="true"><g fill="none" stroke="currentColor"><circle r="57" stroke-width=".8"/><circle r="52" stroke-width=".5" stroke-dasharray="1 4"/></g></svg>
       <span class="core"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15L19.5 12Z" fill="currentColor"/></svg><span>放映</span></span>
@@ -157,15 +225,27 @@
     <div class="pl-lobby-acts" id="pl-lobby-acts"></div>
   </div>
   <div class="pl-screen" id="pl-screen">
-    <div class="pl-shots" id="pl-shots"></div>
-    <div class="pl-shade"></div>
-    <div class="pl-leak" id="pl-leak"></div>
-    <canvas class="pl-dust" id="pl-dust"></canvas>
+    <div class="pl-frame" id="pl-frame">
+      <div class="pl-stage" id="pl-stage">
+        <canvas class="pl-sky" id="pl-sky"></canvas>
+        <div class="pl-desk" id="pl-desk"></div>
+        <svg class="pl-lines" id="pl-lines" aria-hidden="true"></svg>
+        <div class="pl-flat" id="pl-flat"></div>
+        <div class="pl-cam" id="pl-cam"></div>
+      </div>
+      <div class="pl-leak" id="pl-leak"></div>
+      <div class="pl-grade" id="pl-grade"></div>
+      <div class="pl-tint" id="pl-tint"></div>
+      <div class="pl-rays" id="pl-rays"></div>
+      <canvas class="pl-season" id="pl-season"></canvas>
+      <canvas class="pl-dust" id="pl-dust"></canvas>
+      <div class="pl-scrim" id="pl-scrim"></div>
+      <div class="pl-texts" id="pl-texts"></div>
+    </div>
     <div class="pl-title" id="pl-title">
       <div class="pl-ripples" id="pl-ripples"><i></i><i></i><i></i><b></b></div>
       <small id="pl-t-date"></small><h2 id="pl-t-title"></h2><div class="rule" id="pl-t-rule"></div><p id="pl-t-note"></p>
     </div>
-    <div class="pl-sub" id="pl-sub" aria-live="polite"></div>
     <div class="pl-end" id="pl-end">
       <span class="st" id="pl-e-star"></span><div class="fin sb-foil" id="pl-e-fin">终</div><div class="finis" id="pl-e-finis">FINIS</div>
       <div class="meta" id="pl-e-meta"></div><div class="acts" id="pl-e-acts"></div>
@@ -173,7 +253,9 @@
     <div class="pl-grain" id="pl-grain"></div>
     <div class="pl-vig"></div>
     <div class="pl-flash" id="pl-flash"></div>
+    <div class="pl-cut" id="pl-cut"></div>
     <div class="pl-buffer" id="pl-buffer"></div>
+    <div class="pl-live" id="pl-live" aria-live="polite"></div>
   </div>
   <div class="pl-bar t"></div><div class="pl-bar b"></div>
   <div class="pl-count" id="pl-count"></div>
@@ -181,16 +263,18 @@
   <div class="pl-ui" id="pl-ui">
     <div class="pl-bars" id="pl-bars"></div>
     <div class="pl-ctl">
-      <button type="button" id="pl-prev" aria-label="上一个镜头"></button>
+      <div class="pl-seasons" id="pl-seasons" role="radiogroup" aria-label="季节主题"></div>
+      <button type="button" id="pl-prev" aria-label="上一张"></button>
       <button type="button" id="pl-play" class="big" aria-label="暂停"></button>
-      <button type="button" id="pl-next" aria-label="下一个镜头"></button>
+      <button type="button" id="pl-next" aria-label="下一张"></button>
+      <button type="button" id="pl-season-btn" aria-label="季节主题" aria-expanded="false"></button>
       <button type="button" id="pl-music" aria-label="背景音乐开关"></button>
     </div>
   </div>
 </section>
 
 <script>
-/* ── 背景音乐 SB.audio：全站一个播放器，切换时淡入淡出；v1.6.0 新增 duck() ── */
+/* ── 背景音乐 SB.audio：全站一个播放器，切换时淡入淡出；duck() 平滑压低 ── */
 (function(SB){
   const el = new Audio(); el.loop = true; el.preload = 'auto';
   const BASE = .8;
@@ -233,37 +317,79 @@
     action(){ const on = SB.audio.toggle(); SB.toast(on ? '背景音乐已开启' : '背景音乐已关闭'); }});
 })(window.SB);
 
-/* ── 「冥想盆放映厅」 ── */
+/* ── 放映风格与季节的公共定义（编辑器也使用）：SB.cinema ── */
+(function(SB){
+  const svg = (inner, cls) => `<svg class="sb-ico${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${inner}</svg>`;
+  const S = 'fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"';
+  const ICONS = {
+    cinema:`<rect x="3" y="5" width="18" height="14" rx="1.5" ${S}/><path d="M12 5v14M3 9h3M3 15h3M18 9h3M18 15h3" ${S}/>`,
+    constellation:`<path d="M5 17 10 8l5 5 4-8" ${S} stroke-width="1.1" opacity=".75"/><circle cx="5" cy="17" r="1.8" fill="currentColor"/><circle cx="10" cy="8" r="1.6" fill="currentColor"/><circle cx="15" cy="13" r="1.8" fill="currentColor"/><circle cx="19" cy="5" r="1.4" fill="currentColor"/>`,
+    journal:`<rect x="4.5" y="6.5" width="11" height="12" rx="1" transform="rotate(-8 10 12.5)" ${S}/><rect x="9" y="4.5" width="11" height="12" rx="1" transform="rotate(7 14.5 10.5)" ${S}/><path d="M11 18.5c2-1 4 .8 6-.2" ${S}/>`,
+    auto:`<circle cx="12" cy="12" r="8.5" ${S}/><path d="M12 3.5a8.5 8.5 0 0 1 0 17Z" fill="currentColor" opacity=".55"/>`,
+    none:`<circle cx="12" cy="12" r="8" ${S}/><path d="M6.5 17.5 17.5 6.5" ${S}/>`,
+    spring:`<g ${S}><circle cx="12" cy="7" r="3.1"/><circle cx="16.8" cy="10.5" r="3.1"/><circle cx="15" cy="16" r="3.1"/><circle cx="9" cy="16" r="3.1"/><circle cx="7.2" cy="10.5" r="3.1"/></g><circle cx="12" cy="12" r="1.6" fill="currentColor"/>`,
+    summer:`<circle cx="12" cy="12" r="4" ${S}/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1" ${S}/>`,
+    autumn:`<path d="M12 2.8l1.5 3.9 3-1.5-.7 3.5 3.6.4-2.6 2.7 2 2.1-3.6.6.3 3-2.8-1.7L12 21l-.7-5.2-2.8 1.7.3-3-3.6-.6 2-2.1-2.6-2.7 3.6-.4-.7-3.5 3 1.5Z" ${S}/><path d="M12 21v-9" ${S}/>`,
+    winter:`<path d="M12 2.5v19M3.8 7.2l16.4 9.6M3.8 16.8l16.4-9.6M9.6 4.2 12 6.5l2.4-2.3M9.6 19.8 12 17.5l2.4 2.3M4.4 10.6l3.2.6-1 3.1M19.6 13.4l-3.2-.6 1-3.1M4.4 13.4l3.2-.6-1-3.1M19.6 10.6l-3.2.6 1 3.1" ${S} stroke-width="1.2"/>`
+  };
+  const styles = [
+    {id:'cinema', name:'银幕', en:'CINEMA', desc:'电影蒙太奇：宽银幕、分屏拼接、光缝与百叶转场'},
+    {id:'constellation', name:'星图', en:'CONSTELLATION', desc:'星河拼贴：烫金相框在星空里接力浮现，金线连成星座'},
+    {id:'journal', name:'手札', en:'JOURNAL', desc:'魔法手札：相片逐张落在烛光书桌上，墨迹写下旁白'}
+  ];
+  const seasons = [
+    {id:'auto', name:'按月份', en:'AUTO'}, {id:'none', name:'无', en:'NONE'},
+    {id:'spring', name:'春', en:'SPRING', desc:'粉樱飘落，柔和的晨光'}, {id:'summer', name:'夏', en:'SUMMER', desc:'阳光光束与萤火，明亮温暖'},
+    {id:'autumn', name:'秋', en:'AUTUMN', desc:'枫叶翻飞，琥珀色暖调'}, {id:'winter', name:'冬', en:'WINTER', desc:'雪花飘落，清冷的银蓝'}
+  ];
+  const styleOf = m => styles.some(s => s.id === m?.style) ? m.style : 'cinema';
+  const seasonPref = m => seasons.some(s => s.id === m?.season) ? m.season : 'auto';
+  function resolveSeason(pref, date){
+    if(pref !== 'auto') return pref;
+    const mo = parseInt(String(date || '').split('-')[1], 10);
+    if(!mo) return 'none';
+    return mo >= 3 && mo <= 5 ? 'spring' : mo >= 6 && mo <= 8 ? 'summer' : mo >= 9 && mo <= 11 ? 'autumn' : 'winter';
+  }
+  SB.cinema = { styles, seasons, styleOf, seasonPref, resolveSeason, icon:(id, cls) => svg(ICONS[id] || ICONS.none, cls) };
+})(window.SB);
+
+/* ── 「光影放映」 ── */
 (function(SB){
   const $ = id => document.getElementById(id);
   const scene = document.querySelector('.sb-scene[data-scene="player"]');
-  const ease = x => .5 - .5*Math.cos(Math.PI*SB.clamp(x, 0, 1));      // 正弦缓动：镜头运动不用线性
-  const easeOut = x => 1 - Math.pow(1 - SB.clamp(x, 0, 1), 3);
-  const lerp = SB.lerp, clamp = SB.clamp;
+  const clamp = SB.clamp, lerp = SB.lerp;
+  const ease = x => .5 - .5*Math.cos(Math.PI*clamp(x, 0, 1));           // 正弦缓动
+  const EO = x => 1 - Math.pow(1 - clamp(x, 0, 1), 3);                   // ease-out cubic
+  const EO4 = x => 1 - Math.pow(1 - clamp(x, 0, 1), 4);
+  const EIC = x => { x = clamp(x, 0, 1); return x < .5 ? 4*x*x*x : 1 - Math.pow(-2*x + 2, 3)/2; };
+  const backOut = x => { x = clamp(x, 0, 1); const c1 = 1.2, c3 = c1 + 1; return 1 + c3*Math.pow(x - 1, 3) + c1*Math.pow(x - 1, 2); };
   const ICON_PAUSE = '<svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" fill="currentColor"/></svg>';
   const ICON_PLAY = '<svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7Z" fill="currentColor"/></svg>';
-  const CPS = 7, SUB_MIN = 1800, CHAR_STEP = 45;                       // 字幕：7 字/秒，单条最短 1.8 秒
-  const TR = 1600, TR_INK = 2200, TR_MANUAL = 800, END_EST = 4000;
+  const CPS = 7, CUE_MIN = 2000, CUE_GAP = 250, END_EST = 4000, PRE = 1500;
+  const BASE = {cinema:3400, constellation:3200, journal:3600};
 
-  $('pl-prev').innerHTML = SB.icon('chevron', 'flip'); $('pl-prev').querySelector('svg').style.transform = 'scaleX(-1)';
+  $('pl-prev').innerHTML = SB.icon('chevron'); $('pl-prev').querySelector('svg').style.transform = 'scaleX(-1)';
   $('pl-next').innerHTML = SB.icon('chevron'); $('pl-music').innerHTML = SB.icon('note');
   $('pl-e-star').innerHTML = SB.icon('spark');
   $('pl-buffer').appendChild(SB.ui.spinner('正在冲洗胶片…'));
 
-  const P = { m:null, segs:[], T:0, playing:false, showing:false, raf:0, last:0, layers:new Map(), forcedPrev:null,
-              W:0, H:0, bar:0, fw:0, fh:0, idleT:0, subKey:'', endShown:false, wakeAt:0 };
+  const P = { m:null, style:'cinema', seasonPref:'auto', season:'none', TL:null, T:0, playing:false, showing:false, raf:0, last:0,
+              W:0, H:0, bar:0, fw:0, fh:0, idleT:0, endShown:false, cur:0, liveKey:'', nodes:new Map() };
+  const lite = () => SB.perf.level !== 'high';
+  const reduced = () => SB.perf.level === 'reduced';
+  const hash = (n, k = 1) => { const x = Math.sin(n*127.1 + k*311.7)*43758.5453; return x - Math.floor(x); };   // 固定伪随机：同一张照片每次都一样
 
-  /* ── 质感资源：胶片颗粒、墨渍遮罩（一次生成） ── */
-  (function makeGrain(){
+  /* ── 质感资源 ── */
+  const GRAIN = (function(){
     const c = document.createElement('canvas'); c.width = c.height = 160; const g = c.getContext('2d'); const d = g.createImageData(160, 160);
     for(let i = 0; i < d.data.length; i += 4){ const v = Math.random()*255; d.data[i] = d.data[i+1] = d.data[i+2] = v; d.data[i+3] = 255; }
-    g.putImageData(d, 0, 0); $('pl-grain').style.backgroundImage = `url(${c.toDataURL('image/png')})`;
+    g.putImageData(d, 0, 0); return c.toDataURL('image/png');
   })();
-  const INK = (function makeInk(){
+  $('pl-grain').style.backgroundImage = `url(${GRAIN})`;
+  const INK = (function(){
     const s = 256, c = document.createElement('canvas'); c.width = c.height = s; const g = c.getContext('2d');
     const gr = g.createRadialGradient(s/2, s/2, 0, s/2, s/2, s*.34); gr.addColorStop(0, '#fff'); gr.addColorStop(.8, '#fff'); gr.addColorStop(1, 'rgba(255,255,255,0)');
-    g.fillStyle = gr; g.fillRect(0, 0, s, s);
-    g.filter = 'blur(3px)'; g.fillStyle = '#fff';
+    g.fillStyle = gr; g.fillRect(0, 0, s, s); g.filter = 'blur(3px)'; g.fillStyle = '#fff';
     for(let i = 0; i < 38; i++){ const a = Math.random()*Math.PI*2, r = s*(.22 + Math.random()*.14), rr = s*(.03 + Math.random()*.06);
       g.beginPath(); g.arc(s/2 + Math.cos(a)*r, s/2 + Math.sin(a)*r, rr, 0, Math.PI*2); g.fill(); }
     return `url(${c.toDataURL('image/png')})`;
@@ -271,53 +397,280 @@
 
   /* ── 文字工具 ── */
   const len = t => [...String(t || '')].length;
-  /* 按标点切成若干条字幕：每条最多 32 字（两行 × 16），行尾不留逗号句号 */
-  function splitSubs(text){
+  const PUN = '，、；：,; ';
+  /* 按标点切成若干条，每条不超过 max 字 */
+  function splitCues(text, max){
     text = String(text || '').replace(/\s+/g, ' ').trim(); if(!text) return [];
     const clauses = text.match(/[^，。！？；、,.!?;…]+[，。！？；、,.!?;…]*/g) || [text];
     const out = []; let buf = '';
     for(let c of clauses){
       c = c.trim(); if(!c) continue;
-      while(len(c) > 32){ const a = [...c]; if(buf){ out.push(buf); buf = ''; } out.push(a.slice(0, 32).join('')); c = a.slice(32).join(''); }
-      if(len(buf + c) <= 32) buf += c; else { if(buf) out.push(buf); buf = c; }
+      while(len(c) > max){ const a = [...c]; if(buf){ out.push(buf); buf = ''; } out.push(a.slice(0, max).join('')); c = a.slice(max).join(''); }
+      if(len(buf + c) <= max) buf += c; else { if(buf) out.push(buf); buf = c; }
     }
     if(buf) out.push(buf);
-    return out.map(s => s.replace(/[，。、；,.;]+$/, ''));
+    return out.map(s => s.replace(/[，。、；,.;]+$/, '')).filter(Boolean);
   }
-  /* 两行时上短下长（金字塔形），尽量在标点处断行 */
-  function lines(text){
-    const a = [...text]; if(a.length <= 16) return [text];
-    // 两行都不超过 16 字的断点范围内，优先选离中点最近的标点；没有标点时上短下长
-    const lo = Math.max(1, a.length - 16), hi = Math.min(16, a.length - 1), mid = a.length/2;
-    let cut = -1, best = 1e9;
-    for(let k = lo; k <= hi; k++) if('，、；：,; '.includes(a[k-1]) && Math.abs(k - mid) < best){ best = Math.abs(k - mid); cut = k; }
-    if(cut < 0) cut = clamp(Math.floor(mid), lo, hi);
-    return [a.slice(0, cut).join('').replace(/[，、；,;\s]+$/, ''), a.slice(cut).join('').trim()];
+  /* 断行：每行不超过 per 字；两行时上短下长，优先在标点处断 */
+  function wrap(text, per){
+    const a = [...text]; if(a.length <= per) return [text];
+    const n = Math.ceil(a.length/per);
+    if(n === 2){
+      const lo = Math.max(1, a.length - per), hi = Math.min(per, a.length - 1), mid = a.length/2;
+      let cut = -1, best = 1e9;
+      for(let k = lo; k <= hi; k++) if(PUN.includes(a[k-1]) && Math.abs(k - mid) < best){ best = Math.abs(k - mid); cut = k; }
+      if(cut < 0) cut = clamp(Math.floor(mid), lo, hi);
+      return [a.slice(0, cut).join('').replace(/[，、；,;\s]+$/, ''), a.slice(cut).join('').trim()];
+    }
+    const out = []; let i = 0; const even = Math.ceil(a.length/n);
+    while(i < a.length){ let j = Math.min(a.length, i + even);
+      for(let k = j; k > i + even - 4 && k < a.length; k--) if(PUN.includes(a[k-1])){ j = k; break; }
+      out.push(a.slice(i, j).join('').trim()); i = j; }
+    return out.filter(Boolean);
   }
+  const cueDur = t => Math.max(CUE_MIN, len(t)/CPS*1000 + 700);
   function placeOf(m){
     const c = SB.store.city?.(m.cityId);
     return c ? [c.countryName, c.regionName, c.name].filter(Boolean).filter((v, i, arr) => arr.indexOf(v) === i).join(' · ') : '';
   }
   const fmtDur = ms => { const s = Math.round(ms/1000); return s < 60 ? `约 ${s} 秒` : `约 ${Math.floor(s/60)} 分${s%60 ? ' ' + (s%60) + ' 秒' : ''}`; };
+  function dateLine(m){ const d = SB.fmtDate(m.date) || '', sq = x => String(x || '').replace(/\s/g, '');
+    return d && sq(m.title).includes(sq(d)) ? '' : d; }
 
-  /* ── 时间线 ── */
-  function buildSegments(m){
-    const segs = [];
-    const titleRead = (len(m.title) + len(m.note))/CPS*1000;
-    segs.push({type:'title', dur:Math.min(12000, Math.max(4800, 3600 + titleRead)), tr:0});
-    (m.slides || []).forEach((s, i) => {
-      const subs = []; let t = 700;
-      for(const text of splitSubs(s.caption)){ const d = Math.max(SUB_MIN, len(text)/CPS*1000 + 600); subs.push({text, start:t, end:t + d}); t += d + 250; }
-      const dur = Math.min(16000, Math.max(5200, t + 1200));
-      const trType = i === 0 ? 'ink' : ((i % 4 === 3 || i === m.slides.length - 1) && i > 1 ? 'leak' : 'dissolve');
-      segs.push({type:'shot', i, slide:s, dur, tr: trType === 'ink' ? TR_INK : TR, trType, subs});
-    });
-    segs.push({type:'end', dur:Infinity, tr:900});
-    let at = 0; segs.forEach(sg => { sg.start = at; at += sg.dur; });
-    return segs;
+  /* ── 舞台尺寸 ── */
+  function measure(style){
+    const W = scene.clientWidth || innerWidth, H = scene.clientHeight || innerHeight, land = W >= H;
+    const bar = style === 'cinema' ? Math.round(land ? Math.max(0, (H - W/1.85)/2) : H*.07) : 0;
+    return {W, H, bar, fw:W, fh:H - bar*2, land};
   }
-  const estimate = segs => segs.filter(s => s.type !== 'end').reduce((n, s) => n + s.dur, 0) + END_EST;
-  function segAt(T){ let c = 0; for(let k = 0; k < P.segs.length; k++){ if(P.segs[k].start <= T) c = k; else break; } return c; }
+
+  /* ════════ 导演：把照片编排成时间线 ════════
+     照片元素：{kind:'photo', slide, i, t0, t1, keys:[{t,x,y,w,h,r}], kb:{s0,s1,x0,x1,y0,y1}, frame, enter:{type,dur,dir}, exit:{type,dur,dir}, z, depth, space}
+     文字元素：{kind:'text', look, lines, t0, t1, box:{x,y,w,ax,ay}, fs, vertical, idx, space, rot}
+     坐标单位：画框宽高的比例。 */
+  const photo = (o) => Object.assign({kind:'photo', keys:[], kb:{s0:1, s1:1, x0:50, x1:50, y0:50, y1:50}, frame:'bleed', enter:{type:'fade', dur:1000}, exit:{type:'fade', dur:900}, z:10, depth:0, space:'flat'}, o);
+  const fitBox = (a, sw, sh, fw, fh) => { let w = sw*fw, h = w/a; if(h > sh*fh){ h = sh*fh; w = h*a; } return {w:w/fw, h:h/fh}; };
+  const aspect = s => (s.w && s.h) ? s.w/s.h : 1.5;
+  function cueItems(text, t0, per, make){
+    const out = []; let t = t0;
+    for(const c of splitCues(text, per*2)){ const d = cueDur(c); out.push(make(wrap(c, per), t, t + d, c)); t += d + CUE_GAP; }
+    return {items: out, end: out.length ? t - CUE_GAP : t0};
+  }
+  const focusOf = (B, readEnd, t0) => Math.max(B, readEnd - t0 + 600);
+
+  /* 风格一 · 银幕 */
+  function dCinema(S, c){
+    const {fw, fh, land} = c, A = fw/fh, items = [], marks = [];
+    const fs = land ? clamp(fw*.034, 24, 44) : clamp(fw*.062, 21, 26);
+    const per = Math.max(8, Math.min(14, Math.floor(fw*.84/(fs*1.18))));
+    const isPort = x => x && x.a < .9, wide = x => x && x.a > 1.15;
+    const shortCap = x => len(x.s.caption) <= 24;
+    const G = []; let i = 0;
+    while(i < S.length){
+      const a = S[i], b = S[i+1], d = S[i+2];
+      if(land && !c.lite && isPort(a) && isPort(b) && isPort(d) && shortCap(a) && shortCap(b) && shortCap(d) && G.length % 3 !== 0){ G.push({k:'trio', s:[a, b, d]}); i += 3; }
+      else if(land && isPort(a) && isPort(b)){ if(isPort(d) && !isPort(S[i+3])){ G.push({k:'duo', s:[a, b, d]}); i += 3; } else { G.push({k:'duo', s:[a, b]}); i += 2; } }
+      else if(!land && wide(a) && wide(b) && a.a > 1.2 && b.a > 1.2){ G.push({k:'stack', s:[a, b]}); i += 2; }
+      else { G.push({k:'full', s:[a]}); i++; }
+    }
+    const FT = ['bloom', 'slit', 'iris', 'wipe', 'blinds', 'bloom', 'wipe', 'slit', 'iris'];
+    const COVER = new Set(['slit', 'iris', 'wipe', 'blinds', 'ink']);
+    const TRD = {bloom:1300, slit:1200, iris:1300, wipe:1100, blinds:1300, ink:2100};
+    let t = c.C0 - 300, prev = null, nf = 0, z = 100, mg = 0;
+    const capFull = (sl, t0, vertical) => cueItems(sl.s.caption, t0, per, (lines, a, b) => vertical
+      ? {kind:'text', look:'cinema', vertical:true, lines:[lines.join('')], t0:a, t1:b, fs:Math.min(56, Math.max(28, fw*.044), fh*.78/(len(lines.join(''))*1.22 + .8)), box:{x:.9, y:.1, ax:'r', ay:'t'}}
+      : {kind:'text', look:'cinema', lines, t0:a, t1:b, fs, box:{x:.5, y:land ? .9 : .88, w:.9, ax:'c', ay:'b'}, scrim:true});
+    const kbFull = (sl, gi) => {
+      const r = sl.a/A;
+      if(r > 1.3) return {s0:1.01, s1:1.03, x0:gi % 2 ? 100 : 0, x1:gi % 2 ? 0 : 100, y0:50, y1:50};
+      if(r < 1/1.3) return {s0:1.02, s1:1.02, x0:50, x1:50, y0:25, y1:70};
+      return gi % 2 ? {s0:1.08, s1:1, x0:52, x1:50, y0:47, y1:50} : {s0:1, s1:1.08, x0:50, x1:50 + (gi % 4 < 2 ? 3 : -3), y0:50, y1:46};
+    };
+    G.forEach((g, gi) => {
+      const next = G[gi + 1];
+      if(g.k === 'full'){
+        const sl = g.s[0], type = gi === 0 ? 'ink' : FT[nf++ % FT.length], dir = ['l', 'r', 'b', 't'][gi % 4];
+        // 上一组的退场：被覆盖型转场时保持到被完全盖住；溶解时同步淡出
+        if(prev) prev.forEach(p => { if(p.t1 == null){ p.t1 = t + TRD[type]; p.exit = COVER.has(type) ? {type:'hold', dur:1} : {type:'fade', dur:TRD[type]}; } });
+        const framed = land && sl.a < .8;
+        const its = [];
+        if(framed){
+          const bx = fitBox(sl.a, .62, .86, fw, fh);
+          its.push(photo({slide:sl.s, i:sl.i, t0:t, frame:'fill', z:z++, keys:[{t, x:.5, y:.5, w:1, h:1}], enter:{type, dur:TRD[type], dir}, kb:{s0:1.16, s1:1.24, x0:50, x1:50, y0:50, y1:50}}));
+          its.push(photo({slide:sl.s, i:sl.i, t0:t + 250, frame:'framed', z:z++, keys:[{t, x:.5, y:.5, w:bx.w, h:bx.h}], enter:{type:'bloom', dur:1300}, kb:{s0:1, s1:1.04, x0:50, x1:50, y0:50, y1:50}, tilt:true}));
+        } else its.push(photo({slide:sl.s, i:sl.i, t0:t, z:z++, keys:[{t, x:.5, y:.5, w:1, h:1}], enter:{type, dur:TRD[type], dir}, kb:kbFull(sl, gi)}));
+        items.push(...its); marks.push({t, i:sl.i});
+        const cap = sl.s.caption ? splitCues(sl.s.caption, per*2) : [];
+        const vertical = land && cap.length === 1 && len(cap[0]) <= 12 && !framed;
+        const cu = capFull(sl, t + 700, vertical); items.push(...cu.items);
+        if(type !== 'bloom' && gi % 4 === 3) items.push({kind:'leak', t0:t - 200, t1:t + 1500});
+        t += focusOf(c.B, cu.end, t); prev = its;
+        return;
+      }
+      // 多图组：双联 / 三联 / 上下叠放
+      if(prev) prev.forEach(p => { if(p.t1 == null){ p.t1 = t + 1200; p.exit = {type:'fade', dur:1200}; } });
+      const gap = .004, its = [], doors = [];
+      let tt = t;
+      const placeCap = (sl, at) => { const cu = cueItems(sl.s.caption, at, per, (lines, a, b) => ({kind:'text', look:'cinema', lines, t0:a, t1:b, fs, box:{x:.5, y:land ? .9 : .88, w:.9, ax:'c', ay:'b'}, scrim:true})); items.push(...cu.items); return cu.end; };
+      if(g.k === 'duo'){
+        const slot = k => ({x:k ? .75 + gap/2 : .25 - gap/2, y:.5, w:.5 - gap, h:1});
+        const [a, b, d] = g.s;
+        const A1 = photo({slide:a.s, i:a.i, t0:tt, z:z++, keys:[{t:tt, ...slot(0)}], enter:{type:'wipe', dir:'l', dur:1100}, kb:{s0:1.04, s1:1, x0:50, x1:50, y0:40, y1:58}});
+        const B1 = photo({slide:b.s, i:b.i, t0:tt + 450, z:z++, keys:[{t:tt, ...slot(1)}], enter:{type:'wipe', dir:'r', dur:1100}, kb:{s0:1, s1:1.04, x0:50, x1:50, y0:58, y1:42}});
+        its.push(A1, B1); marks.push({t:tt, i:a.i});
+        let e = placeCap(a, tt + 700); tt += focusOf(c.B, e, tt);
+        marks.push({t:tt, i:b.i}); e = placeCap(b, tt + 200); tt += focusOf(c.B*.85, e, tt);
+        let last = B1, other = A1;
+        if(d){
+          A1.t1 = tt + 150 + 1100; A1.exit = {type:'hold', dur:1};          // 新照片擦入覆盖旧照片，不出现黑缝
+          const C1 = photo({slide:d.s, i:d.i, t0:tt + 150, z:z++, keys:[{t:tt, ...slot(0)}], enter:{type:'wipe', dir:'l', dur:1100}, kb:{s0:1.04, s1:1, x0:50, x1:50, y0:45, y1:55}});
+          its.push(C1); marks.push({t:tt, i:d.i}); e = placeCap(d, tt + 600); tt += focusOf(c.B, e, tt);
+          last = C1; other = B1;
+        }
+        const expand = next?.k === 'full' && mg++ % 2 === 0 && !reduced();
+        if(expand){
+          // 一个面板扩展成全画面，另一面板滑出，随后作为全幅镜头停留片刻
+          const k0 = last.keys[0];
+          last.keys = [{...k0, t:tt}, {t:tt + 1300, x:.5, y:.5, w:1, h:1}];
+          last.kb = {...last.kb, s1:1.06};
+          other.t1 = tt + 1100; other.exit = {type:'slide', dir:other.keys[0].x < .5 ? 'l' : 'r', dur:1100};
+          tt += 1700; its.forEach(p => { if(p !== last && p.t1 == null){ p.t1 = tt; p.exit = {type:'fade', dur:600}; } });
+          prev = [last];
+        } else {
+          // 像两扇门一样向两侧打开，露出下一组
+          its.forEach(p => { if(p.t1 == null){ p.t1 = tt + 1200; p.exit = {type:'slide', dir:p.keys[0].x < .5 ? 'l' : 'r', dur:1200}; } });
+          doors.push(...its); prev = null;
+        }
+      } else if(g.k === 'trio'){
+        const w = (1 - gap*2)/3;
+        g.s.forEach((sl, k) => {
+          const p = photo({slide:sl.s, i:sl.i, t0:tt + k*260, z:z++, keys:[{t:tt, x:w/2 + k*(w + gap), y:.5, w, h:1}], enter:{type:'slide', dir:k % 2 ? 'b' : 't', dur:1300}, kb:{s0:1.05, s1:1, x0:50, x1:50, y0:k % 2 ? 60 : 40, y1:50}});
+          its.push(p);
+        });
+        g.s.forEach((sl, k) => { marks.push({t:tt, i:sl.i}); const e = placeCap(sl, tt + (k ? 200 : 900)); tt += focusOf(k ? c.B*.8 : c.B, e, tt); });
+        its.forEach((p, k) => { p.t1 = tt + 1100 + k*180; p.exit = {type:'slide', dir:k % 2 ? 't' : 'b', dur:1100}; });
+        doors.push(...its); prev = null;
+      } else {   // stack：竖屏上两张横图上下叠放
+        const slot = k => ({x:.5, y:k ? .75 + gap/2 : .25 - gap/2, w:1, h:.5 - gap});
+        const [a, b] = g.s;
+        its.push(photo({slide:a.s, i:a.i, t0:tt, z:z++, keys:[{t:tt, ...slot(0)}], enter:{type:'wipe', dir:'l', dur:1100}, kb:{s0:1.02, s1:1.03, x0:0, x1:100, y0:50, y1:50}}));
+        its.push(photo({slide:b.s, i:b.i, t0:tt + 450, z:z++, keys:[{t:tt, ...slot(1)}], enter:{type:'wipe', dir:'r', dur:1100}, kb:{s0:1.03, s1:1.02, x0:100, x1:0, y0:50, y1:50}}));
+        marks.push({t:tt, i:a.i}); let e = placeCap(a, tt + 700); tt += focusOf(c.B, e, tt);
+        marks.push({t:tt, i:b.i}); e = placeCap(b, tt + 200); tt += focusOf(c.B*.85, e, tt);
+        its.forEach((p, k) => { p.t1 = tt + 1200; p.exit = {type:'slide', dir:k ? 'b' : 't', dur:1200}; });
+        doors.push(...its); prev = null;
+      }
+      items.push(...its);
+      // 多图组里「正在讲述」的那张提亮，其余稍暗，引导视线
+      const gm = marks.slice(-its.length - 1).filter(mm => its.some(p => p.i === mm.i));
+      gm.forEach((mm, k) => { const nx = gm[k + 1]; its.filter(p => p.i === mm.i).forEach(p => { p.foc = [mm.t, nx ? nx.t : tt + 2000]; }); });
+      if(gm.length > 1) its.forEach(p => { p.grp = its; });
+      // 「开门」露出的下一组要在门的下面
+      if(doors.length) items._under = (items._under || 0) + 1, doors.forEach(p => p.z += 400);
+      t = tt;
+    });
+    if(prev) prev.forEach(p => { if(p.t1 == null){ p.t1 = t + 1100; p.exit = {type:'fade', dur:1100}; } });
+    items.filter(x => x.kind === 'photo').forEach(p => { if(p.t1 == null) p.t1 = t + 1100; });
+    return {items, marks, end:t + 300};
+  }
+
+  /* 风格二 · 星图 */
+  const TPL_LAND = [
+    {slots:[{x:.30, y:.47, sw:.42, sh:.68, r:-1.5, d:1}, {x:.74, y:.31, sw:.30, sh:.40, r:2.2, d:.55}], order:[0, 1, 0], text:{x:.56, y:.58, w:.38, ax:'l', ay:'t'}},
+    {slots:[{x:.68, y:.52, sw:.42, sh:.68, r:1.5, d:1}, {x:.24, y:.68, sw:.30, sh:.38, r:-2.4, d:.55}], order:[0, 1, 0], text:{x:.07, y:.13, w:.38, ax:'l', ay:'t'}},
+    {slots:[{x:.20, y:.40, sw:.25, sh:.46, r:-3, d:.6}, {x:.50, y:.50, sw:.27, sh:.52, r:1.8, d:1}, {x:.80, y:.40, sw:.25, sh:.46, r:-1.6, d:.6}], order:[0, 1, 2], text:{x:.5, y:.9, w:.8, ax:'c', ay:'b'}, center:true}
+  ];
+  const TPL_PORT = [
+    {slots:[{x:.42, y:.24, sw:.70, sh:.30, r:-2, d:1}, {x:.62, y:.50, sw:.62, sh:.25, r:2, d:.6}], order:[0, 1, 0], text:{x:.5, y:.68, w:.84, ax:'c', ay:'t'}, center:true},
+    {slots:[{x:.60, y:.23, sw:.66, sh:.29, r:2, d:.6}, {x:.38, y:.50, sw:.66, sh:.27, r:-2, d:1}], order:[0, 1, 0], text:{x:.5, y:.68, w:.84, ax:'c', ay:'t'}, center:true},
+    {slots:[{x:.5, y:.35, sw:.84, sh:.48, r:0, d:1}], order:[0, 0], text:{x:.5, y:.68, w:.84, ax:'c', ay:'t'}, center:true}
+  ];
+  function dConstellation(S, c){
+    const {fw, fh, land} = c, items = [], marks = [];
+    let tpls = land ? TPL_LAND : TPL_PORT; if(c.lite && land) tpls = tpls.slice(0, 2);
+    const fs = land ? clamp(fw*.026, 21, 36) : clamp(fw*.058, 20, 25);
+    let ti = 0, tpl = tpls[0], occ = [], filled = 0, t = c.C0 + 100, prevIt = null, z = 100;
+    const retire = (it, at, k = 0) => { it.t1 = at + k*220; it.exit = {type:'stardust', dur:1200}; };
+    S.forEach((sl, n) => {
+      if(filled >= tpl.order.length){
+        occ.forEach((it, k) => it && retire(it, t + 300, k)); t += 900;
+        ti = (ti + 1) % tpls.length; tpl = tpls[ti]; occ = []; filled = 0; prevIt = null;
+      }
+      const si = tpl.order[filled], slot = tpl.slots[si], old = occ[si];
+      if(old) retire(old, t + 500);
+      const bx = fitBox(sl.a, slot.sw, slot.sh, fw, fh);
+      const t0 = t - 200 + (old ? 300 : 0);
+      const it = photo({slide:sl.s, i:sl.i, t0, frame:'gilt', depth:slot.d, z:z++ + Math.round(slot.d*50), keys:[{t:t0, x:slot.x, y:slot.y, w:bx.w, h:bx.h, r:slot.r}],
+        enter:{type:'bloom', dur:1400}, kb:{s0:1, s1:1.06, x0:50, x1:50, y0:50, y1:47}, tilt:true});
+      items.push(it); marks.push({t, i:sl.i});
+      if(prevIt) items.push({kind:'line', a:prevIt, b:it, t0:t + 300});
+      const tb = tpl.text, per = Math.max(7, Math.min(16, Math.floor(tb.w*fw/(fs*1.06))));
+      const cu = cueItems(sl.s.caption, t + 700, per, (lines, a, b) => ({kind:'text', look:'editorial', lines, t0:a, t1:b, fs, idx:String(sl.i + 1).padStart(2, '0'), center:!!tpl.center, box:{...tb}}));
+      if(!cu.items.length) items.push({kind:'text', look:'editorial', lines:[], t0:t + 700, t1:t + 2600, fs, idx:String(sl.i + 1).padStart(2, '0'), center:!!tpl.center, box:{...tb}});
+      items.push(...cu.items);
+      occ[si] = it; filled++; prevIt = it;
+      t += focusOf(c.B, cu.end, t);
+    });
+    occ.forEach((it, k) => it && retire(it, t + 300, k));
+    items.filter(x => x.kind === 'line').forEach(l => { l.t1 = Math.min(l.a.t1, l.b.t1); });
+    return {items, marks, end:t + 900};
+  }
+
+  /* 风格三 · 手札 */
+  function dJournal(S, c){
+    const {fw, fh, land} = c, items = [], marks = [], cam = [];
+    const fs = land ? clamp(fw*.026, 22, 38) : clamp(fw*.06, 21, 26);
+    const per = land ? Math.max(8, Math.floor(fw*.36/(fs*1.06))) : Math.max(8, Math.min(15, Math.floor(fw*.84/(fs*1.06))));
+    let t = c.C0 + 250, px = 0, py = 0, pw = 0, ph = 0, z = 100;
+    const prints = [];
+    S.forEach((sl, n) => {
+      const bx = fitBox(sl.a, land ? .34 : .72, land ? .52 : .38, fw, fh);
+      const bpx = Math.max(7, Math.min(bx.w*fw, bx.h*fh)*.045);
+      const w = bx.w + bpx*2/fw, h = bx.h + bpx*3.4/fh;
+      let x, y;
+      if(land){ x = n ? px + (pw + w)/2*.8 + .025 : .5; y = .40 + (hash(n, 3) - .5)*.06; }
+      else { y = n ? py + (ph + h)/2*.74 + .02 : .38; x = (n % 2 ? .57 : .43) + (hash(n, 3) - .5)*.04; }
+      const r = (n % 2 ? 1 : -1)*(2.5 + hash(n, 5)*4.5);
+      const it = photo({slide:sl.s, i:sl.i, t0:t - 250, frame:'print', space:'desk', z:z++, border:bpx, seal:n % 3 === 2,
+        keys:[{t, x, y, w, h, r}], enter:{type:'drop', dur:950, dir:n % 2 ? 1 : -1}, kb:{s0:1, s1:1.04, x0:50, x1:50, y0:50, y1:50}});
+      items.push(it); prints.push(it); marks.push({t, i:sl.i});
+      // 镜头沿桌面跟随最新的相片
+      const cx = land ? x - .06 : .5, cy = land ? .5 : y + .1;
+      cam.push({t:n ? t - 700 : t - 1000, x:cam.length ? cam[cam.length - 1].x : cx, y:cam.length ? cam[cam.length - 1].y : cy}, {t:t + 800, x:cx, y:cy});
+      let tx;
+      const text = String(sl.s.caption || '').trim();
+      if(text){
+        const lines = wrap(text, per).slice(0, 6), n2 = len(text), writeEnd = 500 + n2*110 + 900;
+        if(land) tx = {kind:'text', look:'ink', space:'desk', lines, t0:t + 450, t1:null, fs:n2 > 40 ? fs*.85 : fs, rot:r*.35,
+          box:{x:x - w/2 + .012, y:y + h/2 + .035, w:.4, ax:'l', ay:'t'}};
+        else tx = {kind:'text', look:'ink', center:true, lines, t0:t + 450, t1:null, fs, box:{x:.5, y:.80, w:.86, ax:'c', ay:'t'}};
+        items.push(tx); it.caption = tx;
+        t += Math.max(c.B, writeEnd + Math.max(0, n2/CPS*1000 - n2*110));
+      } else t += c.B*.85;
+      px = x; py = y; pw = w; ph = h;
+    });
+    // 旧相片在镜头移开后退场；文字跟随相片
+    prints.forEach((p, k) => {
+      const later = prints[k + (land ? 3 : 2)];
+      p.t1 = later ? later.t0 + 1800 : t + 1200; p.exit = {type:'fade', dur:700};
+      // 上一段墨迹在下一段开始书写时淡去，避免相邻文字重叠
+      if(p.caption){ const nx = prints.slice(k + 1).find(q => q.caption); p.caption.t1 = nx ? nx.caption.t0 + 700 : (land ? p.t1 : t + 1000); }
+    });
+    return {items, marks, end:t + 500, cam};
+  }
+  const DIRECT = {cinema:dCinema, constellation:dConstellation, journal:dJournal};
+
+  function buildTL(m, style){
+    const dim = measure(style);
+    const S = (m.slides || []).filter(s => s.id).map((s, i) => ({s, i, a:aspect(s)}));
+    const C0 = Math.min(9000, Math.max(4200, 3600 + (len(m.title) + len(m.note))/CPS*1000));
+    const ctx = {...dim, C0, B:BASE[style], lite:lite()};
+    const r = S.length ? DIRECT[style](S, ctx) : {items:[], marks:[], end:C0};
+    r.items.forEach((it, k) => { it.id = 'e' + k; });
+    r.items.sort((a, b) => a.t0 - b.t0);
+    return {...r, ...dim, style, C0, endT:Math.max(r.end, C0 + 600), n:S.length};
+  }
+  const estimate = TL => TL.endT + END_EST;
 
   /* ── 照片：等待签名地址、预加载并解码 ── */
   const cache = new Map();
@@ -338,196 +691,388 @@
     cache.set(id, rec); return rec.p;
   }
   const isReady = id => !id || cache.get(id)?.ready;
-  function prefetch(fromSeg){ for(let k = fromSeg; k < Math.min(P.segs.length, fromSeg + 3); k++){ const sg = P.segs[k]; if(sg.type === 'shot') load(sg.slide.id); } }
+  function prefetch(T){ if(!P.TL) return; for(const it of P.TL.items) if(it.kind === 'photo' && it.t0 < T + 7000 && (it.t1 ?? 1e12) > T) load(it.slide.id); }
 
-  /* ── 版面：银幕黑边与可视区 ── */
-  function layout(){
-    P.W = scene.clientWidth || innerWidth; P.H = scene.clientHeight || innerHeight;
-    const landscape = P.W >= P.H;
-    P.bar = Math.round(landscape ? Math.max(0, (P.H - P.W/1.85)/2) : P.H*.07);
+  /* ── 布局 ── */
+  function applyLayout(){
+    const TL = P.TL; if(!TL) return;
+    P.W = TL.W; P.H = TL.H; P.bar = TL.bar; P.fw = TL.fw; P.fh = TL.fh;
     scene.style.setProperty('--bar', P.bar + 'px');
-    P.fw = P.W; P.fh = P.H - P.bar*2;
-    for(const [k, L] of P.layers){ fitLayer(L, P.segs[k]); }
+    const st = $('pl-stage'); st.dataset.style = TL.style;
+    $('pl-desk').style.display = TL.style === 'journal' ? '' : 'none';
+    $('pl-sky').style.display = TL.style === 'constellation' ? '' : 'none';
+    $('pl-grain').classList.toggle('off', lite() || TL.style === 'constellation');
+    $('pl-grain').style.opacity = TL.style === 'journal' ? '.05' : '';
+    for(const cv of [$('pl-sky'), $('pl-season'), $('pl-dust')]){ const dpr = Math.min(devicePixelRatio || 1, 1.5); cv.width = Math.round(P.fw*dpr); cv.height = Math.round(P.fh*dpr); cv._dpr = dpr; }
   }
-  addEventListener('resize', () => { if(SB.scenes.current === 'player') layout(); });
+  function rebuild(keepT){
+    if(!P.m) return;
+    const old = P.TL, T = P.T;
+    clearNodes();
+    P.TL = buildTL(P.m, P.style); applyLayout();
+    if(keepT && old && T > old.C0) P.T = T >= old.endT ? P.TL.endT + (T - old.endT) : P.TL.C0 + (T - old.C0)/(old.endT - old.C0)*(P.TL.endT - P.TL.C0);
+    buildBars();
+  }
+  let rsT = 0;
+  addEventListener('resize', () => { if(SB.scenes.current !== 'player') return; clearTimeout(rsT); rsT = setTimeout(() => { if(P.showing) rebuild(true); else if(P.m) updateStat(); render(); }, 180); });
 
-  /* ── 镜头语言 ── */
-  function shotOf(sg){
-    const s = sg.slide, a = (s.w && s.h) ? s.w/s.h : 1.5, A = P.fw/P.fh, r = a/A, i = sg.i;
-    if(r > 1.45) return {kind:'pan', dir: i % 2 ? -1 : 1};
-    if(r < 1/1.45) return A >= 1 ? {kind:'print', dir: i % 2 ? -1 : 1} : {kind:'tilt', dir: 1};
-    return {kind: i % 2 ? 'pull' : 'push', dir: i % 4 < 2 ? 1 : -1};
+  /* ── DOM 节点 ── */
+  function clearNodes(){ for(const [, n] of P.nodes) n.el.remove(); P.nodes.clear(); $('pl-lines').querySelectorAll('line').forEach(l => l.remove()); }
+  function nodeFor(it){
+    let n = P.nodes.get(it.id); if(n) return n;
+    if(it.kind === 'photo'){
+      const el = SB.el('div', 'pl-ph ' + it.frame + (lite() ? ' lite' : ''));
+      const im = SB.el('div', 'im'); const img = SB.el('img'); img.alt = it.slide.caption || P.m?.title || ''; img.decoding = 'async';
+      im.appendChild(img); el.appendChild(im);
+      if(it.frame === 'print'){ const b = it.border; im.style.inset = `${b}px ${b}px ${b*2.4}px ${b}px`; }
+      if(it.seal){ const s = SB.el('span', 'seal', SB.icon('star')); el.appendChild(s); }
+      el.style.opacity = '0'; el.style.zIndex = it.z;
+      (it.space === 'desk' ? $('pl-cam') : $('pl-flat')).appendChild(el);
+      n = {el, im, img, cache:{}};
+    } else if(it.kind === 'text'){
+      const el = buildText(it); el.style.opacity = '0';
+      (it.space === 'desk' ? $('pl-cam') : $('pl-texts')).appendChild(el);
+      n = {el, cache:{}};
+    } else if(it.kind === 'line'){
+      const el = document.createElementNS('http://www.w3.org/2000/svg', 'line'); $('pl-lines').appendChild(el); n = {el, cache:{}};
+    } else return null;
+    P.nodes.set(it.id, n); return n;
   }
-  function fitLayer(L, sg){
-    const s = sg.slide, a = (s.w && s.h) ? s.w/s.h : 1.5, fw = P.fw, fh = P.fh;
-    L.shot = shotOf(sg);
-    let w, h;
-    if(L.shot.kind === 'print'){ const mw = fw*.78, mh = fh*.84; w = Math.min(mw, mh*a); h = w/a; L.cam.classList.add('print'); }
-    else { L.cam.classList.remove('print');
-      if(L.shot.kind === 'pan'){ h = fh*1.02; w = h*a; } else if(L.shot.kind === 'tilt'){ w = fw*1.02; h = w/a; }
-      else { if(a > fw/fh){ h = fh; w = h*a; } else { w = fw; h = w/a; } w *= 1.02; h *= 1.02; } }
-    L.w = w; L.h = h;
-    Object.assign(L.cam.style, {width:w + 'px', height:h + 'px', left:(fw - w)/2 + 'px', top:(fh - h)/2 + 'px'});
-    L.fill.style.display = L.shot.kind === 'print' || L.shot.kind === 'tilt' || L.shot.kind === 'pan' ? '' : 'none';
-  }
-  function camTransform(L, u){
-    const k = ease(u), sh = L.shot, still = SB.perf.level === 'reduced';
-    if(still) return '';
-    if(sh.kind === 'push') return `translate3d(${(lerp(0, 1.4, k)*sh.dir).toFixed(2)}%,${lerp(0, 2.2, k).toFixed(2)}%,0) scale(${lerp(1, 1.1, k).toFixed(4)})`;
-    if(sh.kind === 'pull') return `translate3d(${(lerp(1.2, 0, k)*sh.dir).toFixed(2)}%,${lerp(1.8, 0, k).toFixed(2)}%,0) scale(${lerp(1.12, 1, k).toFixed(4)})`;
-    if(sh.kind === 'pan'){ const over = Math.max(0, L.w - P.fw)/2; return `translate3d(${(lerp(over, -over, k)*sh.dir).toFixed(1)}px,0,0) scale(${lerp(1, 1.03, k).toFixed(4)})`; }
-    if(sh.kind === 'tilt'){ const over = Math.max(0, L.h - P.fh)/2; return `translate3d(0,${lerp(over, -over, k).toFixed(1)}px,0)`; }
-    return `perspective(1400px) rotateY(${(lerp(-4, 4, k)*sh.dir).toFixed(2)}deg) translate3d(0,${lerp(6, -6, k).toFixed(1)}px,0) scale(${lerp(.96, 1.03, k).toFixed(4)})`;
-  }
-
-  /* ── 图层 ── */
-  function makeLayer(k){
-    const sg = P.segs[k]; if(sg?.type !== 'shot') return null;
-    const el = SB.el('div', 'pl-shot' + (SB.perf.level === 'high' ? '' : ' lite'));
-    const fill = SB.el('img', 'fill'); fill.alt = '';
-    const cam = SB.el('div', 'cam'); const img = SB.el('img'); img.alt = sg.slide.caption || P.m.title || '';
-    cam.appendChild(img); el.append(fill, cam);
-    const rec = cache.get(sg.slide.id); if(rec?.url){ img.src = fill.src = rec.url; }
-    el.style.opacity = '0';
-    $('pl-shots').appendChild(el);
-    const L = {el, fill, cam, img}; fitLayer(L, sg); P.layers.set(k, L); return L;
-  }
-  function dropLayers(keep){ for(const [k, L] of P.layers) if(!keep.has(k)){ L.el.remove(); P.layers.delete(k); } }
-
-  /* ── 渲染：一切由时钟 T 计算 ── */
-  const lite = () => SB.perf.level !== 'high';
-  function applyIn(L, type, p){
-    const e = easeOut(p);
-    if(type === 'ink'){
-      L.el.style.opacity = '1';
-      const d = Math.hypot(P.fw, P.fh)*2.6*Math.pow(clamp(p, 0, 1), 1.6) + 1;
-      if(p < 1){ L.el.style.webkitMaskImage = L.el.style.maskImage = INK; L.el.style.webkitMaskSize = L.el.style.maskSize = `${d}px ${d}px`; }
-      else { L.el.style.webkitMaskImage = L.el.style.maskImage = 'none'; }
-      L.el.style.filter = ''; return 1;
+  function buildText(it){
+    const el = SB.el('div', 'pl-tx ' + it.look + (it.vertical ? ' v' : '') + (it.center ? ' c' : ''));
+    el.style.fontSize = it.fs.toFixed(1) + 'px';
+    if(it.box.w) el.style.width = (it.box.w*P.fw).toFixed(0) + 'px';
+    const chars = s => [...s].map(ch => `<span>${SB.esc(ch)}</span>`).join('');
+    if(it.look === 'cinema'){
+      el.innerHTML = it.lines.map(l => `<span class="ln">${chars(l)}</span>`).join('') + '<i class="rule"></i>';
+    } else if(it.look === 'editorial'){
+      el.innerHTML = `<span class="idx">${it.idx}</span><i class="rule"></i>` + it.lines.map(l => `<span class="ln"><b>${SB.esc(l)}</b></span>`).join('');
+    } else {
+      let j = 0;
+      el.innerHTML = it.lines.map(l => `<span class="ln">${[...l].map(ch => { j++; const r = (hash(j, 7) - .5)*3, y = (hash(j, 9) - .5)*.08;
+        return `<span style="transform:translateY(${y.toFixed(3)}em) rotate(${r.toFixed(2)}deg)">${SB.esc(ch)}</span>`; }).join('')}</span>`).join('');
     }
-    L.el.style.webkitMaskImage = L.el.style.maskImage = 'none';
-    L.el.style.opacity = e.toFixed(3);
-    L.el.style.filter = lite() || p >= 1 ? '' : `blur(${((1 - e)*6).toFixed(2)}px) brightness(${(1 + .2*(1 - e)).toFixed(3)})`;
-    return lerp(1.04, 1, e);
+    return el;
   }
-  function applyOut(L, p){
-    const e = ease(p);
-    L.el.style.opacity = (1 - e).toFixed(3);
-    if(!lite()) L.el.style.filter = `blur(${(e*8).toFixed(2)}px) brightness(${(1 + .15*e).toFixed(3)})`;
+  const setS = (n, k, v) => { if(n.cache[k] !== v){ n.cache[k] = v; n.el.style[k] = v; } };
+
+  /* ── 关键帧插值 ── */
+  function keyAt(keys, T){
+    if(keys.length === 1 || T <= keys[0].t) return keys[0];
+    for(let k = 1; k < keys.length; k++){ const b = keys[k]; if(T < b.t){ const a = keys[k-1], e = ease((T - a.t)/(b.t - a.t));
+      return {x:lerp(a.x, b.x, e), y:lerp(a.y, b.y, e), w:lerp(a.w, b.w, e), h:lerp(a.h, b.h, e), r:lerp(a.r || 0, b.r || 0, e)}; } }
+    return keys[keys.length - 1];
   }
-  function renderShot(k, T, role){
-    const sg = P.segs[k], L = P.layers.get(k) || makeLayer(k); if(!L) return;
-    if(!L.img.src){ const rec = cache.get(sg.slide.id); if(rec?.url){ L.img.src = L.fill.src = rec.url; } }
-    const next = P.segs[k + 1], life = sg.dur + (next?.tr || TR);
-    const t = T - sg.start, u = clamp(t/life, 0, 1);
-    let extra = 1;
-    if(role === 'in'){ const trv = P.manualTr || sg.tr; extra = applyIn(L, sg.trType, clamp(t/trv, 0, 1)); }
-    else if(role === 'cur'){ L.el.style.opacity = '1'; L.el.style.filter = ''; L.el.style.webkitMaskImage = L.el.style.maskImage = 'none'; }
-    else if(role === 'out'){ const nx = P.segs[P.cur]; applyOut(L, clamp((T - nx.start)/(P.manualTr || nx.tr || TR), 0, 1)); }
-    const tf = camTransform(L, u);
-    L.cam.style.transform = (extra !== 1 ? `scale(${extra.toFixed(4)}) ` : '') + tf;
+  const drift = T => ({x:Math.sin(T/9000)*.012, y:Math.cos(T/11000)*.009});
+  function camAt(T){
+    const k = P.TL.cam; if(!k?.length) return {x:.5, y:.5};
+    if(T <= k[0].t) return k[0];
+    for(let i = 1; i < k.length; i++){ if(T < k[i].t){ const a = k[i-1], b = k[i], e = ease((T - a.t)/Math.max(1, b.t - a.t)); return {x:lerp(a.x, b.x, e), y:lerp(a.y, b.y, e)}; } }
+    return k[k.length - 1];
   }
+
+  /* ── 转场库：返回 {o, tx, ty, sc, rot, blur, bri, clip, mask, maskSize} 的修改 ── */
+  function fx(st, type, p, enter, dir, it, w, h){
+    if(type === 'hold' || type === 'none' || p <= 0 && enter === false) return;
+    if(reduced() && type !== 'hold') type = 'fade';
+    const v = enter ? EO(p) : 1 - EIC(p);            // 可见度：1 完全可见，0 消失
+    const fw = P.fw, fh = P.fh;
+    switch(type){
+      case 'fade': st.o *= enter ? ease(p) : 1 - ease(p); break;
+      case 'bloom': st.o *= v; st.blur += (1 - v)*10; st.bri *= 1 + .5*(1 - v); st.sc *= 1 + .05*(1 - v); break;
+      case 'stardust': st.o *= v; st.blur += (1 - v)*8; st.bri *= 1 + .7*(1 - v); st.ty -= (1 - v)*.035*fh; st.sc *= .93 + .07*v; break;
+      case 'wipe': { const q = ((1 - EIC(enter ? p : 1 - p))*100).toFixed(2);
+        st.clip = dir === 'l' ? `inset(0 ${q}% 0 0)` : dir === 'r' ? `inset(0 0 0 ${q}%)` : dir === 't' ? `inset(0 0 ${q}% 0)` : `inset(${q}% 0 0 0)`;
+        if(enter) st.bri *= 1 + .25*(1 - v); break; }
+      case 'slit': { const q = ((1 - EIC(enter ? p : 1 - p))*50).toFixed(2); st.clip = `inset(${q}% 0 ${q}% 0)`; st.bri *= 1 + .35*(1 - v); break; }
+      case 'iris': { const q = (EIC(enter ? p : 1 - p)*76).toFixed(2); st.clip = `circle(${q}% at 50% 46%)`; break; }
+      case 'blinds': { const q = EIC(enter ? p : 1 - p)*125 - 20; st.mask = `linear-gradient(90deg,#000 ${q.toFixed(1)}%,transparent ${(q + 20).toFixed(1)}%)`; st.maskSize = '8.333% 100%'; st.maskRepeat = 'repeat-x'; break; }
+      case 'ink': { const d = Math.hypot(fw, fh)*2.6*Math.pow(clamp(p, 0, 1), 1.6) + 1; if(p < 1){ st.mask = INK; st.maskSize = `${d}px ${d}px`; st.maskPos = '50% 46%'; } break; }
+      case 'slide': { const d = enter ? 1 - EO4(p) : EIC(p);
+        if(dir === 'l') st.tx -= d*(w + .02*fw); else if(dir === 'r') st.tx += d*(w + .02*fw); else if(dir === 't') st.ty -= d*(h + .02*fh); else st.ty += d*(h + .02*fh);
+        break; }
+      case 'drop': { const vb = enter ? backOut(p) : v; st.o *= clamp((enter ? p : 1 - p)*3, 0, 1); st.sc *= 1 + .28*(1 - vb); st.rot += 9*(1 - vb)*(dir || 1);
+        st.ty -= .05*fh*(1 - (enter ? EO(p) : v)); st.lift = Math.max(st.lift, 1 - (enter ? EO(p) : v)); break; }
+      case 'drift': st.o *= v; st.ty -= (1 - v)*.03*fh; break;
+    }
+  }
+
+  /* ── 渲染 ── */
+  function rPhoto(it, T, n){
+    const rec = cache.get(it.slide.id);
+    if(!n.img.src && rec?.url) n.img.src = rec.url;
+    const k = keyAt(it.keys, T), fw = P.fw, fh = P.fh;
+    let w = k.w*fw, h = k.h*fh, x = k.x*fw - w/2, y = k.y*fh - h/2;
+    if(it.depth && !reduced()){ const d = drift(T); x += d.x*fw*it.depth; y += d.y*fh*it.depth; }
+    it._c = [x + w/2, y + h/2];
+    setS(n, 'width', w.toFixed(1) + 'px'); setS(n, 'height', h.toFixed(1) + 'px');
+    const st = {o:1, tx:0, ty:0, sc:1, rot:k.r || 0, blur:0, bri:1, clip:'', mask:'', maskSize:'', maskRepeat:'no-repeat', maskPos:'50% 50%', lift:0};
+    const pin = clamp((T - it.t0)/it.enter.dur, 0, 1);
+    if(pin < 1) fx(st, it.enter.type, pin, true, it.enter.dir, it, w, h);
+    const t1 = it.t1 ?? 1e12, pout = clamp((T - (t1 - it.exit.dur))/it.exit.dur, 0, 1);
+    if(pout > 0) fx(st, it.exit.type, pout, false, it.exit.dir, it, w, h);
+    if(T >= t1 || T < it.t0) st.o = 0;
+    if(it.foc && it.grp && !reduced()){
+      const f = Math.min(ease((T - it.foc[0] + 250)/600), 1 - ease((T - it.foc[1] + 250)/600));
+      const anyFocus = it.grp.some(q => q.foc && T >= q.foc[0] - 250 && T < q.foc[1] + 350);
+      if(anyFocus){ const dim = 1 - clamp(f, 0, 1); if(lite()) st.o *= 1 - .3*dim; else st.bri *= 1 - .42*dim; }
+    }
+    it._o = st.o;
+    let tf = `translate3d(${(x + st.tx).toFixed(1)}px,${(y + st.ty).toFixed(1)}px,0)`;
+    if(it.tilt && !reduced()){ const s = hash(it.i, 2)*6; tf += ` perspective(1400px) rotateY(${(Math.sin(T/5200 + s)*2.6).toFixed(2)}deg) rotateX(${(Math.cos(T/6100 + s)*1.6).toFixed(2)}deg)`; }
+    if(st.rot) tf += ` rotate(${st.rot.toFixed(2)}deg)`;
+    if(st.sc !== 1) tf += ` scale(${st.sc.toFixed(4)})`;
+    setS(n, 'transform', tf);
+    setS(n, 'opacity', st.o.toFixed(3));
+    setS(n, 'filter', !lite() && (st.blur > .05 || Math.abs(st.bri - 1) > .01) ? `blur(${st.blur.toFixed(2)}px) brightness(${st.bri.toFixed(3)})` : (lite() && st.bri > 1.01 ? `brightness(${st.bri.toFixed(3)})` : ''));
+    setS(n, 'clipPath', st.clip); setS(n, 'webkitClipPath', st.clip);
+    setS(n, 'maskImage', st.mask || ''); setS(n, 'webkitMaskImage', st.mask || '');
+    if(st.mask){ setS(n, 'maskSize', st.maskSize); setS(n, 'webkitMaskSize', st.maskSize); setS(n, 'maskRepeat', st.maskRepeat); setS(n, 'webkitMaskRepeat', st.maskRepeat); setS(n, 'maskPosition', st.maskPos); setS(n, 'webkitMaskPosition', st.maskPos); }
+    if(it.frame === 'print'){ const L = st.lift; setS(n, 'boxShadow', `0 ${(4 + 30*L).toFixed(1)}px ${(10 + 46*L).toFixed(1)}px rgba(0,0,0,${(.55 - .25*L).toFixed(2)}), 0 1px 2px rgba(0,0,0,.4)`); }
+    // 画内运动（Ken Burns）
+    const kb = it.kb, u = reduced() ? 0 : ease((T - it.t0)/Math.max(1, t1 - it.t0 > 1e11 ? 8000 : t1 - it.t0));
+    const ts = `scale(${lerp(kb.s0, kb.s1, u).toFixed(4)})`, op = `${lerp(kb.x0, kb.x1, u).toFixed(2)}% ${lerp(kb.y0, kb.y1, u).toFixed(2)}%`;
+    if(n.cache.kbT !== ts){ n.cache.kbT = ts; n.img.style.transform = ts; }
+    if(n.cache.kbO !== op){ n.cache.kbO = op; n.img.style.objectPosition = op; }
+  }
+  function rText(it, T, n){
+    const t = T - it.t0, el = n.el, fw = P.fw, fh = P.fh;
+    if(!n.placed){
+      const b = it.box;
+      n.x = b.x*fw; n.y = b.y*fh; n.placed = true;
+      n.anchor = ` translate(${b.ax === 'c' ? -50 : b.ax === 'r' ? -100 : 0}%,${b.ay === 'b' ? -100 : b.ay === 'c' ? -50 : 0}%)`;
+      n.spans = [...el.querySelectorAll(it.look === 'editorial' ? '.ln > b' : 'span:not(.ln)')];
+      n.rule = el.querySelector('.rule'); n.idx = el.querySelector('.idx');
+    }
+    const t1 = it.t1 ?? 1e12, outDur = it.look === 'ink' ? 800 : 650, pout = clamp((T - (t1 - outDur))/outDur, 0, 1);
+    let o = T < it.t0 || T >= t1 ? 0 : 1 - ease(pout), ty = 0, extra = '';
+    if(it.look === 'cinema'){
+      const pin = clamp(t/1100, 0, 1);
+      el.style.letterSpacing = reduced() ? '.16em' : lerp(.5, .16, EO(pin)).toFixed(3) + 'em';
+      n.spans.forEach((s, j) => { const p = clamp((t - j*40)/420, 0, 1);
+        s.style.opacity = ease(p).toFixed(3); s.style.filter = lite() || p >= 1 ? '' : `blur(${((1 - p)*6).toFixed(1)}px)`; });
+      if(n.rule) n.rule.style.transform = (it.vertical ? 'scaleY(' : 'scaleX(') + EO(clamp((t - 300)/900, 0, 1)).toFixed(3) + ')';
+      ty = -6*pout; if(!lite() && pout > 0) extra = `blur(${(pout*4).toFixed(1)}px)`;
+    } else if(it.look === 'editorial'){
+      if(n.idx){ const p = EO(clamp(t/800, 0, 1)); n.idx.style.opacity = p.toFixed(3); n.idx.style.transform = `translateX(${((1 - p)*-12).toFixed(1)}px)`; }
+      if(n.rule) n.rule.style.transform = `scaleX(${EO(clamp((t - 200)/800, 0, 1)).toFixed(3)})`;
+      n.spans.forEach((s, j) => { const p = EO(clamp((t - 380 - j*120)/750, 0, 1)), q = EIC(pout);
+        s.style.transform = `translateY(${((1 - p)*105 - q*40).toFixed(1)}%)`; s.style.opacity = (1 - q).toFixed(3); });
+      o = T < it.t0 || T >= t1 ? 0 : 1;
+    } else {
+      n.spans.forEach((s, j) => { const st = 500 + j*110, p = clamp((t - st)/240, 0, 1), dry = clamp((t - st)/1400, 0, 1);
+        const cp = reduced() ? '' : `inset(-20% ${((1 - p)*100).toFixed(1)}% -20% 0)`;
+        if(s._cp !== cp){ s._cp = cp; s.style.clipPath = cp; s.style.webkitClipPath = cp; }
+        s.style.opacity = reduced() ? ease(p).toFixed(3) : (p > 0 ? '1' : '0');
+        const g = 1 - dry; s.style.color = g > .01 ? `rgb(${Math.round(lerp(232, 255, g))},${Math.round(lerp(184, 244, g))},${Math.round(lerp(104, 214, g))})` : '';
+        s.style.textShadow = g > .01 ? `0 0 ${(14*g).toFixed(1)}px rgba(255,214,150,${(.85*g).toFixed(2)})` : ''; });
+    }
+    let tf = `translate3d(${n.x.toFixed(1)}px,${(n.y + ty).toFixed(1)}px,0)` + n.anchor;
+    if(it.rot) tf += ` rotate(${it.rot.toFixed(2)}deg)`;
+    setS(n, 'transform', tf); setS(n, 'opacity', o.toFixed(3)); setS(n, 'filter', extra);
+    if(o > .5 && it.lines.length) P._live = it.lines.join('');
+    if(it.scrim && o > 0) P._scrim = Math.max(P._scrim, o);
+  }
+  function rLine(it, T, n){
+    const a = it.a._c, b = it.b._c; if(!a || !b){ n.el.style.opacity = '0'; return; }
+    const ln = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    n.el.setAttribute('x1', a[0].toFixed(1)); n.el.setAttribute('y1', a[1].toFixed(1)); n.el.setAttribute('x2', b[0].toFixed(1)); n.el.setAttribute('y2', b[1].toFixed(1));
+    const p = EO(clamp((T - it.t0)/1300, 0, 1));
+    n.el.style.strokeDasharray = ln.toFixed(1); n.el.style.strokeDashoffset = (ln*(1 - p)).toFixed(1);
+    n.el.style.opacity = (Math.min(it.a._o ?? 0, it.b._o ?? 0)*.85).toFixed(3);
+  }
+
+  /* 星空背景（星图风格） */
+  const SKY = Array.from({length:150}, (_, i) => ({x:hash(i, 11), y:hash(i, 13), r:.4 + hash(i, 17)*1.3, ph:hash(i, 19)*6.28, d:.2 + hash(i, 23)*.8}));
+  function rSky(T){
+    if(P.TL.style !== 'constellation') return;
+    const cv = $('pl-sky'), g = cv.getContext('2d'), dpr = cv._dpr || 1, d = drift(T);
+    g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, P.fw, P.fh);
+    for(const s of SKY){ const a = .25 + .55*(.5 + .5*Math.sin(T/900*s.d + s.ph));
+      g.fillStyle = `rgba(255,240,215,${a.toFixed(3)})`; g.beginPath(); g.arc((s.x + d.x*s.d*.4)*P.fw, (s.y + d.y*s.d*.4)*P.fh, s.r, 0, 6.283); g.fill(); }
+  }
+  /* 光尘：星图退场化星尘、手札相片落下扬起的微尘 */
+  function rDust(T){
+    const cv = $('pl-dust'), g = cv.getContext('2d'), dpr = cv._dpr || 1;
+    g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, P.fw, P.fh);
+    if(lite()) return;
+    g.globalCompositeOperation = 'lighter';
+    const cam = P.TL.style === 'journal' ? camOffset(T) : {x:0, y:0};
+    for(const it of P.active){
+      if(it.kind !== 'photo' || !it._c) continue;
+      let p = -1, mode = 0;
+      if(it.exit?.type === 'stardust' && it.t1 != null){ p = (T - (it.t1 - it.exit.dur))/it.exit.dur; mode = 1; }
+      else if(it.enter.type === 'drop'){ p = (T - it.t0 - 650)/900; mode = 2; }
+      if(p <= 0 || p >= 1) continue;
+      const [cx, cy] = it._c, kk = keyAt(it.keys, T), w = kk.w*P.fw, h = kk.h*P.fh;
+      for(let j = 0; j < 26; j++){
+        const a = hash(j + it.i*31, 3), b = hash(j + it.i*31, 5), c = hash(j + it.i*31, 8);
+        let x, y, al;
+        if(mode === 1){ x = cx + (a - .5)*w*(1 + p*.6); y = cy + (b - .5)*h - p*h*.5*(.4 + c); al = Math.sin(Math.PI*p)*(.4 + .6*c); }
+        else { const ang = a*6.283; x = cx + cam.x + Math.cos(ang)*(w*.5 + p*w*.25*c); y = cy + cam.y + h*.4 + Math.sin(ang)*p*h*.12; al = (1 - p)*.5*c; }
+        const r = 1 + c*2.4, gr = g.createRadialGradient(x, y, 0, x, y, r*4);
+        gr.addColorStop(0, `rgba(255,236,190,${al.toFixed(3)})`); gr.addColorStop(1, 'rgba(255,190,100,0)');
+        g.fillStyle = gr; g.fillRect(x - r*4, y - r*4, r*8, r*8);
+      }
+    }
+    g.globalCompositeOperation = 'source-over';
+  }
+  function camOffset(T){ const c = camAt(T); return {x:P.fw/2 - c.x*P.fw, y:P.fh/2 - c.y*P.fh}; }
+  function rLeak(T){
+    const el = $('pl-leak'); let o = 0, x = 0;
+    for(const it of P.active) if(it.kind === 'leak'){ const p = clamp((T - it.t0)/(it.t1 - it.t0), 0, 1); o = Math.sin(Math.PI*p)*.8; x = lerp(-25, 25, ease(p)); }
+    el.style.opacity = lite() ? (o*.6).toFixed(3) : o.toFixed(3); el.style.transform = `translateX(${x.toFixed(1)}%)`;
+  }
+
+  /* ════════ 四季 ════════ */
+  const SEASON = {
+    none:{grade:'transparent', filter:''},
+    spring:{grade:'rgba(255,170,195,.55)', filter:'saturate(1.06) brightness(1.03)'},
+    summer:{grade:'rgba(255,205,120,.55)', filter:'saturate(1.14) contrast(1.03)'},
+    autumn:{grade:'rgba(235,120,40,.62)', filter:'sepia(.14) saturate(1.12)'},
+    winter:{grade:'rgba(150,190,255,.6)', filter:'saturate(.72) brightness(1.05)'}
+  };
+  const PS = {list:[], kind:'none', spawnAcc:0};
+  const MAPLE = (() => { const pts = []; const lobes = [[0, 1], [.32, .62], [.62, .78], [.55, .42], [.95, .3], [.6, .08], [.5, -.25], [.12, -.1], [0, -.55]];
+    lobes.forEach(p => pts.push(p)); for(let k = lobes.length - 2; k >= 0; k--) pts.push([-lobes[k][0], lobes[k][1]]); return pts; })();
+  function seasonTarget(kind){ const k = {spring:26, summer:30, autumn:20, winter:110}[kind] || 0; return Math.round(k*clamp(P.fw*P.fh/(1280*720), .45, 1.4)*(lite() ? .45 : 1)); }
+  function spawn(kind, initial){
+    const W = P.fw, H = P.fh, r = Math.random;
+    const p = {kind, a:0, life:0, x:r()*W, y:initial ? r()*H : -30, ph:r()*6.28, vph:.6 + r()*1.4, rot:r()*6.28, vr:(r() - .5)*1.6, sway:r()*6.28};
+    if(kind === 'spring'){ p.s = 7 + r()*7; p.vy = 22 + r()*26; p.vx = 14 + r()*20; p.c = r(); }
+    else if(kind === 'autumn'){ p.s = 9 + r()*10; p.vy = 34 + r()*36; p.vx = -10 + r()*26; p.c = Math.floor(r()*4); p.vr *= 1.6; }
+    else if(kind === 'winter'){ const L = r(); p.layer = L < .6 ? 0 : L < .92 ? 1 : 2; p.s = [.8 + r()*.9, 1.7 + r()*1.2, 4 + r()*4][p.layer]; p.vy = [18, 36, 70][p.layer] + r()*16; p.vx = -6 + r()*12; }
+    else { p.s = 1.4 + r()*2.2; p.vy = -(6 + r()*14); p.vx = (r() - .5)*10; if(!initial){ p.y = H*(.35 + r()*.7); } }
+    return p;
+  }
+  function setSeason(kind, instant){
+    P.season = kind;
+    const S = SEASON[kind] || SEASON.none;
+    $('pl-grade').style.backgroundColor = S.grade; $('pl-grade').style.opacity = kind === 'none' ? '0' : '.5';
+    const tint = $('pl-tint'); if(kind !== 'none') tint.dataset.s = kind; tint.style.opacity = kind === 'none' ? '0' : '1';
+    $('pl-rays').style.opacity = kind === 'summer' && !reduced() ? '1' : '0';
+    $('pl-stage').style.filter = lite() ? '' : S.filter;
+    PS.list.forEach(p => p.dying = true); PS.kind = kind;
+    if(instant){ PS.list = []; const n = reduced() ? 0 : seasonTarget(kind); for(let k = 0; k < n; k++){ const p = spawn(kind, true); p.a = 1; PS.list.push(p); } }
+    refreshSeasonUI();
+  }
+  function stepSeason(dt){
+    if(reduced()) return;
+    const W = P.fw, H = P.fh, s = dt/1000, wind = Math.sin(P.T/6000)*12;
+    const alive = PS.list.filter(p => !p.dying && p.kind === PS.kind).length, want = seasonTarget(PS.kind);
+    if(PS.kind !== 'none' && alive < want){ PS.spawnAcc += s*want/3; while(PS.spawnAcc > 1 && alive + 1 <= want){ PS.spawnAcc--; PS.list.push(spawn(PS.kind, false)); } }
+    for(const p of PS.list){
+      p.life += s; p.ph += p.vph*s; p.rot += p.vr*s; p.sway += s*.9;
+      p.a = p.dying ? Math.max(0, p.a - s/1.2) : Math.min(1, p.a + s/1.2);
+      if(p.kind === 'summer'){ p.x += (p.vx + Math.sin(p.sway)*8)*s; p.y += p.vy*s; }
+      else { p.x += (p.vx + wind*(p.kind === 'winter' ? .4 : 1) + Math.sin(p.sway)*(p.kind === 'autumn' ? 26 : 14))*s; p.y += p.vy*s; }
+    }
+    PS.list = PS.list.filter(p => p.a > 0 && p.y < H + 40 && p.y > -60 && p.x > -60 && p.x < W + 60);
+  }
+  const PETAL = ['#ffc6d6', '#ffb0c8', '#f798b6'], LEAF = ['#c8462c', '#e0782f', '#f0a63a', '#a8321f'];
+  function rSeason(T){
+    const cv = $('pl-season'), g = cv.getContext('2d'), dpr = cv._dpr || 1;
+    g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, P.fw, P.fh);
+    $('pl-rays').style.transform = `rotate(${(T/400 % 360).toFixed(2)}deg)`;
+    for(const p of PS.list){
+      if(p.a <= 0) continue;
+      g.save(); g.translate(p.x, p.y); g.globalAlpha = p.a;
+      if(p.kind === 'spring'){
+        g.rotate(p.rot); g.scale(Math.cos(p.ph)*.9 + .1*Math.sign(Math.cos(p.ph) || 1), 1);
+        const s = p.s; g.fillStyle = PETAL[Math.floor(p.c*3)];
+        g.beginPath(); g.moveTo(0, -s); g.bezierCurveTo(s*.9, -s*.6, s*.7, s*.6, 0, s); g.bezierCurveTo(-s*.7, s*.6, -s*.9, -s*.6, -s*.18, -s*.92); g.lineTo(0, -s*.7); g.closePath(); g.fill();
+        g.globalAlpha = p.a*.35; g.fillStyle = '#fff'; g.beginPath(); g.ellipse(-s*.15, -s*.2, s*.18, s*.45, 0, 0, 6.283); g.fill();
+      } else if(p.kind === 'autumn'){
+        g.rotate(p.rot); g.scale(Math.cos(p.ph), 1); const s = p.s;
+        g.fillStyle = LEAF[p.c]; g.beginPath(); MAPLE.forEach(([x, y], k) => k ? g.lineTo(x*s, -y*s) : g.moveTo(x*s, -y*s)); g.closePath(); g.fill();
+        g.strokeStyle = 'rgba(80,25,10,.45)'; g.lineWidth = .8; g.beginPath(); g.moveTo(0, s*.55); g.lineTo(0, -s*.9); g.stroke();
+      } else if(p.kind === 'winter'){
+        const s = p.s;
+        if(p.layer === 2){ const gr = g.createRadialGradient(0, 0, 0, 0, 0, s); gr.addColorStop(0, 'rgba(255,255,255,.55)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, s, 0, 6.283); g.fill(); }
+        else { g.fillStyle = p.layer ? 'rgba(255,255,255,.92)' : 'rgba(235,242,255,.7)'; g.beginPath(); g.arc(0, 0, s, 0, 6.283); g.fill(); }
+      } else if(p.kind === 'summer'){
+        const s = p.s*3.2, a = .35 + .65*Math.max(0, Math.sin(p.ph*1.7));
+        const gr = g.createRadialGradient(0, 0, 0, 0, 0, s); gr.addColorStop(0, `rgba(255,246,200,${a})`); gr.addColorStop(.3, `rgba(255,214,120,${a*.6})`); gr.addColorStop(1, 'rgba(255,190,80,0)');
+        g.globalCompositeOperation = 'lighter'; g.fillStyle = gr; g.beginPath(); g.arc(0, 0, s, 0, 6.283); g.fill(); g.globalCompositeOperation = 'source-over';
+      }
+      g.restore();
+    }
+  }
+
+  /* ── 扉页 / 终章 / 进度 ── */
   function renderTitle(T){
-    const sg = P.segs[0], t = T - sg.start, el = $('pl-title');
-    const nx = P.segs[1], outP = nx && T >= nx.start ? clamp((T - nx.start)/(nx.tr || TR), 0, 1) : 0;
-    const vis = T < (nx ? nx.start + (nx.tr || TR) : Infinity);
-    el.style.display = vis ? '' : 'none'; if(!vis) return;
-    el.style.opacity = (1 - ease(outP)).toFixed(3);
-    // 墨滴入水：光点落下（0–0.6s），触水后三圈涟漪
+    const C0 = P.TL.C0, t = T, el = $('pl-title');
+    const vis = T < C0 + 500; el.style.display = vis ? '' : 'none'; if(!vis) return;
+    el.style.opacity = (1 - ease(clamp((T - (C0 - 700))/1100, 0, 1))).toFixed(3);
     const drop = el.querySelector('b'), dp = clamp(t/600, 0, 1);
     drop.style.opacity = t < 700 ? (dp < .85 ? 1 : (1 - (dp - .85)/.15)).toFixed(2) : '0';
-    drop.style.transform = `translateY(${lerp(-30, 0, easeOut(dp)).toFixed(1)}vh)`;
+    drop.style.transform = `translateY(${lerp(-30, 0, EO(dp)).toFixed(1)}vh)`;
     el.querySelectorAll('i').forEach((r, j) => { const rp = clamp((t - 550 - j*260)/2200, 0, 1);
-      r.style.opacity = rp > 0 && rp < 1 ? ((1 - rp)*.9).toFixed(3) : '0'; r.style.transform = `scale(${easeOut(rp).toFixed(3)})`; });
-    const fadeIn = (node, at, dur=900) => { const p = clamp((t - at)/dur, 0, 1); node.style.opacity = ease(p).toFixed(3); node.style.transform = `translateY(${((1 - ease(p))*8).toFixed(1)}px)`; return p; };
-    fadeIn($('pl-t-date'), 900);
-    $('pl-t-title').querySelectorAll('span').forEach((s, j) => { const p = clamp((t - 1300 - j*70)/650, 0, 1);
+      r.style.opacity = rp > 0 && rp < 1 ? ((1 - rp)*.9).toFixed(3) : '0'; r.style.transform = `scale(${EO(rp).toFixed(3)})`; });
+    const fadeIn = (node, at, dur=900) => { const p = clamp((t - at)/dur, 0, 1); node.style.opacity = ease(p).toFixed(3); node.style.transform = `translateY(${((1 - ease(p))*8).toFixed(1)}px)`; };
+    fadeIn($('pl-t-date'), 800);
+    const sp = $('pl-t-title').querySelectorAll('span');
+    sp.forEach((s, j) => { const p = clamp((t - 1100 - j*65)/650, 0, 1);
       s.style.opacity = ease(p).toFixed(3); s.style.filter = lite() || p >= 1 ? '' : `blur(${((1 - p)*6).toFixed(1)}px)`; s.style.transform = `translateY(${((1 - ease(p))*6).toFixed(1)}px)`; });
-    const nT = $('pl-t-title').querySelectorAll('span').length, rp = clamp((t - 1500 - nT*70)/900, 0, 1);
-    $('pl-t-rule').style.transform = `scaleX(${ease(rp).toFixed(3)})`;
-    fadeIn($('pl-t-note'), 2300 + nT*70, 1200);
-  }
-  function renderSubs(T){
-    const sub = $('pl-sub'); const sg = P.segs[P.cur];
-    if(sg?.type !== 'shot'){ if(sub.firstChild) sub.innerHTML = ''; P.subKey = ''; return; }
-    const t = T - sg.start, cue = sg.subs.find(c => t >= c.start && t < c.end);
-    const key = cue ? P.cur + ':' + cue.start : '';
-    if(key !== P.subKey){
-      P.subKey = key; sub.innerHTML = '';
-      if(cue) for(const line of lines(cue.text)){ const d = SB.el('div'); [...line].forEach(ch => { const s = SB.el('span'); s.textContent = ch; d.appendChild(s); }); sub.appendChild(d); }
-    }
-    if(!cue) return;
-    const lt = t - cue.start, outP = clamp((cue.end - t)/600, 0, 1);
-    sub.style.opacity = outP.toFixed(3);
-    let j = 0;
-    sub.querySelectorAll('span').forEach(s => { const p = clamp((lt - j*CHAR_STEP)/380, 0, 1); j++;
-      s.style.opacity = ease(p).toFixed(3); s.style.transform = `translateY(${((1 - ease(p))*6).toFixed(1)}px)`; s.style.filter = lite() || p >= 1 ? '' : `blur(${((1 - p)*4).toFixed(1)}px)`; });
+    $('pl-t-rule').style.transform = `scaleX(${ease(clamp((t - 1300 - sp.length*65)/900, 0, 1)).toFixed(3)})`;
+    fadeIn($('pl-t-note'), 1900 + sp.length*65, 1100);
   }
   function renderEnd(T){
-    const sg = P.segs[P.segs.length - 1], t = T - sg.start, el = $('pl-end'), fl = $('pl-flash');
+    const t = T - P.TL.endT, el = $('pl-end'), fl = $('pl-flash');
     if(t < 0){ el.style.display = 'none'; fl.style.opacity = '0'; $('pl-e-acts').classList.remove('on'); return; }
     el.style.display = '';
-    fl.style.opacity = (t < 1100 ? Math.sin(Math.PI*clamp(t/1100, 0, 1))*.85 : 0).toFixed(3);   // 暖金闪白
+    fl.style.opacity = (t < 1100 ? Math.sin(Math.PI*clamp(t/1100, 0, 1))*.8 : 0).toFixed(3);
     const show = (node, at, dur=900) => { const p = clamp((t - at)/dur, 0, 1); node.style.opacity = ease(p).toFixed(3); node.style.transform = `translateY(${((1 - ease(p))*10).toFixed(1)}px)`; };
     show($('pl-e-star'), 700); show($('pl-e-fin'), 1000, 1300); show($('pl-e-finis'), 1500); show($('pl-e-meta'), 1900); show($('pl-e-acts'), 2500);
     if(t > 2500) $('pl-e-acts').classList.add('on');
     if(!P.endShown){ P.endShown = true; SB.audio.duck(.3, 3000); }
   }
-  function renderDust(T){
-    const cv = $('pl-dust'), g = cv.getContext('2d');
-    const sg = P.segs[P.cur]; const tr = P.manualTr || sg?.tr || TR, p = sg ? (T - sg.start)/tr : 2;
-    const active = sg?.type === 'shot' && sg.trType !== 'ink' && p >= 0 && p < 1 && !lite();
-    if(!active){ if(cv._on){ g.clearRect(0, 0, cv.width, cv.height); cv._on = false; } return; }
-    const dpr = Math.min(devicePixelRatio || 1, 1.5);
-    if(cv.width !== Math.round(P.W*dpr)){ cv.width = Math.round(P.W*dpr); cv.height = Math.round(P.H*dpr); }
-    cv._on = true; g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, P.W, P.H); g.globalCompositeOperation = 'lighter';
-    const seed = P.cur*97;
-    for(let n = 0; n < 70; n++){
-      const r1 = (Math.sin(seed + n*12.9898)*43758.5453) % 1, r2 = (Math.sin(seed + n*78.233)*12543.21) % 1;
-      const a = Math.abs(r1), b = Math.abs(r2);
-      const x = (a*1.4 - .2 + p*1.1 - .45)*P.W, y = (b*1.2 - .1)*P.H - (x/P.W)*P.H*.25;
-      const alpha = Math.sin(Math.PI*p)*(.35 + .65*b), size = 1 + b*2.6;
-      const grd = g.createRadialGradient(x, y, 0, x, y, size*4);
-      grd.addColorStop(0, `rgba(255,236,190,${alpha})`); grd.addColorStop(1, 'rgba(255,190,100,0)');
-      g.fillStyle = grd; g.fillRect(x - size*4, y - size*4, size*8, size*8);
-    }
-    g.globalCompositeOperation = 'source-over';
-  }
-  function renderLeak(T){
-    const sg = P.segs[P.cur], el = $('pl-leak');
-    if(sg?.type !== 'shot' || sg.trType !== 'leak'){ el.style.opacity = '0'; return; }
-    const p = clamp((T - sg.start)/(P.manualTr || sg.tr), 0, 1);
-    el.style.opacity = (Math.sin(Math.PI*p)*.85).toFixed(3);
-    el.style.transform = `translateX(${lerp(-25, 25, ease(p)).toFixed(1)}%)`;
-  }
+  function markIndex(T){ const mk = P.TL.marks; let c = -1; for(let k = 0; k < mk.length; k++){ if(mk[k].t <= T + 1) c = k; else break; } return c; }
   function renderProgress(T){
-    const bars = $('pl-bars').children;
-    for(let k = 0; k < bars.length; k++){ const sg = P.segs[k]; const w = sg ? clamp((T - sg.start)/sg.dur, 0, 1)*100 : 0; bars[k].firstChild.style.width = w.toFixed(1) + '%'; }
-    const sg = P.segs[P.cur]; const n = (P.m?.slides || []).length;
-    $('pl-count').textContent = sg?.type === 'shot' ? `${sg.i + 1} / ${n}` : '';
+    const bars = $('pl-bars').children, mk = P.TL.marks;
+    const pts = [0, ...mk.map(m => m.t), P.TL.endT];
+    for(let k = 0; k < bars.length; k++){ const a = pts[k], b = pts[k + 1]; bars[k].firstChild.style.width = (clamp((T - a)/Math.max(1, b - a), 0, 1)*100).toFixed(1) + '%'; }
+    const c = markIndex(T); P.cur = c;
+    $('pl-count').textContent = c >= 0 && T < P.TL.endT ? `${mk[c].i + 1} / ${P.TL.n}` : '';
   }
   function render(){
-    const T = P.T, c = segAt(T); P.cur = c;
-    const sg = P.segs[c];
-    const prev = P.forcedPrev ?? (c - 1);
-    const inTr = sg && T - sg.start < (P.manualTr || sg.tr || 0);
-    if(!inTr){ P.forcedPrev = null; P.manualTr = 0; }
-    const keep = new Set();
-    if(sg?.type === 'shot'){ renderShot(c, T, inTr ? 'in' : 'cur'); keep.add(c); }
-    if(inTr && P.segs[prev]?.type === 'shot'){ renderShot(prev, T, 'out'); keep.add(prev); }
-    dropLayers(keep);
-    renderTitle(T); renderSubs(T); renderEnd(T); renderDust(T); renderLeak(T); renderProgress(T);
+    if(!P.TL) return;
+    const T = P.T, TL = P.TL;
+    P._live = ''; P._scrim = 0;
+    P.active = [];
+    for(const it of TL.items){
+      const t1 = it.t1 ?? 1e12;
+      const near = T >= it.t0 - PRE && T <= t1 + 60;
+      if(!near){ const n = P.nodes.get(it.id); if(n){ n.el.remove(); P.nodes.delete(it.id); } continue; }
+      P.active.push(it);
+    }
+    // 先算照片（文字与连线依赖照片位置）
+    for(const it of P.active) if(it.kind === 'photo'){ const n = nodeFor(it); rPhoto(it, T, n); }
+    for(const it of P.active){ if(it.kind === 'text'){ const n = nodeFor(it); rText(it, T, n); } else if(it.kind === 'line'){ const n = nodeFor(it); rLine(it, T, n); } }
+    if(TL.style === 'journal'){
+      const c = camOffset(T);
+      $('pl-cam').style.transform = `translate3d(${c.x.toFixed(1)}px,${c.y.toFixed(1)}px,0)`;
+      $('pl-desk').style.transform = `translate3d(${(c.x*.25 % (P.fw*.04)).toFixed(1)}px,${(c.y*.25 % (P.fh*.04)).toFixed(1)}px,0)`;
+    } else $('pl-cam').style.transform = '';
+    $('pl-scrim').style.opacity = P._scrim.toFixed(3);
+    if(P._live !== P.liveKey){ P.liveKey = P._live; $('pl-live').textContent = P._live; }
+    rSky(T); rDust(T); rLeak(T); rSeason(T);
+    renderTitle(T); renderEnd(T); renderProgress(T);
   }
 
   /* ── 时钟 ── */
+  function waitingAt(T, dt){
+    for(const it of P.active || []) if(it.kind === 'photo' && it.t0 <= T + dt + 300 && (it.t1 ?? 1e12) > T && !isReady(it.slide.id)){ load(it.slide.id); return true; }
+    return false;
+  }
+  let pfAt = -1e9;
   function loop(now){
     if(!P.showing || SB.scenes.current !== 'player') return;
     const dt = Math.min(80, now - (P.last || now)); P.last = now;
     if(P.playing){
-      const sg = P.segs[segAt(P.T)], nx = P.segs[segAt(P.T) + 1];
-      const waiting = (sg?.type === 'shot' && !isReady(sg.slide.id)) || (nx?.type === 'shot' && P.T + dt >= nx.start && !isReady(nx.slide.id));
+      const waiting = waitingAt(P.T, dt);
       $('pl-buffer').classList.toggle('on', waiting);
-      if(!waiting){ P.T += dt; if(segAt(P.T) !== P.cur) prefetch(segAt(P.T)); }
+      if(!waiting){ P.T += dt; stepSeason(dt); if(P.T - pfAt > 1000){ pfAt = P.T; prefetch(P.T); } }
     }
     render();
     P.raf = requestAnimationFrame(loop);
@@ -536,51 +1081,76 @@
     P.playing = v; P.last = 0;
     $('pl-play').innerHTML = v ? ICON_PAUSE : ICON_PLAY; $('pl-play').setAttribute('aria-label', v ? '暂停' : '继续放映');
     $('pl-grain').style.animationPlayState = v ? 'running' : 'paused';
+    $('pl-desk').style.animationPlayState = v ? 'running' : 'paused';
   }
-  function jump(k){
-    k = clamp(k, 0, P.segs.length - 1);
-    if(P.segs[k].type === 'end' && k === P.cur) return;
-    P.forcedPrev = P.cur !== k ? P.cur : null; P.manualTr = TR_MANUAL;
-    P.T = P.segs[k].start; P.subKey = '#'; if(P.segs[k].type !== 'end'){ P.endShown = false; SB.audio.duck(1, 800); }
-    prefetch(k); render();
+  function cut(){ const c = $('pl-cut'); c.classList.remove('go'); void c.offsetWidth; c.classList.add('go'); }
+  function jumpTo(T){ P.T = Math.max(0, T); if(T < P.TL.endT){ P.endShown = false; SB.audio.duck(1, 800); } prefetch(P.T); cut(); render(); }
+  function jump(k){                           // k = 进度条段：0 扉页，1..n 照片
+    const mk = P.TL.marks;
+    if(k <= 0) return jumpTo(0);
+    if(k > mk.length){ if(P.T < P.TL.endT) jumpTo(P.TL.endT); return; }
+    jumpTo(mk[k - 1].t - 150);
   }
-  function wake(){ scene.classList.add('awake'); clearTimeout(P.idleT); P.idleT = setTimeout(() => { if(P.playing) scene.classList.remove('awake'); }, 2500); }
+  const step = d => { const c = markIndex(P.T); jump(P.T >= P.TL.endT ? (d < 0 ? P.TL.marks.length : P.TL.marks.length + 1) : c + 1 + d); };
+  function wake(){ scene.classList.add('awake'); clearTimeout(P.idleT); P.idleT = setTimeout(() => { if(P.playing && !$('pl-seasons').classList.contains('open')) scene.classList.remove('awake'); }, 2600); }
 
-  /* ── 第一幕：放映厅 ── */
-  // 标题里已写了日期时，不再重复显示日期小字
-  function dateLine(m){ const d = SB.fmtDate(m.date) || '', sq = x => String(x || '').replace(/\s/g, '');
-    return d && sq(m.title).includes(sq(d)) ? '' : d; }
-  async function lobby(m){
-    P.m = m; P.segs = buildSegments(m); P.showing = false; setPlaying(false);
+  /* ── 风格 / 季节选项 ── */
+  function chip(id, name, icon, on, onClick){
+    const b = SB.el('button', 'pl-chip' + (on ? ' on' : ''), `${SB.cinema.icon(icon)}<span>${SB.esc(name)}</span>`);
+    b.type = 'button'; b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', on ? 'true' : 'false'); b.dataset.id = id;
+    b.addEventListener('click', e => { e.stopPropagation(); onClick(id); }); return b;
+  }
+  const seasonLabel = id => { const s = SB.cinema.seasons.find(x => x.id === id); return s?.name || '无'; };
+  function refreshSeasonUI(){
+    const pref = P.seasonPref, eff = P.season;
+    const row = $('pl-o-season'); row.innerHTML = '<span>SEASON</span>';
+    SB.cinema.seasons.forEach(s => row.appendChild(chip(s.id, s.id === 'auto' ? `按月份${pref === 'auto' && eff !== 'none' ? '·' + seasonLabel(eff) : ''}` : s.name, s.id, pref === s.id, id => { P.seasonPref = id; setSeason(SB.cinema.resolveSeason(id, P.m?.date), !P.showing); })));
+    const pop = $('pl-seasons'); pop.innerHTML = '';
+    SB.cinema.seasons.filter(s => s.id !== 'auto').forEach(s => pop.appendChild(chip(s.id, s.name, s.id, eff === s.id, id => { P.seasonPref = id; setSeason(id, false); wake(); })));
+    $('pl-season-btn').innerHTML = SB.cinema.icon(eff === 'none' ? 'none' : eff); $('pl-season-btn').setAttribute('aria-label', '季节主题：' + seasonLabel(eff));
+  }
+  function refreshStyleUI(){
+    const row = $('pl-o-style'); row.innerHTML = '<span>STYLE</span>';
+    SB.cinema.styles.forEach(s => row.appendChild(chip(s.id, s.name, s.id, P.style === s.id, id => { P.style = id; refreshStyleUI(); updateStat(); })));
+  }
+  function updateStat(){
+    const m = P.m; if(!m) return;
+    const n = (m.slides || []).length, TL = buildTL(m, P.style);
+    $('pl-l-stat').innerHTML = `<span>${n} 张照片</span><i></i><span>${fmtDur(estimate(TL))}</span>${m.bgmMode !== 'none' && (m.bgm || SB.store.settings?.bgm) ? `<i></i><span>${SB.icon('note')} 配乐</span>` : ''}`;
+  }
+
+  /* ── 放映厅 ── */
+  async function lobby(m, keepOpts){
+    P.m = m; P.showing = false; setPlaying(false); P.TL = null;
+    if(!keepOpts){ P.style = SB.cinema.styleOf(m); P.seasonPref = SB.cinema.seasonPref(m); }
     scene.classList.remove('showing', 'awake');
     $('pl-l-date').textContent = dateLine(m);
     $('pl-l-title').textContent = SB.fmtTitle(m.title);
     const place = placeOf(m); $('pl-l-place').textContent = place; $('pl-l-place').hidden = !place;
     const n = (m.slides || []).length;
-    $('pl-l-stat').innerHTML = `<span>${n} 张照片</span><i></i><span>${fmtDur(estimate(P.segs))}</span>${m.bgmMode !== 'none' && (m.bgm || SB.store.settings?.bgm) ? `<i></i><span>${SB.icon('note')} 配乐</span>` : ''}`;
+    updateStat(); refreshStyleUI();
+    P.season = SB.cinema.resolveSeason(P.seasonPref, m.date); refreshSeasonUI();
     $('pl-start').disabled = !n;
     $('pl-wait').textContent = n ? '' : '这段回忆还没有照片';
     const acts = $('pl-lobby-acts'); acts.innerHTML = '';
     if(SB.store.canEdit) acts.appendChild(SB.ui.button('编辑', 'small', () => SB.editor.open({cityId:m.cityId, memory:m}), 'quill'));
     acts.appendChild(SB.ui.button('返回', 'small', () => SB.scenes.back()));
-    // 海报与氛围背景
     const cover = m.cover?.id || m.slides?.[0]?.id; const pimg = $('pl-poster-img'); pimg.classList.remove('ok');
     if(cover){ const rec = await load(cover); if(P.m !== m) return;
       if(rec?.url){ pimg.onload = () => pimg.classList.add('ok'); pimg.src = rec.url; $('pl-ambient').style.backgroundImage = `url("${rec.url}")`; } }
-    prefetch(1);
+    (m.slides || []).slice(0, 3).forEach(s => load(s.id));
   }
 
-  /* ── 第二幕起：放映 ── */
+  /* ── 放映 ── */
   function prepareScreen(){
     const m = P.m;
-    $('pl-shots').innerHTML = ''; P.layers.clear(); P.subKey = '#'; P.endShown = false; P.forcedPrev = null; P.manualTr = 0;
+    clearNodes(); P.endShown = false; P.liveKey = '';
     $('pl-t-date').textContent = dateLine(m);
     const h = $('pl-t-title'); h.innerHTML = '';
-    // 逐字 span；「X · 」三者包进不换行组，避免分隔点落在行首
     const chars = [...SB.fmtTitle(m.title)];
     for(let k = 0; k < chars.length; k++){
       const mk = c => { const s = SB.el('span'); s.textContent = c; return s; };
-      const j = chars[k+1] === '\u00a0' && chars[k+2] === '·' ? 3 : chars[k+1] === '·' ? 2 : 0;
+      const j = chars[k+1] === ' ' && chars[k+2] === '·' ? 3 : chars[k+1] === '·' ? 2 : 0;
       if(j){ const g = SB.el('b', 'pl-nb'); chars.slice(k, k + j).forEach(c => g.appendChild(mk(c))); h.appendChild(g); k += j - 1; }
       else h.appendChild(mk(chars[k]));
     }
@@ -588,45 +1158,51 @@
     $('pl-e-meta').textContent = [SB.fmtDate(m.date), placeOf(m)].filter(Boolean).join(' · ');
     const acts = $('pl-e-acts'); acts.innerHTML = '';
     acts.append(SB.ui.button('再放一遍', 'primary', () => play(true), 'reset'), SB.ui.button('返回相册', '', () => SB.scenes.back()));
-    const bars = $('pl-bars'); bars.innerHTML = '';
-    P.segs.filter(s => s.type !== 'end').forEach((s, k) => { const b = SB.el('b', s.type === 'title' ? 't' : '', '<i></i>');
-      b.addEventListener('click', e => { e.stopPropagation(); jump(k); wake(); }); bars.appendChild(b); });
-    $('pl-grain').classList.toggle('off', lite());
     $('pl-flash').style.opacity = '0'; $('pl-end').style.display = 'none';
+  }
+  function buildBars(){
+    const bars = $('pl-bars'); bars.innerHTML = '';
+    const mk = P.TL.marks;
+    for(let k = 0; k <= mk.length; k++){ const b = SB.el('b', k ? '' : 't', '<i></i>'); b.setAttribute('aria-label', k ? `第 ${mk[k-1].i + 1} 张` : '扉页');
+      b.addEventListener('click', e => { e.stopPropagation(); jump(k); wake(); }); bars.appendChild(b); }
   }
   function play(again){
     if(!P.m || !(P.m.slides || []).length) return;
     SB.audio.unlock();
-    prepareScreen(); layout();
-    P.T = 0; P.cur = 0; P.showing = true;
+    prepareScreen();
+    P.TL = buildTL(P.m, P.style); applyLayout(); buildBars();
+    P.T = 0; P.cur = -1; P.showing = true;
     scene.classList.add('showing');
+    setSeason(P.season, true);
     const scr = $('pl-screen'); scr.classList.remove('pl-flicker'); void scr.offsetWidth; scr.classList.add('pl-flicker');
     if(!again) SB.audio.set(P.m.bgmMode === 'none' ? undefined : (P.m.bgm || null)); else SB.audio.duck(1, 1200);
-    prefetch(1);
-    render();
-    setTimeout(() => { if(P.showing){ setPlaying(true); } }, again ? 300 : 1000);   // 熄灯与银幕框落下后开始
+    prefetch(0); render();
+    setTimeout(() => { if(P.showing) setPlaying(true); }, again ? 300 : 1000);
     cancelAnimationFrame(P.raf); P.last = 0; P.raf = requestAnimationFrame(loop);
     wake();
   }
   function stopShow(){
     P.showing = false; setPlaying(false); cancelAnimationFrame(P.raf);
-    $('pl-shots').innerHTML = ''; P.layers.clear(); $('pl-sub').innerHTML = ''; P.subKey = '';
+    clearNodes(); PS.list = [];
+    $('pl-seasons').classList.remove('open');
     scene.classList.remove('showing', 'awake');
   }
 
   /* ── 交互 ── */
   $('pl-start').addEventListener('click', () => play(false));
-  $('pl-prev').addEventListener('click', e => { e.stopPropagation(); jump(P.cur - 1); wake(); });
-  $('pl-next').addEventListener('click', e => { e.stopPropagation(); jump(P.cur + 1); wake(); });
+  $('pl-prev').addEventListener('click', e => { e.stopPropagation(); step(-1); wake(); });
+  $('pl-next').addEventListener('click', e => { e.stopPropagation(); step(1); wake(); });
   $('pl-play').addEventListener('click', e => { e.stopPropagation(); setPlaying(!P.playing); wake(); });
   $('pl-music').addEventListener('click', e => { e.stopPropagation(); SB.audio.toggle(); $('pl-music').classList.toggle('off', !SB.audio.on); wake(); });
+  $('pl-season-btn').addEventListener('click', e => { e.stopPropagation(); const o = $('pl-seasons').classList.toggle('open'); $('pl-season-btn').setAttribute('aria-expanded', o ? 'true' : 'false'); wake(); });
   scene.addEventListener('pointermove', e => { if(P.showing && e.pointerType === 'mouse') wake(); });
   let sx = 0, sy = 0, st = 0;
   $('pl-screen').addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; st = performance.now(); });
   $('pl-screen').addEventListener('pointerup', e => {
     if(!P.showing || e.target.closest('button')) return;
+    if($('pl-seasons').classList.contains('open')){ $('pl-seasons').classList.remove('open'); return; }
     const dx = e.clientX - sx, dy = e.clientY - sy;
-    if(Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)){ jump(P.cur + (dx < 0 ? 1 : -1)); wake(); }
+    if(Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)){ step(dx < 0 ? 1 : -1); wake(); }
     else if(performance.now() - st < 300){
       if(e.pointerType === 'mouse') { setPlaying(!P.playing); wake(); }
       else scene.classList.contains('awake') ? scene.classList.remove('awake') : wake();
@@ -635,7 +1211,7 @@
   document.addEventListener('keydown', e => {
     if(SB.scenes.current !== 'player' || document.querySelector('.sb-modal')) return;
     if(!P.showing){ if((e.key === 'Enter' || e.key === ' ') && document.activeElement === document.body){ e.preventDefault(); play(false); } return; }
-    if(e.key === 'ArrowRight'){ jump(P.cur + 1); wake(); } else if(e.key === 'ArrowLeft'){ jump(P.cur - 1); wake(); }
+    if(e.key === 'ArrowRight'){ step(1); wake(); } else if(e.key === 'ArrowLeft'){ step(-1); wake(); }
     else if(e.key === ' '){ e.preventDefault(); setPlaying(!P.playing); wake(); }
     else if(e.key === 'Escape' && !document.getElementById('sb-nav').classList.contains('open')) SB.scenes.back();
   });
@@ -660,15 +1236,23 @@
       SB.fx.palette('warm'); SB.fx.calm();
       const m = SB.store.memory(p.id);
       if(!m){ SB.toast('这段回忆找不到了'); setTimeout(() => SB.scenes.back(), 50); return; }
-      layout(); topBar(m); $('pl-music').classList.toggle('off', !SB.audio.on);
+      topBar(m); $('pl-music').classList.toggle('off', !SB.audio.on);
       await lobby(m);
       if(p.autoplay && SB.scenes.current === 'player' && P.m === m) play(false);
     },
-    leave(){ stopShow(); clearTimeout(P.idleT); SB.audio.clear(); P.m = null; }
+    leave(){ stopShow(); clearTimeout(P.idleT); SB.audio.clear(); P.m = null; P.TL = null; }
   });
-  /* 调试 / 自动化验收：定位到时间线上的某一刻（暂停状态下） */
-  function seek(T){ if(!P.showing) return; setPlaying(false); P.forcedPrev = null; P.manualTr = 0; P.T = Math.max(0, T); P.subKey = '#'; prefetch(segAt(P.T)); render(); }
-  SB.player = { play:() => play(false), seek, jump,
-    get state(){ return {T:P.T, cur:P.cur, playing:P.playing, showing:P.showing, segs:P.segs.map(s => ({type:s.type, start:s.start, dur:s.dur, tr:s.tr, trType:s.trType, subs:(s.subs || []).map(c => c.text)}))}; } };
+
+  /* 调试 / 自动化验收：在暂停状态下定位到时间线上的某一刻 */
+  function seek(T){ if(!P.showing) return; setPlaying(false); P.T = Math.max(0, T); prefetch(P.T); render(); }
+  SB.player = {
+    play:() => play(false), seek, jump,
+    setStyle(id){ if(SB.cinema.styles.some(s => s.id === id)){ P.style = id; if(P.showing) rebuild(false); else if(P.m){ refreshStyleUI(); updateStat(); } } },
+    setSeason(id){ P.seasonPref = id; setSeason(SB.cinema.resolveSeason(id, P.m?.date), true); },
+    stepSeason(ms){ for(let k = 0; k < ms/50; k++) stepSeason(50); render(); },
+    estimate:(m, style) => estimate(buildTL(m, style || SB.cinema.styleOf(m))),
+    get state(){ const TL = P.TL; return {T:P.T, playing:P.playing, showing:P.showing, style:P.style, season:P.season, C0:TL?.C0, endT:TL?.endT,
+      marks:TL?.marks.map(m => ({t:Math.round(m.t), i:m.i})) || [], items:TL ? TL.items.filter(x => x.kind === 'photo').map(x => ({i:x.i, t0:Math.round(x.t0), t1:Math.round(x.t1), enter:x.enter.type, exit:x.exit.type, frame:x.frame})) : []}; }
+  };
 })(window.SB);
 </script>

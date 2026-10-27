@@ -165,3 +165,17 @@ git push origin v1.5.2
 ```
 
 周年最终交付版必须打 tag。
+
+## 10. v1.6.0+ 一键发布入口
+
+日常版本发布的首选方式已经升级为：
+
+```powershell
+.\release-current.ps1
+```
+
+它以 `VERSION` 为唯一版本号来源，自动生成缺失 Release Record 和版本专属 `scripts/releases/release-vX.X.X.ps1`，同步结构化版本声明，然后调用底层 `publish.ps1`。
+
+`publish.ps1 -Version ... -Message ...` 仍保留用于底层调试或版本专属脚本调用，但 Owner 日常无需重复手写。
+
+详见 `docs/RELEASE_AUTOMATION.md`。

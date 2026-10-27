@@ -56,6 +56,15 @@ starbook-media
 
 `schema_version` 当前为 Bridge 数据版本。
 
+### Memory 可选表现字段（v1.7.0）
+
+`memories[id]` 在原有字段之外可以有：
+
+- `style`：放映风格 `cinema | constellation | journal`，缺省视为 `cinema`；
+- `season`：季节主题 `auto | none | spring | summer | autumn | winter`，缺省视为 `auto`。
+
+它们是当前 Theme（`magic-celestial`）的**表现偏好**，不是业务数据：只在用户编辑并保存回忆时写入，旧数据无需迁移，`schema_version` 不变；其他 Theme 可以忽略。未来正规化 Memory 表时，应作为可空的 presentation 列或 JSON 偏好保留。
+
 `revision` 用于轻量并发覆盖检测。
 
 ## 4. 普通前端版本升级

@@ -504,3 +504,15 @@ Agent 应说明：
 ## v1.5.1 数据元信息 / Membership 变更示例
 
 当前《星屿之书》的标题变更和成员新增采用 `supabase/migrations/002_v151_title_and_members.sql` 向前迁移，而不是重新 seed。此模式是后续 Production 数据元信息和权限变更的标准做法：保留 `book_data.payload` 与 Storage，只修改明确需要变化的记录。
+
+### Step 8 — 一键发布自动化（v1.6.0+）
+
+完成版本开发后，推荐统一运行：
+
+```powershell
+.\release-current.ps1
+```
+
+它根据 `VERSION` 自动准备版本治理文件、生成 `scripts/releases/release-vX.X.X.ps1`，再调用既有 `publish.ps1` 进入 PR → CI → main → Pages 链路。它不会自动执行 Supabase migration，也不会自动 stash/rebase 有冲突风险的 `main`。
+
+完整行为见 `docs/RELEASE_AUTOMATION.md`。

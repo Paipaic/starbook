@@ -1,4 +1,4 @@
-param(
+﻿param(
     [Parameter(Mandatory = $true)]
     [string]$Version,
 
@@ -78,6 +78,48 @@ elseif ($currentBranch -ne $Branch) {
 # Keep VERSION aligned with the release branch.
 if (Test-Path "VERSION") {
     Set-Content -Path "VERSION" -Value $PlainVersion -Encoding utf8
+}
+
+# Direct publish.ps1 calls should not fail only because the version Release Record
+# has not been created yet. release-current.ps1 is the preferred entry point, but
+# keep this lower-level command resilient for manual/Agent use.
+$releaseRecord = "docs/releases/$TagVersion.md"
+if (-not (Test-Path $releaseRecord)) {
+    $template = "docs/templates/RELEASE_RECORD_TEMPLATE.md"
+    if (-not (Test-Path $template)) {
+        throw "Release record '$releaseRecord' is missing and template '$template' was not found."
+    }
+    New-Item -ItemType Directory -Force -Path "docs/releases" | Out-Null
+    $recordText = Get-Content -LiteralPath $template -Raw
+    $recordText = $recordText.Replace("vX.X.X", $TagVersion)
+    $recordText = $recordText.Replace("## 1. 版本目标", "## 1. 版本目标`r`n`r`n$Message")
+    $encoding = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText((Join-Path (Get-Location) $releaseRecord), $recordText, $encoding)
+    Write-Host "Generated missing release record: $releaseRecord" -ForegroundColor Yellow
+}
+
+# Keep a per-version release wrapper in the repository even when publish.ps1 is
+# called directly instead of through release-current.ps1.
+$versionScript = "scripts/releases/release-$TagVersion.ps1"
+if (-not (Test-Path $versionScript)) {
+    New-Item -ItemType Directory -Force -Path "scripts/releases" | Out-Null
+    $escapedMessage = $Message.Replace('`', '``').Replace('"', '`"')
+    $wrapper = @"
+param(
+    [string]`$Message = "$escapedMessage"
+)
+
+`$ErrorActionPreference = "Stop"
+Set-StrictMode -Version Latest
+`$Root = (Resolve-Path (Join-Path `$PSScriptRoot "..\..")).Path
+Set-Location `$Root
+
+Write-Host "Publishing Starbook $TagVersion" -ForegroundColor Cyan
+& (Join-Path `$Root "publish.ps1") -Version "$PlainVersion" -Message `$Message
+"@
+    $encoding = New-Object System.Text.UTF8Encoding($true)
+    [System.IO.File]::WriteAllText((Join-Path (Get-Location) $versionScript), $wrapper, $encoding)
+    Write-Host "Generated version release script: $versionScript" -ForegroundColor Yellow
 }
 
 Run-Step "Build Starbook" { python build.py }

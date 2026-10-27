@@ -1,38 +1,199 @@
 <style>
-/* ── 块 12 · 回忆编辑器 ── */
-.ed-row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+/* ── 块 12 · 回忆编辑器（v1.7.0「星屿手稿」）──
+   左：实时海报预览（封面、标题、日期、地点、放映风格与季节）；右：四章——故事 / 影像 / 放映 / 乐章。
+   手机：单列，预览缩成顶部横条。 */
+.sb-scroll.ed-book{width:min(1040px,100%);}
+.sb-scroll.ed-book > header{padding-top:22px;}
+.sb-scroll.ed-book > .body{padding:6px 24px 18px;}
+.ed-wrap{display:grid;grid-template-columns:260px minmax(0,1fr);gap:26px;align-items:start;}
+
+/* 预览海报 */
+.ed-side{position:sticky;top:0;display:flex;flex-direction:column;gap:12px;}
+.ed-poster{position:relative;aspect-ratio:4/5;border-radius:6px;overflow:hidden;background:radial-gradient(120% 80% at 50% 0%,#2a1e4a,#0d0a1c);
+  box-shadow:0 0 0 1px rgba(255,226,168,.7),0 0 0 6px rgba(16,10,6,.8),0 0 0 7px rgba(244,184,96,.42),0 22px 50px rgba(0,0,0,.55),0 0 40px rgba(244,184,96,.14);}
+.ed-poster > img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .6s;}
+.ed-poster > img.ok{opacity:1;}
+.ed-poster .empty{position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:10px;color:var(--gold-dim);font-family:var(--f-rune);font-size:10px;letter-spacing:.4em;}
+.ed-poster .empty .sb-ico{width:44px;height:44px;color:rgba(244,184,96,.45);}
+.ed-poster .grade{position:absolute;inset:0;mix-blend-mode:soft-light;opacity:.55;transition:background-color .8s;}
+.ed-poster .fall{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
+.ed-poster .fall i{position:absolute;top:-10%;display:block;animation:edFall linear infinite;opacity:.9;}
+@keyframes edFall{to{transform:translate3d(var(--dx,20px),125cqh,0) rotate(var(--rot,320deg));}}
+@keyframes edRise{0%{transform:translateY(0);opacity:0}20%{opacity:.9}100%{transform:translate3d(var(--dx,10px),-125cqh,0);opacity:0}}
+.ed-poster{container-type:size;}
+.ed-poster .shade{position:absolute;left:0;right:0;bottom:0;height:58%;background:linear-gradient(transparent,rgba(6,4,14,.92));}
+.ed-poster .cap{position:absolute;left:0;right:0;bottom:0;padding:16px 16px 18px;text-align:center;display:flex;flex-direction:column;gap:6px;align-items:center;}
+.ed-poster .cap small{font-family:var(--f-num);font-weight:600;font-size:13px;letter-spacing:.24em;color:var(--gold);}
+.ed-poster .cap b{font-family:var(--f-display);font-weight:600;font-size:19px;line-height:1.4;letter-spacing:.1em;color:var(--gold-hi);text-shadow:0 0 16px rgba(244,184,96,.45);
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+.ed-poster .cap b:empty::before{content:"为这段回忆起个名字";color:rgba(255,226,168,.4);}
+.ed-poster .cap span{font-size:11.5px;letter-spacing:.2em;color:var(--text-dim);}
+.ed-poster .badges{position:absolute;left:10px;top:10px;right:10px;display:flex;justify-content:space-between;gap:6px;}
+.ed-poster .badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;background:rgba(8,6,18,.7);border:1px solid rgba(244,184,96,.4);
+  font-family:var(--f-rune);font-size:9.5px;letter-spacing:.22em;color:var(--gold-hi);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
+.ed-poster .badge .sb-ico{width:12px;height:12px;}
+.ed-sum{display:flex;justify-content:center;gap:10px;font-size:12.5px;letter-spacing:.12em;color:var(--text-dim);}
+.ed-sum i{width:3px;height:3px;border-radius:50%;background:var(--gold-dim);align-self:center;}
+
+/* 章节 */
+.ed-main{display:flex;flex-direction:column;gap:24px;min-width:0;}
+.ed-sec{display:flex;flex-direction:column;gap:14px;}
+.ed-h{display:flex;align-items:center;gap:12px;}
+.ed-h .num{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-rune);font-size:12px;color:var(--gold-hi);
+  border:1px solid rgba(244,184,96,.55);box-shadow:0 0 12px rgba(244,184,96,.25), inset 0 0 8px rgba(244,184,96,.15);}
+.ed-h .tt{display:flex;flex-direction:column;gap:1px;}
+.ed-h .tt b{font-family:var(--f-display);font-weight:600;font-size:17px;letter-spacing:.16em;color:var(--gold-hi);}
+.ed-h .tt span{font-family:var(--f-rune);font-size:9.5px;letter-spacing:.42em;color:var(--gold-dim);}
+.ed-h::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(244,184,96,.45),transparent);}
+
+.ed-tale{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:16px 18px;}
+.ed-tale .full{grid-column:1/-1;}
+.ed-title-in{font-family:var(--f-display);font-weight:600;font-size:20px;letter-spacing:.06em;}
 .ed-date{display:flex;gap:8px;}
-.ed-date select{flex:1;padding:9px 8px;border-radius:8px;border:1px solid rgba(244,184,96,.35);background:rgba(10,8,20,.6);color:var(--text);font-size:15px;}
-.ed-drop{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:20px;border-radius:12px;cursor:pointer;
-  border:1.5px dashed rgba(244,184,96,.45);background:rgba(244,184,96,.04);text-align:center;transition:background .3s, border-color .3s;}
-.ed-drop:hover,.ed-drop.over{background:rgba(244,184,96,.1);border-color:var(--gold-hi);}
-.ed-drop b{font-family:var(--f-display);font-weight:var(--fw-display);font-size:17px;letter-spacing:.14em;color:var(--gold-hi);display:inline-flex;align-items:center;gap:8px;}
-.ed-drop span{font-size:12px;color:var(--text-dim);}
-.ed-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;}
-.ed-list{display:flex;flex-direction:column;gap:8px;}
-.ed-slide{display:grid;grid-template-columns:76px 1fr auto;gap:10px;align-items:center;padding:8px;border-radius:10px;border:1px solid rgba(244,184,96,.18);background:rgba(0,0,0,.18);}
-.ed-slide.cover{border-color:rgba(255,226,168,.7);box-shadow:0 0 14px rgba(244,184,96,.25);}
-.ed-thumb{position:relative;width:76px;height:76px;border-radius:8px;overflow:hidden;background:#151230;display:grid;place-items:center;font-size:11px;color:var(--text-dim);text-align:center;}
-.ed-thumb img{width:100%;height:100%;object-fit:cover;}
-.ed-thumb .star{position:absolute;top:4px;left:4px;font-size:12px;line-height:1;color:#2a1608;background:var(--gold-hi);border-radius:999px;padding:3px 5px;display:grid;place-items:center;}
-.ed-slide textarea{min-height:52px;font-size:14px;}
-.ed-ops{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
-.ed-ops button{width:32px;height:32px;border-radius:8px;border:1px solid rgba(244,184,96,.25);background:none;color:var(--text-dim);cursor:pointer;font-size:15px;display:grid;place-items:center;}
-.ed-ops button:hover{color:var(--gold-hi);border-color:var(--line);}
-.ed-ops button.on{color:#2a1608;background:var(--gold-hi);}
-.ed-music{display:flex;flex-direction:column;gap:8px;}
+.ed-date select{flex:1;min-height:42px;padding:8px 10px;border-radius:10px;border:1px solid rgba(244,184,96,.32);background:rgba(10,8,20,.55);color:var(--text);font-family:var(--f-num);font-weight:600;font-size:16px;letter-spacing:.06em;
+  -webkit-appearance:none;appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--gold) 50%),linear-gradient(135deg,var(--gold) 50%,transparent 50%);
+  background-position:calc(100% - 16px) 50%,calc(100% - 11px) 50%;background-size:5px 5px;background-repeat:no-repeat;}
+.ed-date select:focus{outline:none;border-color:var(--gold-hi);box-shadow:0 0 12px rgba(244,184,96,.3);}
+.ed-count{align-self:flex-end;font-family:var(--f-num);font-size:12px;letter-spacing:.1em;color:var(--gold-dim);margin-top:-2px;}
+
+/* 照片网格 */
+.ed-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:14px;}
+.ed-card{position:relative;display:flex;flex-direction:column;border-radius:10px;overflow:hidden;background:rgba(8,6,16,.55);border:1px solid rgba(244,184,96,.2);
+  transition:border-color .3s, box-shadow .3s, transform .3s var(--ease-soft);}
+.ed-card:hover{border-color:rgba(244,184,96,.5);box-shadow:0 10px 26px rgba(0,0,0,.4),0 0 16px rgba(244,184,96,.12);}
+.ed-card.cover{border-color:rgba(255,226,168,.85);box-shadow:0 0 0 1px rgba(255,226,168,.4),0 0 22px rgba(244,184,96,.28);}
+.ed-card .ph{position:relative;aspect-ratio:4/3;background:#151230;display:grid;place-items:center;overflow:hidden;}
+.ed-card .ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.ed-card .ph .st{position:relative;font-size:12px;letter-spacing:.1em;color:var(--gold);text-align:center;padding:0 10px;}
+.ed-card .no{position:absolute;left:8px;top:6px;font-family:var(--f-num);font-weight:600;font-size:20px;line-height:1;color:#fff8e6;text-shadow:0 1px 6px rgba(0,0,0,.8);}
+.ed-card .cv{position:absolute;right:8px;top:8px;display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;font-size:11px;letter-spacing:.14em;
+  color:#2a1608;background:linear-gradient(180deg,#ffe7b5,#f4b860);box-shadow:0 2px 8px rgba(0,0,0,.4);}
+.ed-card .cv .sb-ico{width:11px;height:11px;}
+.ed-card .ops{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:center;gap:6px;padding:22px 8px 8px;background:linear-gradient(transparent,rgba(4,3,10,.85));
+  opacity:0;transform:translateY(6px);transition:opacity .25s, transform .25s var(--ease-soft);}
+.ed-card:hover .ops,.ed-card:focus-within .ops{opacity:1;transform:none;}
+@media (hover:none){ .ed-card .ops{opacity:1;transform:none;} }
+.ed-card .ops button{width:32px;height:32px;border-radius:50%;border:1px solid rgba(244,184,96,.45);background:rgba(10,8,22,.75);color:var(--gold-hi);cursor:pointer;display:grid;place-items:center;font-size:14px;}
+.ed-card .ops button:hover{background:rgba(244,184,96,.2);}
+.ed-card .ops button.on{color:#2a1608;background:var(--gold-hi);border-color:transparent;}
+.ed-card .ops button[disabled]{opacity:.35;pointer-events:none;}
+.ed-card textarea{border:0;border-top:1px solid rgba(244,184,96,.16);border-radius:0;background:transparent;padding:10px 12px;min-height:62px;font-size:14px;line-height:1.6;color:var(--text);resize:none;outline:none;font-family:var(--f-body);}
+.ed-card textarea:focus{background:rgba(244,184,96,.05);box-shadow:inset 0 -1px 0 var(--gold-hi);}
+.ed-card textarea::placeholder{color:rgba(191,165,130,.45);}
+.ed-add{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:180px;padding:16px;border-radius:10px;cursor:pointer;text-align:center;
+  border:1.5px dashed rgba(244,184,96,.45);background:radial-gradient(80% 60% at 50% 40%,rgba(244,184,96,.08),transparent 70%);transition:background .3s, border-color .3s, box-shadow .3s;}
+.ed-add:hover,.ed-add.over{border-color:var(--gold-hi);background:radial-gradient(80% 60% at 50% 40%,rgba(244,184,96,.16),transparent 70%);box-shadow:0 0 22px rgba(244,184,96,.18);}
+.ed-add .ring{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;color:var(--gold-hi);border:1px solid rgba(244,184,96,.55);box-shadow:0 0 16px rgba(244,184,96,.25);}
+.ed-add .ring .sb-ico{width:22px;height:22px;}
+.ed-add b{font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.16em;color:var(--gold-hi);}
+.ed-add span{font-size:11.5px;line-height:1.6;color:var(--text-dim);}
+.ed-add input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.ed-note{font-size:12px;color:var(--text-dim);line-height:1.7;margin:0;}
+
+/* 放映风格卡片 */
+.ed-styles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+.ed-style{position:relative;display:flex;flex-direction:column;gap:8px;padding:10px 10px 12px;border-radius:12px;cursor:pointer;text-align:left;color:var(--text);
+  border:1px solid rgba(244,184,96,.22);background:rgba(8,6,16,.5);transition:border-color .3s, box-shadow .3s, transform .3s var(--ease-soft);font:inherit;}
+.ed-style:hover{border-color:rgba(244,184,96,.55);transform:translateY(-2px);}
+.ed-style.on{border-color:rgba(255,226,168,.9);box-shadow:0 0 0 1px rgba(255,226,168,.35),0 0 24px rgba(244,184,96,.25);background:rgba(30,20,12,.55);}
+.ed-style.on::after{content:"";position:absolute;right:10px;top:10px;width:18px;height:18px;border-radius:50%;background:radial-gradient(circle,#fff3d1,#f4b860);box-shadow:0 0 10px rgba(244,184,96,.8);}
+.ed-style .pv{position:relative;aspect-ratio:16/10;border-radius:8px;overflow:hidden;background:#07061a;}
+.ed-style .nm{display:flex;align-items:baseline;gap:8px;}
+.ed-style .nm b{font-family:var(--f-display);font-weight:600;font-size:16px;letter-spacing:.2em;color:var(--gold-hi);}
+.ed-style .nm small{font-family:var(--f-rune);font-size:9px;letter-spacing:.3em;color:var(--gold-dim);}
+.ed-style p{margin:0;font-size:12px;line-height:1.6;color:var(--text-dim);}
+/* 示意动画：银幕 */
+.pv-cinema{background:#000;}
+.pv-cinema i{position:absolute;top:12%;bottom:12%;background:linear-gradient(160deg,#5a4a8a,#e6a46a);}
+.pv-cinema i:nth-child(1){left:0;width:49.4%;animation:pvWipeL 4.8s var(--ease-soft) infinite;}
+.pv-cinema i:nth-child(2){right:0;width:49.4%;background:linear-gradient(160deg,#2c5b6a,#cfe0a8);animation:pvWipeR 4.8s var(--ease-soft) infinite;}
+.pv-cinema i:nth-child(3){left:0;right:0;background:linear-gradient(160deg,#3a2a5a,#f0b878);animation:pvSlit 4.8s var(--ease-soft) infinite;}
+.pv-cinema em{position:absolute;left:30%;right:30%;bottom:18%;height:2px;border-radius:2px;background:#fff6e6;opacity:.85;animation:pvSub 4.8s var(--ease-soft) infinite;}
+@keyframes pvWipeL{0%,5%{clip-path:inset(0 100% 0 0)}20%,100%{clip-path:inset(0 0 0 0)}}
+@keyframes pvWipeR{0%,14%{clip-path:inset(0 0 0 100%)}30%,100%{clip-path:inset(0 0 0 0)}}
+@keyframes pvSlit{0%,55%{clip-path:inset(50% 0 50% 0)}72%,92%{clip-path:inset(0 0 0 0)}100%{clip-path:inset(0 0 0 0);opacity:0}}
+@keyframes pvSub{0%,25%{opacity:0;transform:scaleX(.3)}35%,50%{opacity:.85;transform:none}55%,78%{opacity:0}85%,95%{opacity:.85}100%{opacity:0}}
+/* 星图 */
+.pv-constellation{background:radial-gradient(80% 60% at 70% 20%,rgba(80,60,150,.5),transparent 70%),#08071a;}
+.pv-constellation i{position:absolute;border-radius:2px;box-shadow:0 0 0 1px rgba(255,226,168,.85),0 0 10px rgba(244,184,96,.4);opacity:0;animation:pvCard 6s ease-in-out infinite;}
+.pv-constellation i:nth-child(1){left:10%;top:16%;width:34%;height:58%;background:linear-gradient(160deg,#4a3a7a,#e8a070);}
+.pv-constellation i:nth-child(2){left:58%;top:12%;width:26%;height:34%;background:linear-gradient(160deg,#2a5060,#c8e0a0);animation-delay:1.5s;}
+.pv-constellation i:nth-child(3){left:54%;top:56%;width:22%;height:30%;background:linear-gradient(160deg,#6a2a40,#f0c090);animation-delay:3s;}
+.pv-constellation svg{position:absolute;inset:0;width:100%;height:100%;}
+.pv-constellation line{stroke:#ffe2a8;stroke-width:.8;stroke-dasharray:60;animation:pvLine 6s ease-in-out infinite;}
+@keyframes pvCard{0%{opacity:0;filter:blur(4px);transform:scale(.94)}12%,62%{opacity:1;filter:none;transform:none}78%,100%{opacity:0;filter:blur(4px);transform:translateY(-6%) scale(.94)}}
+@keyframes pvLine{0%,20%{stroke-dashoffset:60;opacity:0}40%,65%{stroke-dashoffset:0;opacity:.8}85%,100%{opacity:0}}
+/* 手札 */
+.pv-journal{background:radial-gradient(70% 60% at 25% 10%,rgba(255,190,110,.35),transparent 70%),linear-gradient(160deg,#2a1a10,#120a06);}
+.pv-journal i{position:absolute;width:30%;height:44%;padding:3% 3% 7%;background:#f2eadb;box-shadow:0 4px 10px rgba(0,0,0,.5);opacity:0;animation:pvDrop 6s cubic-bezier(.3,1.3,.5,1) infinite;}
+.pv-journal i::before{content:"";display:block;width:100%;height:100%;background:linear-gradient(160deg,#4a3a6a,#e8a870);}
+.pv-journal i:nth-child(1){left:10%;top:16%;--r:-6deg;}
+.pv-journal i:nth-child(2){left:36%;top:26%;--r:5deg;animation-delay:1.4s;}
+.pv-journal i:nth-child(2)::before{background:linear-gradient(160deg,#2a5060,#d0e0a0);}
+.pv-journal i:nth-child(3){left:61%;top:14%;--r:-3deg;animation-delay:2.8s;}
+.pv-journal i:nth-child(3)::before{background:linear-gradient(160deg,#6a2a30,#f0c080);}
+.pv-journal em{position:absolute;left:12%;bottom:12%;height:2px;width:26%;background:#e8b868;border-radius:2px;transform-origin:0 50%;animation:pvInk 6s linear infinite;}
+@keyframes pvDrop{0%{opacity:0;transform:translateY(-30%) scale(1.3) rotate(calc(var(--r) + 8deg))}10%{opacity:1;transform:rotate(var(--r))}80%{opacity:1;transform:rotate(var(--r))}92%,100%{opacity:0;transform:rotate(var(--r))}}
+@keyframes pvInk{0%,12%{transform:scaleX(0)}40%,85%{transform:scaleX(1);opacity:1}95%,100%{opacity:0}}
+
+/* 季节 */
+.ed-seasons{display:flex;flex-wrap:wrap;gap:8px;}
+.ed-season{display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:6px 14px;border-radius:999px;cursor:pointer;border:1px solid rgba(244,184,96,.28);background:rgba(10,8,20,.5);
+  color:var(--text-dim);font-family:var(--f-display);font-weight:600;font-size:14px;letter-spacing:.12em;transition:color .3s, border-color .3s, background .3s, box-shadow .3s;}
+.ed-season .sb-ico{width:16px;height:16px;}
+.ed-season:hover{color:var(--gold-hi);border-color:rgba(255,226,168,.6);}
+.ed-season.on{color:#2a1608;border-color:transparent;background:linear-gradient(180deg,#ffe7b5,#f4b860 60%,#d0913e);box-shadow:0 0 16px rgba(244,184,96,.4);}
+.ed-hint{font-size:12px;line-height:1.7;color:var(--text-dim);margin:-4px 0 0;}
+
+/* 音乐 */
+.ed-music{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:12px;border:1px solid rgba(244,184,96,.18);background:rgba(8,6,16,.4);}
 .ed-radios{display:flex;flex-wrap:wrap;gap:8px;}
-.ed-radios label{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;border:1px solid rgba(244,184,96,.3);cursor:pointer;font-size:14px;}
+.ed-radios label{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;border:1px solid rgba(244,184,96,.3);cursor:pointer;font-size:14px;transition:border-color .3s, background .3s;}
 .ed-radios label:has(input:checked){border-color:var(--gold-hi);background:rgba(244,184,96,.14);color:var(--gold-hi);}
 .ed-radios input{accent-color:#f4b860;}
 .ed-track{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--text);}
-.ed-note{font-size:12px;color:var(--text-dim);line-height:1.6;margin:0;}
-@media (max-width:560px){ .ed-row2{grid-template-columns:1fr;} .ed-slide{grid-template-columns:64px 1fr;} .ed-thumb{width:64px;height:64px;} .ed-ops{grid-column:1/-1;display:flex;justify-content:flex-end;} }
+
+@media (max-width:860px){
+  .ed-wrap{grid-template-columns:1fr;gap:18px;}
+  .ed-side{position:relative;flex-direction:row;align-items:center;gap:14px;}
+  .ed-poster{width:96px;flex:none;}
+  .ed-poster .cap,.ed-poster .shade,.ed-poster .badges,.ed-poster .empty span{display:none;}
+  .ed-side .ed-mini{display:flex;}
+  .ed-side > .ed-sum.main{display:none;}
+  .ed-sum{justify-content:flex-start;flex-wrap:wrap;}
+}
+.ed-mini{display:none;flex-direction:column;gap:6px;min-width:0;}
+.ed-mini b{font-family:var(--f-display);font-weight:600;font-size:17px;letter-spacing:.08em;color:var(--gold-hi);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ed-mini b:empty::before{content:"新的回忆";color:rgba(255,226,168,.45);}
+@media (max-width:560px){
+  .sb-scroll.ed-book > .body{padding:4px 16px 14px;}
+  .ed-tale{grid-template-columns:1fr;}
+  .ed-styles{grid-template-columns:1fr;}
+  .ed-style{flex-direction:row;align-items:center;gap:12px;}
+  .ed-style .pv{width:112px;flex:none;}
+  .ed-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+  .ed-card textarea{min-height:56px;font-size:13.5px;padding:8px 10px;}
+  .ed-add{min-height:150px;}
+}
 </style>
 
 <script>
 (function(SB){
   const IMG_TYPES = /^image\//;
+  const PV = {
+    cinema:'<div class="pv pv-cinema"><i></i><i></i><i></i><em></em></div>',
+    constellation:'<div class="pv pv-constellation"><svg viewBox="0 0 100 62" preserveAspectRatio="none"><line x1="27" y1="28" x2="71" y2="18"/><line x1="71" y1="18" x2="65" y2="44"/></svg><i></i><i></i><i></i></div>',
+    journal:'<div class="pv pv-journal"><i></i><i></i><i></i><em></em></div>'
+  };
+  // 预览海报上的季节飘落元素（纯 CSS，轻量）
+  const FALL = {
+    spring:{n:10, html:'<svg viewBox="0 0 10 12" width="9" height="11"><path d="M5 0C9 2 9 8 5 12 1 8 1 2 4 1l1 2Z" fill="#ffc8d8"/></svg>'},
+    summer:{n:9, html:'<svg viewBox="0 0 10 10" width="8" height="8"><circle cx="5" cy="5" r="4" fill="rgba(255,226,150,.9)"/></svg>', up:true},
+    autumn:{n:8, html:'<svg viewBox="-10 -10 20 20" width="13" height="13"><path d="M0-9l1.3 3.4 2.6-1.3-.6 3 3.1.4-2.3 2.3 1.7 1.8-3.1.5.3 2.6-2.4-1.5L0 9l-.6-4.4-2.4 1.5.3-2.6-3.1-.5 1.7-1.8-2.3-2.3 3.1-.4-.6-3 2.6 1.3Z" fill="#e0782f"/></svg>'},
+    winter:{n:16, html:'<svg viewBox="0 0 6 6" width="5" height="5"><circle cx="3" cy="3" r="2.6" fill="#fff"/></svg>'}
+  };
+  const GRADE = {none:'transparent', spring:'rgba(255,170,195,.6)', summer:'rgba(255,205,120,.6)', autumn:'rgba(235,120,40,.65)', winter:'rgba(150,190,255,.65)'};
+
   SB.editor = {
     open({cityId, memory}){
       const city = SB.store.city(cityId);
@@ -47,54 +208,104 @@
         cover: orig?.cover?.id || orig?.slides?.[0]?.id || null,
         bgmMode: orig?.bgmMode || (orig?.bgm ? 'own' : 'global'),
         bgm: orig?.bgm || null,
+        style: SB.cinema.styleOf(orig), season: SB.cinema.seasonPref(orig),
         uploading: 0, sessionFiles: []
       };
-      let list, saveBtn, preview, done = false;
+      let grid, saveBtn, preview, done = false, ui = {}, fallKey = '';
+      const place = city ? [city.countryName, city.regionName, city.name].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(' · ') : '';
       const dlg = SB.ui.dialog({
-        title: memory ? '编辑回忆' : '新的回忆', sub: `${city?.name || ''} · ${city?.regionName || ''}`.toUpperCase(), wide:true,
+        title: memory ? '编辑回忆' : '新的回忆', sub: [city?.name, city?.regionName].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(' · ').toUpperCase(), wide:true,
         build(body){
-          const title = SB.ui.input({type:'text', maxlength:'40', placeholder:'例如：2026 年 5 月 · 宽窄巷子的雨', value:st.title});
-          title.addEventListener('input', () => st.title = title.value);
+          const wrap = SB.el('div', 'ed-wrap'); body.appendChild(wrap);
+          /* ── 左：实时海报 ── */
+          const side = SB.el('aside', 'ed-side'); side.setAttribute('aria-label', '放映海报预览');
+          side.innerHTML = `<div class="ed-poster"><img alt=""><div class="empty">${SB.icon('star')}<span>COVER</span></div><div class="grade"></div><div class="fall"></div><div class="shade"></div>
+            <div class="badges"><span class="badge b-style"></span><span class="badge b-season"></span></div>
+            <div class="cap"><small></small><b></b><span>${SB.esc(place)}</span></div></div>
+            <div class="ed-mini"><b></b><div class="ed-sum"></div></div><div class="ed-sum main"></div>`;
+          wrap.appendChild(side);
+          ui.pimg = side.querySelector('.ed-poster > img'); ui.pempty = side.querySelector('.empty'); ui.grade = side.querySelector('.grade'); ui.fall = side.querySelector('.fall');
+          ui.pdate = side.querySelector('.cap small'); ui.ptitle = side.querySelector('.cap b'); ui.mtitle = side.querySelector('.ed-mini b');
+          ui.bStyle = side.querySelector('.b-style'); ui.bSeason = side.querySelector('.b-season'); ui.sums = side.querySelectorAll('.ed-sum');
+          ui.pimg.onload = () => ui.pimg.classList.add('ok');
+
+          const main = SB.el('div', 'ed-main'); wrap.appendChild(main);
+          const section = (num, zh, en) => { const s = SB.el('section', 'ed-sec'); s.innerHTML = `<div class="ed-h"><span class="num">${num}</span><span class="tt"><b>${zh}</b><span>${en}</span></span></div>`; main.appendChild(s); return s; };
+
+          /* Ⅰ 故事 */
+          const s1 = section('I', '故事', 'THE TALE');
+          const tale = SB.el('div', 'ed-tale'); s1.appendChild(tale);
+          const title = SB.ui.input({type:'text', maxlength:'40', placeholder:'例如：2026 年 5 月 · 宽窄巷子的雨', value:st.title}); title.classList.add('ed-title-in');
+          title.addEventListener('input', () => { st.title = title.value; refreshPoster(); });
           const yr = SB.el('select'); yr.setAttribute('aria-label','年份');
           for(let y = now.getFullYear() + 1; y >= 2000; y--){ const o = SB.el('option'); o.value = String(y); o.textContent = y + ' 年'; yr.appendChild(o); }
           const mo = SB.el('select'); mo.setAttribute('aria-label','月份');
           for(let m = 1; m <= 12; m++){ const o = SB.el('option'); o.value = String(m).padStart(2,'0'); o.textContent = m + ' 月'; mo.appendChild(o); }
           yr.value = st.year; mo.value = st.month;
-          yr.addEventListener('change', () => st.year = yr.value); mo.addEventListener('change', () => st.month = mo.value);
+          yr.addEventListener('change', () => { st.year = yr.value; refreshPoster(); renderSeasons(); });
+          mo.addEventListener('change', () => { st.month = mo.value; refreshPoster(); renderSeasons(); });
           const date = SB.el('div','ed-date'); date.append(yr, mo);
-          const row = SB.el('div','ed-row2'); row.append(SB.ui.field('标题', title), SB.ui.field('时间', date));
+          tale.append(SB.ui.field('标题', title), SB.ui.field('时间', date));
           const note = SB.ui.input({multiline:true, maxlength:'300', placeholder:'写一段话，会出现在放映的扉页（可不填）'}); note.value = st.note;
-          note.addEventListener('input', () => st.note = note.value);
-          body.append(row, SB.ui.field('一段话', note));
+          const cnt = SB.el('span', 'ed-count'); const upCnt = () => cnt.textContent = `${[...note.value].length} / 300`; upCnt();
+          note.addEventListener('input', () => { st.note = note.value; upCnt(); refreshSum(); });
+          const nf = SB.ui.field('一段话', note); nf.classList.add('full'); nf.appendChild(cnt); tale.appendChild(nf);
 
-          // 照片
-          const drop = SB.el('label','ed-drop', `<b>${SB.icon('plus')}添加照片</b><span>点击选择或把照片拖到这里，可一次选多张；会自动压缩后上传</span>`);
-          const fin = SB.el('input'); fin.type = 'file'; fin.accept = 'image/*'; fin.multiple = true; fin.setAttribute('aria-label','选择照片');
-          drop.appendChild(fin);
-          fin.addEventListener('change', () => { addFiles([...fin.files]); fin.value = ''; });
-          drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
-          drop.addEventListener('dragleave', () => drop.classList.remove('over'));
-          drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); addFiles([...e.dataTransfer.files]); });
-          list = SB.el('div','ed-list');
-          const ph = SB.el('div','sb-field'); const lab = SB.el('span'); lab.textContent = '照片（★ 为封面）'; ph.append(lab, drop, list);
-          if(!SB.store.canUpload){ drop.style.display = 'none'; const n = SB.el('p','ed-note'); n.textContent = '上传照片需要「编辑者」权限，请让网页的主人在分享设置里把你设为编辑者。'; ph.appendChild(n); }
-          body.appendChild(ph);
+          /* Ⅱ 影像 */
+          const s2 = section('II', '影像', 'THE IMAGES');
+          grid = SB.el('div', 'ed-grid'); s2.appendChild(grid);
+          const tip = SB.el('p', 'ed-note'); tip.textContent = '每张照片下面写一句它的故事，放映时会逐字出现。★ 设为封面，‹ › 调整顺序。'; s2.appendChild(tip);
+          if(!SB.store.canUpload){ const n = SB.el('p','ed-note'); n.textContent = '上传照片需要「编辑者」权限，请让网页的主人在分享设置里把你设为编辑者。'; s2.appendChild(n); }
+          s2.addEventListener('dragover', e => { if(!SB.store.canUpload) return; e.preventDefault(); grid.querySelector('.ed-add')?.classList.add('over'); });
+          s2.addEventListener('dragleave', e => { if(!s2.contains(e.relatedTarget)) grid.querySelector('.ed-add')?.classList.remove('over'); });
+          s2.addEventListener('drop', e => { if(!SB.store.canUpload) return; e.preventDefault(); grid.querySelector('.ed-add')?.classList.remove('over'); addFiles([...e.dataTransfer.files]); });
 
-          // 音乐
-          const mus = SB.el('div','sb-field'); const ml = SB.el('span'); ml.textContent = '专属背景音乐';
+          /* Ⅲ 放映 */
+          const s3 = section('III', '放映', 'THE SCREENING');
+          const styles = SB.el('div', 'ed-styles'); styles.setAttribute('role', 'radiogroup'); styles.setAttribute('aria-label', '放映风格'); s3.appendChild(styles);
+          const renderStyles = () => {
+            styles.innerHTML = '';
+            SB.cinema.styles.forEach(s => {
+              const b = SB.el('button', 'ed-style' + (st.style === s.id ? ' on' : ''), `${PV[s.id]}<div><div class="nm"><b>${s.name}</b><small>${s.en}</small></div><p>${SB.esc(s.desc)}</p></div>`);
+              b.type = 'button'; b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', st.style === s.id ? 'true' : 'false');
+              b.addEventListener('click', () => { st.style = s.id; renderStyles(); refreshPoster(); });
+              styles.appendChild(b);
+            });
+          };
+          const sl = SB.el('div', 'sb-field'); sl.innerHTML = '<span>季节主题</span>';
+          const seasons = SB.el('div', 'ed-seasons'); seasons.setAttribute('role', 'radiogroup'); seasons.setAttribute('aria-label', '季节主题'); sl.appendChild(seasons);
+          const hint = SB.el('p', 'ed-hint'); sl.appendChild(hint); s3.appendChild(sl);
+          const renderSeasons = () => {
+            seasons.innerHTML = '';
+            const auto = SB.cinema.resolveSeason('auto', `${st.year}-${st.month}`);
+            SB.cinema.seasons.forEach(s => {
+              const label = s.id === 'auto' ? `按月份 · ${SB.cinema.seasons.find(x => x.id === auto)?.name || '无'}` : s.name;
+              const b = SB.el('button', 'ed-season' + (st.season === s.id ? ' on' : ''), `${SB.cinema.icon(s.id)}<span>${label}</span>`);
+              b.type = 'button'; b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', st.season === s.id ? 'true' : 'false');
+              b.addEventListener('click', () => { st.season = s.id; renderSeasons(); refreshPoster(); });
+              seasons.appendChild(b);
+            });
+            const eff = SB.cinema.resolveSeason(st.season, `${st.year}-${st.month}`), info = SB.cinema.seasons.find(x => x.id === eff);
+            hint.textContent = eff === 'none' ? '放映时不加季节效果。观看时也可以在放映控制条里临时切换。' : `${info.name} · ${info.desc}。观看时也可以在放映控制条里临时切换。`;
+          };
+          ui.renderSeasons = renderSeasons;
+
+          /* Ⅳ 乐章 */
+          const s4 = section('IV', '乐章', 'THE SCORE');
+          const mus = SB.el('div','ed-music'); s4.appendChild(mus);
           const radios = SB.el('div','ed-radios');
           [['global','使用全站音乐'],['own','这段回忆专属'],['none','不放音乐']].forEach(([v,t]) => {
             const l = SB.el('label'); const r = SB.el('input'); r.type = 'radio'; r.name = 'ed-bgm'; r.value = v; r.checked = st.bgmMode === v;
             r.addEventListener('change', () => { st.bgmMode = v; renderTrack(); }); l.append(r, document.createTextNode(t)); radios.appendChild(l);
           });
           const track = SB.el('div','ed-track');
-          mus.append(ml, radios, track); body.appendChild(mus);
+          mus.append(radios, track);
           const renderTrack = () => {
             track.innerHTML = '';
             if(st.bgmMode !== 'own'){ if(st.bgmMode === 'global'){ const s = SB.el('span'); s.style.color = 'var(--text-dim)'; s.textContent = SB.store.settings?.bgm ? '♪ ' + SB.store.settings.bgm.name : '还没有设置全站音乐（可在「回忆总览」上传）'; track.appendChild(s); } return; }
             if(st.bgm){
               const s = SB.el('span'); s.textContent = '♪ ' + st.bgm.name; track.appendChild(s);
-              track.appendChild(SB.ui.button('试听', 'small', (e) => { if(preview && !preview.paused){ preview.pause(); e.target.textContent = '试听'; return; } preview = SB.audio.preview(st.bgm.id); preview.play(); e.target.textContent = '停止'; }));
+              track.appendChild(SB.ui.button('试听', 'small', (e) => { if(preview && !preview.paused){ preview.pause(); e.currentTarget.textContent = '试听'; return; } preview = SB.audio.preview(st.bgm.id); preview.play(); e.currentTarget.textContent = '停止'; }));
             }
             if(SB.store.canUpload){
               const up = SB.el('label','sb-btn small'); up.style.position = 'relative'; up.textContent = st.bgm ? '换一首' : '上传音乐';
@@ -109,9 +320,9 @@
               });
               up.appendChild(ai); track.appendChild(up);
             }
-            const n = SB.el('p','ed-note'); n.style.width = '100%'; n.textContent = '周年版本建议使用 mp3 或 m4a，单首不超过 20MB；上传后直接私密保存到星屿存储。'; track.appendChild(n);
+            const n = SB.el('p','ed-note'); n.style.width = '100%'; n.textContent = '建议使用 mp3 或 m4a，单首不超过 20MB；上传后私密保存在星屿存储里。'; track.appendChild(n);
           };
-          renderTrack(); renderList();
+          renderTrack(); renderStyles(); renderSeasons(); renderGrid(); refreshPoster();
         },
         actions:[
           ...(memory ? [{text:'删除这段回忆', kind:'danger', async onClick(close){
@@ -127,7 +338,8 @@
             const data = { id: memory?.id, cityId, title: st.title.trim(), date: `${st.year}-${st.month}`, note: st.note.trim(),
               slides: st.slides.map(s => ({id:s.id, w:s.w, h:s.h, caption:(s.caption || '').trim()})),
               cover: {id: st.slides.some(s => s.id === st.cover) ? st.cover : st.slides[0].id},
-              bgmMode: st.bgmMode, bgm: st.bgmMode === 'own' ? st.bgm : null };
+              bgmMode: st.bgmMode, bgm: st.bgmMode === 'own' ? st.bgm : null,
+              style: st.style, season: st.season };
             try{ await SB.store.saveMemory(data); }
             catch(e){ SB.toast(SB.store.errText(e)); btn.disabled = false; return false; }
             cleanup(true, data); SB.toast('回忆已收进星屿之书'); SB.fx.burst(600);
@@ -135,8 +347,44 @@
         ],
         onClose(){ preview?.pause(); if(!done) cleanup(false); }
       });
+      dlg.el.querySelector('.sb-scroll').classList.add('ed-book');
       saveBtn = dlg.footer.querySelector('[data-act="save"]');
+
       function refresh(){ if(saveBtn){ saveBtn.disabled = st.uploading > 0; saveBtn.textContent = st.uploading ? `上传中（${st.uploading}）` : '保存'; } }
+      function refreshSum(){
+        const n = st.slides.filter(s => s.id).length;
+        let dur = '';
+        try{ if(n && SB.player?.estimate){ const s = Math.round(SB.player.estimate({title:st.title, note:st.note, date:`${st.year}-${st.month}`, slides:st.slides.filter(s => s.id)}, st.style)/1000);
+          dur = s < 60 ? `约 ${s} 秒` : `约 ${Math.floor(s/60)} 分${s % 60 ? ' ' + s % 60 + ' 秒' : ''}`; } }catch(e){}
+        const html = `<span>${n} 张照片</span>${dur ? `<i></i><span>${dur}</span>` : ''}`;
+        ui.sums?.forEach(x => x.innerHTML = html);
+      }
+      function refreshPoster(){
+        if(!ui.pimg) return;
+        const cov = st.slides.find(s => s.id && s.id === st.cover) || st.slides.find(s => s.id);
+        const u = cov ? SB.store.url(cov.id) : '';
+        if(u){ if(ui.pimg.getAttribute('src') !== u){ ui.pimg.classList.remove('ok'); ui.pimg.src = u; } ui.pempty.style.display = 'none'; }
+        else { ui.pimg.removeAttribute('src'); ui.pimg.classList.remove('ok'); ui.pempty.style.display = ''; }
+        const d = SB.fmtDate(`${st.year}-${st.month}`) || '';
+        ui.pdate.textContent = d; ui.ptitle.textContent = SB.fmtTitle(st.title.trim()); ui.mtitle.textContent = st.title.trim();
+        const sty = SB.cinema.styles.find(x => x.id === st.style);
+        ui.bStyle.innerHTML = `${SB.cinema.icon(st.style)}<span>${sty.en}</span>`;
+        const eff = SB.cinema.resolveSeason(st.season, `${st.year}-${st.month}`), sea = SB.cinema.seasons.find(x => x.id === eff);
+        ui.bSeason.innerHTML = eff === 'none' ? '' : `${SB.cinema.icon(eff)}<span>${sea.en}</span>`; ui.bSeason.style.visibility = eff === 'none' ? 'hidden' : '';
+        ui.grade.style.backgroundColor = GRADE[eff] || 'transparent';
+        if(fallKey !== eff){
+          fallKey = eff; ui.fall.innerHTML = '';
+          const F = FALL[eff];
+          if(F && SB.perf.level !== 'reduced') for(let k = 0; k < F.n; k++){
+            const i = SB.el('i', '', F.html), dur = 5 + ((k*37) % 50)/10;
+            i.style.left = ((k*61) % 100) + '%'; i.style.animationDuration = dur + 's'; i.style.animationDelay = (-(k*1.7) % dur) + 's';
+            i.style.setProperty('--dx', (((k*13) % 40) - 10) + 'px'); i.style.setProperty('--rot', (eff === 'winter' || eff === 'summer' ? 0 : 200 + (k*47) % 300) + 'deg');
+            if(F.up){ i.style.top = 'auto'; i.style.bottom = '-10%'; i.style.animationName = 'none'; i.style.animation = `edRise ${dur}s ease-in-out ${-(k*1.3) % dur}s infinite`; }
+            ui.fall.appendChild(i);
+          }
+        }
+        refreshSum();
+      }
       function cleanup(saved, data){
         if(done) return; done = true;
         // 删除这次上传但没有用上的文件，以及编辑时被移除的旧文件
@@ -150,45 +398,56 @@
       async function addFiles(files){
         files = files.filter(f => IMG_TYPES.test(f.type) || /\.(heic|heif)$/i.test(f.name));
         if(!files.length) return;
-        for(const f of files){
-          const ph = { pending:true, name:f.name, step:'等待中' }; st.slides.push(ph); st.uploading++;
-        }
-        refresh(); renderList();
+        for(const f of files){ const ph = { pending:true, name:f.name, step:'等待中' }; st.slides.push(ph); st.uploading++; }
+        refresh(); renderGrid();
         for(const f of files){
           const ph = st.slides.find(s => s.pending && s.name === f.name && !s.started); if(!ph) continue; ph.started = true;
           try{
-            // 只更新这一行的进度文字，不打断正在输入的描述
-            const r = await SB.store.uploadImage(f, t => { ph.step = t; if(ph._th) ph._th.textContent = t; });
+            // 只更新这一张卡片的进度文字，不打断正在输入的描述
+            const r = await SB.store.uploadImage(f, t => { ph.step = t; if(ph._st) ph._st.textContent = t; });
             Object.assign(ph, r, {pending:false, caption:''}); delete ph.step; st.sessionFiles.push(r.id);
-            if(!st.cover){ st.cover = r.id; renderList(); } else replaceRow(ph);
-          }catch(e){ st.slides.splice(st.slides.indexOf(ph), 1); ph._row?.remove(); SB.toast(e.msg || SB.store.errText(e), 4200); }
+            if(!st.cover){ st.cover = r.id; renderGrid(); } else replaceCard(ph);
+            refreshPoster();
+          }catch(e){ st.slides.splice(st.slides.indexOf(ph), 1); ph._card?.remove(); renumber(); SB.toast(e.msg || SB.store.errText(e), 4200); }
           st.uploading--; refresh();
         }
       }
-      function buildRow(s){
-        const row = SB.el('div','ed-slide' + (s.id && s.id === st.cover ? ' cover' : ''));
-        const th = SB.el('div','ed-thumb');
-        if(s.pending) th.textContent = s.step || '上传中';
-        else th.innerHTML = `<img alt="" src="${SB.esc(SB.store.url(s.id))}">${s.id === st.cover ? `<span class="star">${SB.icon('star')}</span>` : ''}`;
-        const cap = SB.ui.input({multiline:true, maxlength:'120', placeholder:'这张照片的故事（放映时逐字出现）', 'aria-label':'照片描述'});
-        cap.value = s.caption || ''; cap.disabled = !!s.pending; cap.addEventListener('input', () => s.caption = cap.value);
-        const ops = SB.el('div','ed-ops');
-        const mk = (t, label, fn, on) => { const b = SB.el('button', on ? 'on' : ''); b.type = 'button'; b.innerHTML = SB.icon(t); b.title = label; b.setAttribute('aria-label', label); b.disabled = !!s.pending; b.addEventListener('click', fn); ops.appendChild(b); };
+      function buildCard(s){
+        const i = st.slides.indexOf(s), card = SB.el('div', 'ed-card' + (s.id && s.id === st.cover ? ' cover' : ''));
+        const ph = SB.el('div', 'ph');
+        if(s.pending){ const t = SB.el('span', 'st'); t.textContent = s.step || '上传中'; ph.appendChild(t); Object.defineProperty(s, '_st', {value:t, configurable:true, writable:true}); }
+        else ph.innerHTML = `<img alt="" src="${SB.esc(SB.store.url(s.id))}">`;
+        const no = SB.el('span', 'no'); no.textContent = String(i + 1).padStart(2, '0'); ph.appendChild(no);
+        if(s.id && s.id === st.cover){ ph.insertAdjacentHTML('beforeend', `<span class="cv">${SB.icon('star')}封面</span>`); }
+        const ops = SB.el('div', 'ops');
+        const mk = (icon, label, fn, on, flip) => { const b = SB.el('button', on ? 'on' : ''); b.type = 'button'; b.innerHTML = SB.icon(icon); if(flip) b.querySelector('svg').style.transform = 'scaleX(-1)';
+          b.title = label; b.setAttribute('aria-label', label); b.disabled = !!s.pending; b.addEventListener('click', e => { e.stopPropagation(); fn(); }); ops.appendChild(b); return b; };
         const at = () => st.slides.indexOf(s);
-        mk('up', '上移', () => { const i = at(); if(i > 0){ [st.slides[i-1], st.slides[i]] = [st.slides[i], st.slides[i-1]]; renderList(); } });
-        mk('down', '下移', () => { const i = at(); if(i < st.slides.length-1){ [st.slides[i+1], st.slides[i]] = [st.slides[i], st.slides[i+1]]; renderList(); } });
-        mk('star', '设为封面', () => { st.cover = s.id; renderList(); }, s.id === st.cover);
-        mk('close', '移除', () => { st.slides.splice(at(), 1); if(st.cover === s.id) st.cover = st.slides.find(x => x.id)?.id || null; renderList(); });
-        row.append(th, cap, ops);
-        Object.defineProperty(s, '_row', {value:row, configurable:true, writable:true});
-        Object.defineProperty(s, '_th', {value:th, configurable:true, writable:true});
-        return row;
+        mk('chevron', '前移', () => { const k = at(); if(k > 0){ [st.slides[k-1], st.slides[k]] = [st.slides[k], st.slides[k-1]]; renderGrid(); } }, false, true).disabled ||= i === 0;
+        mk('star', '设为封面', () => { st.cover = s.id; renderGrid(); refreshPoster(); }, s.id === st.cover);
+        mk('close', '移除', () => { st.slides.splice(at(), 1); if(st.cover === s.id) st.cover = st.slides.find(x => x.id)?.id || null; renderGrid(); refreshPoster(); });
+        mk('chevron', '后移', () => { const k = at(); if(k < st.slides.length - 1){ [st.slides[k+1], st.slides[k]] = [st.slides[k], st.slides[k+1]]; renderGrid(); } }).disabled ||= i === st.slides.length - 1;
+        ph.appendChild(ops);
+        const cap = SB.el('textarea'); cap.maxLength = 120; cap.placeholder = '这张照片的故事…'; cap.setAttribute('aria-label', `第 ${i + 1} 张照片的描述`);
+        cap.value = s.caption || ''; cap.disabled = !!s.pending; cap.addEventListener('input', () => { s.caption = cap.value; refreshSum(); });
+        card.append(ph, cap);
+        Object.defineProperty(s, '_card', {value:card, configurable:true, writable:true});
+        return card;
       }
-      function replaceRow(s){ const old = s._row; const row = buildRow(s); old ? old.replaceWith(row) : list.appendChild(row); }
-      function renderList(){
-        if(!list) return;
-        list.innerHTML = '';
-        st.slides.forEach(s => list.appendChild(buildRow(s)));
+      function addTile(){
+        const tile = SB.el('label', 'ed-add', `<span class="ring">${SB.icon('plus')}</span><b>添加照片</b><span>点击选择或拖进来<br>可一次选多张，自动压缩上传</span>`);
+        const fin = SB.el('input'); fin.type = 'file'; fin.accept = 'image/*'; fin.multiple = true; fin.setAttribute('aria-label','选择照片');
+        fin.addEventListener('change', () => { addFiles([...fin.files]); fin.value = ''; }); tile.appendChild(fin);
+        return tile;
+      }
+      function replaceCard(s){ const old = s._card; const c = buildCard(s); old ? old.replaceWith(c) : grid.insertBefore(c, grid.querySelector('.ed-add')); }
+      function renumber(){ grid.querySelectorAll('.ed-card .no').forEach((n, k) => n.textContent = String(k + 1).padStart(2, '0')); }
+      function renderGrid(){
+        if(!grid) return;
+        grid.innerHTML = '';
+        st.slides.forEach(s => grid.appendChild(buildCard(s)));
+        if(SB.store.canUpload) grid.appendChild(addTile());
+        refreshSum();
       }
     }
   };

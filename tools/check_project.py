@@ -62,14 +62,28 @@ if 'SB.icon = ' not in block_text.get('00-core.html', ''):
     print('ERROR: SB.icon helper missing from 00-core.html')
     sys.exit(1)
 player_text = block_text.get('11-memory-player.html', '')
-for marker in ('duck(', 'SB.player = '):
+for marker in ('duck(', 'SB.player = ', 'SB.cinema = '):
     if marker not in player_text:
         print(f'ERROR: cinematic player marker {marker!r} missing from 11-memory-player.html')
         sys.exit(1)
 
 if 'api.github.com' in html or 'github token' in html.lower() or 'mp4-muxer' in html.lower():
     print('warning: legacy GitHub/mp4-muxer marker found in built site')
-print('OK')
+
+# Hard guards against V1 persistence / Magic Book namespace regressions.
+legacy_db = root/'site'/'data'/'db.json'
+if legacy_db.exists():
+    print('ERROR: legacy site/data/db.json exists; v1.5+ persistence must use Supabase')
+    sys.exit(1)
+active_source = '\n'.join(block_text.values()) + '\n' + html
+for marker in ('data/db.json', 'github_pat_', 'ghApi('):
+    if marker in active_source:
+        print(f'ERROR: legacy runtime persistence marker found in active source: {marker}')
+        sys.exit(1)
+for prop in ('busy','open','reset','state','scene','cover','tilt','gemBtn','page','stage','shocks','leaves'):
+    if re.search(rf'\bSB\.book\.{prop}\b', active_source):
+        print(f'ERROR: visual Magic Book property leaked back to SB.book: {prop}; use SB.magicBook')
+        sys.exit(1)
 
 # Governance / release-document consistency checks.
 version = (root/'VERSION').read_text(encoding='utf-8-sig').strip()
@@ -84,6 +98,9 @@ required_files = [
     root/'docs'/'DATA_LIFECYCLE.md',
     root/'docs'/'RELEASE_WORKFLOW.md',
     root/'docs'/'PROJECT_DOCS_INDEX.md',
+    root/'docs'/'RELEASE_AUTOMATION.md',
+    root/'release-current.ps1',
+    root/'scripts'/'releases'/f'release-v{version}.ps1',
     root/'docs'/'releases'/f'v{version}.md',
 ]
 missing = [str(x.relative_to(root)) for x in required_files if not x.exists()]
@@ -129,3 +146,5 @@ runtime_cfg = block_text.get('00-config.html','')
 if f"version: '{version}'" not in runtime_cfg:
     print(f'ERROR: blocks/00-config.html runtime version does not match VERSION ({version})')
     sys.exit(1)
+
+print('OK')

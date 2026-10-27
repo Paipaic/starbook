@@ -1,89 +1,89 @@
-# Starbook Agent Handoff / 必读入口
+# Starbook Agent Handoff / 蹇呰鍏ュ彛
 
-> **这是所有新 Agent、AI 编程窗口和新开发会话的第一入口。**
+> **杩欐槸鎵€鏈夋柊 Agent銆丄I 缂栫▼绐楀彛鍜屾柊寮€鍙戜細璇濈殑绗竴鍏ュ彛銆?*
 >
-> 在修改任何代码、数据库、部署配置或产品体验之前，必须先完成本文规定的阅读顺序。不要仅凭旧对话、文件名或局部代码猜测当前架构。
+> 鍦ㄤ慨鏀逛换浣曚唬鐮併€佹暟鎹簱銆侀儴缃查厤缃垨浜у搧浣撻獙涔嬪墠锛屽繀椤诲厛瀹屾垚鏈枃瑙勫畾鐨勯槄璇婚『搴忋€備笉瑕佷粎鍑棫瀵硅瘽銆佹枃浠跺悕鎴栧眬閮ㄤ唬鐮佺寽娴嬪綋鍓嶆灦鏋勩€?
 
-## 1. 当前项目身份
+## 1. 褰撳墠椤圭洰韬唤
 
-- Project: **Starbook / 星屿之书**
-- Current version: **1.6.0**
+- Project: **Starbook / 鏄熷笨涔嬩功**
+- Current version: **1.7.0**
 - Production branch: **`main`**
 - Production deploy: **GitHub Pages via GitHub Actions**
 - Runtime backend: **Supabase Anniversary Bridge**
-- Current Book: **星屿之书** (`8a3cc6fe-b667-4ce7-b47b-79cebc0e1353`)
+- Current Book: **鏄熷笨涔嬩功** (`8a3cc6fe-b667-4ce7-b47b-79cebc0e1353`)
 - Current product preset:
   - relationship: `romantic`
   - theme: `magic-celestial`
   - experience: `world-map`
-- Current delivery priority: **2026-10-29 周年纪念版稳定交付**
+- Current delivery priority: **2026-10-29 鍛ㄥ勾绾康鐗堢ǔ瀹氫氦浠?*
 
-## 2. Agent 必读顺序
+## 2. Agent 蹇呰椤哄簭
 
-任何新 Agent 在开始工作前，按顺序阅读：
+浠讳綍鏂?Agent 鍦ㄥ紑濮嬪伐浣滃墠锛屾寜椤哄簭闃呰锛?
 
-1. `AGENTS.md` —— 当前文件，确认协作规则。
-2. `PROJECT_STATE.md` —— 当前真实状态、技术债、已验证能力、下一优先级。
-3. `docs/PROJECT_MANAGEMENT_FULL_CHAIN.md` —— 项目管理、开发、发布、部署、数据、回滚全链路。
-4. `docs/ARCHITECTURE_EXTENSION_CONTRACT.md` —— 当前架构边界与未来扩展不可破坏约束。
-5. `docs/DATA_LIFECYCLE.md` —— Supabase 数据生命周期、版本升级与迁移规则。
-6. `CHANGELOG.md` —— 已完成的版本变化。
-7. `ROADMAP.md` —— 未完成事项和后续方向。
-8. 当前目标版本对应 `docs/releases/vX.X.X.md`。
-9. 最后才读取与任务直接相关的源代码。
+1. `AGENTS.md` 鈥斺€?褰撳墠鏂囦欢锛岀‘璁ゅ崗浣滆鍒欍€?
+2. `PROJECT_STATE.md` 鈥斺€?褰撳墠鐪熷疄鐘舵€併€佹妧鏈€恒€佸凡楠岃瘉鑳藉姏銆佷笅涓€浼樺厛绾с€?
+3. `docs/PROJECT_MANAGEMENT_FULL_CHAIN.md` 鈥斺€?椤圭洰绠＄悊銆佸紑鍙戙€佸彂甯冦€侀儴缃层€佹暟鎹€佸洖婊氬叏閾捐矾銆?
+4. `docs/ARCHITECTURE_EXTENSION_CONTRACT.md` 鈥斺€?褰撳墠鏋舵瀯杈圭晫涓庢湭鏉ユ墿灞曚笉鍙牬鍧忕害鏉熴€?
+5. `docs/DATA_LIFECYCLE.md` 鈥斺€?Supabase 鏁版嵁鐢熷懡鍛ㄦ湡銆佺増鏈崌绾т笌杩佺Щ瑙勫垯銆?
+6. `CHANGELOG.md` 鈥斺€?宸插畬鎴愮殑鐗堟湰鍙樺寲銆?
+7. `ROADMAP.md` 鈥斺€?鏈畬鎴愪簨椤瑰拰鍚庣画鏂瑰悜銆?
+8. 褰撳墠鐩爣鐗堟湰瀵瑰簲 `docs/releases/vX.X.X.md`銆?
+9. 鏈€鍚庢墠璇诲彇涓庝换鍔＄洿鎺ョ浉鍏崇殑婧愪唬鐮併€?
 
-如果上述文件与旧聊天记录冲突，**以仓库当前文件为准**。
+濡傛灉涓婅堪鏂囦欢涓庢棫鑱婂ぉ璁板綍鍐茬獊锛?*浠ヤ粨搴撳綋鍓嶆枃浠朵负鍑?*銆?
 
-## 3. 修改前必须回答的 7 个问题
+## 3. 淇敼鍓嶅繀椤诲洖绛旂殑 7 涓棶棰?
 
-Agent 在动手前应自行确认：
+Agent 鍦ㄥ姩鎵嬪墠搴旇嚜琛岀‘璁わ細
 
-1. 当前要修改的是哪一个版本？
-2. 这次改动属于产品功能、稳定性、架构、数据、部署还是文档治理？
-3. 是否影响 `SB.user / SB.book / SB.magicBook / SB.theme / SB.experience / SB.store` 的职责边界？
-4. 是否影响 Supabase schema、RLS、Storage 或现有真实数据？
-5. 是否影响 GitHub Actions、分支、PR、main 或 Pages？
-6. 是否破坏多用户、多 Book、多关系、多 Theme、多 Experience 的未来兼容性？
-7. 本次改动需要同步更新哪些版本记录？
+1. 褰撳墠瑕佷慨鏀圭殑鏄摢涓€涓増鏈紵
+2. 杩欐鏀瑰姩灞炰簬浜у搧鍔熻兘銆佺ǔ瀹氭€с€佹灦鏋勩€佹暟鎹€侀儴缃茶繕鏄枃妗ｆ不鐞嗭紵
+3. 鏄惁褰卞搷 `SB.user / SB.book / SB.magicBook / SB.theme / SB.experience / SB.store` 鐨勮亴璐ｈ竟鐣岋紵
+4. 鏄惁褰卞搷 Supabase schema銆丷LS銆丼torage 鎴栫幇鏈夌湡瀹炴暟鎹紵
+5. 鏄惁褰卞搷 GitHub Actions銆佸垎鏀€丳R銆乵ain 鎴?Pages锛?
+6. 鏄惁鐮村潖澶氱敤鎴枫€佸 Book銆佸鍏崇郴銆佸 Theme銆佸 Experience 鐨勬湭鏉ュ吋瀹规€э紵
+7. 鏈鏀瑰姩闇€瑕佸悓姝ユ洿鏂板摢浜涚増鏈褰曪紵
 
-如果不能回答，不应直接大规模重构。
+濡傛灉涓嶈兘鍥炵瓟锛屼笉搴旂洿鎺ュぇ瑙勬ā閲嶆瀯銆?
 
-## 4. 当前最重要的架构边界
+## 4. 褰撳墠鏈€閲嶈鐨勬灦鏋勮竟鐣?
 
-- `SB.book` = **当前数据 Book / Book Context**，不得再用于魔法书视觉控制。
-- `SB.magicBook` = **Magic Celestial 魔法书视觉与开书动画控制器**。
-- `SB.store` = **业务数据兼容层**，当前内部读写 Supabase `book_data.payload`。
-- `magic-celestial` 只是第一套 Theme，不等于 Starbook Core。
-- `world-map` 只是第一套 Experience，不等于 Starbook Core。
-- 当前是情侣书，但 Starbook Core 不得写死“情侣是唯一关系”。
-- 当前 UI 只有一本 Book，但业务代码不得假设用户永远只有一本 Book。
-- 当前 Memory 与 City 仍有 V1 耦合，这是技术债，不应进一步强化。
+- `SB.book` = **褰撳墠鏁版嵁 Book / Book Context**锛屼笉寰楀啀鐢ㄤ簬榄旀硶涔﹁瑙夋帶鍒躲€?
+- `SB.magicBook` = **Magic Celestial 榄旀硶涔﹁瑙変笌寮€涔﹀姩鐢绘帶鍒跺櫒**銆?
+- `SB.store` = **涓氬姟鏁版嵁鍏煎灞?*锛屽綋鍓嶅唴閮ㄨ鍐?Supabase `book_data.payload`銆?
+- `magic-celestial` 鍙槸绗竴濂?Theme锛屼笉绛変簬 Starbook Core銆?
+- `world-map` 鍙槸绗竴濂?Experience锛屼笉绛変簬 Starbook Core銆?
+- 褰撳墠鏄儏渚ｄ功锛屼絾 Starbook Core 涓嶅緱鍐欐鈥滄儏渚ｆ槸鍞竴鍏崇郴鈥濄€?
+- 褰撳墠 UI 鍙湁涓€鏈?Book锛屼絾涓氬姟浠ｇ爜涓嶅緱鍋囪鐢ㄦ埛姘歌繙鍙湁涓€鏈?Book銆?
+- 褰撳墠 Memory 涓?City 浠嶆湁 V1 鑰﹀悎锛岃繖鏄妧鏈€猴紝涓嶅簲杩涗竴姝ュ己鍖栥€?
 
-## 5. 当前数据与发布原则
+## 5. 褰撳墠鏁版嵁涓庡彂甯冨師鍒?
 
-### 代码生命周期
+### 浠ｇ爜鐢熷懡鍛ㄦ湡
 
-`release/*` 或 `feature/*` → PR → `validate-starbook` → merge `main` → GitHub Pages 自动部署。
+`release/*` 鎴?`feature/*` 鈫?PR 鈫?`validate-starbook` 鈫?merge `main` 鈫?GitHub Pages 鑷姩閮ㄧ讲銆?
 
-### 数据生命周期
+### 鏁版嵁鐢熷懡鍛ㄦ湡
 
-Supabase Database / Private Storage **独立于 Git 分支和 Pages 部署**。
+Supabase Database / Private Storage **鐙珛浜?Git 鍒嗘敮鍜?Pages 閮ㄧ讲**銆?
 
-正常前端版本升级：
+姝ｅ父鍓嶇鐗堟湰鍗囩骇锛?
 
-- 不清空 Supabase；
-- 不重新 seed Book；
-- 不重新导入照片；
-- 不重新导入回忆；
-- 不执行破坏性 reset SQL。
+- 涓嶆竻绌?Supabase锛?
+- 涓嶉噸鏂?seed Book锛?
+- 涓嶉噸鏂板鍏ョ収鐗囷紱
+- 涓嶉噸鏂板鍏ュ洖蹇嗭紱
+- 涓嶆墽琛岀牬鍧忔€?reset SQL銆?
 
-数据库结构升级或 Production 数据元信息/成员变更必须使用**向前 migration**。
+鏁版嵁搴撶粨鏋勫崌绾ф垨 Production 鏁版嵁鍏冧俊鎭?鎴愬憳鍙樻洿蹇呴』浣跨敤**鍚戝墠 migration**銆?
 
-当前 v1.5.1 的标题与成员变更由 `supabase/migrations/002_v151_title_and_members.sql` 管理，禁止通过重跑 seed 清空或覆盖业务数据。
+褰撳墠 v1.5.1 鐨勬爣棰樹笌鎴愬憳鍙樻洿鐢?`supabase/migrations/002_v151_title_and_members.sql` 绠＄悊锛岀姝㈤€氳繃閲嶈窇 seed 娓呯┖鎴栬鐩栦笟鍔℃暟鎹€?
 
-## 6. 每个版本强制维护的文件
+## 6. 姣忎釜鐗堟湰寮哄埗缁存姢鐨勬枃浠?
 
-每个正式版本必须同步更新：
+姣忎釜姝ｅ紡鐗堟湰蹇呴』鍚屾鏇存柊锛?
 
 - `VERSION`
 - `CHANGELOG.md`
@@ -91,7 +91,7 @@ Supabase Database / Private Storage **独立于 Git 分支和 Pages 部署**。
 - `PROJECT_STATE.md`
 - `docs/releases/vX.X.X.md`
 
-如果项目管理链路、架构边界、数据策略或发布策略变化，还必须同步更新：
+濡傛灉椤圭洰绠＄悊閾捐矾銆佹灦鏋勮竟鐣屻€佹暟鎹瓥鐣ユ垨鍙戝竷绛栫暐鍙樺寲锛岃繕蹇呴』鍚屾鏇存柊锛?
 
 - `AGENTS.md`
 - `docs/PROJECT_MANAGEMENT_FULL_CHAIN.md`
@@ -99,72 +99,90 @@ Supabase Database / Private Storage **独立于 Git 分支和 Pages 部署**。
 - `docs/DATA_LIFECYCLE.md`
 - `docs/RELEASE_WORKFLOW.md`
 
-`tools/check_project.py` 与 `validate-starbook` 会检查其中一部分要求。
+`tools/check_project.py` 涓?`validate-starbook` 浼氭鏌ュ叾涓竴閮ㄥ垎瑕佹眰銆?
 
-## 7. 每个 Release Record 必须明确写出的链路变化
+## 7. 姣忎釜 Release Record 蹇呴』鏄庣‘鍐欏嚭鐨勯摼璺彉鍖?
 
-每个 `docs/releases/vX.X.X.md` 至少包含：
+姣忎釜 `docs/releases/vX.X.X.md` 鑷冲皯鍖呭惈锛?
 
-- 本版目标；
-- 产品体验变化；
-- Runtime / 架构链路变化；
-- 数据链路变化；
-- Auth / 权限 / RLS 变化；
-- Storage 变化；
-- Git / PR / CI / Pages 发布链路变化；
-- Agent / 文档治理链路变化；
-- 文件变化；
-- Migration / 手动操作；
-- 测试与验证；
-- 已知问题；
-- 回滚方式；
-- 下一版本建议。
+- 鏈増鐩爣锛?
+- 浜у搧浣撻獙鍙樺寲锛?
+- Runtime / 鏋舵瀯閾捐矾鍙樺寲锛?
+- 鏁版嵁閾捐矾鍙樺寲锛?
+- Auth / 鏉冮檺 / RLS 鍙樺寲锛?
+- Storage 鍙樺寲锛?
+- Git / PR / CI / Pages 鍙戝竷閾捐矾鍙樺寲锛?
+- Agent / 鏂囨。娌荤悊閾捐矾鍙樺寲锛?
+- 鏂囦欢鍙樺寲锛?
+- Migration / 鎵嬪姩鎿嶄綔锛?
+- 娴嬭瘯涓庨獙璇侊紱
+- 宸茬煡闂锛?
+- 鍥炴粴鏂瑰紡锛?
+- 涓嬩竴鐗堟湰寤鸿銆?
 
-如果某一项没有变化，也必须明确写“无变化”，不能省略。
+濡傛灉鏌愪竴椤规病鏈夊彉鍖栵紝涔熷繀椤绘槑纭啓鈥滄棤鍙樺寲鈥濓紝涓嶈兘鐪佺暐銆?
 
-## 8. 发布前最低检查
+## 8. 鍙戝竷鍓嶆渶浣庢鏌?
 
-至少执行：
+鑷冲皯鎵ц锛?
 
 ```powershell
 python build.py
 python tools/check_project.py
 ```
 
-然后通过 PR 的 `validate-starbook`。
+鐒跺悗閫氳繃 PR 鐨?`validate-starbook`銆?
 
-正式 Pages 只允许 `main` 部署。
+姝ｅ紡 Pages 鍙厑璁?`main` 閮ㄧ讲銆?
 
-## 9. 禁止事项
+## 9. 绂佹浜嬮」
 
-除非用户明确批准并已有迁移/回滚方案，否则禁止：
+闄ら潪鐢ㄦ埛鏄庣‘鎵瑰噯骞跺凡鏈夎縼绉?鍥炴粴鏂规锛屽惁鍒欑姝細
 
-- 重置 Supabase production 数据；
-- 删除真实 `book_data` / Storage 文件；
-- 重新运行会覆盖真实数据的 seed；
-- 在前端或仓库加入 `sb_secret_`、`service_role`、数据库密码、GitHub PAT；
-- 关闭 RLS 来“解决”权限错误；
-- 绕过 `main` 直接让 release/feature 分支覆盖 Production；
-- 无版本记录地修改 schema；
-- 为了重构漂亮而破坏 2026-10-29 周年交付稳定性；
-- 把 `SB.book` 与 `SB.magicBook` 再次合并；
-- 将当前唯一 Theme / Experience / Relationship 写死为平台唯一能力。
+- 閲嶇疆 Supabase production 鏁版嵁锛?
+- 鍒犻櫎鐪熷疄 `book_data` / Storage 鏂囦欢锛?
+- 閲嶆柊杩愯浼氳鐩栫湡瀹炴暟鎹殑 seed锛?
+- 鍦ㄥ墠绔垨浠撳簱鍔犲叆 `sb_secret_`銆乣service_role`銆佹暟鎹簱瀵嗙爜銆丟itHub PAT锛?
+- 鍏抽棴 RLS 鏉モ€滆В鍐斥€濇潈闄愰敊璇紱
+- 缁曡繃 `main` 鐩存帴璁?release/feature 鍒嗘敮瑕嗙洊 Production锛?
+- 鏃犵増鏈褰曞湴淇敼 schema锛?
+- 涓轰簡閲嶆瀯婕備寒鑰岀牬鍧?2026-10-29 鍛ㄥ勾浜や粯绋冲畾鎬э紱
+- 鎶?`SB.book` 涓?`SB.magicBook` 鍐嶆鍚堝苟锛?
+- 灏嗗綋鍓嶅敮涓€ Theme / Experience / Relationship 鍐欐涓哄钩鍙板敮涓€鑳藉姏銆?
 
-## 10. Agent 交接输出格式
+## 10. Agent 浜ゆ帴杈撳嚭鏍煎紡
 
-一个 Agent 完成工作后，应在回复或 release record 中说明：
+涓€涓?Agent 瀹屾垚宸ヤ綔鍚庯紝搴斿湪鍥炲鎴?release record 涓鏄庯細
 
-1. 当前版本；
-2. 完成了什么；
-3. 修改/新增/删除了哪些文件；
-4. 是否改数据库；
-5. 是否需要用户手动操作；
-6. 如何测试；
-7. 是否影响 Production / Supabase 数据；
-8. 已知问题；
-9. 下一步建议；
-10. 是否已经更新版本治理文档。
+1. 褰撳墠鐗堟湰锛?
+2. 瀹屾垚浜嗕粈涔堬紱
+3. 淇敼/鏂板/鍒犻櫎浜嗗摢浜涙枃浠讹紱
+4. 鏄惁鏀规暟鎹簱锛?
+5. 鏄惁闇€瑕佺敤鎴锋墜鍔ㄦ搷浣滐紱
+6. 濡備綍娴嬭瘯锛?
+7. 鏄惁褰卞搷 Production / Supabase 鏁版嵁锛?
+8. 宸茬煡闂锛?
+9. 涓嬩竴姝ュ缓璁紱
+10. 鏄惁宸茬粡鏇存柊鐗堟湰娌荤悊鏂囨。銆?
 
 ---
 
-**核心原则：Starbook 的代码可以迭代，用户真实回忆数据必须持续存在；当前周年版本可以简单，但未来扩展接口不能被写死。**
+**鏍稿績鍘熷垯锛歋tarbook 鐨勪唬鐮佸彲浠ヨ凯浠ｏ紝鐢ㄦ埛鐪熷疄鍥炲繂鏁版嵁蹇呴』鎸佺画瀛樺湪锛涘綋鍓嶅懆骞寸増鏈彲浠ョ畝鍗曪紝浣嗘湭鏉ユ墿灞曟帴鍙ｄ笉鑳借鍐欐銆?*
+
+## 11. 涓€閿彂甯冨叆鍙?
+
+鐗堟湰寮€鍙戝畬鎴愬悗锛屼笉鍐嶈姹?Owner/Agent 姣忔閲嶆柊鎷兼帴 Git 鍙戝竷鍛戒护銆傞閫夊叆鍙ｏ細
+
+```powershell
+.\release-current.ps1
+```
+
+瑙勫垯锛?
+
+- 鐗堟湰鍙峰敮涓€鏉ユ簮鏄牴鐩綍 `VERSION`锛?
+- 鑴氭湰鑷姩鐢熸垚缂哄け鐨?`docs/releases/vX.X.X.md` 鍩虹璁板綍锛屼絾 Agent 浠嶈礋璐ｈˉ鍏ㄧ湡瀹為摼璺彉鍖栵紱
+- 鑴氭湰鑷姩鐢熸垚 `scripts/releases/release-vX.X.X.ps1` 浣滀负鐗堟湰瀹¤璁板綍锛?
+- `publish.ps1` 浠嶆槸搴曞眰鍙戝竷鎵ц鍣紝涓嶅缓璁柊 Agent鍙﹂€犲彂甯冩祦绋嬶紱
+- 鏁版嵁搴?migration 缁濅笉鐢卞彂甯冭剼鏈嚜鍔ㄦ墽琛屻€?
+
+瀹屾暣璇存槑锛歚docs/RELEASE_AUTOMATION.md`銆?
