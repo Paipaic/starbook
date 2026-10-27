@@ -16,7 +16,8 @@
 
 - `design/VISUAL_UPGRADE_PLAN.md` — v1.5.2 → v1.6.2 视觉升级总计划、乱码根因实测、奇幻电影与电影式剪辑调研及来源。
 - `../prompts/00-typography.md` — 「星文」字体系统提示词（v1.5.2）。
-- `../prompts/11-memory-player.md` — 「冥想盆放映厅」电影式回忆放映提示词（v1.6.0）。
+- `../prompts/11-memory-player.md` — 「光影放映」多图编排放映、三种放映风格与四季主题提示词（v1.7.0，取代 v1.6.0 版本）。
+- `../prompts/12-memory-editor.md` — 回忆编辑器「星屿手稿」提示词（v1.7.0）。
 
 ## 发布与 CI
 
@@ -51,3 +52,7 @@
 | `CHANGELOG.md` | 已经做了什么？ |
 | `ROADMAP.md` | 还没做什么？ |
 | `releases/vX.X.X.md` | 某个版本到底改变了哪些链路？ |
+
+### `docs/RELEASE_AUTOMATION.md`
+
+v1.6.0+ 一键版本发布机制。说明 `release-current.ps1`、自动 Release Record、版本专属脚本、数据安全边界和失败处理。

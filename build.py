@@ -23,6 +23,7 @@ HEAD = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>星屿之书</title>
 <meta name="theme-color" content="#0d0805">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -45,13 +46,18 @@ legacy_db = site / "data" / "db.json"
 if legacy_db.exists():
     try:
         txt = legacy_db.read_text(encoding="utf-8").strip()
-        if txt in ('', '{"cities":{},"memories":{},"settings":{}}'):
-            legacy_db.unlink()
-            try: legacy_db.parent.rmdir()
-            except OSError: pass
-        else:
-            print("警告：site/data/db.json 含有旧 V1 数据。v1.5 不再读取它，请先备份并迁移到 Supabase。")
-    except Exception:
-        pass
+    except Exception as exc:
+        raise RuntimeError("无法检查旧 site/data/db.json；为避免公开部署旧数据，构建已中止。") from exc
+    if txt in ('', '{"cities":{},"memories":{},"settings":{}}'):
+        legacy_db.unlink()
+        try:
+            legacy_db.parent.rmdir()
+        except OSError:
+            pass
+    else:
+        raise RuntimeError(
+            "检测到非空 site/data/db.json。v1.5+ 禁止把旧 V1 数据部署到 GitHub Pages；"
+            "请先备份/迁移到 Supabase，再删除该文件。"
+        )
 
 print("index.html 与 site/index.html 已生成，共", len(parts), "块")
