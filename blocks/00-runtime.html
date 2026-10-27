@@ -7,6 +7,7 @@
     linear-gradient(180deg,rgba(4,5,18,.96),rgba(8,5,10,.985));
   transition:opacity .7s var(--ease-soft),visibility .7s;}
 #sb-gate[hidden]{display:none!important;} #sb-gate.leaving{opacity:0;visibility:hidden;pointer-events:none;}
+html[data-sb-perf="low"] .sb-gate-card{backdrop-filter:none;-webkit-backdrop-filter:none;}
 .sb-gate-stars{position:absolute;inset:0;overflow:hidden;pointer-events:none;opacity:.75;
   background-image:radial-gradient(circle,rgba(255,239,201,.75) 0 1px,transparent 1.4px),radial-gradient(circle,rgba(143,164,255,.7) 0 1px,transparent 1.4px);
   background-size:97px 97px,143px 143px;background-position:12px 25px,43px 67px;mask-image:radial-gradient(circle at 50% 45%,#000 0 35%,transparent 82%);}
@@ -89,8 +90,9 @@
     gateBody.append(p,actions);
   }
   function hideGate(){
-    gate.classList.add('leaving');
-    setTimeout(()=>{ gate.hidden = true; gate.classList.remove('leaving'); },720);
+    const ms = SB.perf.level === 'high' ? 520 : 320;
+    gate.style.transitionDuration = ms + 'ms'; gate.classList.add('leaving');
+    setTimeout(()=>{ gate.hidden = true; gate.classList.remove('leaving'); gate.style.transitionDuration = ''; },ms + 30);
   }
 
   const user = SB.user = {
@@ -157,7 +159,7 @@
 
   SB.theme = { current: cfg.defaults?.themeId || 'magic-celestial' };
   SB.experience = { current: cfg.defaults?.experienceId || 'world-map' };
-  const runtime = SB.runtime = { ready:null, config:cfg, showLoading, showFatal };
+  const runtime = SB.runtime = { ready:null, config:cfg, showLoading, showFatal, reveal:hideGate };
 
   let resolveReady, rejectReady;
   runtime.ready = new Promise((res,rej)=>{ resolveReady=res; rejectReady=rej; });
@@ -180,7 +182,8 @@
         );
         return;
       }
-      hideGate(); resolveReady({user:user.current,book:current});
+      // v1.7.3：这里只宣布认证/Book 就绪；登录 Gate 由 99-boot 在 Store + 首个场景首帧完成后再揭开。
+      resolveReady({user:user.current,book:current});
     }catch(e){
       console.error('[Starbook runtime]',e);
       const msg=String(e?.message||'');

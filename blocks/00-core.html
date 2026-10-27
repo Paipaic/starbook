@@ -85,9 +85,15 @@ body[data-world="night"] .sb-mist{background:radial-gradient(closest-side, rgba(
 
 /* ── 场景 ── */
 #sb-stage{position:fixed;inset:0;z-index:1;height:100vh;height:100dvh;}
-.sb-scene{position:absolute;inset:0;display:none;overflow:hidden;}
+.sb-scene{position:absolute;inset:0;display:none;overflow:hidden;contain:layout style paint;isolation:isolate;}
 .sb-scene.is-active{display:block;}
-.sb-scene.is-entering{z-index:2;}
+.sb-scene.is-entering{z-index:2;will-change:clip-path;}
+/* v1.7.3：转场期间强制只有当前/目标场景可见，避免异步 enter 导致旧页面或其他块闪现。 */
+body.is-busy .sb-scene:not(.is-active):not(.is-entering){display:none!important;}
+.sb-portal-backdrop{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0;
+  background:radial-gradient(55% 45% at 50% 48%,rgba(48,50,110,.42),transparent 72%),linear-gradient(180deg,#090a21,#050611);
+  transition:opacity .14s ease-out;}
+.sb-portal-backdrop.show{opacity:1;}
 
 /* ── 转场 ── */
 #sb-veil{position:fixed;inset:0;z-index:50;pointer-events:none;opacity:0;
@@ -106,6 +112,8 @@ body[data-world="night"] #sb-veil{background:radial-gradient(circle at 50% 50%, 
 .sb-portal-ring{position:fixed;z-index:52;pointer-events:none;border-radius:50%;
   border:2px solid rgba(255,226,168,.9);box-shadow:0 0 40px 10px rgba(244,184,96,.55), inset 0 0 30px rgba(255,214,150,.5);
   transform:translate(-50%,-50%);}
+.sb-portal-ring.preparing{width:32px;height:32px;opacity:.72;animation:sbPortalReady .8s ease-in-out infinite alternate;}
+@keyframes sbPortalReady{from{transform:translate(-50%,-50%) scale(.8);box-shadow:0 0 18px 4px rgba(244,184,96,.38)}to{transform:translate(-50%,-50%) scale(1.15);box-shadow:0 0 34px 9px rgba(244,184,96,.62)}}
 body.is-busy #sb-stage,body.is-busy #sb-nav{pointer-events:none;}
 
 /* ── 提示条 ── */
@@ -134,6 +142,8 @@ body.is-busy #sb-stage,body.is-busy #sb-nav{pointer-events:none;}
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
   transform:scale(.9);filter:blur(6px);transition:transform .45s var(--ease-soft), filter .45s var(--ease-soft);}
 .sb-modal.show .sb-scroll{transform:none;filter:none;}
+html[data-sb-perf="low"] .sb-modal{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(5,3,10,.68);}
+html[data-sb-perf="low"] .sb-scroll{backdrop-filter:none;-webkit-backdrop-filter:none;filter:none;transition:transform .3s var(--ease-soft);}
 .sb-scroll.wide{width:min(760px,100%);}
 .sb-scroll > header{padding:20px 22px 10px;text-align:center;}
 .sb-scroll > header h3{margin:0;padding-left:.14em;font-family:var(--f-display);font-weight:var(--fw-display);font-size:23px;letter-spacing:.14em;color:var(--gold-hi);text-shadow:0 0 14px rgba(244,184,96,.45);}
@@ -198,12 +208,16 @@ window.SB = window.SB || {};
   /* ── 性能档位 ── */
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const small = Math.min(innerWidth, innerHeight) < 600;
-  const cores = navigator.hardwareConcurrency || 4;
-  SB.perf = { level: reduced ? 'reduced' : (cores <= 4 || small ? 'low' : 'high'), small, reduced,
-    touch: matchMedia('(pointer:coarse)').matches };
+  const touch = matchMedia('(pointer:coarse)').matches;
+  const cores = Number(navigator.hardwareConcurrency) || 8;
+  const memory = Number(navigator.deviceMemory) || 0;
+  const lowHardware = cores <= 4 || (memory > 0 && memory <= 4) || small || touch;
+  SB.perf = { level: reduced ? 'reduced' : (lowHardware ? 'low' : 'high'), small, reduced, touch, cores, memory:memory || null };
   try{ const saved = localStorage.getItem('sb-motion'); if(saved && !reduced) SB.perf.level = saved; }catch(e){}
+  document.documentElement.dataset.sbPerf = SB.perf.level;
 
   SB.wait = ms => new Promise(r => setTimeout(r, ms));
+  SB.nextPaint = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
   SB.lerp = (a,b,t) => a + (b-a)*t;
   SB.clamp = (v,a,b) => Math.max(a, Math.min(b, v));
   SB.esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -369,62 +383,124 @@ window.SB = window.SB || {};
       else history.pushState(state,'',url);
     }catch(e){}
   }
-  function swap(id, params, opts){
+  const preparing = new Map();
+  const prepKey = (id, params) => id + '|' + JSON.stringify(params || {});
+  async function prepareTarget(id, params={}, opts={}){
+    const h = scenes.map[id]; if(!h?.prepare) return;
+    const key = prepKey(id, params);
+    if(preparing.has(key)) return preparing.get(key);
+    const job = Promise.resolve().then(() => h.prepare(params || {}, opts)).finally(() => preparing.delete(key));
+    preparing.set(key, job); return job;
+  }
+  scenes.prefetch = (id, params={}) => prepareTarget(id, params, {prefetch:true}).catch(e => console.warn('[Starbook prefetch]', id, e));
+
+  function scrubScenes(except){
+    // v1.7.3：每次真正 swap 时强制清除所有非目标 scene 的 active/transition 状态。
+    // 即使旧异步逻辑曾遗留 class，也不会在下一次转场中“闪出一堆页面”。
+    document.querySelectorAll('.sb-scene').forEach(el => {
+      if(el === except) return;
+      el.classList.remove('is-active','is-entering'); el.style.clipPath = ''; el.style.zIndex = '';
+      el.setAttribute('aria-hidden','true');
+    });
+  }
+  async function swap(id, params, opts){
     const prev = scenes.current ? {id:scenes.current, params:scenes.params} : null;
-    if(prev){ scenes.el(prev.id)?.classList.remove('is-active'); scenes.map[prev.id]?.leave?.(opts); }
+    const prevEl = prev ? scenes.el(prev.id) : null, nextEl = scenes.el(id), nextHook = scenes.map[id];
+    if(!nextEl) return;
+    scrubScenes(nextEl);
+    if(prev && prev.id !== id){
+      prevEl?.classList.remove('is-active'); prevEl?.setAttribute('aria-hidden','true');
+      await Promise.resolve(scenes.map[prev.id]?.leave?.(opts));
+    }else if(prev && opts?.force){
+      await Promise.resolve(scenes.map[prev.id]?.leave?.(opts));
+      prevEl?.classList.remove('is-active');
+    }
     scenes.current = id; scenes.params = params || {};
     document.body.dataset.scene = id;
-    document.body.dataset.world = scenes.map[id].world || 'night';
-    scenes.el(id)?.classList.add('is-active');
-    scenes.map[id]?.enter?.(scenes.params, opts);
+    document.body.dataset.world = nextHook.world || 'night';
+    nextEl.classList.add('is-active'); nextEl.setAttribute('aria-hidden','false');
+    // v1.7.3：enter 可以异步；遮罩不会在目标场景首帧真正准备好之前退场。
+    await Promise.resolve(nextHook.enter?.(scenes.params, opts));
+    await SB.nextPaint();
     syncHistory(id,scenes.params,opts||{},prev);
     document.dispatchEvent(new CustomEvent('sb:scene', {detail:{id, params:scenes.params}}));
   }
   scenes.go = async (id, params={}, opts={}) => {
     if(!scenes.map[id]) return;
     if(document.body.classList.contains('is-busy')){
-      // Android/浏览器可能在转场动画期间连续触发 popstate。
-      // 永远保留最后一次历史目标，动画结束后再追上，避免 URL 与画面不同步。
       if(opts?.fromHistory) scenes._pendingHistory = {id, params:params||{}, opts:{...opts}};
       return;
     }
     if(id === scenes.current && JSON.stringify(params) === JSON.stringify(scenes.params) && !opts.force) return;
     const tr = opts.transition || 'veil';
+    const low = SB.perf.level !== 'high';
     document.body.classList.add('is-busy');
     SB.menu?.close?.();
     const veil = document.getElementById('sb-veil'), flash = document.getElementById('sb-flash');
+    const gate = SB.gate || null;
     try{
       if(SB.perf.level === 'reduced' || tr === 'none'){
-        swap(id, params, opts);
+        await prepareTarget(id, params, opts);
+        await swap(id, params, opts);
+      }else if(tr === 'flash' && gate){
+        // v1.8.0 秘境之门 · 门钥匙：光丝旋入 → 光门盖满 → 等目标场景首帧 → 光门撕开
+        const at = {x:opts.x, y:opts.y};
+        await gate.cover('portkey', at);
+        await prepareTarget(id, params, opts);
+        await swap(id, params, opts);
+        await gate.reveal('portkey', at);
       }else if(tr === 'flash'){
-        flash.className = 'flash-in'; await SB.wait(600);
-        swap(id, params, opts); await SB.wait(120);
-        flash.className = 'flash-out'; await SB.wait(1200); flash.className = '';
+        const tin = low ? 260 : 380, tout = low ? 360 : 520;
+        flash.style.animationDuration = tin + 'ms';
+        flash.className = 'flash-in'; await SB.wait(tin);
+        // 目标场景的网络/Three.js/首屏内容全部在遮罩完全盖住时准备。
+        await prepareTarget(id, params, opts);
+        await swap(id, params, opts);
+        flash.style.animationDuration = tout + 'ms';
+        flash.className = 'flash-out'; await SB.wait(tout); flash.className = ''; flash.style.animationDuration = '';
       }else if(tr === 'portal'){
         const x = opts.x ?? innerWidth/2, y = opts.y ?? innerHeight/2;
-        const prev = scenes.current, prevEl = scenes.el(prev);
-        const ring = SB.el('div','sb-portal-ring'); ring.style.left = x+'px'; ring.style.top = y+'px';
-        document.body.appendChild(ring);
+        // 点击后立刻给出同一 portal 光环反馈；准备阶段旧页保持完整，不出现空背景或半页残留。
+        // v1.8.0 幻影显形：有 SB.gate 时用旋转符文环代替纯光圈；否则保留旧光圈。
+        const ring = gate ? null : SB.el('div','sb-portal-ring preparing');
+        if(ring){ ring.style.left = x+'px'; ring.style.top = y+'px'; document.body.appendChild(ring); }
+        gate?.portalStart(x, y);
+        await prepareTarget(id, params, opts);
+        if(ring){ ring.classList.remove('preparing'); ring.style.width = ring.style.height = '0px'; }
+        const stage = document.getElementById('sb-stage');
+        const back = SB.el('div','sb-portal-backdrop'); stage.appendChild(back);
+        requestAnimationFrame(() => back.classList.add('show')); await SB.wait(low ? 90 : 120);
         const R = Math.hypot(Math.max(x, innerWidth-x), Math.max(y, innerHeight-y)) + 40;
-        const el = scenes.el(id);
-        el.classList.add('is-entering');
-        el.style.clipPath = `circle(0px at ${x}px ${y}px)`;
-        // 先让旧场景保持可见
-        prevEl?.classList.add('is-active');
-        swap(id, params, opts); prevEl?.classList.add('is-active');
-        SB.fx?.burst?.(500);
-        const t0 = performance.now(), D = 1050;
+        const el = scenes.el(id); el.classList.add('is-entering'); el.style.clipPath = `circle(0px at ${x}px ${y}px)`;
+        await swap(id, params, opts);
+        SB.fx?.burst?.(low ? 260 : 380);
+        const t0 = performance.now(), D = low ? 390 : 560;
         await new Promise(res => { const step = now => { const k = Math.min(1,(now-t0)/D), e = 1-Math.pow(1-k,3), r = e*R;
-          el.style.clipPath = `circle(${r}px at ${x}px ${y}px)`; ring.style.width = ring.style.height = (r*2)+'px'; ring.style.opacity = String(1-k*.9);
+          el.style.clipPath = `circle(${r}px at ${x}px ${y}px)`; gate?.portalFrame(x, y, r, k);
+          if(ring){ ring.style.width = ring.style.height = (r*2)+'px'; ring.style.opacity = String(1-k*.9); }
           k < 1 ? requestAnimationFrame(step) : res(); }; requestAnimationFrame(step); });
-        el.style.clipPath = ''; el.classList.remove('is-entering'); ring.remove();
-        if(prev !== id) prevEl?.classList.remove('is-active');
-      }else{
+        el.style.clipPath = ''; el.classList.remove('is-entering'); ring?.remove(); back.remove(); gate?.portalEnd();
+      }else if(gate){
+        // v1.8.0 秘境之门 · 熄灯器：彗星光点被吸向中心、夜色收拢 → 熄灭 → 荧光闪烁推开夜色
         SB.fx?.gather?.(innerWidth/2, innerHeight/2);
-        veil.className = 'veil-in'; await SB.wait(720);
-        swap(id, params, opts); SB.fx?.calm?.(); SB.fx?.burst?.(700);
-        veil.className = 'veil-out'; await SB.wait(820); veil.className = '';
+        await gate.cover('nox');
+        await prepareTarget(id, params, opts);
+        await swap(id, params, opts); SB.fx?.calm?.(); SB.fx?.burst?.(low ? 320 : 500);
+        await gate.reveal('nox');
+      }else{
+        const tin = low ? 260 : 400, tout = low ? 320 : 480;
+        SB.fx?.gather?.(innerWidth/2, innerHeight/2);
+        veil.style.animationDuration = tin + 'ms'; veil.className = 'veil-in'; await SB.wait(tin);
+        await prepareTarget(id, params, opts);
+        await swap(id, params, opts); SB.fx?.calm?.(); SB.fx?.burst?.(low ? 320 : 500);
+        veil.style.animationDuration = tout + 'ms'; veil.className = 'veil-out'; await SB.wait(tout); veil.className = ''; veil.style.animationDuration = '';
       }
+    }catch(e){
+      console.error('[Starbook scene transition]', id, e);
+      veil && (veil.className = ''); flash && (flash.className = '');
+      document.querySelectorAll('.sb-portal-backdrop,.sb-portal-ring').forEach(x => x.remove());
+      SB.gate?.abort?.();
+      SB.toast?.('场景暂时没有准备好，请再试一次');
     }finally{
       document.body.classList.remove('is-busy');
       const pending = scenes._pendingHistory; scenes._pendingHistory = null;
@@ -433,15 +509,16 @@ window.SB = window.SB || {};
       }
     }
   };
-  scenes.boot = (fallback) => {
-    // 各块的场景写在 <main> 之外，这里统一收进舞台，保证点击能落到场景上
+  scenes.boot = async (fallback) => {
     const stage = document.getElementById('sb-stage');
-    document.querySelectorAll('.sb-scene').forEach(s => stage.appendChild(s));
+    document.querySelectorAll('.sb-scene').forEach(s => { s.classList.remove('is-active','is-entering'); s.style.clipPath=''; s.setAttribute('aria-hidden','true'); stage.appendChild(s); });
     const hs = history.state;
     const want = hs?.starbook ? hs.scene : (location.hash||'').slice(1);
     const h = scenes.map[want];
     const params = hs?.starbook && h ? (hs.params||{}) : {};
-    swap(h && h.deepLink ? want : fallback, params, {boot:true});
+    const target = h && h.deepLink ? want : fallback;
+    await prepareTarget(target, params, {boot:true});
+    await swap(target, params, {boot:true});
   };
   window.addEventListener('popstate', e => {
     const st = e.state;
@@ -455,6 +532,7 @@ window.SB = window.SB || {};
     const veil = document.getElementById('sb-veil'), flash = document.getElementById('sb-flash');
     if(veil) veil.className = '';
     if(flash) flash.className = '';
+    SB.gate?.abort?.();
   });
 })(window.SB);
 </script>

@@ -11,14 +11,19 @@
 6. `../CHANGELOG.md`
 7. `../ROADMAP.md`
 8. 当前 `releases/vX.X.X.md`
+9. `PERFORMANCE_GUIDE.md` —— v1.7.2 起的场景、图片、Canvas 与响应式性能基线。
 
 ## 视觉设计（Magic Celestial Theme）
 
-- `design/VISUAL_UPGRADE_PLAN.md` — v1.5.2 → v1.6.2 视觉升级总计划、乱码根因实测、奇幻电影与电影式剪辑调研及来源。
+- `design/VISUAL_UPGRADE_PLAN.md` — v1.5.2 → v1.7.x 视觉升级总计划、乱码根因实测、奇幻电影与电影式剪辑调研及来源。
 - `../prompts/00-typography.md` — 「星文」字体系统提示词（v1.5.2）。
 - `../prompts/11-memory-player.md` — 「光影放映」多图编排放映、三种放映风格与四季主题提示词（v1.7.0，取代 v1.6.0 版本）。
 - `../prompts/12-memory-editor.md` — 回忆编辑器「星屿手稿」提示词（v1.7.0）。
 - `../prompts/10-city-album.md` — 城市回忆目录页「星屿手稿 · 目录页」提示词（v1.7.1）。
+- `../prompts/00-gate.md` — 「秘境之门」门钥匙 / 幻影显形 / 熄灯器转场提示词（v1.8.0）。
+- `../prompts/03-magic-book.md`、`../prompts/07-globe.md` — 「星辉层次」魔法书与地球特效、地球搜索栏（v1.8.0）。
+- `../prompts/09-country-map.md` — 国家地图；v1.8.0 起返回直接回到地球（大洲目录页已删除）。
+- `../tools/make_cities.py` — 生成离线城市库 `blocks/06-world-cities.html`（v1.8.0）。
 
 ## 发布与 CI
 
@@ -57,3 +62,15 @@
 ### `docs/RELEASE_AUTOMATION.md`
 
 v1.6.0+ 一键版本发布机制。说明 `release-current.ps1`、自动 Release Record、版本专属脚本、数据安全边界和失败处理。
+
+## 场景性能逐链路 Prompt（v1.7.3）
+
+- `prompts/performance/01-login-to-book.md`
+- `prompts/performance/02-book-to-globe.md`
+- `prompts/performance/03-globe-to-country.md`
+- `prompts/performance/04-country-city-deep-scenes.md`
+- `prompts/performance/05-scene-runtime-transaction.md`
+
+## v1.7.3 转场专项验收
+
+- `docs/TRANSITION_STABILITY_TEST.md`：登录→Book→Globe→Country→City→Player 全链路真机验收（v1.8.0 增加秘境之门与搜索验收项）。

@@ -14,6 +14,7 @@
     B.setSpin(10);
     B.cover.classList.add('is-charging', 'is-lit');
     const g = B.gemCenter(); SB.fx.gather(g.x, g.y); SB.fx.orbitBoost(6);
+    B.fxSuck?.(true);
     await SB.wait(1000);
 
     // 2 共鸣
@@ -22,6 +23,9 @@
     B.stage.style.transition = 'transform .5s var(--ease-soft)';
     B.stage.style.transform = 'scale(1.04)';
     await SB.wait(400);
+
+    // v1.7.3：翻页阶段提前准备地球资源；真正切换仍由场景事务等到首帧完成后再揭罩。
+    SB.scenes.prefetch?.('globe',{});
 
     // 3 翻开
     B.cover.classList.add('is-open');
@@ -41,7 +45,8 @@
     B.stage.style.transition = 'transform 1.5s cubic-bezier(.6,0,.35,1), opacity 1.3s ease-in';
     B.stage.style.transform = 'scale(2.6)'; B.stage.style.opacity = '0';
     await SB.wait(700);
-    await SB.scenes.go('globe', {fromBook:true}, {transition:'flash'});
+    // v1.8.0：门钥匙光门从书页中心打开。
+    await SB.scenes.go('globe', {fromBook:true}, {transition:'flash', x:r.left + r.width/2, y:r.top + r.height*.48});
   };
 })(window.SB);
 </script>

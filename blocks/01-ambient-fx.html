@@ -45,7 +45,7 @@
       trail: 'rgba(255,206,130,'
     };
   }
-  const count = () => SB.perf.level === 'high' ? 220 : SB.perf.level === 'low' ? 110 : 30;
+  const count = () => SB.perf.level === 'high' ? (SB.perf.touch ? 150 : 190) : SB.perf.level === 'low' ? 72 : 18;
   function spawn(p, initial){
     const r = Math.random();
     p.kind = r < .14 ? 'bokeh' : r < .62 ? 'dust' : 'ember';
@@ -59,12 +59,12 @@
     return p;
   }
   function buildOrbit(){
-    const n = SB.perf.level === 'high' ? 180 : SB.perf.level === 'low' ? 90 : 0;
+    const n = SB.perf.level === 'high' ? (SB.perf.touch ? 110 : 150) : SB.perf.level === 'low' ? 56 : 0;
     orbitPts = Array.from({length:n}, () => ({ a:Math.random()*6.28, r:.86 + Math.random()*.28, h:(Math.random()-.5)*.16,
       s:.6 + Math.random()*.8, size:1.2 + Math.random()*2.6, tw:Math.random()*6.28, big:Math.random() < .08 }));
   }
   function resize(){
-    DPR = Math.min(devicePixelRatio || 1, SB.perf.level === 'high' ? 2 : 1.5);
+    DPR = Math.min(devicePixelRatio || 1, SB.perf.level === 'high' ? (SB.perf.touch ? 1.5 : 1.75) : SB.perf.level === 'low' ? 1.25 : 1);
     W = innerWidth; H = innerHeight;
     for(const [c,x] of [[back,bctx],[front,fctx]]){ c.width = W*DPR; c.height = H*DPR; x.setTransform(DPR,0,0,DPR,0,0); }
     const n = count();
@@ -94,10 +94,19 @@
     }
   }, {passive:true});
 
-  let last = performance.now(), running = true;
+  let last = performance.now(), running = true, cinemaMode = false, lastDraw = 0;
+  fx.playback = on => { cinemaMode = !!on; };
+  function targetFps(){
+    if(SB.perf.level === 'reduced') return 18;
+    if(cinemaMode) return SB.perf.level === 'high' ? 40 : 24;
+    return SB.perf.level === 'high' ? 60 : 30;
+  }
   function frame(now){
     if(!running) return;
-    const dt = SB.clamp((now - last)/1000, 0, .05); last = now;
+    const minFrame = 1000/targetFps();
+    if(now - lastDraw < minFrame){ requestAnimationFrame(frame); return; }
+    lastDraw = now;
+    const dt = SB.clamp((now - last)/1000, 0, .06); last = now;
     const t = now/1000, sp = S[palette];
     for(const k of ['gather','burst','warp']) mode[k] = SB.lerp(mode[k], mode.tg[k], Math.min(1, dt*(k === 'burst' ? 3 : 1.7)));
     mouse.x = SB.lerp(mouse.x, mouse.tx, Math.min(1, dt*1.5)); mouse.y = SB.lerp(mouse.y, mouse.ty, Math.min(1, dt*1.5));

@@ -6,6 +6,8 @@
 .pl-ambient{position:absolute;inset:-8%;background-size:cover;background-position:center;filter:blur(38px) brightness(.38) saturate(1.15);
   transform:scale(1.08);animation:plBreath 14s ease-in-out infinite alternate;transition:opacity 1.2s var(--ease-soft);}
 @keyframes plBreath{from{transform:scale(1.08)}to{transform:scale(1.16)}}
+html[data-sb-perf="low"] .pl-ambient{filter:blur(20px) brightness(.36) saturate(1.08);animation:none;transform:scale(1.1);}
+html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
 .sb-scene[data-scene="player"].showing .pl-ambient{opacity:0;}
 
 /* ── 放映厅 ── */
@@ -55,7 +57,11 @@
 .pl-lobby-acts{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;animation:plPosterIn 1.2s var(--ease-soft) .45s backwards;}
 .pl-lobby-acts .sb-btn{background:rgba(10,10,28,.55);}
 .pl-wait{font-size:13px;letter-spacing:.14em;color:var(--text-dim);min-height:1.4em;}
-@media (max-width:600px){ .pl-start{width:100px;height:100px;} .pl-start .core{width:66px;height:66px;} }
+@media (max-width:600px){
+  .pl-lobby{gap:clamp(10px,1.6vh,16px);padding-top:calc(58px + var(--safe-t));}
+  .pl-poster{width:min(220px,54vw,30vh);}
+  .pl-start{width:100px;height:100px;} .pl-start .core{width:66px;height:66px;}
+}
 
 /* ── 银幕与舞台 ── */
 .pl-screen{position:absolute;inset:0;overflow:hidden;opacity:0;pointer-events:none;transition:opacity .9s var(--ease-soft);}
@@ -74,7 +80,7 @@
 .pl-flat{position:absolute;inset:0;}
 
 /* 照片元素 */
-.pl-ph{position:absolute;left:0;top:0;contain:layout;will-change:transform,opacity;backface-visibility:hidden;}
+.pl-ph{position:absolute;left:0;top:0;contain:layout paint style;will-change:transform,opacity;backface-visibility:hidden;}
 .pl-ph .im{position:absolute;inset:0;overflow:hidden;}
 .pl-ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transform-origin:50% 45%;will-change:transform;}
 .pl-ph.fill .im img{filter:blur(28px) brightness(.4) saturate(1.2);transform:scale(1.15);}
@@ -373,7 +379,7 @@
   $('pl-e-star').innerHTML = SB.icon('spark');
   $('pl-buffer').appendChild(SB.ui.spinner('正在冲洗胶片…'));
 
-  const P = { m:null, style:'cinema', seasonPref:'auto', season:'none', TL:null, T:0, playing:false, showing:false, raf:0, last:0,
+  const P = { m:null, style:'cinema', seasonPref:'auto', season:'none', TL:null, T:0, playing:false, showing:false, raf:0, last:0, renderAt:0,
               W:0, H:0, bar:0, fw:0, fh:0, idleT:0, endShown:false, cur:0, liveKey:'', nodes:new Map() };
   const lite = () => SB.perf.level !== 'high';
   const reduced = () => SB.perf.level === 'reduced';
@@ -440,7 +446,7 @@
   /* ── 舞台尺寸 ── */
   function measure(style){
     const W = scene.clientWidth || innerWidth, H = scene.clientHeight || innerHeight, land = W >= H;
-    const bar = style === 'cinema' ? Math.round(land ? Math.max(0, (H - W/1.85)/2) : H*.07) : 0;
+    const bar = style === 'cinema' ? Math.round(land ? Math.max(0, (H - W/1.85)/2) : H*(SB.perf.touch ? .045 : .06)) : 0;
     return {W, H, bar, fw:W, fh:H - bar*2, land};
   }
 
@@ -674,16 +680,20 @@
 
   /* ── 照片：等待签名地址、预加载并解码 ── */
   const cache = new Map();
-  function urlOf(id){
-    return new Promise(res => { let n = 0; const tryOnce = () => { const u = SB.store.url(id); if(u || n++ > 33) return res(u || ''); setTimeout(tryOnce, 150); }; tryOnce(); });
+  async function urlOf(id){
+    let u = SB.store.url(id); if(u) return u;
+    await SB.store.prefetchUrls?.([id]);
+    u = SB.store.url(id); if(u) return u;
+    return new Promise(res => { let n = 0; const tryOnce = () => { const x = SB.store.url(id); if(x || n++ > 20) return res(x || ''); setTimeout(tryOnce, 120); }; tryOnce(); });
   }
-  function load(id){
+  function load(id, priority='auto'){
     if(!id) return Promise.resolve(null);
     if(cache.has(id)) return cache.get(id).p;
     const rec = {ready:false, url:'', ok:false};
     rec.p = urlOf(id).then(url => new Promise(res => {
       rec.url = url; if(!url){ rec.ready = true; return res(rec); }
       const img = new Image(); img.decoding = 'async';
+      if('fetchPriority' in img) img.fetchPriority = priority;
       img.onload = () => { (img.decode ? img.decode().catch(() => {}) : Promise.resolve()).then(() => { rec.ready = rec.ok = true; res(rec); }); };
       img.onerror = () => { rec.ready = true; res(rec); };
       img.src = url;
@@ -691,7 +701,23 @@
     cache.set(id, rec); return rec.p;
   }
   const isReady = id => !id || cache.get(id)?.ready;
-  function prefetch(T){ if(!P.TL) return; for(const it of P.TL.items) if(it.kind === 'photo' && it.t0 < T + 7000 && (it.t1 ?? 1e12) > T) load(it.slide.id); }
+  async function prime(m){
+    const ids = [...new Set([m?.cover?.id, ...(m?.slides || []).map(s => s.id)].filter(Boolean))];
+    const n = SB.perf.touch || lite() ? 6 : 10, first = ids.slice(0, n);
+    await SB.store.prefetchUrls?.(first);
+    // 转场只等待封面/第一张真正 decode，后续照片继续后台预热，避免点击后长时间“没有反应”。
+    await Promise.all(first.slice(0, 2).map((id, i) => load(id, i === 0 ? 'high' : 'auto')));
+    first.slice(2, SB.perf.touch || lite() ? 4 : 6).forEach(id => load(id, 'auto'));
+  }
+  function prefetch(T){
+    if(!P.TL) return;
+    const ahead = SB.perf.touch || lite() ? 16000 : 12000;
+    const ids = [];
+    for(const it of P.TL.items) if(it.kind === 'photo' && it.t0 < T + ahead && (it.t1 ?? 1e12) > T - 800) ids.push(it.slide.id);
+    const unique = [...new Set(ids)];
+    SB.store.prefetchUrls?.(unique);
+    unique.forEach((id, i) => load(id, i < 2 ? 'high' : 'auto'));
+  }
 
   /* ── 布局 ── */
   function applyLayout(){
@@ -703,7 +729,10 @@
     $('pl-sky').style.display = TL.style === 'constellation' ? '' : 'none';
     $('pl-grain').classList.toggle('off', lite() || TL.style === 'constellation');
     $('pl-grain').style.opacity = TL.style === 'journal' ? '.05' : '';
-    for(const cv of [$('pl-sky'), $('pl-season'), $('pl-dust')]){ const dpr = Math.min(devicePixelRatio || 1, 1.5); cv.width = Math.round(P.fw*dpr); cv.height = Math.round(P.fh*dpr); cv._dpr = dpr; }
+    for(const cv of [$('pl-sky'), $('pl-season'), $('pl-dust')]){
+      const cap = SB.perf.touch || lite() ? 1 : 1.5, dpr = Math.min(devicePixelRatio || 1, cap);
+      cv.width = Math.round(P.fw*dpr); cv.height = Math.round(P.fh*dpr); cv._dpr = dpr;
+    }
   }
   function rebuild(keepT){
     if(!P.m) return;
@@ -1068,6 +1097,9 @@
   let pfAt = -1e9;
   function loop(now){
     if(!P.showing || SB.scenes.current !== 'player') return;
+    const minFrame = lite() ? 1000/30 : 1000/60;
+    if(P.renderAt && now - P.renderAt < minFrame){ P.raf = requestAnimationFrame(loop); return; }
+    P.renderAt = now;
     const dt = Math.min(80, now - (P.last || now)); P.last = now;
     if(P.playing){
       const waiting = waitingAt(P.T, dt);
@@ -1135,10 +1167,10 @@
     const acts = $('pl-lobby-acts'); acts.innerHTML = '';
     if(SB.store.canEdit) acts.appendChild(SB.ui.button('编辑', 'small', () => SB.editor.open({cityId:m.cityId, memory:m}), 'quill'));
     acts.appendChild(SB.ui.button('返回', 'small', () => SB.scenes.back()));
+    prime(m);
     const cover = m.cover?.id || m.slides?.[0]?.id; const pimg = $('pl-poster-img'); pimg.classList.remove('ok');
-    if(cover){ const rec = await load(cover); if(P.m !== m) return;
+    if(cover){ const rec = await load(cover, 'high'); if(P.m !== m) return;
       if(rec?.url){ pimg.onload = () => pimg.classList.add('ok'); pimg.src = rec.url; $('pl-ambient').style.backgroundImage = `url("${rec.url}")`; } }
-    (m.slides || []).slice(0, 3).forEach(s => load(s.id));
   }
 
   /* ── 放映 ── */
@@ -1171,8 +1203,8 @@
     SB.audio.unlock();
     prepareScreen();
     P.TL = buildTL(P.m, P.style); applyLayout(); buildBars();
-    P.T = 0; P.cur = -1; P.showing = true;
-    scene.classList.add('showing');
+    P.T = 0; P.cur = -1; P.showing = true; P.renderAt = 0;
+    scene.classList.add('showing'); SB.fx?.playback?.(true);
     setSeason(P.season, true);
     const scr = $('pl-screen'); scr.classList.remove('pl-flicker'); void scr.offsetWidth; scr.classList.add('pl-flicker');
     if(!again) SB.audio.set(P.m.bgmMode === 'none' ? undefined : (P.m.bgm || null)); else SB.audio.duck(1, 1200);
@@ -1182,7 +1214,7 @@
     wake();
   }
   function stopShow(){
-    P.showing = false; setPlaying(false); cancelAnimationFrame(P.raf);
+    P.showing = false; setPlaying(false); cancelAnimationFrame(P.raf); SB.fx?.playback?.(false);
     clearNodes(); PS.list = [];
     $('pl-seasons').classList.remove('open');
     scene.classList.remove('showing', 'awake');
@@ -1232,6 +1264,7 @@
     world:'night', hash:false,
     title:p => SB.store.memory(p.id)?.title || '回忆',
     parent:p => { const m = SB.store.memory(p.id); return m ? {id:'city', params:{id:m.cityId}} : {id:'globe', params:{}}; },
+    prepare(p){ const m = SB.store.memory(p.id); return m ? prime(m) : Promise.resolve(); },
     async enter(p){
       SB.fx.palette('warm'); SB.fx.calm();
       const m = SB.store.memory(p.id);
@@ -1246,7 +1279,7 @@
   /* 调试 / 自动化验收：在暂停状态下定位到时间线上的某一刻 */
   function seek(T){ if(!P.showing) return; setPlaying(false); P.T = Math.max(0, T); prefetch(P.T); render(); }
   SB.player = {
-    play:() => play(false), seek, jump,
+    play:() => play(false), seek, jump, prime,
     setStyle(id){ if(SB.cinema.styles.some(s => s.id === id)){ P.style = id; if(P.showing) rebuild(false); else if(P.m){ refreshStyleUI(); updateStat(); } } },
     setSeason(id){ P.seasonPref = id; setSeason(SB.cinema.resolveSeason(id, P.m?.date), true); },
     stepSeason(ms){ for(let k = 0; k < ms/50; k++) stepSeason(50); render(); },

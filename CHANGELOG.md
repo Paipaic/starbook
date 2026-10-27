@@ -1,5 +1,78 @@
 # Changelog
 
+## [1.8.0] - 2026-10-27
+
+### Visual — 「秘境之门」奇幻转场（VIS-002）
+- 新块 `blocks/01b-gate.html`（`SB.gate`，全屏画布 `#sb-magic-gate`），只替换 Scene Runtime 的 cover / reveal 视觉，事务顺序不变（`prepare → cover → await enter → nextPaint → reveal → cleanup`）。
+- **门钥匙 Portkey**（`flash`：魔法书 → 地球、菜单 → 地球）：40–60 条金色光丝沿螺线旋入，暖白蒸汽团旋转，中心光门扩大盖满全屏；等待目标场景时光幕上有缓慢旋转的符文环；揭示时光门从中心「撕开」（羽化 + 不规则边缘），光丝反向甩出。开书时光门从书页中心打开。
+- **幻影显形 Apparition**（`portal`：点击处圆形揭示）：准备阶段点击处出现旋转的小符文环（取代纯光圈）；揭示时圆形边缘带双圈刻度符文环、6 条螺旋金丝、外侧柔光与向外飞溅的火星。
+- **熄灯器 Nox / 荧光闪烁 Lumos**（`veil`：返回、菜单跳转）：光点像彗星一样被吸向中心、夜色收拢、最后一点光熄灭；揭示时中心荧光闪烁亮起，光推开夜色，彗星向外散开。
+- `SB.gate` 不存在时自动回退到旧的 veil / flash / 光圈；任何准备失败都会 `SB.gate.abort()` 清理，不留遮罩；bfcache 恢复同样清理。reduced 档不显示门。
+
+### Visual — 「星辉层次」魔法书与地球（VIS-003）
+- **魔法书**：星云、宝石光溢与旋转光束、绕书一圈的 3D 符文环（28 / 16 枚，经过封面中央时自动变暗）、烟雾与火星（画布粒子，low 档减量、reduced 关闭）、书页边缘流光、新增能量脉络；开书时烟雾、火星与符文环被吸入宝石。
+- **地球**：海面星辉高光、程序生成的云雾层、外层呼吸光晕、星座线、倾斜星盘环（拉丁铭文刻度）、按时间连接我们城市的「足迹光弧」与流动光点。
+
+### Navigation / Search（NAV-001）
+- **删除大洲国家目录页**（`blocks/08-continent.html`、`prompts/08-continent.md`）：国家地图的父级改为世界星图，左上角返回 / 面包屑 / 系统返回都直接回到地球，地球自动转向刚才的国家并短暂高亮。
+- 地球上的大洲徽章、手机底部大洲按钮和菜单「七大洲」改为**让地球转向该大洲**。
+- **地球正上方新增搜索栏**：可搜索我们的城市、任意国家与任意城市；内置 648 座城市离线库（`blocks/06-world-cities.html`，由 `tools/make_cities.py` 从 CLDR 中文城市名 + IANA zone.tab + 手工补充生成）+ 在线城市搜索（Open-Meteo Geocoding，中文，350ms 防抖、6 秒超时、可取消、缓存；失败时只显示本地结果）。
+- 选中结果后地球以 easeInOutCubic 沿最短方向快速转到目标并推近，目标国家高亮、目标点亮起星标与扩散光环，下方浮出信息卡（「打开我们的回忆」/「进入 X 地图」）。支持键盘 ↑↓ / Enter / Esc。
+
+### Governance
+- 新增 / 更新 Prompt：`prompts/00-gate.md`（新）、`prompts/00-architecture.md`、`prompts/03-magic-book.md`、`prompts/07-globe.md`、`prompts/09-country-map.md`、`prompts/performance/03-globe-to-country.md`；调研见 `docs/design/VISUAL_UPGRADE_PLAN.md` 第 8 节。
+- `tools/check_project.py`：DOM id 重复改为错误；新增 `SB.gate`、Scene Runtime 门接入、离线城市库、禁止大洲目录页回归的检查。
+
+### Data
+- **无数据库、RLS、schema_version、Book 数据结构或 Storage 变化；无需 SQL。**
+- 新增唯一外部服务：Open-Meteo 城市搜索（只发送用户输入的搜索词，不发送任何回忆数据；不可用时功能降级为离线城市库）。
+
+
+## [1.7.3] - 2026-10-27
+
+### Performance / Stability
+- **Scene Transaction 重构**：目标场景统一按 `prepare → cover → await enter → nextPaint → reveal` 生命周期切换，修复 async enter 未完成就揭罩造成的空背景、错页闪现和旧页残留。
+- **登录 → 魔法书**：Gate 直到 Store JSONB、Book scene 与首帧 paint 完成后才退场；Store 启动不再全量创建整本书所有媒体 Signed URL。
+- **魔法书 → 地球**：Three.js 脚本 idle 预热，Globe 增加 `prepare()`；手机降低 WebGL 初始化几何细分、纹理尺寸和粒子数量，Flash 只在地球首帧准备完成后退场。
+- **地球 → 国家**：Globe hover 与 Continent focus/pointerenter 提前预取国家地图；Country `prepare()` 复用地图缓存，`enter()` 由 Scene Runtime await。
+- **国家 → 城市 → 回忆**：City 首屏 cover 批量签名；Player `prime()` 可 await 并在 portal 揭示前预热封面/前几张照片；Editor 后台批量预取已有照片 URL。
+- **Portal 稳定层**：Portal 使用 stage 内 backdrop 隔离旧场景，目标 scene 完成首帧后再圆形揭示；转场结束强制清理 clip-path/ring/backdrop。
+
+### Governance
+- 新增 `prompts/performance/` 下 5 份逐链路性能 Prompt，分别约束 Login→Book、Book→Globe、Globe→Country、深层页面和 Scene Runtime。
+- `docs/PERFORMANCE_GUIDE.md` 升级为 v1.7.3 场景事务基线。
+
+### Data
+- **无数据库、RLS、schema_version 或 Storage 路径变化；无需 SQL。**
+
+
+## [1.7.2] - 2026-10-27
+
+### Performance
+- **场景切换去残影**：`portal` 转场不再让旧场景保持 `is-active` 到动画结束；旧场景在新场景进入后立即卸载，圆形展开继续保留原有视觉语言，但不再出现上一页在新画面后方短暂滞留。
+- **转场调度优化**：veil / flash / portal 改为按性能档位使用更短的动画时长，并在 scene swap 后等待浏览器完成下一次 paint 再继续退场，降低切换时主线程拥塞与“卡一帧”。
+- **移动端自动性能档**：综合 coarse pointer、viewport、CPU core、device memory 判定 low / high；低性能设备降低全局粒子数量、Canvas DPR 和动画帧率。
+- **放映时资源让路**：进入回忆放映后，全局 Ambient FX 自动降帧；播放器自身在 low / mobile 档限制到约 30 FPS，桌面高性能档保持 60 FPS。
+- **照片加载预热**：进入放映厅前批量补齐 Signed URL，并预解码前几张照片；播放中预取窗口由 7 秒扩展到 12–16 秒，降低手机弱网下“正在冲洗胶片”的等待频率。
+- **城市相册图片减载**：手机 / low 档减少每个章节卡片同时生成的缩影数量；仅首张封面 eager + high priority，其余封面 / 缩影 lazy + low priority；离屏章节启用 `content-visibility:auto`。
+- **编辑器图片懒加载**：照片网格改为 `loading="lazy" + decoding="async" + fetchpriority="low"`，避免打开编辑器时一次性解码全部照片。
+- **Private Storage 浏览器缓存**：新上传的唯一文件路径改为一年 `cacheControl`，减少重复打开同一照片时的网络开销。
+
+### Responsive
+- 城市章节卡片在手机端海报比例由 16:9 调整为 3:2，窄屏进一步使用 4:3，减少竖图被过度裁切。
+- 回忆编辑器桌面端增大可用宽度并让预览列自适应；手机端增大预览尺寸，≤430px 时照片编辑卡片改为单列 3:2，提升可编辑面积。
+- 放映厅手机端海报尺寸与垂直间距重新约束；竖屏 Cinema 黑边减少，让照片获得更多有效画面高度。
+- low 档移除编辑器 / 通用弹窗实时 backdrop blur，并减少编辑器季节粒子数量，保持视觉风格但降低 GPU 压力。
+
+### Governance
+- v1.7.2 明确为性能与响应式优化版本；原计划的「秘境之门」视觉转场设计延期，避免在周年 Feature Freeze 前继续叠加特效。
+- 新增 `docs/PERFORMANCE_GUIDE.md`，记录场景、图片、Canvas、响应式和未来 Agent 的性能约束。
+- `tools/check_project.py` 增加关键性能回归标记检查。
+
+### Data
+- **无数据库、RLS、schema_version、Book 数据结构变化；无需 SQL。**
+- 不迁移、不删除现有城市 / 回忆 / 照片 / BGM；Storage 仅影响 v1.7.2 之后新上传对象的浏览器缓存元数据。
+
 ## [1.7.1] - 2026-10-27
 
 ### Changed

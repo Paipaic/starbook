@@ -2,10 +2,10 @@
 /* ── 块 12 · 回忆编辑器（v1.7.0「星屿手稿」）──
    左：实时海报预览（封面、标题、日期、地点、放映风格与季节）；右：四章——故事 / 影像 / 放映 / 乐章。
    手机：单列，预览缩成顶部横条。 */
-.sb-scroll.ed-book{width:min(1040px,100%);}
+.sb-scroll.ed-book{width:min(1120px,100%);}
 .sb-scroll.ed-book > header{padding-top:22px;}
 .sb-scroll.ed-book > .body{padding:6px 24px 18px;}
-.ed-wrap{display:grid;grid-template-columns:260px minmax(0,1fr);gap:26px;align-items:start;}
+.ed-wrap{display:grid;grid-template-columns:clamp(240px,25vw,300px) minmax(0,1fr);gap:clamp(20px,2.4vw,30px);align-items:start;}
 
 /* 预览海报 */
 .ed-side{position:sticky;top:0;display:flex;flex-direction:column;gap:12px;}
@@ -57,7 +57,7 @@
 .ed-count{align-self:flex-end;font-family:var(--f-num);font-size:12px;letter-spacing:.1em;color:var(--gold-dim);margin-top:-2px;}
 
 /* 照片网格 */
-.ed-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:14px;}
+.ed-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;}
 .ed-card{position:relative;display:flex;flex-direction:column;border-radius:10px;overflow:hidden;background:rgba(8,6,16,.55);border:1px solid rgba(244,184,96,.2);
   transition:border-color .3s, box-shadow .3s, transform .3s var(--ease-soft);}
 .ed-card:hover{border-color:rgba(244,184,96,.5);box-shadow:0 10px 26px rgba(0,0,0,.4),0 0 16px rgba(244,184,96,.12);}
@@ -156,7 +156,7 @@
 @media (max-width:860px){
   .ed-wrap{grid-template-columns:1fr;gap:18px;}
   .ed-side{position:relative;flex-direction:row;align-items:center;gap:14px;}
-  .ed-poster{width:96px;flex:none;}
+  .ed-poster{width:clamp(104px,24vw,136px);flex:none;}
   .ed-poster .cap,.ed-poster .shade,.ed-poster .badges,.ed-poster .empty span{display:none;}
   .ed-side .ed-mini{display:flex;}
   .ed-side > .ed-sum.main{display:none;}
@@ -166,6 +166,7 @@
 .ed-mini b{font-family:var(--f-display);font-weight:600;font-size:17px;letter-spacing:.08em;color:var(--gold-hi);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .ed-mini b:empty::before{content:"新的回忆";color:rgba(255,226,168,.45);}
 @media (max-width:560px){
+  .sb-scroll.ed-book{max-height:calc(100dvh - var(--safe-t));}
   .sb-scroll.ed-book > .body{padding:4px 16px 14px;}
   .ed-tale{grid-template-columns:1fr;}
   .ed-styles{grid-template-columns:1fr;}
@@ -175,6 +176,13 @@
   .ed-card textarea{min-height:56px;font-size:13.5px;padding:8px 10px;}
   .ed-add{min-height:150px;}
 }
+@media (max-width:430px){
+  .ed-side{align-items:flex-start;}
+  .ed-poster{width:112px;}
+  .ed-grid{grid-template-columns:1fr;}
+  .ed-card .ph{aspect-ratio:3/2;}
+}
+html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop-filter:none;}
 </style>
 
 <script>
@@ -199,6 +207,7 @@
       const city = SB.store.city(cityId);
       if(!SB.store.canEdit){ SB.toast('你目前只有查看权限'); return; }
       const orig = memory ? JSON.parse(JSON.stringify(memory)) : null;
+      if(orig){ const ids = [...new Set([orig.cover?.id, ...(orig.slides||[]).map(s=>s.id)].filter(Boolean))]; SB.store.prefetchUrls?.(ids.slice(0, SB.perf.touch ? 8 : 14)); }
       const now = new Date();
       const st = {
         title: orig?.title || '', note: orig?.note || '',
@@ -375,12 +384,15 @@
         if(fallKey !== eff){
           fallKey = eff; ui.fall.innerHTML = '';
           const F = FALL[eff];
-          if(F && SB.perf.level !== 'reduced') for(let k = 0; k < F.n; k++){
+          if(F && SB.perf.level !== 'reduced'){
+            const fallCount = SB.perf.level === 'low' ? Math.max(4, Math.ceil(F.n*.55)) : F.n;
+            for(let k = 0; k < fallCount; k++){
             const i = SB.el('i', '', F.html), dur = 5 + ((k*37) % 50)/10;
             i.style.left = ((k*61) % 100) + '%'; i.style.animationDuration = dur + 's'; i.style.animationDelay = (-(k*1.7) % dur) + 's';
             i.style.setProperty('--dx', (((k*13) % 40) - 10) + 'px'); i.style.setProperty('--rot', (eff === 'winter' || eff === 'summer' ? 0 : 200 + (k*47) % 300) + 'deg');
             if(F.up){ i.style.top = 'auto'; i.style.bottom = '-10%'; i.style.animationName = 'none'; i.style.animation = `edRise ${dur}s ease-in-out ${-(k*1.3) % dur}s infinite`; }
             ui.fall.appendChild(i);
+            }
           }
         }
         refreshSum();
@@ -416,7 +428,7 @@
         const i = st.slides.indexOf(s), card = SB.el('div', 'ed-card' + (s.id && s.id === st.cover ? ' cover' : ''));
         const ph = SB.el('div', 'ph');
         if(s.pending){ const t = SB.el('span', 'st'); t.textContent = s.step || '上传中'; ph.appendChild(t); Object.defineProperty(s, '_st', {value:t, configurable:true, writable:true}); }
-        else ph.innerHTML = `<img alt="" src="${SB.esc(SB.store.url(s.id))}">`;
+        else ph.innerHTML = `<img alt="" loading="lazy" decoding="async" fetchpriority="low" src="${SB.esc(SB.store.url(s.id))}">`;
         const no = SB.el('span', 'no'); no.textContent = String(i + 1).padStart(2, '0'); ph.appendChild(no);
         if(s.id && s.id === st.cover){ ph.insertAdjacentHTML('beforeend', `<span class="cv">${SB.icon('star')}封面</span>`); }
         const ops = SB.el('div', 'ops');

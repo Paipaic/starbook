@@ -1,3 +1,19 @@
+
+## v1.8.0 — 秘境之门 · 星辉层次 · 搜索与导航
+
+- [x] 「秘境之门」门钥匙 / 幻影显形 / 熄灯器三种转场（`SB.gate`，可回退）
+- [x] 「星辉层次」魔法书与地球特效
+- [x] 删除大洲国家目录页，国家返回直接回到地球
+- [x] 地球搜索栏（我们的城市 / 国家 / 任意城市，离线 + 在线）
+
+## v1.7.3 — Scene Transaction / First-frame Stability
+
+- [x] 登录 Gate 延迟到 Book 首帧后揭开
+- [x] Scene Manager await prepare / enter / nextPaint
+- [x] Globe / Country / City / Player 首屏资源预取
+- [x] Portal backdrop 防旧页残留
+- [x] 逐链路性能 Prompt 固化
+
 # Starbook Roadmap
 
 ## Visual Upgrade — Magic Celestial Theme（计划见 `docs/design/VISUAL_UPGRADE_PLAN.md`）
@@ -8,9 +24,11 @@
 - **VIS-006 · 放映四季主题（春 / 夏 / 秋 / 冬调色与粒子）** — `DONE` (v1.7.0)
 - **VIS-007 · 回忆编辑器「星屿手稿」界面升级（实时海报预览、照片卡片、风格 / 季节选择）** — `DONE` (v1.7.0)
 - **VIS-008 · 城市回忆目录页「星屿手稿 · 目录页」升级** — `DONE` (v1.7.1)
-- **VIS-002 · 「秘境之门」奇幻转场系统** — `PLANNED` (v1.7.2)
-- **VIS-003 · 「星辉层次」魔法书与地球特效** — `PLANNED` (v1.7.3)
-- 版本号按交付顺序递增；若 Feature Freeze 前时间不足，v1.7.2 / v1.7.3 可顺延到周年之后。
+- **PERF-001 · 场景切换 / 移动端 / 放映图片 / 深层页面比例性能优化** — `DONE` (v1.7.2)
+- **VIS-002 · 「秘境之门」奇幻转场系统** — `DONE` (v1.8.0)
+- **VIS-003 · 「星辉层次」魔法书与地球特效** — `DONE` (v1.8.0)
+- **NAV-001 · 导航精简（删除大洲目录页）+ 地球城市 / 国家搜索栏** — `DONE` (v1.8.0)
+- v1.7.2 改为性能与响应式优化版本；VIS-002 / VIS-003 按 Owner 要求在 v1.8.0 完成，并保持 v1.7.3 场景事务与性能分档。
 - 后续可选：放映风格增加第 4 种；编辑器内「预览放映」按钮；照片焦点（兴趣点）标记（需新增字段）。
 
 ## Project Governance — v1.5.1

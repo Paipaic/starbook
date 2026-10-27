@@ -85,6 +85,57 @@ for prop in ('busy','open','reset','state','scene','cover','tilt','gemBtn','page
         print(f'ERROR: visual Magic Book property leaked back to SB.book: {prop}; use SB.magicBook')
         sys.exit(1)
 
+# v1.7.3 performance / scene-transaction baseline guards.
+core_text = block_text.get('00-core.html','')
+store_text = block_text.get('05-store.html','')
+city_text = block_text.get('10-city-album.html','')
+editor_text = block_text.get('12-memory-editor.html','')
+if 'SB.nextPaint' not in core_text:
+    print('ERROR: scene paint synchronization missing from 00-core.html')
+    sys.exit(1)
+for marker in ('prepareTarget', 'scenes.prefetch', 'await prepareTarget', 'await Promise.resolve(nextHook.enter'):
+    if marker not in core_text:
+        print(f'ERROR: v1.7.3 scene transaction marker missing: {marker}')
+        sys.exit(1)
+if "prevEl?.classList.add('is-active')" in core_text:
+    print('ERROR: portal transition reactivates previous scene and can cause visual residue')
+    sys.exit(1)
+if 'st.prefetchUrls' not in store_text:
+    print('ERROR: Signed URL prefetch API missing from 05-store.html')
+    sys.exit(1)
+if re.search(r'async function applyRemote\(row\)\s*\{[^}]*await\s+warmUrls', store_text, re.S):
+    print('ERROR: Store startup must not await full-library warmUrls; use scene-level prefetch')
+    sys.exit(1)
+for marker in ('async function prime(m)', 'SB.fx?.playback?.(true)', 'play:() => play(false), seek, jump, prime'):
+    if marker not in player_text:
+        print(f'ERROR: player performance marker {marker!r} missing from 11-memory-player.html')
+        sys.exit(1)
+if 'loading="lazy"' not in editor_text:
+    print('ERROR: memory editor image lazy loading missing')
+    sys.exit(1)
+if 'content-visibility:auto' not in city_text:
+    print('ERROR: city album offscreen rendering guard missing')
+    sys.exit(1)
+
+# v1.8.0 guards: magic gate transitions, search data, navigation simplification, unique DOM ids.
+if dups:
+    print(f'ERROR: duplicate DOM ids would break runtime lookups: {dups}')
+    sys.exit(1)
+gate_text = block_text.get('01b-gate.html', '')
+for marker in ('SB.gate = ', 'portalFrame', 'abort()'):
+    if marker not in gate_text:
+        print(f'ERROR: magic gate marker {marker!r} missing from 01b-gate.html')
+        sys.exit(1)
+if "gate.cover('portkey'" not in core_text or 'SB.gate?.abort?.()' not in core_text:
+    print('ERROR: Scene Runtime must route flash/veil through SB.gate and abort it on failure')
+    sys.exit(1)
+if 'SB.WORLD_CITIES = ' not in block_text.get('06-world-cities.html', ''):
+    print('ERROR: offline world city search data missing (06-world-cities.html)')
+    sys.exit(1)
+if "register('continent'" in ''.join(block_text.values()):
+    print('ERROR: continent directory scene was removed in v1.8.0 and must not return')
+    sys.exit(1)
+
 # Governance / release-document consistency checks.
 version = (root/'VERSION').read_text(encoding='utf-8-sig').strip()
 required_files = [
@@ -99,6 +150,7 @@ required_files = [
     root/'docs'/'RELEASE_WORKFLOW.md',
     root/'docs'/'PROJECT_DOCS_INDEX.md',
     root/'docs'/'RELEASE_AUTOMATION.md',
+    root/'docs'/'PERFORMANCE_GUIDE.md',
     root/'release-current.ps1',
     root/'scripts'/'releases'/f'release-v{version}.ps1',
     root/'docs'/'releases'/f'v{version}.md',

@@ -20,13 +20,14 @@
 | v1.6.0 | 「冥想盆放映厅」电影式回忆放映 + 放映按钮（新增用户能力 → 次版本号） | 11-memory-player、10-city-album | 中 |
 | **v1.7.0** | 「光影放映」多图编排放映引擎 + 三种放映风格（银幕 / 星图 / 手札）+ 编辑器风格选择（新增用户能力 → 次版本号） | 11-memory-player、12-memory-editor | 中 |
 | **v1.7.1** | 城市回忆目录页「星屿手稿 · 目录页」升级（Owner 追加） | 10-city-album | 低 |
-| v1.7.2 | 「秘境之门」奇幻转场系统 | 00-core（转场层）、01-ambient-fx、04-book-opening | 中 |
-| v1.7.3 | 「星辉层次」魔法书与地球特效 | 03-magic-book、07-globe、01-ambient-fx | 中 |
+| **v1.7.2** | 性能 / 照片加载 / 响应式比例优化（稳定性优先） | 00-core、01-ambient-fx、05-store、10-city-album、11-memory-player、12-memory-editor | 中 |
+| v1.7.3 | Scene Transaction / 首帧稳定性（Owner 自行迭代） | 00-core、00-runtime、05-store、07-globe、09-country-map 等 | 中 |
+| **v1.8.0** | 「秘境之门」奇幻转场 + 「星辉层次」魔法书与地球特效 + 导航精简（删除大洲目录页）+ 地球搜索栏（新增用户能力 → 次版本号） | 00-core、01b-gate（新）、03-magic-book、04-book-opening、06-world-cities（新）、07-globe、09-country-map；删除 08-continent | 中 |
 
 拆分原则：
 - 每版只动一类视觉，便于在 Production 上单独验证与回滚；
 - 版本号按**交付顺序**递增（语义化版本不能回退）。放映排在第二：它是周年当天最常被观看的部分，若 2026-10-28 晚 Feature Freeze 前时间不足，转场与特效可顺延到周年之后。
-- Owner 原始需求编号与版本对应：需求 1 → v1.5.2，需求 4 → v1.6.0 / v1.7.0（Owner 2026-10-26 反馈后重做），需求 3 → v1.7.2，需求 2 → v1.7.3；城市目录页追加优化 → v1.7.1。
+- Owner 原始需求编号与版本对应：需求 1 → v1.5.2，需求 4 → v1.6.0 / v1.7.0（Owner 2026-10-26 反馈后重做），需求 3 / 2 的新增视觉特效延期；v1.7.2 改为性能与响应式优化；城市目录页追加优化 → v1.7.1。
 
 ## 3. v1.5.2 调研：乱码根因（实测）
 
@@ -142,7 +143,46 @@
 - 资料：Huemor《Timelines》——纵向时间线适合长内容与移动端，只放关键节点，节点要用醒目的标记便于扫读，用交互逐步展开细节；Kombai「Reel Fest」电影节节目单——标题为第一层级、时长为第二层级、类别用颜色标签表达，入场用 0.06s 错开的批量淡入。
 - 结论：改为**单列时间线 + 章节卡片**（左海报、右信息），节点使用与编辑器相同的罗马数字章节徽记；卡片层级 = 标题 > 时间 / 时长 > 风格与季节徽章 > 摘录与缩影；「放映」作为主操作直接放在卡片上；空状态与「新的一页」改用深色烫金手稿语言。
 
-## 8. 参考来源
+## 8. v1.8.0 调研与设计：秘境之门 · 星辉层次 · 搜索与导航
+
+### 8.1 Owner 需求（2026-10-27，基于 v1.7.3）
+
+1. 奇幻转场：参考已收集的《哈利·波特》资料与提示词（第 5 节）。
+2. 魔法书与地球的层次特效：同样参考已收集资料。
+3. 结构：从国家地图返回不再经过「大洲国家列表」页，**删除该页**，直接返回地球；地球正上方加搜索栏，可搜索任意城市和任意国家，选中后地球快速旋转到对应位置。
+
+### 8.2 补充资料（转场与层次）
+
+| 来源 | 要点 | 落地 |
+|---|---|---|
+| fxguide · Double Negative《凤凰社》 | 凤凰社成员幻影显形 =「闪亮蒸汽的旋涡 + 蛛丝般的细丝」；食死徒 = 浓黑烟 + 破布条；咒语周围「少量湍流位移，表现力量」；白光与黑烟互相平衡；西里斯「被柔化、调色、逐渐混合消失」进入帷幕 | 「幻影显形」门：光圈外沿一圈螺旋金丝 + 蒸汽光晕；「熄灯器」门的暗场与光的平衡 |
+| AWN · Double Negative《火焰杯》门钥匙 | 早期方案是虫洞 / 倒龙卷，最终是**周围环境溶解成旋涡、新地点在人物周围重新成形**；由旋转粒子与流体构成；目的是让观众「失去上下方向」；整体走「有机、古老、扎根现实」而不是夸张魔幻 | 「门钥匙」门：画面旋入金色旋涡 → 中心光门 → 新场景从中心向外「成形」 |
+| CGW · 《死亡圣器》Spellbound | 熄灯器：灯光「像彗星一样剥离，飞过房间」被吸入；幻影移形：肢体沿各自路径被拉向同一个消失点，在很少的帧里完成；遗忘咒：小尺度分形扭曲 + 轻微调色，不抢戏 | 「熄灯器」门：彗星光点从四周被吸向中心、四周熄灭；重新点亮时从中心放出光 |
+| TheOneRing · Animal Logic 真知晶球 | 「一层又一层的图像」；最外层是云雾；火花与尖芒纹理（蓝、橙、红）；从周围场景取反射色混入；晶球即使不通讯也「有自己的生命」 | 地球：云雾层 + 双层大气 + 星盘环 + 足迹光弧 + 海面高光；魔法书：星云底层 + 宝石光溢 + 3D 符文环 + 升腾烟雾与火星 |
+
+Owner 早先提供的魔法书参考图（发光的古书、上方升起的烟、四周金色火星与能量细线）也作为魔法书层次的直接参考。
+
+### 8.3 三种「秘境之门」与场景事务的结合
+
+v1.7.3 的 Scene Transaction（`prepare → cover → activate → await enter → nextPaint → reveal → cleanup`）保持不变，转场只替换 **cover / reveal 的视觉**：
+
+| 原名称（调用方不变） | 新视觉 | 用于 |
+|---|---|---|
+| `flash` | **门钥匙 Portkey**：四周光丝与蒸汽旋入中心形成金色光门 → 盖满 → 目标场景首帧完成后，光门从中心向外打开（带不规则柔边），残余光丝向外甩出 | 魔法书 → 地球、菜单前往地球 |
+| `portal` | **幻影显形 Apparition**：保留点击处圆形揭示；光圈边缘加旋转符文环、螺旋金丝、外抛火星和一圈照亮四周的光 | 地球 → 国家、国家 → 城市、城市 → 放映等 |
+| `veil` | **熄灯器 Deluminator**：四周光点像彗星一样被吸入中心，画面由外向内熄灭成夜色 → 目标首帧完成后，中心「荧光闪烁」亮起，光向外推开夜色 | 返回、菜单跳转等默认转场 |
+
+性能：转场画布只在转场期间存在并运行；low 档粒子减半、DPR 1；reduced 档沿用 v1.7.3 的无动画切换。
+
+### 8.4 导航与搜索
+
+- 删除 `continent` 场景（块 08）：国家地图的父级改为地球；地球上的大洲徽章与手机底部大洲按钮改为「转向该大洲」，不再跳页。南极洲点击直接进入 `country:aq`。
+- 搜索数据：
+  1. 本地即时：全部国家（中文 / 英文名）、我们点亮的城市、内置主要城市库（CLDR 时区代表城市的官方中文名 + 主要城市补充，约 600 座）。
+  2. 在线补全「任意城市」：Open-Meteo Geocoding API（基于 GeoNames，支持中文查询与中文结果，免费非商业使用，浏览器可直接调用）。只在输入停顿后请求，结果缓存；离线或失败时只显示本地结果。
+- 选中后：地球用缓动在 0.9–1.6 秒内转到目标经纬度（取最短方向）并轻微推近；该国家高亮脉动，地点上竖起一道光柱和扩散光环；下方浮出信息卡（进入国家地图 / 打开我们的回忆）。
+
+## 9. 参考来源
 
 - Typotheque — Typesetting principles of CJK text: https://www.typotheque.com/articles/typesetting-cjk-text
 - TheOneRing.net — The Lord of the Fonts: https://www.theonering.net/torwp/2014/06/26/90498-the-lord-of-the-fonts-a-guide-to-fonts-in-the-hobbit-and-the-lord-of-the-rings/3/
@@ -174,3 +214,7 @@
 - Toolfarm — Creation Effects: Falling Leaves: https://www.toolfarm.com/news/new-creation-effects-falling-leaves-is-now-available-at-toolfarm/
 - Huemor — Timelines (glossary): https://huemor.rocks/glossary/timelines/
 - Kombai — Reel Fest film festival design: https://kombai.com/gallery/inspirations/reel-fest/
+- AWN — Double Negative goes organic for Goblet of Fire: https://www.awn.com/print/news/double-negative-goes-organic-goblet-fire
+- CGW — Spellbound (Deathly Hallows Part 1 VFX): https://www.cgw.com/Press-Center/Web-Exclusives/2011/Spellbound.aspx
+- Open-Meteo — Geocoding API: https://open-meteo.com/en/docs/geocoding-api
+- Unicode CLDR — exemplar city names（经 Python Babel 2.18 读取）: https://cldr.unicode.org/

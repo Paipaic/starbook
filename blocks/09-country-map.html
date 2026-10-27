@@ -317,8 +317,10 @@
   SB.scenes.register('country', {
     world:'night',
     title:p => SB.geo.country(p.k)?.zh || '国家',
-    parent:p => { const c = SB.geo.country(p.k); return c ? {id:'continent', params:{c:c.cont}} : {id:'globe', params:{}}; },
-    enter(p){ SB.fx.palette('night'); load(p.k); },
+    // v1.8.0：大洲国家目录页已删除，国家地图直接返回世界星图（地球会自动转向这个国家）
+    parent:() => ({id:'globe', params:{}}),
+    prepare(p){ const c = SB.geo.country(p.k); return c?.hasMap ? SB.geo.loadCountryMap(p.k).catch(()=>null) : Promise.resolve(); },
+    enter(p){ SB.fx.palette('night'); return load(p.k); },
     leave(){ hidePop(true); }
   });
 })(window.SB);

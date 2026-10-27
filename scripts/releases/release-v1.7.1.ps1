@@ -1,5 +1,5 @@
 ﻿param(
-    [string]$Message = "v1.7.1 city-album功能优化更新"
+    [string]$Message = "城市回忆目录页「星屿手稿 · 目录页」升级"
 )
 
 $ErrorActionPreference = "Stop"

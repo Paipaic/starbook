@@ -1,13 +1,60 @@
 <style>
-/* ── 块 07 · 3D 世界星图地球仪 ── */
+/* ── 块 07 · 3D 世界星图地球仪（v1.8.0：星辉层次 + 搜索栏飞转定位 + 大洲徽章转向） ── */
 #gl-canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab;display:block;}
 #gl-canvas.dragging{cursor:grabbing;}
-.gl-head{position:absolute;left:50%;top:calc(18px + var(--safe-t));transform:translateX(-50%);text-align:center;pointer-events:none;
-  display:flex;flex-direction:column;align-items:center;gap:4px;width:max-content;max-width:calc(100vw - 32px);}
-.gl-head h1{margin:0;padding-left:.32em;font-family:var(--f-display);font-weight:var(--fw-display);font-size:clamp(24px,3.2vw,38px);letter-spacing:.32em;color:var(--gold-hi);
+.gl-head{position:absolute;left:50%;top:calc(14px + var(--safe-t));transform:translateX(-50%);text-align:center;pointer-events:none;z-index:3;
+  display:flex;flex-direction:column;align-items:center;gap:4px;width:min(560px, calc(100vw - 32px));}
+.gl-head h1{margin:0;padding-left:.32em;font-family:var(--f-display);font-weight:var(--fw-display);font-size:clamp(22px,2.8vw,34px);letter-spacing:.32em;color:var(--gold-hi);
   text-shadow:0 0 22px rgba(244,184,96,.65);}
-.gl-head p{margin:0;font-size:13px;letter-spacing:.12em;color:#c9c6ea;}
-.gl-head small{font-family:var(--f-rune);font-weight:500;font-size:10.5px;letter-spacing:.4em;padding-left:.4em;color:var(--gold-dim);}
+.gl-head p{margin:0;font-size:12.5px;letter-spacing:.12em;color:#c9c6ea;}
+.gl-head small{font-family:var(--f-rune);font-weight:500;font-size:10px;letter-spacing:.4em;padding-left:.4em;color:var(--gold-dim);}
+
+/* 搜索栏 */
+.gl-search{position:relative;width:100%;margin:6px 0 4px;pointer-events:auto;}
+.gl-qbox{position:relative;display:flex;align-items:center;gap:8px;height:44px;padding:0 8px 0 14px;border-radius:999px;
+  background:linear-gradient(180deg,rgba(26,22,58,.82),rgba(10,10,30,.86));border:1px solid rgba(255,226,168,.42);
+  box-shadow:0 0 0 4px rgba(10,8,24,.35),0 10px 30px rgba(0,0,0,.35),inset 0 0 14px rgba(244,184,96,.08);
+  transition:border-color .3s, box-shadow .3s;}
+.gl-search.on .gl-qbox,.gl-qbox:focus-within{border-color:rgba(255,226,168,.85);box-shadow:0 0 0 4px rgba(10,8,24,.35),0 0 26px rgba(244,184,96,.35),inset 0 0 14px rgba(244,184,96,.14);}
+.gl-qbox .ico{flex:none;width:20px;height:20px;color:var(--gold-hi);filter:drop-shadow(0 0 5px rgba(244,184,96,.7));}
+.gl-qbox input{flex:1;min-width:0;height:100%;border:0;outline:0;background:transparent;color:var(--text);font-family:var(--f-body);font-size:15.5px;letter-spacing:.06em;}
+.gl-qbox input::placeholder{color:rgba(201,198,234,.55);}
+.gl-qbox input::-webkit-search-cancel-button{display:none;}
+.gl-qbox .clr{flex:none;width:30px;height:30px;border-radius:50%;border:0;background:rgba(244,184,96,.1);color:var(--gold-hi);cursor:pointer;display:grid;place-items:center;}
+.gl-qbox .clr[hidden]{display:none;}
+.gl-qbox .clr .sb-ico{width:14px;height:14px;}
+.gl-res{position:absolute;left:0;right:0;top:calc(100% + 8px);max-height:min(58vh,520px);overflow:auto;overscroll-behavior:contain;text-align:left;
+  border-radius:16px;padding:6px;background:radial-gradient(120% 50% at 50% 0%,rgba(244,184,96,.12),transparent 70%),rgba(12,10,32,.94);
+  border:1px solid rgba(255,226,168,.4);box-shadow:0 20px 50px rgba(0,0,0,.55),0 0 30px rgba(244,184,96,.15);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+.gl-res[hidden]{display:none;}
+.gl-res h4{margin:8px 10px 4px;font-family:var(--f-rune);font-weight:500;font-size:9.5px;letter-spacing:.38em;color:var(--gold-dim);}
+.gl-opt{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border:0;border-radius:10px;background:transparent;cursor:pointer;color:var(--text);text-align:left;font:inherit;}
+.gl-opt.act,.gl-opt:hover{background:rgba(244,184,96,.13);}
+.gl-opt .ic{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:var(--gold-hi);border:1px solid rgba(244,184,96,.35);background:rgba(244,184,96,.06);}
+.gl-opt .ic .sb-ico{width:14px;height:14px;}
+.gl-opt .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;}
+.gl-opt .tx b{font-family:var(--f-display);font-weight:600;font-size:15.5px;letter-spacing:.06em;color:#fff3dc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.gl-opt .tx b mark{background:none;color:var(--gold-hi);text-shadow:0 0 10px rgba(244,184,96,.6);}
+.gl-opt .tx span{font-size:12px;color:var(--text-dim);letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.gl-opt .tag{flex:none;font-size:11px;letter-spacing:.08em;color:#2a1608;background:linear-gradient(180deg,#ffe7b5,#f4b860);padding:2px 8px;border-radius:999px;}
+.gl-res .note{padding:8px 12px;font-size:12.5px;color:var(--text-dim);letter-spacing:.06em;}
+.gl-res .note.wait{color:var(--gold);}
+.gl-res .src{padding:6px 12px 4px;font-size:10.5px;color:rgba(191,165,130,.6);letter-spacing:.08em;text-align:right;}
+
+/* 定位信息卡 */
+.gl-card{position:absolute;left:50%;bottom:calc(64px + var(--safe-b));z-index:3;width:min(440px, calc(100vw - 32px));transform:translate(-50%,16px);opacity:0;pointer-events:none;
+  display:flex;flex-direction:column;gap:10px;padding:16px 18px;border-radius:16px;text-align:center;
+  background:radial-gradient(100% 70% at 50% 0%,rgba(244,184,96,.16),transparent 70%),rgba(14,12,34,.9);border:1px solid rgba(255,226,168,.5);
+  box-shadow:0 0 0 4px rgba(10,8,24,.4),0 20px 50px rgba(0,0,0,.5),0 0 34px rgba(244,184,96,.2);transition:opacity .45s var(--ease-soft), transform .45s var(--ease-soft);}
+.gl-card.show{opacity:1;transform:translate(-50%,0);pointer-events:auto;}
+.gl-card small{font-family:var(--f-rune);font-size:9.5px;letter-spacing:.4em;color:var(--gold-dim);}
+.gl-card h2{margin:0;font-family:var(--f-display);font-weight:600;font-size:24px;letter-spacing:.14em;color:var(--gold-hi);text-shadow:0 0 18px rgba(244,184,96,.5);}
+.gl-card p{margin:0;font-size:13px;letter-spacing:.1em;color:#d9cfee;}
+.gl-card .acts{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:2px;}
+.gl-card .x{position:absolute;right:8px;top:8px;width:32px;height:32px;border-radius:50%;border:0;background:none;color:var(--text-dim);cursor:pointer;display:grid;place-items:center;}
+.gl-card .x .sb-ico{width:14px;height:14px;}
+
 .gl-labels{position:absolute;inset:0;pointer-events:none;}
 .gl-cont{position:absolute;left:0;top:0;pointer-events:auto;cursor:pointer;border:0;padding:0;background:none;
   display:flex;flex-direction:column;align-items:center;gap:2px;transition:opacity .3s;will-change:transform,opacity;}
@@ -35,17 +82,31 @@
 .gl-hint{position:absolute;right:max(16px,var(--safe-r));bottom:calc(16px + var(--safe-b));font-size:12px;color:var(--text-dim);letter-spacing:.12em;opacity:.7;pointer-events:none;}
 .gl-load{position:absolute;inset:0;display:grid;place-items:center;}
 .gl-load[hidden]{display:none!important;}
-@media (pointer:coarse), (max-width:700px){ .gl-dock{display:flex;} .gl-hint{display:none;} .gl-cont .orb{font-size:14px;padding:5px 11px 5px 7px;} }
-@media (max-width:700px){ .gl-head{top:calc(72px + var(--safe-t));} }
+@media (pointer:coarse), (max-width:700px){ .gl-dock{display:flex;} .gl-hint{display:none;} .gl-cont .orb{font-size:14px;padding:5px 11px 5px 7px;}
+  .gl-card{bottom:calc(66px + var(--safe-b));} }
+@media (max-width:700px){ .gl-head{top:calc(64px + var(--safe-t));gap:2px;} .gl-head small{display:none;} .gl-head h1{font-size:22px;} .gl-head p{font-size:11.5px;}
+  .gl-qbox{height:42px;} .gl-qbox input{font-size:16px;} }
+@media (max-width:700px) and (max-height:700px){ .gl-head p{display:none;} }
 </style>
 
 <section class="sb-scene" data-scene="globe" aria-label="世界星图">
   <canvas id="gl-canvas"></canvas>
   <div class="gl-labels" id="gl-labels"></div>
   <div class="gl-tip" id="gl-tip"></div>
-  <header class="gl-head"><small>ORBIS STELLARUM</small><h1>世界星图</h1><p id="gl-stat"></p></header>
+  <header class="gl-head"><small>ORBIS STELLARUM</small><h1>世界星图</h1>
+    <div class="gl-search" id="gl-search" role="search">
+      <div class="gl-qbox">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M15.4 15.4 20 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10.5 6.8l.9 2.8 2.8.9-2.8.9-.9 2.8-.9-2.8-2.8-.9 2.8-.9z" fill="currentColor"/></svg>
+        <input id="gl-q" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"
+          placeholder="搜索城市或国家 · 例如 京都、冰岛、Paris" aria-label="搜索城市或国家" role="combobox" aria-autocomplete="list" aria-controls="gl-res" aria-expanded="false">
+        <button type="button" class="clr" id="gl-qx" aria-label="清除搜索" hidden></button>
+      </div>
+      <div class="gl-res" id="gl-res" role="listbox" aria-label="搜索结果" hidden></div>
+    </div>
+    <p id="gl-stat"></p></header>
+  <div class="gl-card" id="gl-card" role="dialog" aria-live="polite" aria-label="定位结果"></div>
   <nav class="gl-dock" id="gl-dock" aria-label="七大洲"></nav>
-  <div class="gl-hint">拖动旋转 · 滚轮缩放 · 点击国家直达地图</div>
+  <div class="gl-hint">拖动旋转 · 滚轮缩放 · 点击国家直达地图 · 顶部搜索任意城市</div>
   <div class="gl-load" id="gl-load" hidden></div>
 </section>
 
@@ -55,20 +116,26 @@
   const $ = id => document.getElementById(id);
   const cv = $('gl-canvas'), labelsEl = $('gl-labels'), tip = $('gl-tip');
   let T, renderer, scene, camera, globe, earth, earthMat, texCanvas, tex, idCanvas, idTex, starMat, dustMats = [], cityGroup, starTexture;
+  let cloud, cloudMat, halo, astro, arcGroup, arcMats = [], arcRunners = [], constGroup, focusGroup, focusRings = [], focusStar;
   let ready = false, running = false, last = 0, time = 0;
-  const view = { rotX:.35, rotY:-1.9, vx:0, vy:0, dist:3.2, distT:3.2, base:3.2, zoom:1, zoomT:1, idle:0, intro:0 };
+  const view = { rotX:.35, rotY:-1.9, vx:0, vy:0, dist:3.2, distT:3.2, base:3.2, zoom:1, zoomT:1, idle:0, intro:0, shift:.06 };
   const contIndex = Object.fromEntries(SB.geo.CONTINENTS.map((c,i) => [c.code, i+1]));
   const hover = { country:-1, cont:-1 };
+  const fly = { on:false };                  // 飞转动画
+  const focus = { on:false, kind:'', key:'', t0:0, card:null };
+  const reduced = () => SB.perf.level === 'reduced';
+  const hi = () => SB.perf.level === 'high';
 
-  /* ── 七大洲按钮 ── */
+  /* ── 七大洲徽章：v1.8.0 起点击让地球转向该大洲（大洲国家目录页已删除） ── */
   const RUNE = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1"/><path d="M12 3 L14 12 L12 21 L10 12Z M3 12 L12 10 L21 12 L12 14Z" fill="currentColor" opacity=".8"/></svg>';
+  const toCont = c => focusTo({kind:'cont', key:c.code, lon:c.center[0], lat:c.center[1], name:c.name});
   const contBtns = SB.geo.CONTINENTS.map(c => {
-    const b = SB.el('button','gl-cont'); b.type = 'button'; b.setAttribute('aria-label', c.name + '的国家目录');
+    const b = SB.el('button','gl-cont'); b.type = 'button'; b.setAttribute('aria-label', '让地球转向' + c.name);
     b.innerHTML = `<span class="orb">${RUNE}<span>${c.name}</span><b></b></span><span class="stem"></span><span class="dot"></span>`;
-    b.addEventListener('click', e => { e.stopPropagation(); SB.scenes.go('continent', {c:c.code}); });
+    b.addEventListener('click', e => { e.stopPropagation(); toCont(c); });
     labelsEl.appendChild(b); return {c, b, badge:b.querySelector('b')};
   });
-  SB.geo.CONTINENTS.forEach(c => { const b = SB.el('button'); b.type = 'button'; b.textContent = c.name; b.addEventListener('click', () => SB.scenes.go('continent', {c:c.code})); $('gl-dock').appendChild(b); });
+  SB.geo.CONTINENTS.forEach(c => { const b = SB.el('button'); b.type = 'button'; b.textContent = c.name; b.setAttribute('aria-label', '让地球转向' + c.name); b.addEventListener('click', () => toCont(c)); $('gl-dock').appendChild(b); });
 
   /* ── 纹理：星光地图 + 国家编号图（用于悬停高亮） ── */
   function unwrap(r){
@@ -90,9 +157,7 @@
     const sea = g.createLinearGradient(0, 0, 0, H);
     sea.addColorStop(0, '#0d1440'); sea.addColorStop(.5, '#121a52'); sea.addColorStop(1, '#0b1136');
     g.fillStyle = sea; g.fillRect(0, 0, W, H);
-    // 海面星尘
     for(let i = 0; i < 2600*u; i++){ g.fillStyle = `rgba(${Math.random()<.3?'255,214,150':'170,186,255'},${Math.random()*.35})`; const s = Math.random()*2.2*u + .4; g.fillRect(Math.random()*W, Math.random()*H, s, s); }
-    // 经纬网
     g.strokeStyle = 'rgba(244,184,96,.13)'; g.lineWidth = 1.2*u;
     for(let lon = -180; lon <= 180; lon += 15){ const x = (lon+180)/360*W; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
     for(let lat = -75; lat <= 75; lat += 15){ const y = (90-lat)/180*H; g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
@@ -125,7 +190,8 @@
 
   /* ── 着色器 ── */
   const earthVS = `varying vec2 vUv; varying vec3 vN; void main(){ vUv = uv; vN = normalize(normalMatrix*normal); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }`;
-  const earthFS = `uniform sampler2D map; uniform sampler2D idMap; uniform float hc; uniform float hk; uniform float t; uniform vec3 L;
+  // v1.8.0：fk = 搜索 / 返回时聚焦的国家（更亮的脉动金光），fc = 聚焦的大洲；海面加星辉高光
+  const earthFS = `uniform sampler2D map; uniform sampler2D idMap; uniform float hc; uniform float hk; uniform float fk; uniform float fc; uniform float fa; uniform float t; uniform vec3 L;
     varying vec2 vUv; varying vec3 vN;
     void main(){
       vec3 n = normalize(vN);
@@ -135,8 +201,14 @@
       vec4 id = texture2D(idMap, vUv);
       if(id.b > .99){
         float cid = floor(id.r*255.0 + .5), cn = floor(id.g*255.0 + .5);
+        if(cid == fk) col += vec3(.52,.36,.12)*fa*(.75 + .25*sin(t*5.0));
+        else if(cn == fc) col += vec3(.16,.12,.05)*fa;
         if(cid == hk) col += vec3(.34,.24,.08)*(.85 + .15*sin(t*4.0));
         else if(cn == hc) col += vec3(.12,.09,.04);
+      }else{
+        vec3 h = normalize(normalize(L) + vec3(0.,0.,1.));
+        float sp = pow(max(dot(n, h), 0.0), 46.0);
+        col += vec3(1.0,.86,.6)*sp*.42 + vec3(.35,.45,1.0)*pow(max(dot(n,h),0.0), 8.0)*.06;
       }
       float fr = pow(1.0 - max(dot(n, vec3(0.,0.,1.)), 0.0), 2.6);
       col += mix(vec3(.45,.55,1.0), vec3(1.0,.74,.38), .5)*fr*.45;
@@ -145,6 +217,12 @@
   const atmoVS = `varying vec3 vN; void main(){ vN = normalize(normalMatrix*normal); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }`;
   const atmoFS = `varying vec3 vN; void main(){ float i = pow(max(0., .66 - dot(vN, vec3(0.,0.,1.))), 2.6); vec3 c = mix(vec3(.36,.46,1.0), vec3(1.0,.66,.26), .6);
     gl_FragColor = vec4(c*i*.62, i*.6); }`;
+  // 云雾层：程序生成的云丝，受光面更亮，边缘淡出
+  const cloudVS = `varying vec2 vUv; varying vec3 vN; void main(){ vUv = uv; vN = normalize(normalMatrix*normal); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }`;
+  const cloudFS = `uniform sampler2D map; uniform vec3 L; uniform float a; varying vec2 vUv; varying vec3 vN;
+    void main(){ vec3 n = normalize(vN); float c = texture2D(map, vUv).r; float lit = clamp(dot(n, normalize(L))*.6 + .55, .25, 1.0);
+      float rim = smoothstep(.0, .35, dot(n, vec3(0.,0.,1.)));
+      gl_FragColor = vec4(mix(vec3(1.0,.82,.55), vec3(1.0,.96,.88), c)*lit, c*a*rim); }`;
   const ptsVS = `attribute float size; attribute float seed; uniform float t; uniform float px; varying float vA; varying float vS;
     void main(){ vec4 mv = modelViewMatrix*vec4(position,1.0); vS = seed;
       vA = .45 + .55*sin(t*(1.0 + seed*2.0) + seed*40.0);
@@ -154,6 +232,12 @@
       float core = smoothstep(.5, .0, d); float cross = max(0., 1. - abs(p.x)*14.) * smoothstep(.5,.0,abs(p.y)) + max(0., 1. - abs(p.y)*14.) * smoothstep(.5,.0,abs(p.x));
       vec3 c = mix(c1, c2, step(.7, vS));
       gl_FragColor = vec4(c, (core*core + cross*.35*step(.85, vS))*vA); }`;
+  // 足迹光弧：沿弧线流动的光脉冲
+  const arcVS = `attribute float u; varying float vU; void main(){ vU = u; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }`;
+  const arcFS = `uniform float t; uniform float ph; varying float vU;
+    void main(){ float p = fract(t*.22 + ph); float d = abs(vU - p); float pulse = smoothstep(.16, .0, d);
+      float base = .22*smoothstep(0., .08, vU)*smoothstep(1., .92, vU);
+      gl_FragColor = vec4(mix(vec3(1.0,.72,.32), vec3(1.0,.97,.86), pulse), base + pulse*.95); }`;
 
   function pointsMat(c1, c2){
     return new T.ShaderMaterial({ uniforms:{ t:{value:0}, px:{value:renderer.getPixelRatio()}, c1:{value:new T.Color(c1)}, c2:{value:new T.Color(c2)} },
@@ -171,12 +255,50 @@
     const u = (lon + 180)/360, v = (lat + 90)/180, phi = u*Math.PI*2, theta = (1 - v)*Math.PI;
     return new T.Vector3(-Math.cos(phi)*Math.sin(theta)*r, Math.cos(theta)*r, Math.sin(phi)*Math.sin(theta)*r);
   }
+  function radial(size, stops){
+    const c = document.createElement('canvas'); c.width = c.height = size; const g = c.getContext('2d'), h = size/2;
+    const gr = g.createRadialGradient(h,h,0,h,h,h); stops.forEach(([o,col]) => gr.addColorStop(o,col)); g.fillStyle = gr; g.fillRect(0,0,size,size);
+    return c;
+  }
   function makeStarTexture(){
-    const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
-    const gr = g.createRadialGradient(64,64,0,64,64,64); gr.addColorStop(0,'rgba(255,250,230,1)'); gr.addColorStop(.15,'rgba(255,214,140,.9)'); gr.addColorStop(.4,'rgba(255,170,70,.25)'); gr.addColorStop(1,'rgba(0,0,0,0)');
-    g.fillStyle = gr; g.fillRect(0,0,128,128);
+    const c = radial(128, [[0,'rgba(255,250,230,1)'],[.15,'rgba(255,214,140,.9)'],[.4,'rgba(255,170,70,.25)'],[1,'rgba(0,0,0,0)']]), g = c.getContext('2d');
     g.globalCompositeOperation = 'lighter';
     for(const [w,h] of [[128,5],[5,128]]){ const l = g.createLinearGradient(64-w/2,64-h/2,64+w/2,64+h/2); l.addColorStop(0,'rgba(0,0,0,0)'); l.addColorStop(.5,'rgba(255,248,220,1)'); l.addColorStop(1,'rgba(0,0,0,0)'); g.fillStyle = l; g.fillRect(64-w/2,64-h/2,w,h); }
+    return new T.CanvasTexture(c);
+  }
+
+  /* ── v1.8.0 星辉层次：程序生成纹理 ── */
+  function cloudTexture(W, H){
+    // 横向可平铺的多层值噪声 → 拉长的云丝
+    const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
+    const img = g.createImageData(W, H), D = img.data, acc = new Float32Array(W*H);
+    let amp = 1, tot = 0;
+    for(let o = 0; o < 5; o++){
+      const gx = 6 << o, gy = Math.max(2, (3 << o)), grid = new Float32Array((gx)*(gy+1)).map(() => Math.random());
+      const at = (i, j) => grid[(j)*gx + ((i % gx) + gx) % gx];
+      for(let y = 0; y < H; y++){ const fy = y/H*gy, j = fy|0, ty = fy - j, sy = ty*ty*(3-2*ty);
+        for(let x = 0; x < W; x++){ const fx = x/W*gx, i = fx|0, tx = fx - i, sx = tx*tx*(3-2*tx);
+          const a = at(i,j), b = at(i+1,j), c2 = at(i,j+1), d = at(i+1,j+1);
+          acc[y*W+x] += (a + (b-a)*sx + (c2-a)*sy + (a-b-c2+d)*sx*sy)*amp; } }
+      tot += amp; amp *= .55;
+    }
+    for(let y = 0; y < H; y++){ const lat = Math.abs(y/H - .5)*2, band = 1 - Math.pow(lat, 6);
+      for(let x = 0; x < W; x++){ const v = acc[y*W+x]/tot, k = Math.max(0, (v - .52)/.48), c3 = Math.pow(k, 1.4)*band*255;
+        const i = (y*W+x)*4; D[i] = D[i+1] = D[i+2] = c3; D[i+3] = 255; } }
+    g.putImageData(img, 0, 0);
+    const t = new T.CanvasTexture(c); t.wrapS = T.RepeatWrapping; return t;
+  }
+  function astrolabeTexture(S, r0, r1){
+    const c = document.createElement('canvas'); c.width = c.height = S; const g = c.getContext('2d'), h = S/2, k = h/r1;
+    g.translate(h, h); g.strokeStyle = 'rgba(255,214,150,.9)'; g.fillStyle = 'rgba(255,226,168,.95)';
+    g.lineWidth = 1.4; g.beginPath(); g.arc(0, 0, r1*k - 2, 0, Math.PI*2); g.stroke();
+    g.lineWidth = .9; g.beginPath(); g.arc(0, 0, r0*k + 2, 0, Math.PI*2); g.stroke();
+    for(let i = 0; i < 360; i += 2){ const a = i*Math.PI/180, L = i % 30 === 0 ? 14 : i % 10 === 0 ? 8 : 4;
+      g.lineWidth = i % 30 === 0 ? 1.4 : .7; g.beginPath(); g.moveTo(Math.cos(a)*(r1*k - 3), Math.sin(a)*(r1*k - 3)); g.lineTo(Math.cos(a)*(r1*k - 3 - L), Math.sin(a)*(r1*k - 3 - L)); g.stroke(); }
+    const text = ' ORBIS · TERRARUM · MEMORIA · STELLARUM · ITER · NOSTRUM ·'.repeat(2);
+    const rm = (r0 + (r1 - r0)*.36)*k; g.font = `500 ${Math.round((r1 - r0)*k*.26)}px Cinzel, serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    const step = (Math.PI*2)/text.length;
+    [...text].forEach((ch, i) => { g.save(); g.rotate(i*step); g.translate(0, -rm); g.fillText(ch, 0, 0); g.restore(); });
     return new T.CanvasTexture(c);
   }
 
@@ -186,40 +308,74 @@
     try{ await SB.loadScript(THREE_URLS); }
     catch(e){ load.innerHTML = ''; const d = SB.el('div','sb-empty'); d.textContent = '星图引擎没有加载成功，请检查网络后刷新页面'; load.appendChild(d); throw e; }
     T = window.THREE;
-    renderer = new T.WebGLRenderer({canvas:cv, antialias:true, alpha:true, powerPreference:'high-performance'});
+    const HI = hi();
+    renderer = new T.WebGLRenderer({canvas:cv, antialias:HI, alpha:true, powerPreference:'high-performance'});
     renderer.setClearColor(0x000000, 0);
     scene = new T.Scene();
     camera = new T.PerspectiveCamera(38, 1, .1, 200);
     globe = new T.Group(); scene.add(globe);
-    const hi = SB.perf.level === 'high';
-    texCanvas = document.createElement('canvas'); texCanvas.width = hi ? 4096 : 2048; texCanvas.height = texCanvas.width/2;
-    idCanvas = document.createElement('canvas'); idCanvas.width = 2048; idCanvas.height = 1024;
+    texCanvas = document.createElement('canvas'); texCanvas.width = HI ? 3072 : 1280; texCanvas.height = texCanvas.width/2;
+    idCanvas = document.createElement('canvas'); idCanvas.width = HI ? 1536 : 1024; idCanvas.height = idCanvas.width/2;
     tex = new T.CanvasTexture(texCanvas); tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
     idTex = new T.CanvasTexture(idCanvas); idTex.magFilter = idTex.minFilter = T.NearestFilter; idTex.generateMipmaps = false;
-    earthMat = new T.ShaderMaterial({ uniforms:{ map:{value:tex}, idMap:{value:idTex}, hc:{value:-1}, hk:{value:-1}, t:{value:0}, L:{value:new T.Vector3(-.6,.45,.75)} }, vertexShader:earthVS, fragmentShader:earthFS });
-    earth = new T.Mesh(new T.SphereGeometry(1, 96, 64), earthMat); globe.add(earth);
-    const atmo = new T.Mesh(new T.SphereGeometry(1.12, 64, 48), new T.ShaderMaterial({vertexShader:atmoVS, fragmentShader:atmoFS, side:T.BackSide, blending:T.AdditiveBlending, transparent:true, depthWrite:false}));
+    const L = new T.Vector3(-.6,.45,.75);
+    earthMat = new T.ShaderMaterial({ uniforms:{ map:{value:tex}, idMap:{value:idTex}, hc:{value:-1}, hk:{value:-1}, fk:{value:-1}, fc:{value:-1}, fa:{value:0}, t:{value:0}, L:{value:L} }, vertexShader:earthVS, fragmentShader:earthFS });
+    earth = new T.Mesh(new T.SphereGeometry(1, HI ? 80 : 56, HI ? 56 : 40), earthMat); globe.add(earth);
+    // 云雾层（真知晶球「最外层是云」）
+    cloudMat = new T.ShaderMaterial({ uniforms:{ map:{value:cloudTexture(HI ? 768 : 512, HI ? 384 : 256)}, L:{value:L}, a:{value:HI ? .55 : .45} },
+      vertexShader:cloudVS, fragmentShader:cloudFS, transparent:true, depthWrite:false, blending:T.AdditiveBlending });
+    cloud = new T.Mesh(new T.SphereGeometry(1.014, HI ? 64 : 44, HI ? 44 : 30), cloudMat); globe.add(cloud);
+    const atmo = new T.Mesh(new T.SphereGeometry(1.12, HI ? 56 : 40, HI ? 40 : 28), new T.ShaderMaterial({vertexShader:atmoVS, fragmentShader:atmoFS, side:T.BackSide, blending:T.AdditiveBlending, transparent:true, depthWrite:false}));
     scene.add(atmo);
-    // 背景星海
+    // 外层光晕：地球后方的大光晕，被地球自身遮挡，只在轮廓外可见
+    halo = new T.Sprite(new T.SpriteMaterial({ map:new T.CanvasTexture(radial(256, [[0,'rgba(255,214,150,.0)'],[.38,'rgba(255,200,120,.0)'],[.42,'rgba(255,206,130,.32)'],[.5,'rgba(150,170,255,.16)'],[.72,'rgba(90,110,220,.05)'],[1,'rgba(0,0,0,0)']])),
+      blending:T.AdditiveBlending, depthWrite:false, transparent:true }));
+    halo.scale.setScalar(4.6); scene.add(halo);
+    // 背景星海 + 星座线
     starMat = pointsMat(0xdfe6ff, 0xffd690);
-    scene.add(new T.Points(pointsGeo(hi ? 2600 : 1200, () => { const v = rdir().multiplyScalar(30 + Math.random()*40); return [v.x, v.y, v.z, 1.5 + Math.random()*3]; }), starMat));
+    scene.add(new T.Points(pointsGeo(HI ? 2000 : 760, () => { const v = rdir().multiplyScalar(30 + Math.random()*40); return [v.x, v.y, v.z, 1.5 + Math.random()*3]; }), starMat));
+    constGroup = new T.Group(); scene.add(constGroup);
+    buildConstellations(HI ? 9 : 5);
     // 两条环绕光尘带
     [[1.42, .38, 1500], [1.62, -.52, 1100]].forEach(([R, tilt, n]) => {
       const m = pointsMat(0xffd690, 0xfff4d8); dustMats.push(m);
-      const ring = new T.Points(pointsGeo(hi ? n : n/2, () => { const a = Math.random()*Math.PI*2, r = R + (Math.random()-.5)*.16*(Math.random()+.3); return [Math.cos(a)*r, (Math.random()-.5)*.05, Math.sin(a)*r, .8 + Math.random()*2.2]; }), m);
+      const ring = new T.Points(pointsGeo(HI ? n*.78 : n*.30, () => { const a = Math.random()*Math.PI*2, r = R + (Math.random()-.5)*.16*(Math.random()+.3); return [Math.cos(a)*r, (Math.random()-.5)*.05, Math.sin(a)*r, .8 + Math.random()*2.2]; }), m);
       const holder = new T.Group(); holder.rotation.z = tilt; holder.rotation.x = .25; holder.add(ring); scene.add(holder); m.userData.ring = ring;
     });
+    // 星盘环（刻度 + 拉丁铭文）
+    const r0 = 1.74, r1 = 1.86;
+    astro = new T.Mesh(new T.RingGeometry(r0, r1, HI ? 192 : 128, 1),
+      new T.MeshBasicMaterial({ map:astrolabeTexture(HI ? 1024 : 768, r0, r1), transparent:true, opacity:.24, depthWrite:false, blending:T.AdditiveBlending, side:T.DoubleSide }));
+    const astroHold = new T.Group(); astroHold.rotation.set(1.18, 0, -.32); astroHold.add(astro); scene.add(astroHold);
     // 上升的光点
     const riseMat = pointsMat(0xffd690, 0xbfd0ff); dustMats.push(riseMat);
-    const rise = new T.Points(pointsGeo(hi ? 360 : 160, () => { const v = rdir().multiplyScalar(1.15 + Math.random()*.9); return [v.x, v.y, v.z, 1 + Math.random()*2]; }), riseMat);
+    const rise = new T.Points(pointsGeo(HI ? 280 : 100, () => { const v = rdir().multiplyScalar(1.15 + Math.random()*.9); return [v.x, v.y, v.z, 1 + Math.random()*2]; }), riseMat);
     rise.userData.rise = true; scene.add(rise); riseMat.userData.rise = rise;
     starTexture = makeStarTexture();
     cityGroup = new T.Group(); globe.add(cityGroup);
-    drawIds(); drawTexture(); buildCities();
+    arcGroup = new T.Group(); globe.add(arcGroup);
+    focusGroup = new T.Group(); globe.add(focusGroup); buildFocusMarker();
+    drawIds(); drawTexture(); buildCities(); buildArcs();
     resize(); bindControls();
     load.hidden = true; ready = true;
   }
 
+  function buildConstellations(n){
+    // 几组由极淡金线连接的远方星座
+    const pos = [], lines = [];
+    for(let k = 0; k < n; k++){
+      const c = rdir().multiplyScalar(48); const m = 4 + (Math.random()*3|0); let prev = null;
+      for(let i = 0; i < m; i++){
+        const p = c.clone().add(rdir().multiplyScalar(3 + Math.random()*5)).setLength(48);
+        pos.push(p.x, p.y, p.z, 2.6 + Math.random()*2);
+        if(prev) lines.push(prev.x, prev.y, prev.z, p.x, p.y, p.z); prev = p;
+      }
+    }
+    const lg = new T.BufferGeometry(); lg.setAttribute('position', new T.Float32BufferAttribute(lines, 3));
+    constGroup.add(new T.LineSegments(lg, new T.LineBasicMaterial({color:0xffd690, transparent:true, opacity:.16, depthWrite:false, blending:T.AdditiveBlending})));
+    const m = pointsMat(0xfff4d8, 0xffd690); dustMats.push(m);
+    let k = 0; constGroup.add(new T.Points(pointsGeo(pos.length/4, () => { const r = pos.slice(k*4, k*4 + 4); k++; return r; }), m));
+  }
   function buildCities(){
     if(!cityGroup) return;
     while(cityGroup.children.length) cityGroup.remove(cityGroup.children[0]);
@@ -232,27 +388,74 @@
       cityGroup.add(s);
     }
   }
+  /* 足迹光弧：把我们点亮的城市按时间连成大圆弧 */
+  function buildArcs(){
+    if(!arcGroup) return;
+    while(arcGroup.children.length){ const o = arcGroup.children[0]; arcGroup.remove(o); o.geometry?.dispose?.(); }
+    arcMats = []; arcRunners = [];
+    const pts = SB.store.cities.filter(c => c.lon != null && c.lat != null).sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
+    const max = hi() ? 24 : 12; let n = 0;
+    for(let i = 1; i < pts.length && n < max; i++){
+      const a = lonLatToVec(pts[i-1].lon, pts[i-1].lat, 1).normalize(), b = lonLatToVec(pts[i].lon, pts[i].lat, 1).normalize();
+      const ang = a.angleTo(b); if(ang < .01) continue;
+      const N = 72, pos = new Float32Array(N*3), us = new Float32Array(N), h = .03 + .16*ang/Math.PI;
+      for(let k = 0; k < N; k++){
+        const t = k/(N-1), s = Math.sin(ang);
+        const v = a.clone().multiplyScalar(Math.sin((1-t)*ang)/s).add(b.clone().multiplyScalar(Math.sin(t*ang)/s));
+        v.setLength(1.006 + h*Math.sin(Math.PI*t)); pos.set([v.x, v.y, v.z], k*3); us[k] = t;
+      }
+      const g = new T.BufferGeometry(); g.setAttribute('position', new T.BufferAttribute(pos, 3)); g.setAttribute('u', new T.BufferAttribute(us, 1));
+      const m = new T.ShaderMaterial({ uniforms:{ t:{value:0}, ph:{value:n*.37} }, vertexShader:arcVS, fragmentShader:arcFS, transparent:true, depthWrite:false, blending:T.AdditiveBlending });
+      arcMats.push(m); arcGroup.add(new T.Line(g, m));
+      const run = new T.Sprite(new T.SpriteMaterial({map:starTexture, blending:T.AdditiveBlending, depthWrite:false, transparent:true}));
+      run.scale.setScalar(.05); run.userData = {pos, ph:n*.37}; arcGroup.add(run); arcRunners.push(run);
+      n++;
+    }
+  }
+  /* 聚焦标记：星标 + 两圈贴地扩散光环 */
+  function ringTexture(){
+    return new T.CanvasTexture(radial(256, [[0,'rgba(0,0,0,0)'],[.78,'rgba(255,214,150,0)'],[.9,'rgba(255,236,190,.95)'],[.95,'rgba(255,200,120,.5)'],[1,'rgba(0,0,0,0)']]));
+  }
+  function buildFocusMarker(){
+    const rt = ringTexture();
+    for(let i = 0; i < 2; i++){
+      const m = new T.Mesh(new T.PlaneGeometry(1, 1), new T.MeshBasicMaterial({map:rt, transparent:true, depthWrite:false, depthTest:false, blending:T.AdditiveBlending, side:T.DoubleSide, opacity:0}));
+      focusGroup.add(m); focusRings.push(m);
+    }
+    focusStar = new T.Sprite(new T.SpriteMaterial({map:starTexture, blending:T.AdditiveBlending, depthWrite:false, transparent:true, opacity:0}));
+    focusGroup.add(focusStar); focusGroup.visible = false;
+  }
+  function placeFocusMarker(lon, lat, kind){
+    const n = lonLatToVec(lon, lat, 1).normalize(), p = n.clone().multiplyScalar(1.016);
+    focusRings.forEach(m => { m.position.copy(p); m.lookAt(n.clone().multiplyScalar(3)); m.userData.big = kind === 'place' || kind === 'mine' ? .16 : .3; });
+    focusStar.position.copy(n.clone().multiplyScalar(1.03));
+    focusStar.userData.show = kind === 'place' || kind === 'mine';
+    focusGroup.visible = true;
+  }
+
   function refreshStats(){
     const s = SB.store.stats();
-    $('gl-stat').textContent = s.cities ? `已点亮 ${s.countries} 个国家 · ${s.cities} 座城市 · ${s.memories} 段回忆` : '还没有点亮任何地方 · 选一个大洲开始吧';
+    $('gl-stat').textContent = s.cities ? `已点亮 ${s.countries} 个国家 · ${s.cities} 座城市 · ${s.memories} 段回忆` : '还没有点亮任何地方 · 搜索一座城市开始吧';
     const vis = SB.store.visitedCountries();
     contBtns.forEach(({c, badge}) => { const n = SB.geo.inContinent(c.code).filter(x => vis.has(x.key)).length; badge.innerHTML = n ? SB.icon('star') + n : ''; });
   }
   document.addEventListener('sb:data', () => {
-    refreshStats();
+    refreshStats(); index.mine = null;
     if(!ready) return;
     const sig = [...SB.store.visitedCountries()].sort().join() + '|' + SB.store.cities.length;
-    if(sig !== drawTexture.sig){ drawTexture.sig = sig; drawTexture(); buildCities(); }
+    if(sig !== drawTexture.sig){ drawTexture.sig = sig; drawTexture(); buildCities(); buildArcs(); }
   });
 
   function resize(){
     if(!renderer) return;
     const W = innerWidth, H = innerHeight;
-    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, SB.perf.level === 'high' ? 1.75 : 1.25));
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, hi() ? 1.75 : 1.25));
     renderer.setSize(W, H, false);
     camera.aspect = W/H; camera.updateProjectionMatrix();
-    const frac = .72*Math.min(W, H)/H;
+    const narrow = W <= 700;
+    const frac = (narrow ? .68 : .66)*Math.min(W, H)/H;
     view.base = 1/(frac*Math.tan(camera.fov*Math.PI/360));
+    view.shift = narrow ? .12 : .085;           // 地球整体下移（视口高度比例 / 2），给顶部搜索栏留空间
     [starMat, ...dustMats].forEach(m => m.uniforms.px.value = renderer.getPixelRatio()*(H/900));
   }
   addEventListener('resize', () => { if(SB.scenes.current === 'globe') resize(); });
@@ -273,14 +476,16 @@
     const pts = new Map(); let pinch = 0, moved = 0, lastHover = 0;
     const tapMoveLimit = SB.perf.touch ? 14 : 6;
     cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); pts.set(e.pointerId, {x:e.clientX, y:e.clientY}); moved = 0; view.idle = 0; cv.classList.add('dragging');
+      closeResults();
       if(pts.size === 2){ const [a,b] = [...pts.values()]; pinch = Math.hypot(a.x-b.x, a.y-b.y); } });
     cv.addEventListener('pointermove', e => {
       const p = pts.get(e.pointerId);
-      if(!p){ // 悬停
+      if(!p){
         if(SB.perf.touch || performance.now() - lastHover < 60) return; lastHover = performance.now();
         const h = pick(e.clientX, e.clientY); setHover(h, e.clientX, e.clientY); return;
       }
       const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY; moved += Math.abs(dx) + Math.abs(dy);
+      if(moved > tapMoveLimit){ fly.on = false; if(focus.on) endFocus(); }
       if(pts.size === 2){ const [a,b] = [...pts.values()]; const d = Math.hypot(a.x-b.x, a.y-b.y); if(pinch){ view.zoomT = SB.clamp(view.zoomT*pinch/d, .58, 1.9); } pinch = d; return; }
       const k = 2.6/Math.min(innerWidth, innerHeight)*view.zoom;
       view.vy = dx*k; view.vx = dy*k;
@@ -291,49 +496,247 @@
       pts.delete(e.pointerId); if(pts.size < 2) pinch = 0; if(!pts.size) cv.classList.remove('dragging');
       if(moved < tapMoveLimit && e.type === 'pointerup'){
         const h = pick(e.clientX, e.clientY);
-        if(h?.country){
-          if(h.country.key === 'aq') SB.scenes.go('continent', {c:'an'});
-          else SB.scenes.go('country', {k:h.country.key}, {transition:'portal', x:e.clientX, y:e.clientY});
-        }
+        if(h?.country) SB.scenes.go('country', {k:h.country.key}, {transition:'portal', x:e.clientX, y:e.clientY});
       }
     };
     cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
     cv.addEventListener('pointerleave', () => setHover(null));
     cv.addEventListener('wheel', e => { e.preventDefault(); view.zoomT = SB.clamp(view.zoomT*(1 + Math.sign(e.deltaY)*.12), .58, 1.9); view.idle = 0; }, {passive:false});
   }
+  let warmCountryT = 0, warmCountryKey = '';
   function setHover(h, x, y){
     const c = h?.country;
     const idx = c ? SB.geo.countries.indexOf(c) + 1 : -1;
     earthMat.uniforms.hk.value = idx; earthMat.uniforms.hc.value = c ? (contIndex[c.cont] || -1) : -1;
-    if(!c){ tip.classList.remove('show'); return; }
+    if(!c){ clearTimeout(warmCountryT); warmCountryKey = ''; tip.classList.remove('show'); return; }
+    if(c.key !== warmCountryKey){ clearTimeout(warmCountryT); warmCountryKey = c.key; warmCountryT = setTimeout(() => SB.scenes.prefetch?.('country',{k:c.key}),180); }
     const n = SB.store.citiesIn(c.key).length;
     tip.innerHTML = `<b>${SB.esc(c.zh)}</b>${SB.esc(SB.geo.continent(c.cont)?.name || '')}${n ? ` · ${SB.icon('star')}${n} 座城市` : ''}`;
     tip.style.transform = `translate(${Math.min(x + 16, innerWidth - tip.offsetWidth - 12)}px, ${y + 18}px)`;
     tip.classList.add('show');
   }
 
+  /* ── 飞转定位：把经纬度转到正对镜头 ── */
+  const easeIO = x => x < .5 ? 4*x*x*x : 1 - Math.pow(-2*x + 2, 3)/2;
+  function targetRotation(lon, lat){
+    const v = lonLatToVec(lon, lat, 1), r = Math.hypot(v.x, v.z);
+    let y = -Math.atan2(v.x, v.z); const x = SB.clamp(Math.atan2(v.y, r), -1.25, 1.25);
+    const TAU = Math.PI*2; y += Math.round((view.rotY - y)/TAU)*TAU;       // 走最短方向
+    return {x, y};
+  }
+  function flyTo(lon, lat, zoom){
+    const to = targetRotation(lon, lat);
+    if(reduced() || !running){ view.rotX = to.x; view.rotY = to.y; view.vx = view.vy = 0; view.zoomT = zoom; fly.on = false; return Promise.resolve(); }
+    const ang = Math.abs(to.y - view.rotY) + Math.abs(to.x - view.rotX);
+    Object.assign(fly, { on:true, t0:performance.now(), dur:SB.clamp(700 + ang*360, 900, 1600), x0:view.rotX, y0:view.rotY, x1:to.x, y1:to.y });
+    view.vx = view.vy = 0; view.zoomT = zoom;
+    return new Promise(res => { fly.done = res; });
+  }
+  function countryOfCode(cc){
+    if(!cc) return null;
+    cc = String(cc).toUpperCase();
+    if(cc === 'HK' || cc === 'MO' || cc === 'TW') cc = 'CN';
+    return SB.geo.countries.find(c => c.a2 === cc) || null;
+  }
+  const REGION_ZH = {HK:'中国香港', MO:'中国澳门', TW:'中国台湾'};
+  function countryLabel(cc){ cc = String(cc || '').toUpperCase(); return REGION_ZH[cc] || countryOfCode(cc)?.zh || ''; }
+
+  async function focusTo(o){
+    endFocus(true); closeResults();
+    const ctry = o.kind === 'country' ? SB.geo.country(o.key) : o.kind === 'mine' ? SB.geo.country(o.key) : o.kind === 'place' ? countryOfCode(o.cc) : null;
+    earthMat.uniforms.fk.value = ctry ? SB.geo.countries.indexOf(ctry) + 1 : -1;
+    earthMat.uniforms.fc.value = o.kind === 'cont' ? (contIndex[o.key] || -1) : -1;
+    Object.assign(focus, {on:true, kind:o.kind, key:o.key, t0:performance.now(), o, ctry});
+    if(o.kind !== 'cont') placeFocusMarker(o.lon, o.lat, o.kind); else focusGroup.visible = false;
+    view.idle = -8;                                   // 飞到后多停一会儿再自转
+    const zoom = o.kind === 'place' || o.kind === 'mine' ? .8 : o.kind === 'cont' ? 1.05 : .9;
+    await flyTo(o.lon, o.lat, zoom);
+    if(focus.o !== o) return;
+    if(o.kind !== 'cont' && !o.silent) showCard(o, ctry);
+  }
+  function endFocus(keepMarker){
+    focus.on = false; focus.o = null; hideCard();
+    if(earthMat){ earthMat.uniforms.fk.value = -1; earthMat.uniforms.fc.value = -1; earthMat.uniforms.fa.value = 0; }
+    if(!keepMarker && focusGroup) focusGroup.visible = false;
+  }
+  function hideCard(){ $('gl-card').classList.remove('show'); }
+  function showCard(o, ctry){
+    const card = $('gl-card'); card.innerHTML = '';
+    const mine = o.kind === 'mine' ? SB.store.city(o.id) : SB.store.cities.find(c => c.name === o.zh && (!ctry || c.country === ctry.key));
+    const n = ctry ? SB.store.citiesIn(ctry.key).length : 0;
+    const kicker = o.kind === 'country' ? 'TERRA' : 'URBS';
+    const sub = o.kind === 'country' ? (n ? `已点亮 ${n} 座城市` : (SB.geo.continent(ctry?.cont)?.name || '')) : (o.sub || '');
+    card.innerHTML = `<button type="button" class="x" aria-label="关闭">${SB.icon('close')}</button><small>${kicker}</small><h2></h2><p></p><div class="acts"></div>`;
+    card.querySelector('h2').textContent = o.zh; card.querySelector('p').textContent = sub;
+    card.querySelector('.x').addEventListener('click', () => endFocus());
+    const acts = card.querySelector('.acts');
+    const go = (id, params, btn) => { const r = btn.getBoundingClientRect(); SB.scenes.go(id, params, {transition:'portal', x:r.left + r.width/2, y:r.top + r.height/2}); };
+    if(mine){ const b = SB.ui.button('打开我们的回忆', 'primary', () => go('city', {id:mine.id}, b), 'star'); acts.appendChild(b); }
+    if(ctry){ const b = SB.ui.button(`进入${ctry.zh}地图`, mine ? '' : 'primary', () => go('country', {k:ctry.key}, b)); acts.appendChild(b); }
+    if(!acts.children.length){ const p = SB.el('p'); p.textContent = '这里暂时没有可以进入的地图'; acts.appendChild(p); }
+    card.classList.add('show');
+    if(ctry) SB.scenes.prefetch?.('country', {k:ctry.key});
+  }
+
+  /* ── 搜索 ── */
+  const index = { countries:null, places:null, mine:null };
+  const norm = s => String(s || '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[\s·・'’\-_.,，]/g, '');
+  function buildIndex(){
+    if(!index.countries) index.countries = SB.geo.countries.map(c => ({kind:'country', zh:c.zh, en:c.en, key:c.key, lon:c.mid[0], lat:c.mid[1], nz:norm(c.zh), ne:norm(c.en)}));
+    if(!index.places) index.places = (SB.WORLD_CITIES || []).map(([zh, en, cc, lon, lat, tier]) => ({kind:'place', zh, en, cc, lon, lat, tier, nz:norm(zh), ne:norm(en)}));
+    if(!index.mine) index.mine = SB.store.cities.filter(c => c.lon != null).map(c => ({kind:'mine', id:c.id, zh:c.name, en:'', key:c.country, lon:c.lon, lat:c.lat,
+      sub:[c.countryName, c.regionName].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(' · '), nz:norm(c.name), ne:''}));
+  }
+  function score(e, q){
+    let s = -1;
+    for(const n of [e.nz, e.ne]){ if(!n) continue; if(n === q) s = Math.max(s, 100); else if(n.startsWith(q)) s = Math.max(s, 80 - Math.min(20, n.length - q.length)); else if(n.includes(q)) s = Math.max(s, 55); }
+    return s;
+  }
+  function localSearch(raw){
+    buildIndex(); const q = norm(raw); if(!q) return {mine:[], countries:[], places:[]};
+    const pick = (arr, n, bonus) => arr.map(e => ({e, s:score(e, q)})).filter(x => x.s >= 0).map(x => ({...x, s:x.s + (bonus ? bonus(x.e) : 0)})).sort((a, b) => b.s - a.s).slice(0, n).map(x => x.e);
+    const vis = SB.store.visitedCountries();
+    return {
+      mine: pick(index.mine, 5),
+      countries: pick(index.countries, 6, e => vis.has(e.key) ? 6 : 0),
+      places: pick(index.places, 8, e => e.tier === 1 ? 6 : 0)
+    };
+  }
+  const online = { cache:new Map(), ctl:null, timer:0, state:'' };
+  const GEO_URL = q => `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=10&language=zh&format=json`;
+  async function onlineSearch(raw){
+    const q = raw.trim(); if([...q].length < 2) return [];
+    if(online.cache.has(q)) return online.cache.get(q);
+    online.ctl?.abort(); const ctl = online.ctl = new AbortController();
+    const to = setTimeout(() => ctl.abort(), 6000);
+    try{
+      const r = await fetch(GEO_URL(q), {signal:ctl.signal, credentials:'omit'}); if(!r.ok) throw new Error('geo ' + r.status);
+      const j = await r.json();
+      const out = (j.results || []).filter(x => /^PPL/.test(x.feature_code || 'PPL') && x.latitude != null)
+        .sort((a, b) => (b.population || 0) - (a.population || 0))
+        .map(x => ({kind:'place', zh:x.name, en:'', cc:x.country_code, lon:x.longitude, lat:x.latitude, pop:x.population || 0,
+          sub:[countryLabel(x.country_code) || x.country, x.admin1].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(' · ')}));
+      online.cache.set(q, out); return out;
+    } finally { clearTimeout(to); }
+  }
+  const res = $('gl-res'), qIn = $('gl-q'), qx = $('gl-qx'), sBox = $('gl-search');
+  if(matchMedia('(max-width: 560px)').matches) qIn.placeholder = '搜索城市或国家 · 京都、冰岛';
+  qx.innerHTML = SB.icon('close');
+  const S = { opts:[], act:-1, q:'', local:null, remote:null, remoteState:'' };
+  const ICON = { mine:SB.icon('star'), country:'<svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M3.5 12h17M12 3.5c3 3.2 3 13.8 0 17M12 3.5c-3 3.2-3 13.8 0 17" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>',
+    place:'<svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-6.1-6.5-11a6.5 6.5 0 0 1 13 0c0 4.9-6.5 11-6.5 11Z" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="12" cy="10" r="2.2" fill="currentColor"/></svg>' };
+  function hl(name, q){
+    const n = String(name || ''), nq = String(q || '').trim(); if(!nq) return SB.esc(n);
+    const i = n.toLowerCase().indexOf(nq.toLowerCase()); if(i < 0) return SB.esc(n);
+    return SB.esc(n.slice(0, i)) + '<mark>' + SB.esc(n.slice(i, i + nq.length)) + '</mark>' + SB.esc(n.slice(i + nq.length));
+  }
+  function render(){
+    const L = S.local || {mine:[], countries:[], places:[]};
+    const vis = SB.store.visitedCountries();
+    // 合并本地城市与在线城市（同名同国家或很近的去重）
+    const places = [...L.places];
+    for(const r of (S.remote || [])){
+      const dup = places.some(p => (p.cc || '').toUpperCase() === (r.cc || '').toUpperCase() && (p.zh === r.zh || (Math.abs(p.lat - r.lat) < .35 && Math.abs(p.lon - r.lon) < .35)));
+      if(!dup && places.length < 12) places.push(r);
+    }
+    // 已在「我们的足迹」中出现的城市（约 40km 内）不再在「城市」组重复显示。
+    for(let i = places.length - 1; i >= 0; i--){ const p = places[i];
+      if(L.mine.some(m => Math.abs(m.lat - p.lat) < .35 && Math.abs(m.lon - p.lon) < .35)) places.splice(i, 1); }
+    S.opts = []; res.innerHTML = '';
+    const group = (title, arr, row) => { if(!arr.length) return; const h = SB.el('h4'); h.textContent = title; res.appendChild(h); arr.forEach(e => { const b = row(e); b.dataset.i = S.opts.length; S.opts.push(e); res.appendChild(b); }); };
+    const opt = (e, name, sub, tag) => {
+      const b = SB.el('button', 'gl-opt', `<span class="ic">${ICON[e.kind]}</span><span class="tx"><b>${hl(name, S.q)}</b><span>${SB.esc(sub || '')}</span></span>${tag ? `<span class="tag">${SB.esc(tag)}</span>` : ''}`);
+      b.type = 'button'; b.setAttribute('role', 'option'); b.id = 'gl-opt-' + S.opts.length;
+      b.addEventListener('pointerdown', ev => ev.preventDefault());
+      b.addEventListener('click', () => choose(e)); return b;
+    };
+    group('OUR STARS · 我们的足迹', L.mine, e => opt(e, e.zh, e.sub, '已点亮'));
+    group('TERRAE · 国家与地区', L.countries, e => { const n = SB.store.citiesIn(e.key).length;
+      return opt(e, e.zh, [e.en, SB.geo.continent(SB.geo.country(e.key)?.cont)?.name].filter(Boolean).join(' · '), vis.has(e.key) ? `已点亮 ${n}` : ''); });
+    group('URBES · 城市', places, e => opt(e, e.zh, e.sub || [countryLabel(e.cc), e.en && e.en !== e.zh ? e.en : ''].filter(Boolean).join(' · ')));
+    if(S.remoteState === 'wait'){ const d = SB.el('div', 'note wait'); d.textContent = '正在星图中寻找更多城市…'; res.appendChild(d); }
+    else if(S.remoteState === 'fail'){ const d = SB.el('div', 'note'); d.textContent = '在线城市搜索暂时不可用，已显示本地结果'; res.appendChild(d); }
+    if(!S.opts.length && S.remoteState !== 'wait'){ const d = SB.el('div', 'note'); d.textContent = '星图里没有找到「' + S.q + '」，换个写法试试（中文或英文）'; res.appendChild(d); }
+    if(places.length || S.remoteState){ const d = SB.el('div', 'src'); d.textContent = '城市数据：GeoNames · Open-Meteo · CLDR'; res.appendChild(d); }
+    S.act = S.opts.length ? 0 : -1; markAct();
+    res.hidden = false; sBox.classList.add('on'); qIn.setAttribute('aria-expanded', 'true');
+  }
+  function markAct(){
+    res.querySelectorAll('.gl-opt').forEach(b => b.classList.toggle('act', +b.dataset.i === S.act));
+    const a = res.querySelector('.gl-opt.act'); qIn.setAttribute('aria-activedescendant', a ? a.id : ''); a?.scrollIntoView({block:'nearest'});
+  }
+  function closeResults(){ res.hidden = true; sBox.classList.remove('on'); qIn.setAttribute('aria-expanded', 'false'); }
+  function search(){
+    const q = qIn.value; S.q = q.trim(); qx.hidden = !q;
+    clearTimeout(online.timer); online.ctl?.abort();
+    if(!S.q){ closeResults(); return; }
+    S.local = localSearch(S.q); S.remote = online.cache.get(S.q) || null;
+    S.remoteState = S.remote || [...S.q].length < 2 ? '' : 'wait';
+    render();
+    if(S.remoteState === 'wait'){
+      const asked = S.q;
+      online.timer = setTimeout(async () => {
+        try{ const r = await onlineSearch(asked); if(asked !== S.q) return; S.remote = r; S.remoteState = ''; }
+        catch(e){ if(e?.name === 'AbortError' && asked !== S.q) return; if(asked !== S.q) return; S.remote = []; S.remoteState = 'fail'; }
+        render();
+      }, 350);
+    }
+  }
+  function choose(e){
+    qIn.value = e.zh; qx.hidden = false; closeResults();
+    if(SB.perf.touch) qIn.blur();
+    focusTo(e.kind === 'place' ? {...e, sub:e.sub || [countryLabel(e.cc), e.en && e.en !== e.zh ? e.en : ''].filter(Boolean).join(' · ')} : e);
+  }
+  qIn.addEventListener('input', search);
+  qIn.addEventListener('focus', () => { if(qIn.value.trim()) search(); });
+  qIn.addEventListener('keydown', e => {
+    if(e.key === 'ArrowDown' || e.key === 'ArrowUp'){ if(res.hidden) return; e.preventDefault(); const n = S.opts.length; if(!n) return; S.act = (S.act + (e.key === 'ArrowDown' ? 1 : -1) + n) % n; markAct(); }
+    else if(e.key === 'Enter'){ e.preventDefault(); if(res.hidden) search(); else if(S.act >= 0) choose(S.opts[S.act]); }
+    else if(e.key === 'Escape'){ if(!res.hidden){ e.stopPropagation(); closeResults(); } else qIn.blur(); }
+  });
+  qx.addEventListener('click', () => { qIn.value = ''; qx.hidden = true; closeResults(); endFocus(); qIn.focus(); });
+  document.addEventListener('pointerdown', e => { if(SB.scenes.current === 'globe' && !sBox.contains(e.target)) closeResults(); });
+
   /* ── 渲染循环 ── */
-  const tmpV = { v:null, n:null, cam:null };
+  const tmpV = { v:null, n:null };
   function loop(now){
     if(!running) return;
     const dt = Math.min(.05, (now - (last || now))/1000); last = now; time += dt;
+    const still = reduced() ? 0 : 1;
     view.idle += dt;
-    // 惯性 + 闲置自转
-    view.vx *= Math.pow(.05, dt); view.vy *= Math.pow(.05, dt);
-    view.rotY += view.vy*dt*8 + (view.idle > 4 ? dt*.06*Math.min(1, (view.idle-4)/2) : 0);
-    view.rotX = SB.clamp(view.rotX + view.vx*dt*8, -1.25, 1.25);
+    if(fly.on){
+      const k = SB.clamp((now - fly.t0)/fly.dur, 0, 1), e = easeIO(k);
+      view.rotX = SB.lerp(fly.x0, fly.x1, e); view.rotY = SB.lerp(fly.y0, fly.y1, e); view.vx = view.vy = 0;
+      if(k >= 1){ fly.on = false; fly.done?.(); fly.done = null; }
+    }else{
+      view.vx *= Math.pow(.05, dt); view.vy *= Math.pow(.05, dt);
+      view.rotY += view.vy*dt*8 + (view.idle > 4 && still ? dt*.06*Math.min(1, (view.idle-4)/2) : 0);
+      view.rotX = SB.clamp(view.rotX + view.vx*dt*8, -1.25, 1.25);
+    }
     globe.rotation.set(view.rotX, view.rotY, 0);
-    // 进场飞入
     view.intro = Math.min(1, view.intro + dt/2.4);
     const ease = 1 - Math.pow(1 - view.intro, 3);
-    view.zoom = SB.lerp(view.zoom, view.zoomT, Math.min(1, dt*6));
-    camera.position.set(0, 0, SB.lerp(14, view.base, ease)*view.zoom);
-    camera.lookAt(0, 0, 0);
-    earthMat.uniforms.t.value = time;
-    starMat.uniforms.t.value = time;
-    dustMats.forEach((m, i) => { m.uniforms.t.value = time; if(m.userData.ring) m.userData.ring.rotation.y += dt*(i ? -.05 : .07); if(m.userData.rise){ m.userData.rise.rotation.y += dt*.02; m.userData.rise.position.y = Math.sin(time*.2)*.05; } });
+    view.zoom = SB.lerp(view.zoom, view.zoomT, Math.min(1, dt*(fly.on ? 3 : 6)));
+    const dist = SB.lerp(14, view.base, ease)*view.zoom, sy = dist*Math.tan(camera.fov*Math.PI/360)*view.shift;
+    camera.position.set(0, sy, dist); camera.lookAt(0, sy, 0);
+    earthMat.uniforms.t.value = time; starMat.uniforms.t.value = time;
+    // 聚焦脉动：2.6 秒内渐弱为柔和的持续高光
+    if(focus.on){ const ft = (now - focus.t0)/1000; earthMat.uniforms.fa.value = SB.clamp(ft/.4, 0, 1)*(focus.kind === 'cont' ? Math.max(0, 1 - Math.max(0, ft - 2.2)/1.2) : .55 + .45*Math.exp(-Math.max(0, ft - 1.6)/1.4)); }
+    dustMats.forEach((m, i) => { m.uniforms.t.value = time; if(m.userData.ring) m.userData.ring.rotation.y += dt*(i ? -.05 : .07)*still; if(m.userData.rise){ m.userData.rise.rotation.y += dt*.02*still; m.userData.rise.position.y = Math.sin(time*.2)*.05*still; } });
     cityGroup.children.forEach(s => s.scale.setScalar(.06 + .02*Math.sin(time*2.4 + s.userData.ph)));
-    // 大洲按钮跟随地球
+    // 星辉层次
+    cloud.rotation.y += dt*.012*still;
+    halo.material.opacity = .85 + .15*Math.sin(time*.7)*still;
+    astro.rotation.z -= dt*.03*still;
+    constGroup.rotation.y = -view.rotY*.04; constGroup.rotation.x = -view.rotX*.03;
+    arcMats.forEach(m => { m.uniforms.t.value = time*still; });
+    arcRunners.forEach(r => { const p = (time*.22*still + r.userData.ph) % 1, N = r.userData.pos.length/3, k = Math.min(N - 1, Math.round(p*(N - 1)));
+      r.position.set(r.userData.pos[k*3], r.userData.pos[k*3+1], r.userData.pos[k*3+2]); r.material.opacity = Math.sin(Math.PI*p); });
+    if(focusGroup.visible){
+      const ft = (now - focus.t0)/1000;
+      focusRings.forEach((m, i) => { const ph = ((ft*.55 + i*.5) % 1); const s = m.userData.big*(.3 + ph*1.1); m.scale.set(s, s, s); m.material.opacity = (1 - ph)*.9*(focus.on ? 1 : 0); });
+      focusStar.material.opacity = focusStar.userData.show && focus.on ? .85 + .15*Math.sin(ft*5) : 0; focusStar.scale.setScalar(.09 + .02*Math.sin(ft*3));
+    }
     if(!tmpV.v){ tmpV.v = new T.Vector3(); tmpV.n = new T.Vector3(); }
     globe.updateMatrixWorld();
     const W = innerWidth, H = innerHeight;
@@ -343,7 +746,7 @@
       const facing = tmpV.n.dot(tmpV.v.copy(camera.position).sub(p).normalize());
       p.project(camera);
       const x = (p.x*.5 + .5)*W, y = (-p.y*.5 + .5)*H;
-      const a = SB.clamp((facing - .1)*3, 0, 1)*ease;
+      const a = SB.clamp((facing - .1)*3, 0, 1)*ease*(focus.on && focus.kind !== 'cont' ? .35 : 1);
       b.style.opacity = a.toFixed(2); b.style.pointerEvents = a > .3 ? 'auto' : 'none';
       b.style.transform = `translate(${(x - b.offsetWidth/2).toFixed(1)}px, ${(y - b.offsetHeight + 3).toFixed(1)}px)`;
     });
@@ -351,27 +754,49 @@
     requestAnimationFrame(loop);
   }
   function start(){ if(running || !ready) return; running = true; last = 0; requestAnimationFrame(loop); }
-  function stop(){ running = false; }
+  function stop(){ running = false; if(fly.on){ view.rotX = fly.x1; view.rotY = fly.y1; fly.on = false; fly.done?.(); fly.done = null; } }
   document.addEventListener('visibilitychange', () => { if(document.hidden) stop(); else if(SB.scenes.current === 'globe') start(); });
+
+  /* 记住刚离开的国家：从国家地图返回时地球转向它 */
+  let lastCountry = null;
+  document.addEventListener('sb:scene', e => { if(e.detail.id === 'country') lastCountry = e.detail.params?.k || null; else if(e.detail.id !== 'globe') lastCountry = null; });
+
+  SB.globe = { warmEngine:()=>SB.loadScript(THREE_URLS), prepare:init, focus:o => focusTo(o), search:q => { qIn.value = q; search(); return S; } };
 
   SB.scenes.register('globe', {
     world:'night', deepLink:true,
     title:()=>'世界星图',
     parent:()=>null,
-    async enter(p){
+    prepare(){ return init(); },
+    async enter(p, opts){
       SB.fx.palette('night'); SB.fx.orbit(null);
       setTimeout(() => SB.fx.warp(false), p?.fromBook ? 900 : 0);
       setTimeout(() => SB.fx.calm(), 1400);
-      refreshStats();
-      view.intro = p?.fromBook ? 0 : .55;
+      refreshStats(); closeResults();
+      const back = lastCountry && SB.geo.country(lastCountry); lastCountry = null;
+      view.intro = p?.fromBook ? 0 : back ? .8 : .55;
       try{ await init(); }catch(e){ return; }
       resize(); view.zoomT = 1; start();
+      if(back && back.mid){
+        // 从国家地图返回：转向这个国家并短暂高亮（不弹信息卡）
+        const v = back.mid; focusTo({kind:'country', key:back.key, zh:back.zh, lon:v[0], lat:v[1], silent:true});
+        setTimeout(() => { if(focus.o?.silent) endFocus(); }, 4200);
+      }
     },
-    leave(){ stop(); setHover(null); }
+    leave(){ stop(); setHover(null); closeResults(); hideCard(); }
   });
 
-  SB.menu.add({id:'globe', order:20, icon:'globe', label:'世界星图', desc:'旋转地球，寻找我们的足迹',
+  SB.menu.add({id:'globe', order:20, icon:'globe', label:'世界星图', desc:'旋转地球，搜索任意城市，寻找我们的足迹',
     current:() => SB.scenes.current === 'globe',
     action(){ if(SB.scenes.current === 'book') SB.magicBook.open(); else SB.scenes.go('globe', {}, {transition:'flash'}); } });
+  // v1.8.0：大洲目录页已删除；菜单「七大洲」改为让地球转向对应大洲。
+  SB.menu.add({id:'continents', order:30, icon:'compass', label:'七大洲', desc:'让地球转向某个大洲',
+    children:() => { const vis = SB.store.visitedCountries();
+      return SB.geo.CONTINENTS.map(c => { const n = SB.geo.inContinent(c.code).filter(x => vis.has(x.key)).length;
+        return {label:c.name, badge: n ? String(n) : '', async action(){
+          if(SB.scenes.current === 'book') await SB.magicBook.open();
+          else if(SB.scenes.current !== 'globe') await SB.scenes.go('globe', {}, {transition:'flash'});
+          if(SB.scenes.current === 'globe') toCont(c);
+        }}; }); }});
 })(window.SB);
 </script>
