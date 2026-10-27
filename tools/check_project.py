@@ -117,6 +117,25 @@ if 'content-visibility:auto' not in city_text:
     print('ERROR: city album offscreen rendering guard missing')
     sys.exit(1)
 
+# v1.8.0 guards: magic gate transitions, search data, navigation simplification, unique DOM ids.
+if dups:
+    print(f'ERROR: duplicate DOM ids would break runtime lookups: {dups}')
+    sys.exit(1)
+gate_text = block_text.get('01b-gate.html', '')
+for marker in ('SB.gate = ', 'portalFrame', 'abort()'):
+    if marker not in gate_text:
+        print(f'ERROR: magic gate marker {marker!r} missing from 01b-gate.html')
+        sys.exit(1)
+if "gate.cover('portkey'" not in core_text or 'SB.gate?.abort?.()' not in core_text:
+    print('ERROR: Scene Runtime must route flash/veil through SB.gate and abort it on failure')
+    sys.exit(1)
+if 'SB.WORLD_CITIES = ' not in block_text.get('06-world-cities.html', ''):
+    print('ERROR: offline world city search data missing (06-world-cities.html)')
+    sys.exit(1)
+if "register('continent'" in ''.join(block_text.values()):
+    print('ERROR: continent directory scene was removed in v1.8.0 and must not return')
+    sys.exit(1)
+
 # Governance / release-document consistency checks.
 version = (root/'VERSION').read_text(encoding='utf-8-sig').strip()
 required_files = [

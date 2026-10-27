@@ -147,13 +147,51 @@
   text-shadow:0 0 12px rgba(244,184,96,.7);animation:bkHint 4s ease-in-out infinite;pointer-events:none;transition:opacity .5s;}
 @keyframes bkHint{0%,100%{opacity:.35}50%{opacity:.95}}
 .sb-scene[data-scene="book"].is-opening .bk-hint{opacity:0;animation:none;}
-@media (prefers-reduced-motion:reduce){ .bk-aura,.bk-float,.bk-veins path,.bk-smoke i,.bk-gemglow,.bk-hint,.bk-rays,.bk-refract,.bk-glint{animation:none!important;} }
+/* ── v1.8.0 星辉层次 ── */
+/* 1 星云底层（真知晶球式多层云雾） */
+.bk-neb{position:absolute;left:50%;top:50%;width:150vmax;height:150vmax;margin:-75vmax 0 0 -75vmax;pointer-events:none;mix-blend-mode:screen;will-change:transform;}
+.bk-neb.n1{opacity:.55;animation:bkNeb 320s linear infinite;
+  background:radial-gradient(18% 12% at 34% 40%,rgba(255,168,80,.20),transparent 70%),radial-gradient(22% 14% at 66% 58%,rgba(255,120,60,.14),transparent 70%),
+    radial-gradient(14% 20% at 58% 30%,rgba(255,214,150,.12),transparent 70%),radial-gradient(26% 18% at 40% 70%,rgba(160,80,40,.16),transparent 70%);}
+.bk-neb.n2{opacity:.45;animation:bkNeb 460s linear infinite reverse;
+  background:radial-gradient(16% 10% at 62% 36%,rgba(255,200,120,.16),transparent 70%),radial-gradient(24% 12% at 30% 60%,rgba(255,150,70,.12),transparent 70%),
+    radial-gradient(12% 16% at 48% 74%,rgba(255,226,170,.10),transparent 70%);}
+@keyframes bkNeb{from{transform:rotate(0) scale(1)}50%{transform:rotate(180deg) scale(1.08)}to{transform:rotate(360deg) scale(1)}}
+/* 2 宝石光溢 + 体积光（光有来源：从宝石发出） */
+.bk-spill{position:absolute;left:50%;top:calc(50% + var(--bh) * .08);width:calc(var(--bw) * 2.4);aspect-ratio:1;transform:translate(-50%,-50%);pointer-events:none;
+  background:radial-gradient(closest-side,rgba(255,206,130,.30),rgba(255,160,70,.12) 45%,transparent 75%);opacity:.8;}
+.bk-shafts{position:absolute;left:50%;top:calc(50% + var(--bh) * .08);width:calc(var(--bw) * 3.2);aspect-ratio:1;margin:calc(var(--bw) * -1.6) 0 0 calc(var(--bw) * -1.6);pointer-events:none;
+  background:repeating-conic-gradient(from 0deg,rgba(255,226,170,0) 0deg 5deg,rgba(255,220,160,.10) 6deg 6.6deg,rgba(255,226,170,0) 7.6deg 13deg,rgba(255,236,190,.06) 13.6deg 15deg,rgba(255,226,170,0) 16deg 23deg);
+  -webkit-mask:radial-gradient(closest-side,transparent 14%,#000 26%,rgba(0,0,0,.5) 55%,transparent 100%);mask:radial-gradient(closest-side,transparent 14%,#000 26%,rgba(0,0,0,.5) 55%,transparent 100%);
+  opacity:.75;will-change:transform,opacity;}
+/* 3 3D 符文环 */
+.bk-runes{position:absolute;left:50%;top:76%;width:0;height:0;transform-style:preserve-3d;pointer-events:none;}
+.bk-rune{position:absolute;left:-11px;top:-15px;width:22px;height:30px;color:#ffe2a8;will-change:transform,opacity;backface-visibility:visible;}
+.bk-rune svg{width:100%;height:100%;overflow:visible;}
+.bk-rune path{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
+.bk-runes.glow .bk-rune svg{filter:drop-shadow(0 0 3px rgba(255,200,120,.95)) drop-shadow(0 0 8px rgba(244,184,96,.6));}
+/* 4 烟雾与火星画布 */
+.bk-fxc{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+/* 5 书页边流光 */
+.bk-sr::after,.bk-sb::after{content:"";position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;}
+.bk-sr::after{background:linear-gradient(180deg,transparent 0%,rgba(255,250,230,0) 40%,rgba(255,248,220,.95) 50%,rgba(255,250,230,0) 60%,transparent 100%);background-size:100% 300%;animation:bkEdgeV 7s ease-in-out infinite;}
+.bk-sb::after{background:linear-gradient(90deg,transparent 0%,rgba(255,250,230,0) 40%,rgba(255,248,220,.95) 50%,rgba(255,250,230,0) 60%,transparent 100%);background-size:300% 100%;animation:bkEdgeH 7s ease-in-out 3.5s infinite;}
+@keyframes bkEdgeV{0%{background-position:0 100%}60%,100%{background-position:0 0%}}
+@keyframes bkEdgeH{0%{background-position:0% 0}60%,100%{background-position:100% 0}}
+/* 6 能量细丝闪亮 */
+.bk-veins .v4{stroke-width:.7;stroke-dasharray:8 120;animation:bkFlow 7s linear infinite, bkFlick 3.2s ease-in-out infinite;opacity:.9;}
+@keyframes bkFlick{0%,100%{opacity:.25}45%{opacity:1}55%{opacity:.5}}
+.sb-scene[data-scene="book"].is-opening .bk-shafts{opacity:1;transition:opacity .8s;}
+@media (prefers-reduced-motion:reduce){ .bk-aura,.bk-float,.bk-veins path,.bk-smoke i,.bk-gemglow,.bk-hint,.bk-rays,.bk-refract,.bk-glint,.bk-neb,.bk-sr::after,.bk-sb::after{animation:none!important;} }
 </style>
 
 <section class="sb-scene" data-scene="book" aria-label="魔法书封面">
   <svg class="bk-aura" id="bk-aura" viewBox="-500 -500 1000 1000" aria-hidden="true"></svg>
   <svg class="bk-aura a2" id="bk-aura2" viewBox="-500 -500 1000 1000" aria-hidden="true"></svg>
+  <div class="bk-neb n1" aria-hidden="true"></div><div class="bk-neb n2" aria-hidden="true"></div>
   <div class="bk-stage" id="bk-stage">
+    <div class="bk-spill" id="bk-spill" aria-hidden="true"></div>
+    <div class="bk-shafts" id="bk-shafts" aria-hidden="true"></div>
     <div class="bk-float" id="bk-float">
       <div class="bk-under"></div>
       <svg class="bk-veins" viewBox="0 0 1000 200" preserveAspectRatio="none" aria-hidden="true">
@@ -162,6 +200,8 @@
         <path class="v2" d="M30 150 C160 128 240 176 360 140 S540 108 640 150 S820 182 980 140"/>
         <path class="v3" d="M80 86 C190 70 260 108 380 84 S560 52 680 90 S860 112 960 80"/>
         <path class="v1" d="M120 170 C260 150 330 190 470 160 S650 138 760 172 S900 186 990 166" style="animation-duration:22s"/>
+        <path class="v4" d="M500 60 C420 70 360 40 260 66 S90 40 0 70"/>
+        <path class="v4" d="M500 60 C580 70 640 40 740 66 S910 40 1000 70" style="animation-delay:-1.6s,-1.6s"/>
       </svg>
       <div class="bk-tilt" id="bk-tilt">
         <div class="bk-body">
@@ -210,8 +250,10 @@
         </div>
         <div class="bk-smoke" aria-hidden="true"><i></i><i></i><i></i></div>
       </div>
+      <div class="bk-runes" id="bk-runes" aria-hidden="true"></div>
     </div>
   </div>
+  <canvas class="bk-fxc" id="bk-fxc" aria-hidden="true"></canvas>
   <div class="bk-hint">轻触宝石 · 开启星屿</div>
 </section>
 
@@ -430,9 +472,90 @@
     if(e.target === $('bk-gembtn') || nearGem(e.clientX, e.clientY)) SB.magicBook.open?.();
   });
 
+  /* ── v1.8.0 星辉层次：3D 符文环、烟雾与火星、宝石光溢 ── */
+  const RUNE_P = ['M6 2v24M6 7l9-4M6 13l9-4','M5 26V4l10 6v16','M6 2v24M6 8l8 6-8 6','M6 2v24M6 6l9 5M6 12l9 5','M6 26V2l8 5-8 6 9 13','M14 4L6 14l8 10',
+    'M4 4l12 20M16 4L4 24','M10 26V2M3 9l7-7 7 7','M5 2v24M15 2v24M5 8l10 6','M10 2v24M4 10l12 6','M10 2v24M4 6l6 5 6-5M4 22l6-5 6 5','M10 26V12M10 12L4 4M10 12l6-8M10 12V2',
+    'M6 2v24l9-6-9-6 9-6-9-6','M4 26V2l6 8 6-8v24','M10 2l7 8-7 8-7-8zM3 26l7-8 7 8','M4 4l12 20V4L4 24z'];
+  const lvl = () => SB.perf.level;
+  const runeHost = $('bk-runes');
+  const RUNE_N = lvl() === 'high' ? 28 : 16;
+  const runeGlyphs = Array.from({length: RUNE_N}, (_, i) => {
+    const el = SB.el('div', 'bk-rune', `<svg viewBox="0 0 20 28"><path d="${RUNE_P[(i*7) % RUNE_P.length]}"/></svg>`); runeHost.appendChild(el);
+    return {el, a:i/RUNE_N*Math.PI*2, bob:Math.random()*6.28, tw:Math.random()*6.28};
+  });
+  if(lvl() === 'high') runeHost.classList.add('glow');
+  runeHost.style.transform = 'rotateX(-13deg) rotateZ(-7deg)';
+  const fxc = $('bk-fxc'), fg = fxc.getContext('2d');
+  const FX = { W:0, H:0, dpr:1, rect:null, smoke:[], sparks:[], acc:0, acc2:0, suck:0, suckT:0, ringA:0, ringK:1, ringR:200, shaftA:0 };
+  function sprite(r, stops){ const c = document.createElement('canvas'); c.width = c.height = r*2; const g = c.getContext('2d'), gr = g.createRadialGradient(r,r,0,r,r,r); stops.forEach(([o,col]) => gr.addColorStop(o,col)); g.fillStyle = gr; g.fillRect(0,0,r*2,r*2); return c; }
+  const SMOKE = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+    for(let i = 0; i < 9; i++){ const x = 64 + (Math.random()-.5)*46, y = 64 + (Math.random()-.5)*46, r = 22 + Math.random()*26;
+      const gr = g.createRadialGradient(x,y,0,x,y,r); gr.addColorStop(0,'rgba(255,222,176,.42)'); gr.addColorStop(.5,'rgba(255,190,120,.16)'); gr.addColorStop(1,'rgba(255,170,90,0)'); g.fillStyle = gr; g.fillRect(0,0,128,128); }
+    return c; })();
+  const SPARK = sprite(12, [[0,'rgba(255,252,236,1)'],[.3,'rgba(255,190,90,.8)'],[1,'rgba(0,0,0,0)']]);
+  function fxResize(){
+    FX.dpr = Math.min(devicePixelRatio || 1, lvl() === 'high' ? 1.5 : 1);
+    FX.W = scene.clientWidth || innerWidth; FX.H = scene.clientHeight || innerHeight;
+    fxc.width = Math.round(FX.W*FX.dpr); fxc.height = Math.round(FX.H*FX.dpr);
+    const r = $('bk-float').getBoundingClientRect(); FX.rect = r; FX.ringR = r.width*.66;
+  }
+  function fxStep(dt, now){
+    const L = lvl(); if(!FX.rect) fxResize();
+    const r = FX.rect, k = r.width/600;
+    // 符文环
+    FX.ringA += dt*(.16 + .9*FX.suck)*(L === 'reduced' ? 0 : 1);
+    FX.ringK = SB.lerp(FX.ringK, FX.suck ? .18 : 1, Math.min(1, dt*(FX.suck ? 1.6 : 3)));
+    const R = FX.ringR*FX.ringK, t = now/1000;
+    for(const g of runeGlyphs){
+      const th = g.a + FX.ringA, x = Math.sin(th)*R, z = Math.cos(th)*R, y = (L === 'reduced' ? 0 : Math.sin(t*1.1 + g.bob)*7);
+      g.el.style.transform = `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,${z.toFixed(1)}px) scale(${(.9 + .25*FX.ringK).toFixed(3)})`;
+      // 正面经过封面中央的符文降低亮度，避免压住封面烫金图案；两侧与背后保持清晰。
+      const cov = z > 0 ? 1 - .58*Math.max(0, Math.min(1, (.8 - Math.abs(x)/(R || 1))/.25)) : 1;
+      g.el.style.opacity = ((.32 + .68*(z/(R || 1) + 1)/2)*(.75 + .25*Math.sin(t*2.3 + g.tw))*cov*(FX.suck ? FX.ringK : 1)).toFixed(3);
+    }
+    // 宝石光溢与体积光：跟随宝石呼吸，鼠标靠近宝石时更亮
+    const breath = .5 + .5*Math.sin(now/4200*Math.PI*2 - Math.PI/2), boost = hovering ? .25 : 0;
+    FX.shaftA += dt*(L === 'reduced' ? 0 : 1.1 + 6*FX.suck);
+    spill.style.opacity = (.62 + .3*breath + boost + .3*FX.suck).toFixed(3);
+    shafts.style.opacity = (.42 + .3*breath + boost + .5*FX.suck).toFixed(3);
+    shafts.style.transform = `rotate(${FX.shaftA.toFixed(2)}deg)`;
+    // 烟雾与火星
+    const cap = L === 'high' ? 1 : L === 'low' ? .45 : 0;
+    fg.setTransform(FX.dpr, 0, 0, FX.dpr, 0, 0); fg.clearRect(0, 0, FX.W, FX.H);
+    if(!cap){ return; }
+    const gem = SB.magicBook.gemCenter();
+    if(!FX.suck){
+      FX.acc += dt*4.2*cap; while(FX.acc > 1 && FX.smoke.length < 26*cap){ FX.acc--;
+        FX.smoke.push({ x:r.left + r.width*(.28 + Math.random()*.44), y:r.top + r.height*.03, vx:(Math.random()-.5)*8, vy:-(16 + Math.random()*20)*k, s:(34 + Math.random()*34)*k,
+          age:0, life:5 + Math.random()*3, rot:Math.random()*6.28, vr:(Math.random()-.5)*.35, ph:Math.random()*6.28 }); }
+      FX.acc2 += dt*12*cap; while(FX.acc2 > 1 && FX.sparks.length < 40*cap){ FX.acc2--;
+        const side = Math.random(), u = Math.random();
+        const p = side < .5 ? {x:r.left + r.width*u, y:r.top + r.height*.02} : side < .75 ? {x:r.left + r.width*.02, y:r.top + r.height*u*.7} : {x:r.right - r.width*.02, y:r.top + r.height*u*.7};
+        FX.sparks.push({ ...p, vx:(Math.random()-.5)*18, vy:-(24 + Math.random()*46)*k, s:1.2 + Math.random()*1.8, age:0, life:1.4 + Math.random()*1.8, ph:Math.random()*6.28 }); }
+    }
+    fg.globalCompositeOperation = 'lighter';
+    for(let i = FX.smoke.length - 1; i >= 0; i--){
+      const p = FX.smoke[i]; p.age += dt; if(p.age > p.life){ FX.smoke.splice(i, 1); continue; }
+      if(FX.suck){ const dx = gem.x - p.x, dy = gem.y - p.y; p.vx += dx*dt*2.4; p.vy += dy*dt*2.4; p.vx *= .94; p.vy *= .94; p.s *= 1 - dt*.6; }
+      p.x += (p.vx + Math.sin(p.age*.8 + p.ph)*9)*dt; p.y += p.vy*dt; p.s *= 1 + dt*.22; p.rot += p.vr*dt;
+      const a = Math.sin(Math.PI*Math.min(1, p.age/p.life))*.78;
+      fg.globalAlpha = a; fg.save(); fg.translate(p.x, p.y); fg.rotate(p.rot); fg.scale(1, 1.35); fg.drawImage(SMOKE, -p.s, -p.s, p.s*2, p.s*2); fg.restore();
+    }
+    for(let i = FX.sparks.length - 1; i >= 0; i--){
+      const p = FX.sparks[i]; p.age += dt; if(p.age > p.life){ FX.sparks.splice(i, 1); continue; }
+      if(FX.suck){ const dx = gem.x - p.x, dy = gem.y - p.y; p.vx += dx*dt*5; p.vy += dy*dt*5; p.vx *= .9; p.vy *= .9; }
+      p.x += (p.vx + Math.sin(p.age*3 + p.ph)*10)*dt; p.y += p.vy*dt;
+      const a = (1 - p.age/p.life)*(.6 + .4*Math.sin(p.age*14 + p.ph)), sz = p.s*4;
+      fg.globalAlpha = Math.max(0, a); fg.drawImage(SPARK, p.x - sz/2, p.y - sz/2, sz, sz);
+    }
+    fg.globalAlpha = 1; fg.globalCompositeOperation = 'source-over';
+  }
+  const spill = $('bk-spill'), shafts = $('bk-shafts');
+
   function placeOrbit(){
     const r = $('bk-float').getBoundingClientRect();
     SB.fx.orbit({ cx:r.left + r.width/2, cy:r.top + r.height*.58, rx:r.width*.82, ry:r.height*.16, tilt:-.14, speed:.16 });
+    fxResize();
   }
   let last = 0;
   function loop(now){
@@ -450,10 +573,11 @@
     const sweep = ((now/9000) % 1)*1.6 - .8;
     const s = (state.cx*.35 + sweep).toFixed(3);
     if(s !== state.sheen){ state.sheen = s; band.style.transform = `translate3d(${s*60}%, ${(state.cy*12).toFixed(1)}%, 0)`; gloss.style.transform = `translate3d(${(state.cx*14).toFixed(1)}%, ${(state.cy*10).toFixed(1)}%, 0)`; }
+    fxStep(dt, now);
     requestAnimationFrame(loop);
   }
   function start(){ if(state.running) return; state.running = true; last = 0; requestAnimationFrame(loop); }
-  function stop(){ state.running = false; }
+  function stop(){ state.running = false; FX.smoke.length = FX.sparks.length = 0; fg.clearRect(0, 0, fxc.width, fxc.height); }
   document.addEventListener('visibilitychange', () => { if(document.hidden) stop(); else if(SB.scenes.current === 'book') start(); });
   addEventListener('resize', () => { if(SB.scenes.current === 'book' && !SB.magicBook.busy) placeOrbit(); });
 
@@ -462,9 +586,11 @@
     busy:false, state, scene, cover, tilt, gemBtn, page:$('bk-page'),
     stage:$('bk-stage'), shocks:[$('bk-shock'), $('bk-shock2')], leaves:[$('bk-leaf1'),$('bk-leaf2'),$('bk-leaf3')],
     setSpin(v){ state.spinTarget = v; },
+    // v1.8.0：开书时把烟雾、火星、符文环吸向宝石（与门钥匙转场衔接）
+    fxSuck(on){ FX.suck = on ? 1 : 0; },
     gemCenter(){ const r = gemBtn.getBoundingClientRect(); return {x:r.left + r.width/2, y:r.top + r.height/2}; },
     reset(){
-      this.busy = false; state.spinTarget = 1; state.spin = 1;
+      this.busy = false; state.spinTarget = 1; state.spin = 1; FX.suck = 0; FX.ringK = 1;
       scene.classList.remove('is-opening'); this.page.classList.remove('lit');
       cover.classList.remove('is-open','is-lit','is-charging','is-hover');
       this.stage.style.transition = 'none'; this.stage.style.transform = ''; this.stage.style.opacity = '';

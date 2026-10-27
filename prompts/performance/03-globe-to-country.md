@@ -9,7 +9,7 @@
 
 ## 必查文件
 - `blocks/07-globe.html`
-- `blocks/08-continent.html`
+- `blocks/01b-gate.html`（v1.8.0 幻影显形装饰；大洲目录页 `08-continent` 已删除）
 - `blocks/09-country-map.html`
 - `blocks/06-world-geo.html`
 - `blocks/00-core.html`
@@ -19,7 +19,7 @@
 
 ## 实现要求
 - Globe hover 后短延迟预取 `country`。
-- Continent card pointerenter / focusin 预取。
+- 搜索结果信息卡「进入 X 地图」出现时预取该国家地图（v1.8.0；大洲目录卡片已删除）。
 - `country.prepare()` 复用 `SB.geo.loadCountryMap()` cache。
 - `country.enter()` 必须 return/await `load()`。
 - Portal 外圈区域使用稳定 backdrop，不得露出旧 scene。

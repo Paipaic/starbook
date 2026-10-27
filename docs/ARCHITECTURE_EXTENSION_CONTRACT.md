@@ -80,6 +80,22 @@ user_id == book_id
 
 它是 Theme-specific controller，不是业务 Book Context。
 
+### `SB.gate`（v1.8.0）
+
+Magic Celestial Theme 的转场视觉（门钥匙 / 幻影显形 / 熄灯器）。
+
+- 只提供 cover / reveal / portal 装饰，**不拥有场景生命周期**；Scene Runtime 仍负责 `prepare → cover → await enter → nextPaint → reveal`。
+- 属于 Theme 层：未来其他 Theme 可提供自己的 `SB.gate` 实现；缺失时 Scene Runtime 回退到通用 veil / flash。
+- 不读写任何业务数据。
+
+### `SB.globe` 搜索（v1.8.0）
+
+World Map Experience 的地球搜索：离线 `SB.WORLD_CITIES` + Open-Meteo 在线城市搜索。
+
+- 外部请求只包含用户输入的搜索词，不发送 Book / Memory / 照片 / 账户数据；
+- 在线服务不可用不影响任何核心链路（降级为离线库）；
+- 搜索结果只用于转动地球与导航，不写入 Store。
+
 ### `SB.theme`
 
 当前只有 Context：

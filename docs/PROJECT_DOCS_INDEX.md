@@ -20,6 +20,10 @@
 - `../prompts/11-memory-player.md` — 「光影放映」多图编排放映、三种放映风格与四季主题提示词（v1.7.0，取代 v1.6.0 版本）。
 - `../prompts/12-memory-editor.md` — 回忆编辑器「星屿手稿」提示词（v1.7.0）。
 - `../prompts/10-city-album.md` — 城市回忆目录页「星屿手稿 · 目录页」提示词（v1.7.1）。
+- `../prompts/00-gate.md` — 「秘境之门」门钥匙 / 幻影显形 / 熄灯器转场提示词（v1.8.0）。
+- `../prompts/03-magic-book.md`、`../prompts/07-globe.md` — 「星辉层次」魔法书与地球特效、地球搜索栏（v1.8.0）。
+- `../prompts/09-country-map.md` — 国家地图；v1.8.0 起返回直接回到地球（大洲目录页已删除）。
+- `../tools/make_cities.py` — 生成离线城市库 `blocks/06-world-cities.html`（v1.8.0）。
 
 ## 发布与 CI
 
@@ -69,4 +73,4 @@ v1.6.0+ 一键版本发布机制。说明 `release-current.ps1`、自动 Release
 
 ## v1.7.3 转场专项验收
 
-- `docs/TRANSITION_STABILITY_TEST.md`：登录→Book→Globe→Country→City→Player 全链路真机验收。
+- `docs/TRANSITION_STABILITY_TEST.md`：登录→Book→Globe→Country→City→Player 全链路真机验收（v1.8.0 增加秘境之门与搜索验收项）。

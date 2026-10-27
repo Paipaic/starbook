@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.8.0] - 2026-10-27
+
+### Visual — 「秘境之门」奇幻转场（VIS-002）
+- 新块 `blocks/01b-gate.html`（`SB.gate`，全屏画布 `#sb-magic-gate`），只替换 Scene Runtime 的 cover / reveal 视觉，事务顺序不变（`prepare → cover → await enter → nextPaint → reveal → cleanup`）。
+- **门钥匙 Portkey**（`flash`：魔法书 → 地球、菜单 → 地球）：40–60 条金色光丝沿螺线旋入，暖白蒸汽团旋转，中心光门扩大盖满全屏；等待目标场景时光幕上有缓慢旋转的符文环；揭示时光门从中心「撕开」（羽化 + 不规则边缘），光丝反向甩出。开书时光门从书页中心打开。
+- **幻影显形 Apparition**（`portal`：点击处圆形揭示）：准备阶段点击处出现旋转的小符文环（取代纯光圈）；揭示时圆形边缘带双圈刻度符文环、6 条螺旋金丝、外侧柔光与向外飞溅的火星。
+- **熄灯器 Nox / 荧光闪烁 Lumos**（`veil`：返回、菜单跳转）：光点像彗星一样被吸向中心、夜色收拢、最后一点光熄灭；揭示时中心荧光闪烁亮起，光推开夜色，彗星向外散开。
+- `SB.gate` 不存在时自动回退到旧的 veil / flash / 光圈；任何准备失败都会 `SB.gate.abort()` 清理，不留遮罩；bfcache 恢复同样清理。reduced 档不显示门。
+
+### Visual — 「星辉层次」魔法书与地球（VIS-003）
+- **魔法书**：星云、宝石光溢与旋转光束、绕书一圈的 3D 符文环（28 / 16 枚，经过封面中央时自动变暗）、烟雾与火星（画布粒子，low 档减量、reduced 关闭）、书页边缘流光、新增能量脉络；开书时烟雾、火星与符文环被吸入宝石。
+- **地球**：海面星辉高光、程序生成的云雾层、外层呼吸光晕、星座线、倾斜星盘环（拉丁铭文刻度）、按时间连接我们城市的「足迹光弧」与流动光点。
+
+### Navigation / Search（NAV-001）
+- **删除大洲国家目录页**（`blocks/08-continent.html`、`prompts/08-continent.md`）：国家地图的父级改为世界星图，左上角返回 / 面包屑 / 系统返回都直接回到地球，地球自动转向刚才的国家并短暂高亮。
+- 地球上的大洲徽章、手机底部大洲按钮和菜单「七大洲」改为**让地球转向该大洲**。
+- **地球正上方新增搜索栏**：可搜索我们的城市、任意国家与任意城市；内置 648 座城市离线库（`blocks/06-world-cities.html`，由 `tools/make_cities.py` 从 CLDR 中文城市名 + IANA zone.tab + 手工补充生成）+ 在线城市搜索（Open-Meteo Geocoding，中文，350ms 防抖、6 秒超时、可取消、缓存；失败时只显示本地结果）。
+- 选中结果后地球以 easeInOutCubic 沿最短方向快速转到目标并推近，目标国家高亮、目标点亮起星标与扩散光环，下方浮出信息卡（「打开我们的回忆」/「进入 X 地图」）。支持键盘 ↑↓ / Enter / Esc。
+
+### Governance
+- 新增 / 更新 Prompt：`prompts/00-gate.md`（新）、`prompts/00-architecture.md`、`prompts/03-magic-book.md`、`prompts/07-globe.md`、`prompts/09-country-map.md`、`prompts/performance/03-globe-to-country.md`；调研见 `docs/design/VISUAL_UPGRADE_PLAN.md` 第 8 节。
+- `tools/check_project.py`：DOM id 重复改为错误；新增 `SB.gate`、Scene Runtime 门接入、离线城市库、禁止大洲目录页回归的检查。
+
+### Data
+- **无数据库、RLS、schema_version、Book 数据结构或 Storage 变化；无需 SQL。**
+- 新增唯一外部服务：Open-Meteo 城市搜索（只发送用户输入的搜索词，不发送任何回忆数据；不可用时功能降级为离线城市库）。
+
+
 ## [1.7.3] - 2026-10-27
 
 ### Performance / Stability

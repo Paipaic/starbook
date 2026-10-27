@@ -6,7 +6,7 @@
 ## 1. 褰撳墠椤圭洰韬唤
 
 - Project: **Starbook / 鏄熷笨涔嬩功**
-- Current version: **1.7.3**
+- Current version: **1.8.0**
 - Production branch: **`main`**
 - Production deploy: **GitHub Pages via GitHub Actions**
 - Runtime backend: **Supabase Anniversary Bridge**
@@ -112,3 +112,5 @@ python tools/check_project.py
 瀹屾暣璇存槑锛歚docs/RELEASE_AUTOMATION.md`銆?
 ### v1.7.3 鍦烘櫙鎬ц兘 Prompt
 淇敼鐧诲綍銆侀瓟娉曚功銆丟lobe銆丆ountry銆丆ity銆丳layer 鎴?Scene Runtime 鍓嶏紝蹇呴』鍏堥槄璇?`prompts/performance/` 涓搴旈摼璺枃浠讹紱涓嶅緱缁曡繃 `prepare 鈫?await enter 鈫?nextPaint 鈫?reveal` 鐢熷懡鍛ㄦ湡銆?
+### v1.8.0 杞満 / 瀵艰埅 / 鎼滅储
+- 杞満瑙嗚鍙兘閫氳繃 `SB.gate`锛坄blocks/01b-gate.html`锛屾彁绀鸿瘝 `prompts/00-gate.md`锛夋墿灞曪紱涓嶅緱涓轰簡鐗规晥鏀瑰彉 Scene Runtime 浜嬪姟椤哄簭锛屽け璐ヨ矾寰勫繀椤昏皟鐢?`SB.gate.abort()`銆?- 澶ф床鍥藉鐩綍椤靛凡鍦?v1.8.0 鍒犻櫎锛屼笉瑕佹仮澶?`continent` 鍦烘櫙锛涘浗瀹跺湴鍥剧殑鐖剁骇鏄?`globe`銆?- 绂荤嚎鍩庡競搴?`blocks/06-world-cities.html` 鐢?`tools/make_cities.py` 鐢熸垚锛屼笉瑕佹墜鏀癸紱鍦ㄧ嚎鍩庡競鎼滅储鍙彂閫佹悳绱㈣瘝锛屼笉寰楀彂閫佷换浣曞洖蹇嗐€佺収鐗囨垨璐︽埛鏁版嵁銆?
