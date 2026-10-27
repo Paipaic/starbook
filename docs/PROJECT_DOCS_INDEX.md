@@ -21,7 +21,8 @@
 - `../prompts/12-memory-editor.md` — 回忆编辑器「星屿手稿」提示词（v1.7.0）。
 - `../prompts/10-city-album.md` — 城市回忆目录页「星屿手稿 · 目录页」提示词（v1.7.1）。
 - `../prompts/00-gate.md` — 「秘境之门」转场提示词（v1.8.1 重写：五种门按路线区分、曝光规则、放慢光线）。
-- `../prompts/02-menu.md` — 菜单（只保留世界星图 / 时光长卷）与右上角工具标识 `SB.dock`（v1.8.1）。
+- `../prompts/02-menu.md` — 菜单（只保留世界星图 / 时光长卷）与右上角工具标识 `SB.dock`（v1.8.1；v1.8.2 增加「回到魔法书」）。
+- `../prompts/04-book-opening.md` — 开书特效「星尘启封」（v1.8.2 重写）。
 - `../prompts/13-overview.md` — 「时光长卷」横向时间轴（v1.8.1，取代回忆总览）。
 - `../prompts/03-magic-book.md`、`../prompts/07-globe.md` — 「星辉层次」魔法书与地球特效、地球搜索栏（v1.8.0）。
 - `../prompts/09-country-map.md` — 国家地图；v1.8.0 起返回直接回到地球（大洲目录页已删除）。

@@ -3,6 +3,8 @@
 #sb-dock{position:fixed;z-index:60;top:calc(14px + var(--safe-t));right:calc(14px + var(--safe-r));display:flex;gap:6px;align-items:flex-start;
   transition:opacity .5s var(--ease-soft), top .4s var(--ease-soft);}
 #sb-dock[hidden]{display:none!important;}
+.sb-dk[hidden]{display:none!important;}
+.sb-dk.is-home{margin-right:6px;}
 .sb-dk{position:relative;width:36px;height:36px;border-radius:50%;padding:0;display:grid;place-items:center;cursor:pointer;color:#ecd7a4;opacity:.82;
   border:1px solid var(--line);background:linear-gradient(180deg, rgba(48,28,15,.78), rgba(20,11,6,.78));
   backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 0 0 1px rgba(0,0,0,.35) inset, 0 4px 16px rgba(0,0,0,.4);
@@ -26,7 +28,7 @@ body[data-world="night"] .sb-dk{background:linear-gradient(180deg, rgba(26,24,58
   transform-origin:calc(100% - 18px) -8px;opacity:0;transform:scale(.9) translateY(-4px);visibility:hidden;pointer-events:none;
   transition:opacity .35s var(--ease-soft), transform .35s var(--ease-soft), visibility 0s .35s;}
 body[data-world="night"] .sb-dkp{background:radial-gradient(120% 60% at 50% 0%, rgba(244,184,96,.10), transparent 70%), var(--glass-night);}
-html[data-sb-perf="low"] .sb-dkp{backdrop-filter:none;-webkit-backdrop-filter:none;}
+html:not([data-sb-perf="high"]) .sb-dkp,html:not([data-sb-perf="high"]) .sb-dk,html:not([data-sb-perf="high"]) #sb-nav-btn,html:not([data-sb-perf="high"]) #sb-back,html:not([data-sb-perf="high"]) #sb-menu{backdrop-filter:none;-webkit-backdrop-filter:none;}
 #sb-dock.open .sb-dkp{opacity:1;transform:none;visibility:visible;pointer-events:auto;transition:opacity .35s var(--ease-soft), transform .35s var(--ease-soft), visibility 0s;}
 .sb-dkp h4{margin:0 0 4px;font-size:16px;letter-spacing:.14em;color:var(--gold-hi);display:flex;align-items:center;gap:8px;}
 .sb-dkp .rn{margin:0 0 12px;font-family:var(--f-rune);font-weight:500;font-size:9.5px;letter-spacing:.32em;color:var(--gold-dim);}
@@ -54,7 +56,9 @@ html[data-sb-perf="low"] .sb-dkp{backdrop-filter:none;-webkit-backdrop-filter:no
 /* 放映进行中：跟随放映控件醒来 / 隐藏，并下移到「编辑 / 退出放映」下方 */
 body:has(.sb-scene[data-scene="player"].showing) #sb-dock{top:calc(64px + var(--safe-t));}
 body:has(.sb-scene[data-scene="player"].showing:not(.awake)) #sb-dock:not(.open){opacity:0;pointer-events:none;}
-@media (max-width:480px){ #sb-dock{top:calc(14px + var(--safe-t));right:calc(10px + var(--safe-r));gap:5px;} }
+@media (max-width:480px){ #sb-dock{top:calc(14px + var(--safe-t));right:calc(10px + var(--safe-r));gap:4px;}
+  .sb-dk{width:32px;height:32px;} .sb-dk::after{inset:-6px;} .sb-dk svg{width:16px;height:16px;} .sb-dk.is-home{margin-right:4px;} }
+@media (max-width:360px){ .sb-dk{width:30px;height:30px;} #sb-dock{gap:3px;} }
 @media (prefers-reduced-motion:reduce){ .sb-dk .eq i{animation:none;} }
 </style>
 
@@ -72,9 +76,10 @@ body:has(.sb-scene[data-scene="player"].showing:not(.awake)) #sb-dock:not(.open)
     dock.querySelectorAll('.sb-dk').forEach(b => b.remove());
     items.sort((a, b) => a.order - b.order).forEach(it => {
       const b = SB.el('button', 'sb-dk', it.icon + (it.eq ? '<span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>' : ''));
-      b.type = 'button'; b.dataset.id = it.id; b.setAttribute('aria-label', it.label); b.title = it.label;
+      b.type = 'button'; b.dataset.id = it.id; b.classList.add('is-' + it.id); b.setAttribute('aria-label', it.label); b.title = it.label;
       b.setAttribute('aria-haspopup', 'dialog'); b.setAttribute('aria-expanded', 'false');
-      b.addEventListener('click', e => { e.stopPropagation(); openId === it.id ? api.close() : api.open(it.id); });
+      if(it.action){ b.removeAttribute('aria-haspopup'); b.removeAttribute('aria-expanded'); b.addEventListener('click', e => { e.stopPropagation(); api.close(); it.action(); }); }
+      else b.addEventListener('click', e => { e.stopPropagation(); openId === it.id ? api.close() : api.open(it.id); });
       dock.insertBefore(b, panel);
     });
     api.sync();
@@ -89,26 +94,32 @@ body:has(.sb-scene[data-scene="player"].showing:not(.awake)) #sb-dock:not(.open)
     open(id){
       SB.menu?.close?.();
       openId = id; render(); dock.classList.add('open');
-      dock.querySelectorAll('.sb-dk').forEach(b => b.setAttribute('aria-expanded', String(b.dataset.id === id)));
+      dock.querySelectorAll('.sb-dk[aria-haspopup]').forEach(b => b.setAttribute('aria-expanded', String(b.dataset.id === id)));
       // 面板箭头对齐：面板右缘与被点的标识右缘对齐
       const b = btnOf(id), r = dock.getBoundingClientRect(), br = b.getBoundingClientRect();
       const pw = panel.offsetWidth || 320, maxRight = Math.max(0, r.right - 12 - pw);   // 不超出屏幕左缘
       panel.style.right = Math.min(Math.max(0, r.right - br.right), maxRight) + 'px';
     },
-    close(){ openId = null; dock.classList.remove('open'); dock.querySelectorAll('.sb-dk').forEach(b => b.setAttribute('aria-expanded', 'false')); },
+    close(){ openId = null; dock.classList.remove('open'); dock.querySelectorAll('.sb-dk[aria-haspopup]').forEach(b => b.setAttribute('aria-expanded', 'false')); },
     refresh(id){ if(openId && (!id || id === openId)) render(); api.sync(); },
     sync(){ items.forEach(it => { const b = btnOf(it.id); if(b && it.state) it.state(b); }); },
     get openId(){ return openId; }
   };
   document.addEventListener('click', e => { if(openId && !dock.contains(e.target)) api.close(); });
   document.addEventListener('keydown', e => { if(e.key === 'Escape' && openId){ api.close(); e.stopPropagation(); } }, true);
-  document.addEventListener('sb:scene', () => api.close());
+  document.addEventListener('sb:scene', () => { api.close(); api.sync(); });
   // 菜单打开时收起面板
   document.getElementById('sb-nav-btn')?.addEventListener('click', () => api.close());
   // 登录后才显示
   const vis = () => { dock.hidden = !SB.user?.current; };
   document.addEventListener('sb:book', vis); document.addEventListener('sb:scene', vis);
   vis();
+
+  /* ── v1.8.2 回到魔法书：直接返回封面（熄灯器转场），在魔法书页面上自动隐藏 ── */
+  api.add({id:'home', order:0, label:'回到魔法书',
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h10.5a2 2 0 0 1 2 2v13H7a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M5 17.5a2 2 0 0 1 2-2h10.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M11.2 7.6l1.2 2.4 2.4 1.2-2.4 1.2-1.2 2.4-1.2-2.4-2.4-1.2 2.4-1.2z" fill="currentColor"/></svg>',
+    state(b){ b.hidden = SB.scenes.current === 'book'; },
+    action(){ if(SB.scenes.current !== 'book') SB.scenes.go('book', {}, {transition:'veil'}); }});
 
   /* ── 动效强度 ── */
   const TIERS = [
