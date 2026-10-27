@@ -1,13 +1,19 @@
 <script>
-/* ── v1.5 · 账户菜单：当前仅登录 / 退出；未来可升级为 Library / Profile ── */
+/* ── v1.5 账户 → v1.8.1 改为右上角「账户」标识（SB.dock）；当前仅显示账号与退出，未来可升级为 Library / Profile ── */
 (function(SB){
-  SB.menu.icons.user = '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M5.5 19c.8-4 3-6 6.5-6s5.7 2 6.5 6" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>';
-  SB.menu.add({id:'account',order:95,icon:'user',label:'账户',
-    desc:()=>SB.user?.current?.email || '未登录',
-    tag:()=>SB.book?.current?.role ? `<span class="sb-seg"><span class="on">${SB.esc(SB.book.current.role)}</span></span>` : '',
-    hidden:()=>!SB.user?.current,
-    action:async()=>{ if(await SB.ui.confirm('退出当前账号？','退出','danger')) await SB.user.signOut(); }
-  });
-  document.addEventListener('sb:book',()=>SB.menu.refresh());
+  const ROLE = {owner:'主人', editor:'可编辑', viewer:'只读'};
+  SB.dock.add({id:'account', order:30, label:'账户',
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.3" r="3.3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 19.5c.8-4 3-6 6.5-6s5.7 2 6.5 6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
+    render(p){
+      p.innerHTML = '<h4>账户</h4><p class="rn">VIATOR · LIBRI</p>';
+      const u = SB.user?.current, b = SB.book?.current;
+      const row = (lb, val) => { const r = SB.el('div', 'row'); const a = SB.el('span', 'lb'); a.textContent = lb; r.appendChild(a); if(typeof val === 'string'){ const v = SB.el('span', 'sm'); v.textContent = val; r.appendChild(v); } else r.appendChild(val); p.appendChild(r); };
+      row('账号', u?.email || '未登录');
+      if(b){ row('当前的书', b.name || '星屿之书'); const badge = SB.el('span', 'sb-badge'); badge.textContent = ROLE[b.role] || b.role || '成员'; row('身份', badge); }
+      if(u){ const acts = SB.el('div', 'acts');
+        acts.appendChild(SB.ui.button('退出登录', 'small danger', async () => { SB.dock.close(); if(await SB.ui.confirm('退出当前账号？', '退出', 'danger')) await SB.user.signOut(); }));
+        p.appendChild(acts); }
+    }});
+  document.addEventListener('sb:book', () => SB.dock.refresh('account'));
 })(window.SB);
 </script>

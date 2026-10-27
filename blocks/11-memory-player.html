@@ -295,14 +295,14 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
   async function sync(){
     const track = override === undefined ? null : (override || SB.store.settings?.bgm || null);
     const id = track?.id || null;
-    if(!want || !unlocked || !id){ if(!el.paused){ await fade(0, 900); el.pause(); } cur = id ? track : cur; SB.menu?.refresh(); return; }
+    if(!want || !unlocked || !id){ if(!el.paused){ await fade(0, 900); el.pause(); } cur = id ? track : cur; SB.dock?.sync(); return; }
     if(cur?.id !== id || el.paused){
       if(!el.paused) await fade(0, 900);
       if(cur?.id !== id || !el.src){ el.src = SB.store.url(id); }
       cur = track; el.volume = 0;
       try{ await el.play(); await fade(BASE*gain, 1400); }catch(e){}
     }
-    SB.menu?.refresh();
+    SB.dock?.sync();
   }
   SB.audio = {
     unlock(){ if(unlocked) return; unlocked = true; sync(); },
@@ -316,11 +316,49 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
   document.addEventListener('pointerdown', () => SB.audio.unlock(), {once:true});
   document.addEventListener('sb:data', () => { if(override === null) sync(); });
 
-  SB.menu.add({id:'music', order:60, icon:'note', keepOpen:true,
-    label:() => SB.audio.playing ? '背景音乐 · 播放中' : '背景音乐',
-    desc:() => SB.audio.track?.name ? '♪ ' + SB.audio.track.name : (SB.store.settings?.bgm ? '♪ ' + SB.store.settings.bgm.name : '在「回忆总览」里上传全站音乐'),
-    tag:() => `<span class="sb-seg"><span class="${SB.audio.on?'':'on'}">关</span><span class="${SB.audio.on?'on':''}">开</span></span>`,
-    action(){ const on = SB.audio.toggle(); SB.toast(on ? '背景音乐已开启' : '背景音乐已关闭'); }});
+  /* v1.8.1：背景音乐从菜单移到右上角「音乐」标识（SB.dock）；全站音乐的试听 / 上传 / 更换 / 移除也从总览页迁移到这里 */
+  let previewA = null;
+  SB.dock.add({id:'music', order:10, label:'背景音乐', eq:true,
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 17.2V6.3l10-2v10.9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="6.8" cy="17.3" r="2.3" fill="currentColor"/><circle cx="16.8" cy="15.2" r="2.3" fill="currentColor"/></svg>',
+    state(b){ b.classList.toggle('playing', SB.audio.playing); },
+    render(p){
+      p.innerHTML = '<h4>背景音乐</h4><p class="rn">CANTUS · STELLARUM</p>';
+      const row = SB.el('div', 'row'); const lb = SB.el('span', 'lb'); lb.textContent = SB.audio.on ? '音乐已开启' : '音乐已关闭'; row.appendChild(lb);
+      const sw = SB.el('button', 'sb-switch'); sw.type = 'button'; sw.setAttribute('role', 'switch'); sw.setAttribute('aria-checked', String(SB.audio.on)); sw.setAttribute('aria-label', '背景音乐开关');
+      sw.addEventListener('click', () => { SB.audio.toggle(); SB.dock.refresh('music'); });
+      row.appendChild(sw); p.appendChild(row);
+      const bgm = SB.store.settings?.bgm, now = SB.audio.track?.name;
+      const info = SB.el('p', 'sm'); info.style.margin = '6px 0 0';
+      info.textContent = now ? (SB.audio.playing ? '♪ 正在播放：' : '♪ ') + now : bgm ? '♪ 全站音乐：' + bgm.name : '还没有全站背景音乐' + (SB.store.canEdit ? '，上传一首属于你们的歌吧' : '');
+      p.appendChild(info);
+      const acts = SB.el('div', 'acts');
+      if(bgm) acts.appendChild(SB.ui.button(previewA && !previewA.paused ? '停止试听' : '试听', 'small', () => {
+        if(previewA && !previewA.paused){ previewA.pause(); } else { previewA = SB.audio.preview(bgm.id); previewA.play().catch(()=>{}); previewA.onended = () => SB.dock.refresh('music'); }
+        SB.dock.refresh('music'); }));
+      if(SB.store.canEdit && SB.store.canUpload){
+        const up = SB.el('label', 'sb-btn small primary'); up.style.position = 'relative'; up.textContent = bgm ? '换一首' : '上传音乐';
+        const inp = SB.el('input'); inp.type = 'file'; inp.accept = 'audio/*,.mp3,.m4a,.aac,.wav,.mp4'; inp.style.cssText = 'position:absolute;inset:0;opacity:0;cursor:pointer';
+        inp.setAttribute('aria-label', '选择音乐文件');
+        inp.addEventListener('change', async () => {
+          const f = inp.files[0]; if(!f) return; inp.value = '';
+          try{ const r = await SB.store.uploadAudio(f, step => { info.textContent = step; });
+            const old = SB.store.settings?.bgm?.id;
+            await SB.store.saveSettings({bgm:r});
+            if(old && !SB.store.memories.some(m => m.bgm?.id === old)) SB.store.deleteFile(old);
+            SB.toast('全站背景音乐已更新'); SB.audio.unlock(); SB.dock.refresh('music');
+          }catch(e){ SB.toast(e.msg || SB.store.errText(e), 4200); SB.dock.refresh('music'); }
+        });
+        up.appendChild(inp); acts.appendChild(up);
+        if(bgm) acts.appendChild(SB.ui.button('移除', 'small danger', async () => {
+          SB.dock.close();
+          if(!await SB.ui.confirm('移除全站背景音乐？', '移除')) return;
+          try{ await SB.store.saveSettings({bgm:null}); if(!SB.store.memories.some(m => m.bgm?.id === bgm.id)) SB.store.deleteFile(bgm.id); }catch(e){ SB.toast(SB.store.errText(e)); }
+        }));
+      }
+      if(acts.children.length) p.appendChild(acts);
+    }});
+  el.addEventListener('play', () => SB.dock.sync()); el.addEventListener('pause', () => SB.dock.sync());
+  document.addEventListener('sb:data', () => SB.dock.refresh('music'));
 })(window.SB);
 
 /* ── 放映风格与季节的公共定义（编辑器也使用）：SB.cinema ── */
@@ -1263,7 +1301,8 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
   SB.scenes.register('player', {
     world:'night', hash:false,
     title:p => SB.store.memory(p.id)?.title || '回忆',
-    parent:p => { const m = SB.store.memory(p.id); return m ? {id:'city', params:{id:m.cityId}} : {id:'globe', params:{}}; },
+    // v1.8.1：从「时光长卷」进入的放映，返回时回到时光长卷
+    parent:p => { if(p.from === 'overview') return {id:'overview', params:{}}; const m = SB.store.memory(p.id); return m ? {id:'city', params:{id:m.cityId}} : {id:'globe', params:{}}; },
     prepare(p){ const m = SB.store.memory(p.id); return m ? prime(m) : Promise.resolve(); },
     async enter(p){
       SB.fx.palette('warm'); SB.fx.calm();

@@ -23,6 +23,7 @@
 | **v1.7.2** | 性能 / 照片加载 / 响应式比例优化（稳定性优先） | 00-core、01-ambient-fx、05-store、10-city-album、11-memory-player、12-memory-editor | 中 |
 | v1.7.3 | Scene Transaction / 首帧稳定性（Owner 自行迭代） | 00-core、00-runtime、05-store、07-globe、09-country-map 等 | 中 |
 | **v1.8.0** | 「秘境之门」奇幻转场 + 「星辉层次」魔法书与地球特效 + 导航精简（删除大洲目录页）+ 地球搜索栏（新增用户能力 → 次版本号） | 00-core、01b-gate（新）、03-magic-book、04-book-opening、06-world-cities（新）、07-globe、09-country-map；删除 08-continent | 中 |
+| **v1.8.1** | Owner 实看反馈：去除过曝、转场按路线区分并放慢、魔法书「星夜摩洛哥皮」材质重设计、菜单精简 + 每页右上角三枚设置标识、「时光长卷」时间轴、城市空状态重排 | 00-core、01-ambient-fx、01b-gate、02-menu、02y-dock（新）、02z-account、03-magic-book、04-book-opening、07-globe、09-country-map、10-city-album、11-memory-player、13-overview | 中 |
 
 拆分原则：
 - 每版只动一类视觉，便于在 Production 上单独验证与回滚；
@@ -184,6 +185,15 @@ v1.7.3 的 Scene Transaction（`prepare → cover → activate → await enter �
 
 ## 9. 参考来源
 
+v1.8.1 新增：
+- Wikipedia — Tooling (bookbinding)（盲压、烫金、线轮 / 花轮工具、dentelle 花边）: https://en.wikipedia.org/wiki/Tooling_(bookbinding)
+- University of Adelaide — Cover to Cover: hand tooling: https://adelaide.edu.au/library/special/exhibitions/cover-to-cover/hand-tooling
+- George Bayntun — New bindings（摩洛哥羊皮、竹节书脊、金口）: https://georgebayntun.com/about-our-new-bindings
+- DNEG — Harry Potter and the Half-Blood Prince（冥想盆）: https://www.dneg.com/show/harry-potter-and-the-half-blood-prince/
+- PremiumBeat — Harry Potter-inspired flashback（记忆画面「像透过水看」：左右缓慢倾斜而非辉光，慢动作）: https://www.premiumbeat.com/blog/create-harry-potter-inspired-flashback/
+- usedragscroll / Unity ScrollRect inertia（拖拽惯性与减速率）: https://github.com/mildrenben/usedragscroll ・ https://docs.unity3d.com/es/2017.3/ScriptReference/UI.ScrollRect-inertia.html
+
+
 - Typotheque — Typesetting principles of CJK text: https://www.typotheque.com/articles/typesetting-cjk-text
 - TheOneRing.net — The Lord of the Fonts: https://www.theonering.net/torwp/2014/06/26/90498-the-lord-of-the-fonts-a-guide-to-fonts-in-the-hobbit-and-the-lord-of-the-rings/3/
 - fxguide — Harry Potter: The Magic of Double Negative: https://www.fxguide.com/?p=21584
@@ -218,3 +228,62 @@ v1.7.3 的 Scene Transaction（`prepare → cover → activate → await enter �
 - CGW — Spellbound (Deathly Hallows Part 1 VFX): https://www.cgw.com/Press-Center/Web-Exclusives/2011/Spellbound.aspx
 - Open-Meteo — Geocoding API: https://open-meteo.com/en/docs/geocoding-api
 - Unicode CLDR — exemplar city names（经 Python Babel 2.18 读取）: https://cldr.unicode.org/
+
+## 10. v1.8.1 调研与设计：柔光 · 分路转场 · 星夜摩洛哥皮 · 时光长卷
+
+### 10.1 Owner 反馈（2026-10-27，实看 v1.8.0）
+
+一、视觉：① 开书时星星汇聚落下曝光过强、刺眼；进入世界星图转场的最后几帧同样过曝。② 各页面转场过于一致，光线流速过快，不够舒适。③ 魔法书在材质、质感、颜色、渲染上重新设计。
+二、布局：① 菜单只保留「世界星图」和（改名后的）「回忆总览」，删掉「合上魔法书」「七大洲」；总览改为可拖动、有动态效果的时间轴。② 「背景音乐」「动效强度」「账户」移出菜单，改为每个页面上都有的三枚小标识，不写文字、不抢视野，点开再调。③ 城市为空时「＋新的回忆」页的布局与框图比例重排。全部兼容电脑与手机。
+
+### 10.2 过曝的根因（逐帧实测 v1.8.0）
+
+| 现象 | 根因 | 处理 |
+|---|---|---|
+| 开书汇聚刺眼 | 全局粒子 190 + 环绕光带 150 颗 + 魔法书烟雾 / 火星全部用 `lighter` 叠加，并被吸向**同一个点**（宝石）→ 叠加亮度无上限，宝石处变成纯白 | 粒子越接近汇聚点越透明（被「吸收」而不是堆积）；汇聚时粒子总亮度设上限；冲击光环、宝石光晕、光柱降低亮度 |
+| 门钥匙最后几帧过曝 | 光幕本身是 `#fff8ea → #ffe7bc` 的近白色全屏，再叠加 `lighter` 蒸汽与光丝 | 光幕改为**暮色**（深靛蓝底 + 中心琥珀金，峰值亮度约 60%）；所有叠加层设亮度上限；结束帧不出现全屏亮色 |
+
+**曝光规则（写入 00-gate 提示词）**：任何转场或特效中，全屏范围内不得出现大于约 20% 屏幕面积的近白色（亮度 > 85%）区域；汇聚到一点的粒子必须随距离淡出；全屏遮罩只能用深色（夜色 / 暮色），亮色只能是局部光源。
+
+### 10.3 分路转场：每条路线一种「魔法」，并放慢光线
+
+| 路线 | 门 | 资料依据 | 节奏 |
+|---|---|---|---|
+| 魔法书 → 世界星图（含菜单前往） | **门钥匙 · 暮色漩涡**：慢速旋转的琥珀光带把画面卷入暮色漩涡，光门在中心缓缓打开 | DNeg 门钥匙「环境溶解成旋涡、新地点重新成形」 | 盖 0.95 s / 揭 1.05 s（low 0.7 / 0.75） |
+| 世界星图 → 国家 | **幻影显形**：保留点击处圆形揭示，但符文环更细、转速减半、火星减少 | DNeg 凤凰社「闪亮蒸汽 + 细丝」 | 揭 0.86 s（low 0.62） |
+| 国家 → 城市、→ 时光长卷 | **墨金书页**（新）：一道带金色书边光的柔和「书页」从右向左翻过画面 | 古籍翻页、手稿 | 盖 0.7 s / 揭 0.8 s |
+| 城市 / 时光长卷 → 放映 | **冥想盆**（新）：从点击处一圈圈银蓝色涟漪扩散，画面像沉入水中、缓慢左右倾斜，银色记忆丝缕缓慢旋转 → 放映厅从水面中「浮现」 | 《混血王子》冥想盆：记忆「透过水看」，靠缓慢倾斜而非辉光 | 盖 0.85 s / 揭 0.95 s |
+| 返回（所有场景） | **熄灯器**：彗星光点数量减少、速度放慢，中心光柔和熄灭再亮起 | CGW《死亡圣器》熄灯器 | 盖 0.72 s / 揭 0.82 s |
+
+光线流速：所有光丝 / 彗星 / 涟漪的角速度和位移速度降到 v1.8.0 的约 55%；用 easeInOutSine 等更柔的曲线代替 cubic 急加速。
+
+### 10.4 魔法书「星夜摩洛哥皮」
+
+参考西式手工精装：摩洛哥山羊皮（细密荔枝纹）、**盲压**（不上金、压深并抛光的暗纹边框）、**烫金**只落在压痕里、线轮 / 花轮工具形成的 dentelle 花边、金口书页、竹节书脊。
+
+- 颜色：皮革从棕色改为**午夜靛蓝**（#1b2045 主色，边缘磨光更深 #0d1028，中央略亮的旧化斑驳）；烫金从橙金改为**香槟古金**（#fbeec4 → #e0bf78 → #b08a3e → #6a4b1b），饱和度更低，不刺眼；宝石保留琥珀暖光作为全书唯一的暖光源。
+- 材质层次：① 荔枝纹皮革（程序法线光照）② 盲压暗纹边框（dentelle 花边，压深 + 内阴影 + 抛光高光）③ 烫金线条（镜面高光滤镜）④ 镶嵌的「星辰蓝宝石」小四芒星（8 颗，轮流闪烁）⑤ 古金包角（雕花、去掉橙铜色）⑥ 金口书页（香槟金，减弱外发光）。
+- 渲染：左上主光 + 右侧冷色轮廓光 + 法阵凹陷处的环境光遮蔽；皮革反光随倾斜移动（冷白、soft-light）；书下方的橙色光晕改为淡金并减弱。
+
+### 10.5 菜单与「三枚标识」
+
+- 菜单只保留：**世界星图**、**时光长卷**（原「回忆总览」，拉丁铭文 VOLUMEN TEMPORIS）；面包屑保留。
+- 新增「工具标识」`SB.dock`（每个场景右上角）：三枚 36px 圆形玻璃标识（音符 / 魔杖星芒 / 人像），无文字（有 `aria-label` 与悬停提示）；点击在其下方展开小面板，一次只开一个；点外部或 Esc 收起。
+  - 音乐：开关、当前曲名（播放时标识上有轻微跳动的音柱）、可编辑者可上传 / 试听 / 更换 / 移除全站音乐（从原总览页迁移）。
+  - 动效：华丽 / 柔和 / 静止 三档（带一句说明）。
+  - 账户：邮箱、角色、当前书名、「退出登录」。
+- 放映进行中标识与放映控制一起自动隐藏（醒来时显示，位于「编辑 / 退出放映」下方）。
+
+### 10.6 「时光长卷」时间轴
+
+- 横向长卷：中央一条缓慢流动的金色时光河；年份用巨大的描边数字在背景以较慢速度视差移动；月份刻度在河上。
+- 每段回忆是一张「相片卡」（4:5 相框 + 日期 + 标题 + 城市），上下交替挂在河上的星节点；离屏幕中心越近越大、越亮（1.0），远处缩小到 0.86 并变暗，形成景深。
+- 操作：鼠标拖动（惯性减速，速度 × 0.92 / 帧）、滚轮（纵向滚轮转为横向）、触控滑动、键盘 ← →（跳到上一段 / 下一段）；底部「年轮刻度条」显示全部年份与回忆点，可点击跳转，指示当前位置。
+- 入场：时光河从左向右描出，卡片依次升起；点击卡片用「冥想盆」进入放映，点击城市名进入城市。
+- 性能：只有拖动 / 惯性期间运行 RAF；卡片只更新 transform 与 opacity；reduced 档无惯性动画与视差。
+
+### 10.7 城市空状态
+
+v1.8.0 的空状态是一张悬浮在法阵中央的方形大卡片，手机上几乎占满一屏，罗马数字「I」像光标；与有回忆时的「章节卡片」比例完全不同。
+重排为与章节卡片同一套比例：页眉（城市名 + 统计「0 段回忆」）→ 一张**空白章节卡**：左侧 3:4 空相框（虚线金框、淡淡的星屿压印、＋号），右侧「CHAPTER I · 第一章」、标题「这里还没有回忆」、一句引导、主按钮「＋ 写下第一章」；手机上相框变为 4:3 横幅置于上方，整体宽度与章节卡一致，不再出现大面积空框。
+

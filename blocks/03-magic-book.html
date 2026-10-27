@@ -1,5 +1,5 @@
 <style>
-/* ── 块 03 · 首页魔法书（皮革浮雕、压印烫金、流光、黄铜包角、机匣、宝石折射） ── */
+/* ── 块 03 · 首页魔法书 v1.8.1「星夜摩洛哥皮」：午夜靛蓝山羊皮、盲压花边、香槟古金烫金、镶嵌星辰、古金包角、机匣、宝石折射 ── */
 .sb-scene[data-scene="book"]{
   --bw:min(92vw, calc(min(100vh, 100dvh) * .80 * .75), 760px);
   --bh:calc(var(--bw) * 4 / 3);
@@ -18,9 +18,9 @@
 .bk-body{position:absolute;inset:0;transform-style:preserve-3d;}
 
 .bk-under{position:absolute;left:-18%;right:-18%;bottom:-16%;height:34%;pointer-events:none;
-  background:radial-gradient(50% 50% at 50% 50%, rgba(255,170,80,.45), rgba(255,130,40,.12) 55%, transparent 75%);transform:translateZ(-60px);}
+  background:radial-gradient(50% 50% at 50% 50%, rgba(226,186,120,.24), rgba(200,150,80,.07) 55%, transparent 75%);transform:translateZ(-60px);}
 .bk-veins{position:absolute;left:-22%;width:144%;bottom:-11%;height:22%;pointer-events:none;overflow:visible;transform:translateZ(-20px);}
-.bk-veins path{fill:none;stroke:#ffd38a;stroke-linecap:round;}
+.bk-veins path{fill:none;stroke:#e9cf98;stroke-linecap:round;}
 .bk-veins .v1{stroke-width:1.6;stroke-dasharray:60 340;animation:bkFlow 14s linear infinite;}
 .bk-veins .v2{stroke-width:1.1;stroke-dasharray:30 260;animation:bkFlow 19s linear infinite reverse;opacity:.8;}
 .bk-veins .v3{stroke-width:.8;stroke-dasharray:18 200;animation:bkFlow 11s linear infinite;opacity:.65;}
@@ -33,39 +33,39 @@
 .bk-back{inset:0;border-radius:10px 4px 4px 10px;transform:translateZ(calc(var(--bt) / -2)) rotateY(180deg);
   background:linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.35)), var(--tex-leather) center/512px;box-shadow:0 30px 80px rgba(0,0,0,.7);}
 .bk-edge-r{top:.8%;height:98.4%;width:calc(var(--bt) - 4px);left:calc(99.3% - (var(--bt) - 4px) / 2);transform:rotateY(-90deg);
-  background:linear-gradient(90deg, rgba(255,200,120,0), rgba(255,210,140,.4) 50%, rgba(255,200,120,0)),
-    repeating-linear-gradient(90deg, #f1dcae 0 1px, #c99e62 1px 2px, #e6cc96 2px 3px);
-  box-shadow:0 0 22px rgba(255,180,90,.55), inset 0 0 6px rgba(120,70,20,.6);}
+  background:linear-gradient(90deg, rgba(240,220,170,0), rgba(246,230,190,.3) 50%, rgba(240,220,170,0)),
+    repeating-linear-gradient(90deg, #efe2bd 0 1px, #b59a62 1px 2px, #dccca0 2px 3px);
+  box-shadow:0 0 10px rgba(220,190,120,.25), inset 0 0 6px rgba(70,52,20,.6);}
 .bk-edge-b{left:.6%;width:98.7%;height:calc(var(--bt) - 4px);top:calc(99.2% - (var(--bt) - 4px) / 2);transform:rotateX(90deg);
-  background:linear-gradient(0deg, rgba(255,210,140,0), rgba(255,220,150,.4) 50%, rgba(255,200,120,0)),
-    repeating-linear-gradient(0deg, #f1dcae 0 1px, #c99e62 1px 2px, #e6cc96 2px 3px);
-  box-shadow:0 0 26px rgba(255,180,90,.6), inset 0 0 6px rgba(120,70,20,.6);}
+  background:linear-gradient(0deg, rgba(240,220,170,0), rgba(246,230,190,.3) 50%, rgba(240,220,170,0)),
+    repeating-linear-gradient(0deg, #efe2bd 0 1px, #b59a62 1px 2px, #dccca0 2px 3px);
+  box-shadow:0 0 12px rgba(220,190,120,.28), inset 0 0 6px rgba(70,52,20,.6);}
 .bk-edge-t{left:.6%;width:98.7%;height:calc(var(--bt) - 4px);top:calc(.8% - (var(--bt) - 4px) / 2);transform:rotateX(-90deg);
-  background:repeating-linear-gradient(0deg, #e9d2a0 0 1px, #b88b52 1px 2px);}
+  background:repeating-linear-gradient(0deg, #e6d6ac 0 1px, #a98f58 1px 2px);}
 .bk-spine{top:0;height:100%;width:var(--bt);left:calc(var(--bt) / -2);transform:rotateY(90deg);border-radius:6px;
-  background:linear-gradient(90deg, rgba(0,0,0,.55), rgba(255,220,170,.08) 50%, rgba(0,0,0,.55)), var(--tex-leather) center/512px;}
+  background:linear-gradient(90deg, rgba(0,0,0,.55), rgba(200,215,255,.08) 50%, rgba(0,0,0,.55)), var(--tex-leather) center/512px;}
 /* 鎏金书页叠层：正面视角下也能看见厚度 */
 .bk-sr,.bk-sb{position:absolute;pointer-events:none;transform:translateZ(calc(var(--bt) / 2 - 6px));}
 .bk-sr{top:1.4%;bottom:-.8%;right:-1.5%;width:3%;border-radius:0 4px 4px 0;
-  background:linear-gradient(90deg, rgba(90,50,20,.6), transparent 40%, rgba(255,214,140,.35)),
-    repeating-linear-gradient(90deg, #f6e4b8 0 1px, #c99e62 1px 2px);
-  box-shadow:4px 0 18px rgba(255,180,90,.6), 1px 0 0 #ffd890;}
+  background:linear-gradient(90deg, rgba(40,30,20,.6), transparent 40%, rgba(240,220,170,.3)),
+    repeating-linear-gradient(90deg, #f2e6c4 0 1px, #b59a62 1px 2px);
+  box-shadow:3px 0 9px rgba(220,190,120,.28), 1px 0 0 #e9d6a4;}
 .bk-sb{left:1.2%;right:-1.5%;bottom:-1.4%;height:2.5%;border-radius:0 0 4px 4px;
-  background:linear-gradient(0deg, rgba(255,214,140,.35), transparent 60%, rgba(90,50,20,.6)),
-    repeating-linear-gradient(0deg, #f6e4b8 0 1px, #c99e62 1px 2px);
-  box-shadow:0 5px 20px rgba(255,180,90,.65), 0 1px 0 #ffd890;}
+  background:linear-gradient(0deg, rgba(240,220,170,.3), transparent 60%, rgba(40,30,20,.6)),
+    repeating-linear-gradient(0deg, #f2e6c4 0 1px, #b59a62 1px 2px);
+  box-shadow:0 4px 10px rgba(220,190,120,.3), 0 1px 0 #e9d6a4;}
 
 /* 扉页与翻页 */
 .bk-page{left:.6%;right:.7%;top:.8%;bottom:.8%;transform:translateZ(calc(var(--bt) / 2 - 3px));
   border-radius:2px 6px 6px 2px;overflow:hidden;
-  background:radial-gradient(60% 45% at 50% 48%, rgba(255,232,176,.95), rgba(255,200,120,.35) 45%, transparent 75%),
+  background:radial-gradient(60% 45% at 50% 48%, rgba(255,232,176,.45), rgba(240,200,130,.16) 45%, transparent 75%),
     linear-gradient(90deg, rgba(90,50,20,.45), transparent 9%), var(--tex-paper) center/256px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4%;color:#5a3416;text-align:center;}
 .bk-page .emb{width:46%;opacity:.85;}
 .bk-page h2{margin:0;padding-left:.2em;font-family:var(--f-display);font-weight:900;font-size:calc(var(--bw) * .07);letter-spacing:.2em;color:#6b3a12;}
 .bk-page p{margin:0;font-size:calc(var(--bw) * .03);font-weight:600;letter-spacing:.12em;padding-left:.12em;color:#7a4e24;}
 .bk-beam{position:absolute;left:50%;top:50%;width:140%;height:140%;transform:translate(-50%,-50%) scale(.2);opacity:0;pointer-events:none;
-  background:repeating-conic-gradient(from 0deg, rgba(255,236,190,.0) 0deg 7deg, rgba(255,226,168,.5) 9deg 11deg, rgba(255,236,190,0) 13deg 22deg);
+  background:repeating-conic-gradient(from 0deg, rgba(255,236,190,.0) 0deg 7deg, rgba(246,222,170,.28) 9deg 11deg, rgba(255,236,190,0) 13deg 22deg);
   -webkit-mask:radial-gradient(circle, #000 0%, transparent 62%);mask:radial-gradient(circle, #000 0%, transparent 62%);
   transition:transform 1.6s var(--ease-soft), opacity 1s;}
 .bk-page.lit .bk-beam{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(25deg);}
@@ -79,26 +79,31 @@
 .bk-cover.is-open{transform:translateZ(calc(var(--bt) / 2)) rotateY(-165deg);}
 .bk-front{inset:0;border-radius:4px 10px 10px 4px;overflow:hidden;
   background:
-    radial-gradient(circle at 50% 56%, rgba(255,170,80,.30), transparent 42%),
-    radial-gradient(130% 95% at 52% 50%, transparent 50%, rgba(10,5,2,.85)),
+    radial-gradient(circle at 50% 56.25%, rgba(214,160,90,.16), transparent calc(var(--bw) * .2)),
+    radial-gradient(circle at 50% 56.25%, transparent calc(var(--bw) * .36), rgba(2,3,12,.34) calc(var(--bw) * .392), transparent calc(var(--bw) * .43)),
+    linear-gradient(135deg, rgba(190,205,255,.07), transparent 38%, rgba(0,0,10,.2)),
+    radial-gradient(130% 95% at 48% 46%, transparent 48%, rgba(3,4,14,.86)),
     var(--tex-leather) center/512px;
-  box-shadow:inset 0 0 0 1px rgba(0,0,0,.6), inset 8px 0 16px rgba(0,0,0,.65), inset -2px -3px 10px rgba(255,200,140,.08);}
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.6), inset 8px 0 16px rgba(0,0,0,.65), inset -1.5px -1.5px 0 rgba(200,215,255,.16), inset -3px -4px 12px rgba(160,180,255,.06);}
 .cv-gloss{position:absolute;inset:-30%;pointer-events:none;will-change:transform;mix-blend-mode:soft-light;
-  background:linear-gradient(115deg, transparent 35%, rgba(255,236,200,.22) 48%, transparent 60%);}
+  background:linear-gradient(115deg, transparent 35%, rgba(205,220,255,.16) 48%, transparent 60%);}
 .bk-inner{inset:0;border-radius:10px 4px 4px 10px;transform:rotateY(180deg);
-  background:radial-gradient(circle at 50% 50%, rgba(244,184,96,.14), transparent 40%),
-    repeating-radial-gradient(circle at 30% 40%, #2a1a10 0 6px, #22140c 6px 13px), #24160d;
-  box-shadow:inset 0 0 0 10px #3a2416, inset 0 0 0 11px rgba(244,184,96,.5);display:grid;place-items:center;}
+  background:radial-gradient(circle at 50% 50%, rgba(224,191,120,.12), transparent 40%),
+    repeating-radial-gradient(circle at 30% 40%, #181b3c 0 6px, #121430 6px 13px), #14163a;
+  box-shadow:inset 0 0 0 10px #1b1f45, inset 0 0 0 11px rgba(224,191,120,.5);display:grid;place-items:center;}
 .bk-inner svg{width:30%;opacity:.7;}
-.cv-art,.cv-art-hot{position:absolute;inset:0;width:100%;height:100%;}
+.cv-art,.cv-art-hot,.cv-blind,.cv-stars{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+/* v1.8.1 镶嵌星辰蓝宝石：错开闪烁 */
+.cv-stars g{transform-box:fill-box;transform-origin:center;animation:cvTwinkle 7s ease-in-out infinite;}
+@keyframes cvTwinkle{0%,100%{opacity:.62;transform:scale(.88)}45%{opacity:1;transform:scale(1.08)}60%{opacity:.8;transform:scale(.96)}}
 .cv-art-hot{opacity:0;transition:opacity 1s ease;}
 .bk-cover.is-lit .cv-art-hot{opacity:1;}
 /* 烫金流光：用图案本身做遮罩，只照亮金色 */
 .cv-sheen{position:absolute;inset:0;pointer-events:none;overflow:hidden;
   -webkit-mask-size:100% 100%;mask-size:100% 100%;}
 .cv-sheen i{position:absolute;inset:-40% -60%;will-change:transform;
-  background:linear-gradient(110deg, transparent 42%, rgba(255,250,232,.0) 44%, rgba(255,250,232,.95) 50%, rgba(255,250,232,0) 56%, transparent 58%);}
-.cv-brass{position:absolute;width:13%;aspect-ratio:1;pointer-events:none;filter:drop-shadow(1px 2px 2px rgba(0,0,0,.6));}
+  background:linear-gradient(110deg, transparent 42%, rgba(255,250,232,.0) 44%, rgba(255,248,226,.7) 50%, rgba(255,250,232,0) 56%, transparent 58%);}
+.cv-brass{position:absolute;width:13%;aspect-ratio:1;pointer-events:none;filter:drop-shadow(1px 2px 2px rgba(0,0,10,.65));}
 .cv-brass.tl{top:-.4%;left:-.4%}.cv-brass.tr{top:-.4%;right:-.4%;transform:scaleX(-1)}
 .cv-brass.bl{bottom:-.4%;left:-.4%;transform:scaleY(-1)}.cv-brass.br{bottom:-.4%;right:-.4%;transform:scale(-1)}
 .cv-rot{position:absolute;will-change:transform;pointer-events:none;}
@@ -107,33 +112,33 @@
 
 /* 宝石 */
 .bk-rays{position:absolute;left:50%;top:56.25%;width:62%;aspect-ratio:1;transform:translate(-50%,-50%);pointer-events:none;opacity:.55;
-  background:repeating-conic-gradient(from 0deg, rgba(255,226,168,0) 0deg 10deg, rgba(255,214,150,.35) 13deg 15deg, rgba(255,226,168,0) 18deg 30deg);
+  background:repeating-conic-gradient(from 0deg, rgba(255,226,168,0) 0deg 10deg, rgba(240,206,150,.26) 13deg 15deg, rgba(255,226,168,0) 18deg 30deg);
   -webkit-mask:radial-gradient(circle, #000 12%, transparent 66%);mask:radial-gradient(circle, #000 12%, transparent 66%);
   animation:bkRays 40s linear infinite;}
 @keyframes bkRays{to{transform:translate(-50%,-50%) rotate(360deg)}}
-.bk-cover.is-charging .bk-rays{opacity:1;animation-duration:4s;}
+.bk-cover.is-charging .bk-rays{opacity:.75;animation-duration:7s;}
 .bk-gemglow{position:absolute;left:50%;top:56.25%;width:44%;aspect-ratio:1;transform:translate(-50%,-50%);pointer-events:none;
-  background:radial-gradient(circle, rgba(255,240,200,.85) 0%, rgba(255,190,90,.45) 22%, rgba(255,140,40,.12) 48%, transparent 70%);
+  background:radial-gradient(circle, rgba(255,232,190,.6) 0%, rgba(240,180,96,.32) 22%, rgba(220,140,60,.09) 48%, transparent 70%);
   animation:bkGemBreath 4.2s ease-in-out infinite;transition:width .8s var(--ease-soft);}
 @keyframes bkGemBreath{0%,100%{opacity:.55;transform:translate(-50%,-50%) scale(.92)}50%{opacity:.95;transform:translate(-50%,-50%) scale(1.06)}}
 .bk-cover.is-hover .bk-gemglow{width:56%;}
-.bk-cover.is-charging .bk-gemglow{width:120%;animation-duration:.9s;}
+.bk-cover.is-charging .bk-gemglow{width:78%;animation-duration:1.6s;}
 .bk-refract{position:absolute;left:50%;top:56.25%;width:9.6%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;
   background:conic-gradient(from 0deg, rgba(255,255,255,0), rgba(255,255,255,.55) 8%, rgba(255,255,255,0) 18%, rgba(255,240,200,0) 45%, rgba(255,240,200,.45) 52%, rgba(255,255,255,0) 62%);
   mix-blend-mode:screen;animation:bkRefract 9s linear infinite;}
 @keyframes bkRefract{to{transform:translate(-50%,-50%) rotate(360deg)}}
 .bk-glint{position:absolute;left:53.5%;top:53.5%;width:16%;aspect-ratio:1;transform:translate(-50%,-50%) scale(0);pointer-events:none;
   animation:bkGlint 5.5s ease-in-out infinite;}
-.bk-cover.is-charging .bk-glint{animation-duration:1.1s;}
+.bk-cover.is-charging .bk-glint{animation-duration:2.2s;}
 @keyframes bkGlint{0%,78%,100%{transform:translate(-50%,-50%) scale(0) rotate(0)}86%{transform:translate(-50%,-50%) scale(1) rotate(45deg)}}
 .bk-gembtn{position:absolute;left:50%;top:56.25%;width:16%;aspect-ratio:1;transform:translate(-50%,-50%);
   border-radius:50%;border:0;background:transparent;cursor:pointer;z-index:3;}
 .bk-shock{position:absolute;left:50%;top:56.25%;width:16%;aspect-ratio:1;border-radius:50%;pointer-events:none;
   transform:translate(-50%,-50%) scale(.3);opacity:0;
-  border:2px solid rgba(255,236,190,.95);box-shadow:0 0 30px 8px rgba(255,190,90,.75), inset 0 0 20px rgba(255,220,150,.7);}
+  border:1.5px solid rgba(240,222,176,.7);box-shadow:0 0 12px 2px rgba(214,170,100,.38), inset 0 0 10px rgba(240,210,150,.3);}
 .bk-shock.go{animation:bkShock 1.1s cubic-bezier(.2,.6,.3,1) forwards;}
 .bk-shock.s2.go{animation-delay:.18s;}
-@keyframes bkShock{0%{opacity:1;transform:translate(-50%,-50%) scale(.3)}100%{opacity:0;transform:translate(-50%,-50%) scale(7)}}
+@keyframes bkShock{0%{opacity:.85;transform:translate(-50%,-50%) scale(.3)}100%{opacity:0;transform:translate(-50%,-50%) scale(5)}}
 
 .bk-smoke{position:absolute;left:50%;top:-6%;width:30%;height:40%;pointer-events:none;transform:translate(-50%,-60%) translateZ(10px);}
 .bk-smoke i{position:absolute;bottom:0;left:30%;width:40%;height:60%;border-radius:50%;
@@ -159,30 +164,30 @@
 @keyframes bkNeb{from{transform:rotate(0) scale(1)}50%{transform:rotate(180deg) scale(1.08)}to{transform:rotate(360deg) scale(1)}}
 /* 2 宝石光溢 + 体积光（光有来源：从宝石发出） */
 .bk-spill{position:absolute;left:50%;top:calc(50% + var(--bh) * .08);width:calc(var(--bw) * 2.4);aspect-ratio:1;transform:translate(-50%,-50%);pointer-events:none;
-  background:radial-gradient(closest-side,rgba(255,206,130,.30),rgba(255,160,70,.12) 45%,transparent 75%);opacity:.8;}
+  background:radial-gradient(closest-side,rgba(236,200,140,.18),rgba(210,160,90,.07) 45%,transparent 75%);opacity:.8;}
 .bk-shafts{position:absolute;left:50%;top:calc(50% + var(--bh) * .08);width:calc(var(--bw) * 3.2);aspect-ratio:1;margin:calc(var(--bw) * -1.6) 0 0 calc(var(--bw) * -1.6);pointer-events:none;
   background:repeating-conic-gradient(from 0deg,rgba(255,226,170,0) 0deg 5deg,rgba(255,220,160,.10) 6deg 6.6deg,rgba(255,226,170,0) 7.6deg 13deg,rgba(255,236,190,.06) 13.6deg 15deg,rgba(255,226,170,0) 16deg 23deg);
   -webkit-mask:radial-gradient(closest-side,transparent 14%,#000 26%,rgba(0,0,0,.5) 55%,transparent 100%);mask:radial-gradient(closest-side,transparent 14%,#000 26%,rgba(0,0,0,.5) 55%,transparent 100%);
   opacity:.75;will-change:transform,opacity;}
 /* 3 3D 符文环 */
 .bk-runes{position:absolute;left:50%;top:76%;width:0;height:0;transform-style:preserve-3d;pointer-events:none;}
-.bk-rune{position:absolute;left:-11px;top:-15px;width:22px;height:30px;color:#ffe2a8;will-change:transform,opacity;backface-visibility:visible;}
+.bk-rune{position:absolute;left:-11px;top:-15px;width:22px;height:30px;color:#efdcae;will-change:transform,opacity;backface-visibility:visible;}
 .bk-rune svg{width:100%;height:100%;overflow:visible;}
 .bk-rune path{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
-.bk-runes.glow .bk-rune svg{filter:drop-shadow(0 0 3px rgba(255,200,120,.95)) drop-shadow(0 0 8px rgba(244,184,96,.6));}
+.bk-runes.glow .bk-rune svg{filter:drop-shadow(0 0 3px rgba(240,210,150,.8)) drop-shadow(0 0 7px rgba(214,170,100,.45));}
 /* 4 烟雾与火星画布 */
 .bk-fxc{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
 /* 5 书页边流光 */
 .bk-sr::after,.bk-sb::after{content:"";position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;}
-.bk-sr::after{background:linear-gradient(180deg,transparent 0%,rgba(255,250,230,0) 40%,rgba(255,248,220,.95) 50%,rgba(255,250,230,0) 60%,transparent 100%);background-size:100% 300%;animation:bkEdgeV 7s ease-in-out infinite;}
-.bk-sb::after{background:linear-gradient(90deg,transparent 0%,rgba(255,250,230,0) 40%,rgba(255,248,220,.95) 50%,rgba(255,250,230,0) 60%,transparent 100%);background-size:300% 100%;animation:bkEdgeH 7s ease-in-out 3.5s infinite;}
+.bk-sr::after{background:linear-gradient(180deg,transparent 0%,rgba(255,250,230,0) 40%,rgba(255,248,220,.6) 50%,rgba(255,250,230,0) 60%,transparent 100%);background-size:100% 300%;animation:bkEdgeV 7s ease-in-out infinite;}
+.bk-sb::after{background:linear-gradient(90deg,transparent 0%,rgba(255,250,230,0) 40%,rgba(255,248,220,.6) 50%,rgba(255,250,230,0) 60%,transparent 100%);background-size:300% 100%;animation:bkEdgeH 7s ease-in-out 3.5s infinite;}
 @keyframes bkEdgeV{0%{background-position:0 100%}60%,100%{background-position:0 0%}}
 @keyframes bkEdgeH{0%{background-position:0% 0}60%,100%{background-position:100% 0}}
 /* 6 能量细丝闪亮 */
 .bk-veins .v4{stroke-width:.7;stroke-dasharray:8 120;animation:bkFlow 7s linear infinite, bkFlick 3.2s ease-in-out infinite;opacity:.9;}
 @keyframes bkFlick{0%,100%{opacity:.25}45%{opacity:1}55%{opacity:.5}}
 .sb-scene[data-scene="book"].is-opening .bk-shafts{opacity:1;transition:opacity .8s;}
-@media (prefers-reduced-motion:reduce){ .bk-aura,.bk-float,.bk-veins path,.bk-smoke i,.bk-gemglow,.bk-hint,.bk-rays,.bk-refract,.bk-glint,.bk-neb,.bk-sr::after,.bk-sb::after{animation:none!important;} }
+@media (prefers-reduced-motion:reduce){ .cv-stars g,.bk-aura,.bk-float,.bk-veins path,.bk-smoke i,.bk-gemglow,.bk-hint,.bk-rays,.bk-refract,.bk-glint,.bk-neb,.bk-sr::after,.bk-sb::after{animation:none!important;} }
 </style>
 
 <section class="sb-scene" data-scene="book" aria-label="魔法书封面">
@@ -223,8 +228,10 @@
           <div class="bk-cover" id="bk-cover">
             <div class="bk-face bk-front">
               <div class="cv-gloss" id="cv-gloss"></div>
+              <svg class="cv-blind" id="cv-blind" viewBox="0 0 600 800" aria-hidden="true"></svg>
               <svg class="cv-art" id="cv-art" viewBox="0 0 600 800" aria-hidden="true"></svg>
               <svg class="cv-art-hot" id="cv-art-hot" viewBox="0 0 600 800" aria-hidden="true"></svg>
+              <svg class="cv-stars" id="cv-stars" viewBox="0 0 600 800" aria-hidden="true"></svg>
               <div class="cv-sheen" id="cv-sheen"><i id="cv-sheen-band"></i></div>
               <div class="bk-rays"></div>
               <div class="bk-gemglow"></div>
@@ -298,24 +305,26 @@
     const H = (x,y) => { x = (x+s)%s; y = (y+s)%s; return h[y*s+x]*.35 + (1 - bump[y*s+x]*bump[y*s+x])*.32; };
     for(let y = 0; y < s; y++) for(let x = 0; x < s; x++){
       const nx = H(x-1,y) - H(x+1,y), ny = H(x,y-1) - H(x,y+1);
-      const light = SB.clamp(.86 + (nx*1.2 + ny*1.5)*1.5, .62, 1.16);   // 左上光源
+      const light = SB.clamp(.9 + (nx*1.2 + ny*1.5)*1.05, .72, 1.1);   // 左上光源
       const tone = .82 + h[y*s+x]*.22 + (Math.random()-.5)*.05;
       const i = (y*s+x)*4;
-      D[i] = 62*tone*light; D[i+1] = 36*tone*light; D[i+2] = 21*tone*light; D[i+3] = 255;
+      // v1.8.1 午夜靛蓝摩洛哥山羊皮：低频斑驳（旧化）+ 冷色高光
+      const mot = .9 + h[((y>>3)*8%s)*s + ((x>>3)*8%s)]*.18;
+      D[i] = 21*tone*light*mot; D[i+1] = 25*tone*light*mot; D[i+2] = 55*tone*light*(mot*.6 + .4); D[i+3] = 255;
     }
     g.putImageData(img, 0, 0);
     // 细划痕与磨损
-    g.globalCompositeOperation = 'multiply'; g.strokeStyle = 'rgba(30,14,6,.35)'; g.lineWidth = .7;
+    g.globalCompositeOperation = 'multiply'; g.strokeStyle = 'rgba(8,10,30,.4)'; g.lineWidth = .7;
     for(let i = 0; i < 60; i++){ let x = Math.random()*s, y = Math.random()*s; g.beginPath(); g.moveTo(x,y);
       for(let k = 0; k < 5; k++){ x += (Math.random()-.5)*26; y += (Math.random()-.5)*12; g.lineTo(x,y); } g.stroke(); }
-    g.globalCompositeOperation = 'screen'; g.strokeStyle = 'rgba(255,214,170,.06)';
+    g.globalCompositeOperation = 'screen'; g.strokeStyle = 'rgba(180,200,255,.06)';
     for(let i = 0; i < 40; i++){ const x = Math.random()*s, y = Math.random()*s; g.beginPath(); g.moveTo(x,y); g.lineTo(x+(Math.random()-.5)*40, y+(Math.random()-.5)*8); g.stroke(); }
     return `url(${c.toDataURL('image/jpeg', .9)})`;
   }
   function paper(){
     const s = 256, c = document.createElement('canvas'); c.width = c.height = s; const g = c.getContext('2d');
     const h = noise2(s, 4), img = g.createImageData(s, s), D = img.data;
-    for(let i = 0; i < s*s; i++){ const t = .9 + h[i]*.08 + (Math.random()-.5)*.05; D[i*4] = 240*t; D[i*4+1] = 220*t; D[i*4+2] = 180*t; D[i*4+3] = 255; }
+    for(let i = 0; i < s*s; i++){ const t = .9 + h[i]*.08 + (Math.random()-.5)*.05; D[i*4] = 222*t; D[i*4+1] = 204*t; D[i*4+2] = 168*t; D[i*4+3] = 255; }
     g.putImageData(img, 0, 0); return `url(${c.toDataURL('image/jpeg', .88)})`;
   }
   scene.style.setProperty('--tex-leather', leather());
@@ -336,13 +345,13 @@
 
   /* 压印烫金滤镜：辉光 + 压进皮革的暗影 + 金属浮雕高光 */
   const FOIL = (id, glow) => `<defs>
-    <linearGradient id="${id}g" x1="0" y1="0" x2=".35" y2="1"><stop offset="0" stop-color="#fff0c4"/><stop offset=".3" stop-color="#f7c46c"/><stop offset=".62" stop-color="#d48f38"/><stop offset="1" stop-color="#8f5a1e"/></linearGradient>
+    <linearGradient id="${id}g" x1="0" y1="0" x2=".35" y2="1"><stop offset="0" stop-color="#fbeec4"/><stop offset=".3" stop-color="#e3c47e"/><stop offset=".62" stop-color="#b48d42"/><stop offset="1" stop-color="#6a4b1b"/></linearGradient>
     <filter id="${id}f" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
       <feGaussianBlur in="SourceAlpha" stdDeviation="1.1" result="a"/>
       <feSpecularLighting in="a" surfaceScale="2.6" specularConstant="1.15" specularExponent="24" lighting-color="#fff4d8" result="sp"><feDistantLight azimuth="225" elevation="50"/></feSpecularLighting>
       <feComposite in="sp" in2="SourceAlpha" operator="in" result="spIn"/>
       <feOffset in="SourceAlpha" dx="1.1" dy="1.5" result="off"/><feGaussianBlur in="off" stdDeviation=".8" result="offb"/>
-      <feFlood flood-color="#0a0402" flood-opacity=".85"/><feComposite in2="offb" operator="in" result="shadow"/>
+      <feFlood flood-color="#02030c" flood-opacity=".85"/><feComposite in2="offb" operator="in" result="shadow"/>
       <feGaussianBlur in="SourceGraphic" stdDeviation="${glow}" result="gl"/>
       <feMerge><feMergeNode in="gl"/><feMergeNode in="shadow"/><feMergeNode in="SourceGraphic"/><feMergeNode in="spIn"/></feMerge>
     </filter></defs>`;
@@ -375,27 +384,45 @@
       <text x="304" y="727" text-anchor="middle" fill="url(#${id}g)" font-family="'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', serif" font-weight="600" font-size="21" letter-spacing="8">爱与远方的记忆</text><g fill="url(#${id}g)"><path d="M178 712C179.44 717.44 180.56 718.56 186 720 180.56 721.44 179.44 722.56 178 728 176.56 722.56 175.44 721.44 170 720 175.44 718.56 176.56 717.44 178 712Z" stroke="none"/><path d="M422 712C423.44 717.44 424.56 718.56 430 720 424.56 721.44 423.44 722.56 422 728 420.56 722.56 419.44 721.44 414 720 419.44 718.56 420.56 717.44 422 712Z" stroke="none"/></g>
       <text x="303" y="754" text-anchor="middle" fill="url(#${id}g)" font-family="Cinzel, 'Trajan Pro', serif" font-weight="500" font-size="10.5" letter-spacing="6" opacity=".8">MMXXVI · LIBER PRIMUS</text></g>`;
   }
-  $('cv-art').innerHTML = coverArt('ca', 1.6);
-  $('cv-art-hot').innerHTML = coverArt('ch', 5.5);
+  $('cv-art').innerHTML = coverArt('ca', .8);
+  $('cv-art-hot').innerHTML = coverArt('ch', 3);
+  /* v1.8.1 盲压：不上金的 dentelle 花边与圆点环——先画右下 1px 抛光高光，再画压深的暗槽 */
+  (function(){
+    const motif = [];
+    const leaf = (x, y, rot) => `<ellipse cx="${x}" cy="${y}" rx="5.2" ry="2.1" transform="rotate(${rot} ${x} ${y})"/>`;
+    const dot = (x, y, r = 1.5) => `<circle cx="${x}" cy="${y}" r="${r}"/>`;
+    const dia = (x, y) => `<path d="M${x} ${y-3.6} L${x+2.6} ${y} L${x} ${y+3.6} L${x-2.6} ${y}Z"/>`;
+    for(let x = 112, i = 0; x <= 488; x += 24, i++){ motif.push(i % 2 ? dia(x, 47) + dia(x, 753) : leaf(x, 47, 0) + leaf(x, 753, 0)); motif.push(dot(x + 12, 47, 1.1) + dot(x + 12, 753, 1.1)); }
+    for(let y = 112, i = 0; y <= 688; y += 24, i++){ motif.push(i % 2 ? dia(47, y) + dia(553, y) : leaf(47, y, 90) + leaf(553, y, 90)); motif.push(dot(47, y + 12, 1.1) + dot(553, y + 12, 1.1)); }
+    for(let i = 0; i < 64; i++){ const a = i/64*Math.PI*2; motif.push(dot((300 + 243*Math.cos(a)).toFixed(1), (450 + 243*Math.sin(a)).toFixed(1), i % 4 ? 1 : 1.7)); }
+    const lines = `<rect x="58" y="58" width="484" height="684" rx="4" fill="none" stroke-width="1.4"/><circle cx="300" cy="450" r="252" fill="none" stroke-width="1"/>`;
+    const art = motif.join('') + lines;
+    $('cv-blind').innerHTML = `<g transform="translate(.9 .9)" fill="rgba(190,205,255,.13)" stroke="rgba(190,205,255,.13)">${art}</g><g fill="rgba(2,3,14,.82)" stroke="rgba(2,3,14,.82)">${art}</g>`;
+  })();
+  /* v1.8.1 镶嵌星辰蓝宝石（法阵八个顶点） */
+  $('cv-stars').innerHTML = `<defs><radialGradient id="sapph" cx=".4" cy=".35" r=".75"><stop offset="0" stop-color="#ffffff"/><stop offset=".35" stop-color="#cfe0ff"/><stop offset=".75" stop-color="#6f8fe0"/><stop offset="1" stop-color="#2c3f8f"/></radialGradient></defs>` +
+    Array.from({length:8}, (_, i) => { const a = (-90 + i*45)*Math.PI/180, x = +(300 + 200*Math.cos(a)).toFixed(1), y = +(450 + 200*Math.sin(a)).toFixed(1), q = 10, w = 2.4;
+      return `<g style="animation-delay:${(-i*.9).toFixed(1)}s;animation-duration:${(5 + (i*1.7) % 4).toFixed(1)}s"><path d="M${x} ${y-q} L${x+w} ${y-w} L${x+q} ${y} L${x+w} ${y+w} L${x} ${y+q} L${x-w} ${y+w} L${x-q} ${y} L${x-w} ${y-w}Z" fill="url(#sapph)"/><circle cx="${x}" cy="${y}" r="1.6" fill="#fff"/></g>`; }).join('');
   // 流光遮罩（不含文字，避免遮罩里字体不一致）
   const maskSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800">${shapes('stroke="#fff" fill="#fff"', false)}</svg>`;
   const maskUrl = `url("data:image/svg+xml;utf8,${encodeURIComponent(maskSvg)}")`;
   $('cv-sheen').style.webkitMaskImage = maskUrl; $('cv-sheen').style.maskImage = maskUrl;
 
   /* 黄铜包角 */
-  const brass = `<defs><linearGradient id="brg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff1c8"/><stop offset=".25" stop-color="#d9a24e"/><stop offset=".55" stop-color="#8a5a22"/><stop offset=".8" stop-color="#c88f3e"/><stop offset="1" stop-color="#5e3a14"/></linearGradient></defs>
+  const brass = `<defs><linearGradient id="brg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbeec4"/><stop offset=".25" stop-color="#d4b36c"/><stop offset=".55" stop-color="#806428"/><stop offset=".8" stop-color="#c6a45c"/><stop offset="1" stop-color="#4a3714"/></linearGradient>
+    <radialGradient id="brs" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#eef4ff"/><stop offset=".45" stop-color="#7d9be6"/><stop offset="1" stop-color="#253a86"/></radialGradient></defs>
     <path d="M0 0 H70 Q62 10 52 12 Q30 14 22 22 Q14 30 12 52 Q10 62 0 70 Z" fill="url(#brg)"/>
     <path d="M4 4 H58 Q50 10 44 11 Q24 13 17 17 Q13 24 11 44 Q10 50 4 58 Z" fill="none" stroke="#fff3d0" stroke-opacity=".55" stroke-width=".8"/>
-    <path d="M14 30 Q22 22 30 14" fill="none" stroke="#5e3a14" stroke-width="1.2"/>
-    <circle cx="14" cy="14" r="4" fill="url(#brg)" stroke="#4a2c0e" stroke-width=".8"/><circle cx="13" cy="13" r="1.4" fill="#fff7dc"/>
-    <circle cx="42" cy="7" r="2.6" fill="url(#brg)" stroke="#4a2c0e" stroke-width=".6"/><circle cx="7" cy="42" r="2.6" fill="url(#brg)" stroke="#4a2c0e" stroke-width=".6"/>`;
+    <path d="M14 30 Q22 22 30 14 M20 40 Q24 30 34 26 Q40 22 40 16 M40 20 Q30 24 26 34" fill="none" stroke="#3a2a10" stroke-width="1"/>
+    <circle cx="14" cy="14" r="4.4" fill="url(#brs)" stroke="#3a2a10" stroke-width=".9"/><circle cx="12.8" cy="12.6" r="1.2" fill="#fff"/>
+    <circle cx="42" cy="7" r="2.4" fill="url(#brg)" stroke="#3a2a10" stroke-width=".6"/><circle cx="7" cy="42" r="2.4" fill="url(#brg)" stroke="#3a2a10" stroke-width=".6"/>`;
   document.querySelectorAll('.cv-brass').forEach(s => s.innerHTML = brass);
 
   /* 法阵流光 */
   $('cv-flow').innerHTML = `<defs><filter id="flb"><feGaussianBlur stdDeviation="3"/></filter></defs>
-    <circle r="228" fill="none" stroke="#ffe2a8" stroke-width="5" stroke-dasharray="90 1343" stroke-linecap="round" filter="url(#flb)" opacity=".9"/>
-    <circle r="228" fill="none" stroke="#fff6dc" stroke-width="1.6" stroke-dasharray="70 1363" stroke-dashoffset="-10" stroke-linecap="round"/>
-    <circle r="200" fill="none" stroke="#ffd38a" stroke-width="3" stroke-dasharray="40 1217" stroke-dashoffset="-600" stroke-linecap="round" filter="url(#flb)" opacity=".7"/>`;
+    <circle r="228" fill="none" stroke="#eedcae" stroke-width="4" stroke-dasharray="90 1343" stroke-linecap="round" filter="url(#flb)" opacity=".6"/>
+    <circle r="228" fill="none" stroke="#fbf1d6" stroke-width="1.3" stroke-dasharray="70 1363" stroke-dashoffset="-10" stroke-linecap="round" opacity=".85"/>
+    <circle r="200" fill="none" stroke="#c9d8ff" stroke-width="2.4" stroke-dasharray="40 1217" stroke-dashoffset="-600" stroke-linecap="round" filter="url(#flb)" opacity=".5"/>`;
 
   /* ── 机匣 ── */
   const runes = 'AMOR · ITER · STELLAE · MEMORIA · DOMUS · LUX · ';
@@ -404,18 +431,18 @@
     <path d="${ticks(140,146,120)}" stroke-width=".7"/><path d="${ticks(134,146,12)}" stroke-width="1.8"/>
     <path id="m1tp" d="M -137 0 A 137 137 0 1 1 137 0 A 137 137 0 1 1 -137 0" stroke="none"/>
     <text fill="url(#m1g)" stroke="none" font-family="Cinzel, 'Trajan Pro', serif" font-weight="600" font-size="7.4" letter-spacing="2.4"><textPath href="#m1tp">${runes+runes}</textPath></text></g>`;
-  $('mk-r2').innerHTML = FOIL('m2', 1.2) + `<path d="${gear(124,116,48)}" fill="#4a2c12"/><circle r="104" fill="#1c1009"/>
+  $('mk-r2').innerHTML = FOIL('m2', 1.2) + `<path d="${gear(124,116,48)}" fill="#232650"/><circle r="104" fill="#0b0d22"/>
     <g filter="url(#m2f)" stroke="url(#m2g)">
     <path d="${gear(124,116,48)}" fill="none" stroke-width="1.3"/>
     <circle r="104" fill="none" stroke-width="1.5"/>
     ${Array.from({length:12},(_,i)=>{const [x,y]=P(110,rad(i*30));return `<circle cx="${x}" cy="${y}" r="2.8" fill="url(#m2g)" stroke="none"/>`;}).join('')}
     <path d="${ticks(96,104,36)}" stroke-width=".8" fill="none"/></g>`;
-  const smallGear = k => `<g id="mk-sg${k}"><path d="${gear(30,24,11)}" fill="#6a4019" stroke="url(#m3g)" stroke-width="1.1"/>
+  const smallGear = k => `<g id="mk-sg${k}"><path d="${gear(30,24,11)}" fill="#2c2f5c" stroke="url(#m3g)" stroke-width="1.1"/>
     <circle r="16" fill="none" stroke="url(#m3g)" stroke-width=".9"/><path d="${ticks(4,16,6)}" stroke="url(#m3g)" stroke-width="1.5"/><circle r="4" fill="url(#m3g)"/></g>`;
   $('mk-r3').innerHTML = FOIL('m3', 1) + `<g filter="url(#m3f)">
     <circle r="72" fill="none" stroke="url(#m3g)" stroke-width=".7" stroke-dasharray="2 4"/>
     ${[0,1,2].map(k=>{const [x,y]=P(72,rad(-90+k*120));return `<g transform="translate(${x} ${y})">${smallGear(k)}</g>`;}).join('')}</g>`;
-  $('mk-r4').innerHTML = FOIL('m4', 1.2) + `<circle r="44" fill="#1c1009"/><g filter="url(#m4f)" stroke="url(#m4g)" fill="none">
+  $('mk-r4').innerHTML = FOIL('m4', 1.2) + `<circle r="44" fill="#0b0d22"/><g filter="url(#m4f)" stroke="url(#m4g)" fill="none">
     <circle r="44" stroke-width="1.5"/>
     <path d="${star(54,8,3)}" stroke-width="1.2"/><circle r="54" stroke-width=".6" stroke-dasharray="1 3"/>
     ${[0,1,2,3].map(k=>{const [x,y]=P(58,rad(k*90+45));return `<circle cx="${x}" cy="${y}" r="2.6" fill="#fff1cf" stroke="none"/>`;}).join('')}</g>`;
@@ -446,7 +473,7 @@
     <path d="${star(84,8,3)}"/><circle r="40"/><path d="${ticks(40,84,16)}" stroke-width=".5"/></g>
     <path d="M0 -26 L16 -6 L0 28 L-16 -6 Z" fill="#c47f2c" stroke="#6b3a12"/><path d="M-16 -6 H16" stroke="#6b3a12"/>`;
   $('bk-emb').innerHTML = emb;
-  $('bk-inner-emb').innerHTML = emb.replaceAll('#8a4f1c','#c48a3c').replaceAll('#6b3a12','#f4b860');
+  $('bk-inner-emb').innerHTML = emb.replaceAll('#8a4f1c','#b8994f').replaceAll('#6b3a12','#e3c47e').replaceAll('#c47f2c','#c9a75a');
 
   /* ── 动画驱动 ── */
   const rings = [{el:$('mk-r1'), speed:3}, {el:$('mk-r2'), speed:-6}, {el:$('mk-r3'), speed:4.5}, {el:$('mk-r4'), speed:9}, {el:$('cv-flow'), speed:45}];
@@ -538,14 +565,16 @@
       const p = FX.smoke[i]; p.age += dt; if(p.age > p.life){ FX.smoke.splice(i, 1); continue; }
       if(FX.suck){ const dx = gem.x - p.x, dy = gem.y - p.y; p.vx += dx*dt*2.4; p.vy += dy*dt*2.4; p.vx *= .94; p.vy *= .94; p.s *= 1 - dt*.6; }
       p.x += (p.vx + Math.sin(p.age*.8 + p.ph)*9)*dt; p.y += p.vy*dt; p.s *= 1 + dt*.22; p.rot += p.vr*dt;
-      const a = Math.sin(Math.PI*Math.min(1, p.age/p.life))*.78;
+      let a = Math.sin(Math.PI*Math.min(1, p.age/p.life))*.78;
+      if(FX.suck){ a *= SB.clamp((Math.hypot(gem.x - p.x, gem.y - p.y) - 30)/140, 0, 1); }   // v1.8.1：被宝石吸收而不是堆积
       fg.globalAlpha = a; fg.save(); fg.translate(p.x, p.y); fg.rotate(p.rot); fg.scale(1, 1.35); fg.drawImage(SMOKE, -p.s, -p.s, p.s*2, p.s*2); fg.restore();
     }
     for(let i = FX.sparks.length - 1; i >= 0; i--){
       const p = FX.sparks[i]; p.age += dt; if(p.age > p.life){ FX.sparks.splice(i, 1); continue; }
       if(FX.suck){ const dx = gem.x - p.x, dy = gem.y - p.y; p.vx += dx*dt*5; p.vy += dy*dt*5; p.vx *= .9; p.vy *= .9; }
       p.x += (p.vx + Math.sin(p.age*3 + p.ph)*10)*dt; p.y += p.vy*dt;
-      const a = (1 - p.age/p.life)*(.6 + .4*Math.sin(p.age*14 + p.ph)), sz = p.s*4;
+      let a = (1 - p.age/p.life)*(.6 + .4*Math.sin(p.age*14 + p.ph)), sz = p.s*4;
+      if(FX.suck){ a *= SB.clamp((Math.hypot(gem.x - p.x, gem.y - p.y) - 24)/110, 0, 1); }
       fg.globalAlpha = Math.max(0, a); fg.drawImage(SPARK, p.x - sz/2, p.y - sz/2, sz, sz);
     }
     fg.globalAlpha = 1; fg.globalCompositeOperation = 'source-over';
