@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.7.2] - 2026-10-27
+
+### Performance
+- **场景切换去残影**：`portal` 转场不再让旧场景保持 `is-active` 到动画结束；旧场景在新场景进入后立即卸载，圆形展开继续保留原有视觉语言，但不再出现上一页在新画面后方短暂滞留。
+- **转场调度优化**：veil / flash / portal 改为按性能档位使用更短的动画时长，并在 scene swap 后等待浏览器完成下一次 paint 再继续退场，降低切换时主线程拥塞与“卡一帧”。
+- **移动端自动性能档**：综合 coarse pointer、viewport、CPU core、device memory 判定 low / high；低性能设备降低全局粒子数量、Canvas DPR 和动画帧率。
+- **放映时资源让路**：进入回忆放映后，全局 Ambient FX 自动降帧；播放器自身在 low / mobile 档限制到约 30 FPS，桌面高性能档保持 60 FPS。
+- **照片加载预热**：进入放映厅前批量补齐 Signed URL，并预解码前几张照片；播放中预取窗口由 7 秒扩展到 12–16 秒，降低手机弱网下“正在冲洗胶片”的等待频率。
+- **城市相册图片减载**：手机 / low 档减少每个章节卡片同时生成的缩影数量；仅首张封面 eager + high priority，其余封面 / 缩影 lazy + low priority；离屏章节启用 `content-visibility:auto`。
+- **编辑器图片懒加载**：照片网格改为 `loading="lazy" + decoding="async" + fetchpriority="low"`，避免打开编辑器时一次性解码全部照片。
+- **Private Storage 浏览器缓存**：新上传的唯一文件路径改为一年 `cacheControl`，减少重复打开同一照片时的网络开销。
+
+### Responsive
+- 城市章节卡片在手机端海报比例由 16:9 调整为 3:2，窄屏进一步使用 4:3，减少竖图被过度裁切。
+- 回忆编辑器桌面端增大可用宽度并让预览列自适应；手机端增大预览尺寸，≤430px 时照片编辑卡片改为单列 3:2，提升可编辑面积。
+- 放映厅手机端海报尺寸与垂直间距重新约束；竖屏 Cinema 黑边减少，让照片获得更多有效画面高度。
+- low 档移除编辑器 / 通用弹窗实时 backdrop blur，并减少编辑器季节粒子数量，保持视觉风格但降低 GPU 压力。
+
+### Governance
+- v1.7.2 明确为性能与响应式优化版本；原计划的「秘境之门」视觉转场设计延期，避免在周年 Feature Freeze 前继续叠加特效。
+- 新增 `docs/PERFORMANCE_GUIDE.md`，记录场景、图片、Canvas、响应式和未来 Agent 的性能约束。
+- `tools/check_project.py` 增加关键性能回归标记检查。
+
+### Data
+- **无数据库、RLS、schema_version、Book 数据结构变化；无需 SQL。**
+- 不迁移、不删除现有城市 / 回忆 / 照片 / BGM；Storage 仅影响 v1.7.2 之后新上传对象的浏览器缓存元数据。
+
 ## [1.7.1] - 2026-10-27
 
 ### Changed

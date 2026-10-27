@@ -99,6 +99,8 @@
     }
   }
   async function warmUrls(d){ return signPaths([...refs(d)]); }
+  // v1.7.2：播放器 / 相册可提前批量补齐签名地址，避免逐张轮询造成首屏等待。
+  st.prefetchUrls = paths => signPaths(paths || []);
 
   async function applyRemote(row){
     st.revision = Number(row?.revision)||0;
@@ -224,7 +226,7 @@
     if(!st.canUpload) throw {code:403};
     if(!blob || blob.size > MAX_FILE) throw {code:'too_large'};
     const path = `${bookId()}/${folder}/${SB.uid()}.${ext}`;
-    const {error} = await bucket().upload(path,blob,{contentType:type||undefined,cacheControl:'3600',upsert:false});
+    const {error} = await bucket().upload(path,blob,{contentType:type||undefined,cacheControl:'31536000',upsert:false});
     if(error) throw error;
     preview[path] = URL.createObjectURL(blob);
     return path;

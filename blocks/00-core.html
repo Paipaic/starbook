@@ -85,9 +85,9 @@ body[data-world="night"] .sb-mist{background:radial-gradient(closest-side, rgba(
 
 /* ── 场景 ── */
 #sb-stage{position:fixed;inset:0;z-index:1;height:100vh;height:100dvh;}
-.sb-scene{position:absolute;inset:0;display:none;overflow:hidden;}
+.sb-scene{position:absolute;inset:0;display:none;overflow:hidden;contain:layout style paint;isolation:isolate;}
 .sb-scene.is-active{display:block;}
-.sb-scene.is-entering{z-index:2;}
+.sb-scene.is-entering{z-index:2;will-change:clip-path;}
 
 /* ── 转场 ── */
 #sb-veil{position:fixed;inset:0;z-index:50;pointer-events:none;opacity:0;
@@ -134,6 +134,8 @@ body.is-busy #sb-stage,body.is-busy #sb-nav{pointer-events:none;}
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
   transform:scale(.9);filter:blur(6px);transition:transform .45s var(--ease-soft), filter .45s var(--ease-soft);}
 .sb-modal.show .sb-scroll{transform:none;filter:none;}
+html[data-sb-perf="low"] .sb-modal{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(5,3,10,.68);}
+html[data-sb-perf="low"] .sb-scroll{backdrop-filter:none;-webkit-backdrop-filter:none;filter:none;transition:transform .3s var(--ease-soft);}
 .sb-scroll.wide{width:min(760px,100%);}
 .sb-scroll > header{padding:20px 22px 10px;text-align:center;}
 .sb-scroll > header h3{margin:0;padding-left:.14em;font-family:var(--f-display);font-weight:var(--fw-display);font-size:23px;letter-spacing:.14em;color:var(--gold-hi);text-shadow:0 0 14px rgba(244,184,96,.45);}
@@ -198,12 +200,16 @@ window.SB = window.SB || {};
   /* ── 性能档位 ── */
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const small = Math.min(innerWidth, innerHeight) < 600;
-  const cores = navigator.hardwareConcurrency || 4;
-  SB.perf = { level: reduced ? 'reduced' : (cores <= 4 || small ? 'low' : 'high'), small, reduced,
-    touch: matchMedia('(pointer:coarse)').matches };
+  const touch = matchMedia('(pointer:coarse)').matches;
+  const cores = Number(navigator.hardwareConcurrency) || 8;
+  const memory = Number(navigator.deviceMemory) || 0;
+  const lowHardware = cores <= 4 || (memory > 0 && memory <= 4) || small || touch;
+  SB.perf = { level: reduced ? 'reduced' : (lowHardware ? 'low' : 'high'), small, reduced, touch, cores, memory:memory || null };
   try{ const saved = localStorage.getItem('sb-motion'); if(saved && !reduced) SB.perf.level = saved; }catch(e){}
+  document.documentElement.dataset.sbPerf = SB.perf.level;
 
   SB.wait = ms => new Promise(r => setTimeout(r, ms));
+  SB.nextPaint = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
   SB.lerp = (a,b,t) => a + (b-a)*t;
   SB.clamp = (v,a,b) => Math.max(a, Math.min(b, v));
   SB.esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -390,40 +396,46 @@ window.SB = window.SB || {};
     }
     if(id === scenes.current && JSON.stringify(params) === JSON.stringify(scenes.params) && !opts.force) return;
     const tr = opts.transition || 'veil';
+    const low = SB.perf.level === 'low';
     document.body.classList.add('is-busy');
     SB.menu?.close?.();
     const veil = document.getElementById('sb-veil'), flash = document.getElementById('sb-flash');
     try{
       if(SB.perf.level === 'reduced' || tr === 'none'){
         swap(id, params, opts);
+        await SB.nextPaint();
       }else if(tr === 'flash'){
-        flash.className = 'flash-in'; await SB.wait(600);
-        swap(id, params, opts); await SB.wait(120);
-        flash.className = 'flash-out'; await SB.wait(1200); flash.className = '';
+        const tin = low ? 360 : 520, tout = low ? 520 : 760;
+        flash.style.animationDuration = tin + 'ms';
+        flash.className = 'flash-in'; await SB.wait(tin);
+        swap(id, params, opts); await SB.nextPaint();
+        flash.style.animationDuration = tout + 'ms';
+        flash.className = 'flash-out'; await SB.wait(tout); flash.className = ''; flash.style.animationDuration = '';
       }else if(tr === 'portal'){
         const x = opts.x ?? innerWidth/2, y = opts.y ?? innerHeight/2;
-        const prev = scenes.current, prevEl = scenes.el(prev);
         const ring = SB.el('div','sb-portal-ring'); ring.style.left = x+'px'; ring.style.top = y+'px';
         document.body.appendChild(ring);
         const R = Math.hypot(Math.max(x, innerWidth-x), Math.max(y, innerHeight-y)) + 40;
         const el = scenes.el(id);
         el.classList.add('is-entering');
         el.style.clipPath = `circle(0px at ${x}px ${y}px)`;
-        // 先让旧场景保持可见
-        prevEl?.classList.add('is-active');
-        swap(id, params, opts); prevEl?.classList.add('is-active');
-        SB.fx?.burst?.(500);
-        const t0 = performance.now(), D = 1050;
+        // v1.7.2：旧场景在切换时立即卸载，避免圆形展开期间残留在新画面后方。
+        swap(id, params, opts);
+        await SB.nextPaint();
+        SB.fx?.burst?.(low ? 320 : 450);
+        const t0 = performance.now(), D = low ? 520 : 760;
         await new Promise(res => { const step = now => { const k = Math.min(1,(now-t0)/D), e = 1-Math.pow(1-k,3), r = e*R;
           el.style.clipPath = `circle(${r}px at ${x}px ${y}px)`; ring.style.width = ring.style.height = (r*2)+'px'; ring.style.opacity = String(1-k*.9);
           k < 1 ? requestAnimationFrame(step) : res(); }; requestAnimationFrame(step); });
         el.style.clipPath = ''; el.classList.remove('is-entering'); ring.remove();
-        if(prev !== id) prevEl?.classList.remove('is-active');
       }else{
+        const tin = low ? 360 : 540, tout = low ? 440 : 640;
         SB.fx?.gather?.(innerWidth/2, innerHeight/2);
-        veil.className = 'veil-in'; await SB.wait(720);
-        swap(id, params, opts); SB.fx?.calm?.(); SB.fx?.burst?.(700);
-        veil.className = 'veil-out'; await SB.wait(820); veil.className = '';
+        veil.style.animationDuration = tin + 'ms';
+        veil.className = 'veil-in'; await SB.wait(tin);
+        swap(id, params, opts); await SB.nextPaint(); SB.fx?.calm?.(); SB.fx?.burst?.(low ? 420 : 600);
+        veil.style.animationDuration = tout + 'ms';
+        veil.className = 'veil-out'; await SB.wait(tout); veil.className = ''; veil.style.animationDuration = '';
       }
     }finally{
       document.body.classList.remove('is-busy');

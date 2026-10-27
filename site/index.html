@@ -16,10 +16,10 @@
 <body>
 <!-- ████ BLOCK 00-config START ████ -->
 <script>
-/* 鈹€鈹€ Starbook v1.7.1 路 鍏紑瀹㈡埛绔厤缃?鈹€鈹€
+/* 鈹€鈹€ Starbook v1.7.2 路 鍏紑瀹㈡埛绔厤缃?鈹€鈹€
    Publishable Key 璁捐涓婂厑璁稿嚭鐜板湪娴忚鍣紱涓嶈鍦ㄦ鏂囦欢鏀?Secret / service_role / 鏁版嵁搴撳瘑鐮併€?*/
 window.STARBOOK_CONFIG = Object.freeze({
-  version: '1.7.1',
+  version: '1.7.2',
   supabaseUrl: 'https://xowbbcumcxtsrrnulunb.supabase.co',
   supabasePublishableKey: 'sb_publishable_SYGBrk2PiwwzRXZm03Patg_oDlYSIGd',
   storageBucket: 'starbook-media',
@@ -122,9 +122,9 @@ body[data-world="night"] .sb-mist{background:radial-gradient(closest-side, rgba(
 
 /* ── 场景 ── */
 #sb-stage{position:fixed;inset:0;z-index:1;height:100vh;height:100dvh;}
-.sb-scene{position:absolute;inset:0;display:none;overflow:hidden;}
+.sb-scene{position:absolute;inset:0;display:none;overflow:hidden;contain:layout style paint;isolation:isolate;}
 .sb-scene.is-active{display:block;}
-.sb-scene.is-entering{z-index:2;}
+.sb-scene.is-entering{z-index:2;will-change:clip-path;}
 
 /* ── 转场 ── */
 #sb-veil{position:fixed;inset:0;z-index:50;pointer-events:none;opacity:0;
@@ -171,6 +171,8 @@ body.is-busy #sb-stage,body.is-busy #sb-nav{pointer-events:none;}
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
   transform:scale(.9);filter:blur(6px);transition:transform .45s var(--ease-soft), filter .45s var(--ease-soft);}
 .sb-modal.show .sb-scroll{transform:none;filter:none;}
+html[data-sb-perf="low"] .sb-modal{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(5,3,10,.68);}
+html[data-sb-perf="low"] .sb-scroll{backdrop-filter:none;-webkit-backdrop-filter:none;filter:none;transition:transform .3s var(--ease-soft);}
 .sb-scroll.wide{width:min(760px,100%);}
 .sb-scroll > header{padding:20px 22px 10px;text-align:center;}
 .sb-scroll > header h3{margin:0;padding-left:.14em;font-family:var(--f-display);font-weight:var(--fw-display);font-size:23px;letter-spacing:.14em;color:var(--gold-hi);text-shadow:0 0 14px rgba(244,184,96,.45);}
@@ -235,12 +237,16 @@ window.SB = window.SB || {};
   /* ── 性能档位 ── */
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const small = Math.min(innerWidth, innerHeight) < 600;
-  const cores = navigator.hardwareConcurrency || 4;
-  SB.perf = { level: reduced ? 'reduced' : (cores <= 4 || small ? 'low' : 'high'), small, reduced,
-    touch: matchMedia('(pointer:coarse)').matches };
+  const touch = matchMedia('(pointer:coarse)').matches;
+  const cores = Number(navigator.hardwareConcurrency) || 8;
+  const memory = Number(navigator.deviceMemory) || 0;
+  const lowHardware = cores <= 4 || (memory > 0 && memory <= 4) || small || touch;
+  SB.perf = { level: reduced ? 'reduced' : (lowHardware ? 'low' : 'high'), small, reduced, touch, cores, memory:memory || null };
   try{ const saved = localStorage.getItem('sb-motion'); if(saved && !reduced) SB.perf.level = saved; }catch(e){}
+  document.documentElement.dataset.sbPerf = SB.perf.level;
 
   SB.wait = ms => new Promise(r => setTimeout(r, ms));
+  SB.nextPaint = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
   SB.lerp = (a,b,t) => a + (b-a)*t;
   SB.clamp = (v,a,b) => Math.max(a, Math.min(b, v));
   SB.esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -427,40 +433,46 @@ window.SB = window.SB || {};
     }
     if(id === scenes.current && JSON.stringify(params) === JSON.stringify(scenes.params) && !opts.force) return;
     const tr = opts.transition || 'veil';
+    const low = SB.perf.level === 'low';
     document.body.classList.add('is-busy');
     SB.menu?.close?.();
     const veil = document.getElementById('sb-veil'), flash = document.getElementById('sb-flash');
     try{
       if(SB.perf.level === 'reduced' || tr === 'none'){
         swap(id, params, opts);
+        await SB.nextPaint();
       }else if(tr === 'flash'){
-        flash.className = 'flash-in'; await SB.wait(600);
-        swap(id, params, opts); await SB.wait(120);
-        flash.className = 'flash-out'; await SB.wait(1200); flash.className = '';
+        const tin = low ? 360 : 520, tout = low ? 520 : 760;
+        flash.style.animationDuration = tin + 'ms';
+        flash.className = 'flash-in'; await SB.wait(tin);
+        swap(id, params, opts); await SB.nextPaint();
+        flash.style.animationDuration = tout + 'ms';
+        flash.className = 'flash-out'; await SB.wait(tout); flash.className = ''; flash.style.animationDuration = '';
       }else if(tr === 'portal'){
         const x = opts.x ?? innerWidth/2, y = opts.y ?? innerHeight/2;
-        const prev = scenes.current, prevEl = scenes.el(prev);
         const ring = SB.el('div','sb-portal-ring'); ring.style.left = x+'px'; ring.style.top = y+'px';
         document.body.appendChild(ring);
         const R = Math.hypot(Math.max(x, innerWidth-x), Math.max(y, innerHeight-y)) + 40;
         const el = scenes.el(id);
         el.classList.add('is-entering');
         el.style.clipPath = `circle(0px at ${x}px ${y}px)`;
-        // 先让旧场景保持可见
-        prevEl?.classList.add('is-active');
-        swap(id, params, opts); prevEl?.classList.add('is-active');
-        SB.fx?.burst?.(500);
-        const t0 = performance.now(), D = 1050;
+        // v1.7.2：旧场景在切换时立即卸载，避免圆形展开期间残留在新画面后方。
+        swap(id, params, opts);
+        await SB.nextPaint();
+        SB.fx?.burst?.(low ? 320 : 450);
+        const t0 = performance.now(), D = low ? 520 : 760;
         await new Promise(res => { const step = now => { const k = Math.min(1,(now-t0)/D), e = 1-Math.pow(1-k,3), r = e*R;
           el.style.clipPath = `circle(${r}px at ${x}px ${y}px)`; ring.style.width = ring.style.height = (r*2)+'px'; ring.style.opacity = String(1-k*.9);
           k < 1 ? requestAnimationFrame(step) : res(); }; requestAnimationFrame(step); });
         el.style.clipPath = ''; el.classList.remove('is-entering'); ring.remove();
-        if(prev !== id) prevEl?.classList.remove('is-active');
       }else{
+        const tin = low ? 360 : 540, tout = low ? 440 : 640;
         SB.fx?.gather?.(innerWidth/2, innerHeight/2);
-        veil.className = 'veil-in'; await SB.wait(720);
-        swap(id, params, opts); SB.fx?.calm?.(); SB.fx?.burst?.(700);
-        veil.className = 'veil-out'; await SB.wait(820); veil.className = '';
+        veil.style.animationDuration = tin + 'ms';
+        veil.className = 'veil-in'; await SB.wait(tin);
+        swap(id, params, opts); await SB.nextPaint(); SB.fx?.calm?.(); SB.fx?.burst?.(low ? 420 : 600);
+        veil.style.animationDuration = tout + 'ms';
+        veil.className = 'veil-out'; await SB.wait(tout); veil.className = ''; veil.style.animationDuration = '';
       }
     }finally{
       document.body.classList.remove('is-busy');
@@ -801,7 +813,7 @@ window.SB = window.SB || {};
       trail: 'rgba(255,206,130,'
     };
   }
-  const count = () => SB.perf.level === 'high' ? 220 : SB.perf.level === 'low' ? 110 : 30;
+  const count = () => SB.perf.level === 'high' ? (SB.perf.touch ? 150 : 190) : SB.perf.level === 'low' ? 72 : 18;
   function spawn(p, initial){
     const r = Math.random();
     p.kind = r < .14 ? 'bokeh' : r < .62 ? 'dust' : 'ember';
@@ -815,12 +827,12 @@ window.SB = window.SB || {};
     return p;
   }
   function buildOrbit(){
-    const n = SB.perf.level === 'high' ? 180 : SB.perf.level === 'low' ? 90 : 0;
+    const n = SB.perf.level === 'high' ? (SB.perf.touch ? 110 : 150) : SB.perf.level === 'low' ? 56 : 0;
     orbitPts = Array.from({length:n}, () => ({ a:Math.random()*6.28, r:.86 + Math.random()*.28, h:(Math.random()-.5)*.16,
       s:.6 + Math.random()*.8, size:1.2 + Math.random()*2.6, tw:Math.random()*6.28, big:Math.random() < .08 }));
   }
   function resize(){
-    DPR = Math.min(devicePixelRatio || 1, SB.perf.level === 'high' ? 2 : 1.5);
+    DPR = Math.min(devicePixelRatio || 1, SB.perf.level === 'high' ? (SB.perf.touch ? 1.5 : 1.75) : SB.perf.level === 'low' ? 1.25 : 1);
     W = innerWidth; H = innerHeight;
     for(const [c,x] of [[back,bctx],[front,fctx]]){ c.width = W*DPR; c.height = H*DPR; x.setTransform(DPR,0,0,DPR,0,0); }
     const n = count();
@@ -850,10 +862,19 @@ window.SB = window.SB || {};
     }
   }, {passive:true});
 
-  let last = performance.now(), running = true;
+  let last = performance.now(), running = true, cinemaMode = false, lastDraw = 0;
+  fx.playback = on => { cinemaMode = !!on; };
+  function targetFps(){
+    if(SB.perf.level === 'reduced') return 18;
+    if(cinemaMode) return SB.perf.level === 'high' ? 40 : 24;
+    return SB.perf.level === 'high' ? 60 : 30;
+  }
   function frame(now){
     if(!running) return;
-    const dt = SB.clamp((now - last)/1000, 0, .05); last = now;
+    const minFrame = 1000/targetFps();
+    if(now - lastDraw < minFrame){ requestAnimationFrame(frame); return; }
+    lastDraw = now;
+    const dt = SB.clamp((now - last)/1000, 0, .06); last = now;
     const t = now/1000, sp = S[palette];
     for(const k of ['gather','burst','warp']) mode[k] = SB.lerp(mode[k], mode.tg[k], Math.min(1, dt*(k === 'burst' ? 3 : 1.7)));
     mouse.x = SB.lerp(mouse.x, mouse.tx, Math.min(1, dt*1.5)); mouse.y = SB.lerp(mouse.y, mouse.ty, Math.min(1, dt*1.5));
@@ -1809,6 +1830,8 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
     }
   }
   async function warmUrls(d){ return signPaths([...refs(d)]); }
+  // v1.7.2：播放器 / 相册可提前批量补齐签名地址，避免逐张轮询造成首屏等待。
+  st.prefetchUrls = paths => signPaths(paths || []);
 
   async function applyRemote(row){
     st.revision = Number(row?.revision)||0;
@@ -1934,7 +1957,7 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
     if(!st.canUpload) throw {code:403};
     if(!blob || blob.size > MAX_FILE) throw {code:'too_large'};
     const path = `${bookId()}/${folder}/${SB.uid()}.${ext}`;
-    const {error} = await bucket().upload(path,blob,{contentType:type||undefined,cacheControl:'3600',upsert:false});
+    const {error} = await bucket().upload(path,blob,{contentType:type||undefined,cacheControl:'31536000',upsert:false});
     if(error) throw error;
     preview[path] = URL.createObjectURL(blob);
     return path;
@@ -3023,7 +3046,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 .ca-line{position:relative;display:flex;flex-direction:column;gap:30px;padding-left:76px;}
 .ca-line::before{content:"";position:absolute;left:29px;top:6px;bottom:6px;width:1px;
   background:linear-gradient(transparent,rgba(244,184,96,.75) 5%,rgba(244,184,96,.75) 95%,transparent);box-shadow:0 0 10px rgba(244,184,96,.45);}
-.ca-ch{position:relative;}
+.ca-ch{position:relative;content-visibility:auto;contain-intrinsic-size:360px;}
 .ca-node{position:absolute;left:-76px;top:18px;width:60px;display:flex;flex-direction:column;align-items:center;gap:8px;}
 .ca-node .num{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-rune);font-size:13px;color:var(--gold-hi);
   background:#0d0a1c;border:1px solid rgba(244,184,96,.7);box-shadow:0 0 14px rgba(244,184,96,.35), inset 0 0 8px rgba(244,184,96,.2);}
@@ -3040,6 +3063,9 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 .ca-card::before{left:7px;top:7px;border-right:0;border-bottom:0;} .ca-card::after{right:7px;bottom:7px;border-left:0;border-top:0;}
 .ca-card:hover,.ca-card:focus-visible{transform:translateY(-4px);border-color:rgba(255,226,168,.7);box-shadow:0 22px 50px rgba(0,0,0,.5),0 0 34px rgba(244,184,96,.22);outline:none;}
 @keyframes caIn{from{opacity:0;transform:translateY(16px);filter:blur(4px)}}
+@keyframes caInLite{from{opacity:0;transform:translateY(10px)}}
+html[data-sb-perf="low"] .ca-card,html[data-sb-perf="low"] .ca-new{animation-name:caInLite;animation-duration:.5s;}
+html[data-sb-perf="low"] .ca-badge{backdrop-filter:none;-webkit-backdrop-filter:none;}
 
 /* 海报（与编辑器预览同款） */
 .ca-poster{position:relative;aspect-ratio:4/5;border-radius:5px;overflow:hidden;background:radial-gradient(120% 80% at 50% 0%,#2a1e4a,#0d0a1c);align-self:start;
@@ -3095,7 +3121,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 
 @media (prefers-reduced-motion:reduce){ .ca-sigil svg{animation:none;} .ca-card,.ca-new{animation:none;} }
 @media (max-width:760px){
-  .ca-wrap{padding-top:calc(70px + var(--safe-t));}
+  .ca-wrap{padding-top:calc(70px + var(--safe-t));max-width:680px;}
   .ca-head{margin-bottom:28px;}
   .ca-line{padding-left:40px;gap:22px;}
   .ca-line::before{left:15px;}
@@ -3103,13 +3129,18 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   .ca-node .num{width:30px;height:30px;font-size:11px;}
   .ca-node .ym{display:none;}
   .ca-card{grid-template-columns:1fr;gap:14px;padding:12px;}
-  .ca-poster{aspect-ratio:16/9;}
+  .ca-poster{aspect-ratio:3/2;}
   .ca-strip i{width:58px;}
   .ca-strip i:nth-child(n+5){display:none;}
   .ca-acts .sb-btn{min-height:44px;}
   .ca-acts .play{flex:1 1 100%;}
   .ca-acts .sb-btn:not(.play){flex:1 1 0;}
   .ca-new{padding:16px;}
+}
+@media (max-width:520px){
+  .ca-poster{aspect-ratio:4/3;}
+  .ca-info h2{font-size:21px;}
+  .ca-note{-webkit-line-clamp:3;}
 }
 </style>
 
@@ -3138,9 +3169,15 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   const roman = n => { const R = [[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']]; let s = ''; for(const [v,r] of R) while(n >= v){ s += r; n -= v; } return s; };
   const ROMAN = n => n <= 39 ? roman(n) : String(n);
   const fmtDur = ms => { const s = Math.round(ms/1000); return s < 60 ? `约 ${s} 秒` : `约 ${Math.floor(s/60)} 分${s % 60 ? ' ' + s % 60 + ' 秒' : ''}`; };
-  const img = (id, eager) => { const u = id ? SB.store.url(id) : ''; return u ? `<img alt="" ${eager ? '' : 'loading="lazy" '}decoding="async" src="${SB.esc(u)}">` : ''; };
-  const go = (e, m, autoplay) => SB.scenes.go('player', autoplay ? {id:m.id, autoplay:true} : {id:m.id},
-    {transition:'portal', x:e?.clientX || innerWidth/2, y:e?.clientY || innerHeight/2});
+  const img = (id, eager=false, priority='low') => {
+    const u = id ? SB.store.url(id) : '';
+    return u ? `<img alt="" loading="${eager ? 'eager' : 'lazy'}" decoding="async" fetchpriority="${priority}" src="${SB.esc(u)}">` : '';
+  };
+  const go = (e, m, autoplay) => {
+    SB.player?.prime?.(m);
+    return SB.scenes.go('player', autoplay ? {id:m.id, autoplay:true} : {id:m.id},
+      {transition:'portal', x:e?.clientX || innerWidth/2, y:e?.clientY || innerHeight/2});
+  };
 
   function chapter(m, k){
     const ch = SB.el('article', 'ca-ch'); ch.setAttribute('role', 'article');
@@ -3152,9 +3189,13 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
     const slides = (m.slides || []).filter(s => s.id), cover = m.cover?.id || slides[0]?.id;
     let dur = ''; try{ if(slides.length && SB.player?.estimate) dur = fmtDur(SB.player.estimate(m, style)); }catch(e){}
     const music = m.bgmMode !== 'none' && (m.bgm || SB.store.settings?.bgm);
-    const thumbs = slides.slice(0, 5).map((s, i) => i === 4 && slides.length > 5 ? `<i class="more">+${slides.length - 4}</i>` : `<i>${img(s.id)}</i>`).join('');
+    const thumbLimit = SB.perf.touch || SB.perf.level !== 'high' ? 3 : 5;
+    const thumbs = slides.slice(0, thumbLimit).map((s, i) =>
+      i === thumbLimit - 1 && slides.length > thumbLimit ? `<i class="more">+${slides.length - (thumbLimit - 1)}</i>` : `<i>${img(s.id, false, 'low')}</i>`
+    ).join('');
+    const eagerCover = k < (SB.perf.touch ? 1 : 2);
     card.innerHTML = `
-      <div class="ca-poster">${img(cover, k < 3)}<div class="grade" style="background:${GRADE[season] || 'transparent'}"></div>
+      <div class="ca-poster">${img(cover, eagerCover, eagerCover ? 'high' : 'low')}<div class="grade" style="background:${GRADE[season] || 'transparent'}"></div>
         <div class="ca-badges">${sty ? `<span class="ca-badge">${C.icon(style)}${sty.en}</span>` : '<span></span>'}${season !== 'none' && sea ? `<span class="ca-badge">${C.icon(season)}${sea.en}</span>` : ''}</div></div>
       <div class="ca-info">
         <div class="ca-kicker">CHAPTER ${ROMAN(k + 1)}<em>${SB.esc(SB.fmtDate(m.date))}</em></div>
@@ -3235,6 +3276,8 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 .pl-ambient{position:absolute;inset:-8%;background-size:cover;background-position:center;filter:blur(38px) brightness(.38) saturate(1.15);
   transform:scale(1.08);animation:plBreath 14s ease-in-out infinite alternate;transition:opacity 1.2s var(--ease-soft);}
 @keyframes plBreath{from{transform:scale(1.08)}to{transform:scale(1.16)}}
+html[data-sb-perf="low"] .pl-ambient{filter:blur(20px) brightness(.36) saturate(1.08);animation:none;transform:scale(1.1);}
+html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
 .sb-scene[data-scene="player"].showing .pl-ambient{opacity:0;}
 
 /* ── 放映厅 ── */
@@ -3284,7 +3327,11 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 .pl-lobby-acts{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;animation:plPosterIn 1.2s var(--ease-soft) .45s backwards;}
 .pl-lobby-acts .sb-btn{background:rgba(10,10,28,.55);}
 .pl-wait{font-size:13px;letter-spacing:.14em;color:var(--text-dim);min-height:1.4em;}
-@media (max-width:600px){ .pl-start{width:100px;height:100px;} .pl-start .core{width:66px;height:66px;} }
+@media (max-width:600px){
+  .pl-lobby{gap:clamp(10px,1.6vh,16px);padding-top:calc(58px + var(--safe-t));}
+  .pl-poster{width:min(220px,54vw,30vh);}
+  .pl-start{width:100px;height:100px;} .pl-start .core{width:66px;height:66px;}
+}
 
 /* ── 银幕与舞台 ── */
 .pl-screen{position:absolute;inset:0;overflow:hidden;opacity:0;pointer-events:none;transition:opacity .9s var(--ease-soft);}
@@ -3303,7 +3350,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 .pl-flat{position:absolute;inset:0;}
 
 /* 照片元素 */
-.pl-ph{position:absolute;left:0;top:0;contain:layout;will-change:transform,opacity;backface-visibility:hidden;}
+.pl-ph{position:absolute;left:0;top:0;contain:layout paint style;will-change:transform,opacity;backface-visibility:hidden;}
 .pl-ph .im{position:absolute;inset:0;overflow:hidden;}
 .pl-ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transform-origin:50% 45%;will-change:transform;}
 .pl-ph.fill .im img{filter:blur(28px) brightness(.4) saturate(1.2);transform:scale(1.15);}
@@ -3602,7 +3649,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   $('pl-e-star').innerHTML = SB.icon('spark');
   $('pl-buffer').appendChild(SB.ui.spinner('正在冲洗胶片…'));
 
-  const P = { m:null, style:'cinema', seasonPref:'auto', season:'none', TL:null, T:0, playing:false, showing:false, raf:0, last:0,
+  const P = { m:null, style:'cinema', seasonPref:'auto', season:'none', TL:null, T:0, playing:false, showing:false, raf:0, last:0, renderAt:0,
               W:0, H:0, bar:0, fw:0, fh:0, idleT:0, endShown:false, cur:0, liveKey:'', nodes:new Map() };
   const lite = () => SB.perf.level !== 'high';
   const reduced = () => SB.perf.level === 'reduced';
@@ -3669,7 +3716,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   /* ── 舞台尺寸 ── */
   function measure(style){
     const W = scene.clientWidth || innerWidth, H = scene.clientHeight || innerHeight, land = W >= H;
-    const bar = style === 'cinema' ? Math.round(land ? Math.max(0, (H - W/1.85)/2) : H*.07) : 0;
+    const bar = style === 'cinema' ? Math.round(land ? Math.max(0, (H - W/1.85)/2) : H*(SB.perf.touch ? .045 : .06)) : 0;
     return {W, H, bar, fw:W, fh:H - bar*2, land};
   }
 
@@ -3903,16 +3950,20 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 
   /* ── 照片：等待签名地址、预加载并解码 ── */
   const cache = new Map();
-  function urlOf(id){
-    return new Promise(res => { let n = 0; const tryOnce = () => { const u = SB.store.url(id); if(u || n++ > 33) return res(u || ''); setTimeout(tryOnce, 150); }; tryOnce(); });
+  async function urlOf(id){
+    let u = SB.store.url(id); if(u) return u;
+    await SB.store.prefetchUrls?.([id]);
+    u = SB.store.url(id); if(u) return u;
+    return new Promise(res => { let n = 0; const tryOnce = () => { const x = SB.store.url(id); if(x || n++ > 20) return res(x || ''); setTimeout(tryOnce, 120); }; tryOnce(); });
   }
-  function load(id){
+  function load(id, priority='auto'){
     if(!id) return Promise.resolve(null);
     if(cache.has(id)) return cache.get(id).p;
     const rec = {ready:false, url:'', ok:false};
     rec.p = urlOf(id).then(url => new Promise(res => {
       rec.url = url; if(!url){ rec.ready = true; return res(rec); }
       const img = new Image(); img.decoding = 'async';
+      if('fetchPriority' in img) img.fetchPriority = priority;
       img.onload = () => { (img.decode ? img.decode().catch(() => {}) : Promise.resolve()).then(() => { rec.ready = rec.ok = true; res(rec); }); };
       img.onerror = () => { rec.ready = true; res(rec); };
       img.src = url;
@@ -3920,7 +3971,21 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
     cache.set(id, rec); return rec.p;
   }
   const isReady = id => !id || cache.get(id)?.ready;
-  function prefetch(T){ if(!P.TL) return; for(const it of P.TL.items) if(it.kind === 'photo' && it.t0 < T + 7000 && (it.t1 ?? 1e12) > T) load(it.slide.id); }
+  function prime(m){
+    const ids = [...new Set([m?.cover?.id, ...(m?.slides || []).map(s => s.id)].filter(Boolean))];
+    const n = SB.perf.touch || lite() ? 6 : 10, first = ids.slice(0, n);
+    SB.store.prefetchUrls?.(first);
+    first.slice(0, SB.perf.touch || lite() ? 4 : 6).forEach((id, i) => load(id, i < 2 ? 'high' : 'auto'));
+  }
+  function prefetch(T){
+    if(!P.TL) return;
+    const ahead = SB.perf.touch || lite() ? 16000 : 12000;
+    const ids = [];
+    for(const it of P.TL.items) if(it.kind === 'photo' && it.t0 < T + ahead && (it.t1 ?? 1e12) > T - 800) ids.push(it.slide.id);
+    const unique = [...new Set(ids)];
+    SB.store.prefetchUrls?.(unique);
+    unique.forEach((id, i) => load(id, i < 2 ? 'high' : 'auto'));
+  }
 
   /* ── 布局 ── */
   function applyLayout(){
@@ -3932,7 +3997,10 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
     $('pl-sky').style.display = TL.style === 'constellation' ? '' : 'none';
     $('pl-grain').classList.toggle('off', lite() || TL.style === 'constellation');
     $('pl-grain').style.opacity = TL.style === 'journal' ? '.05' : '';
-    for(const cv of [$('pl-sky'), $('pl-season'), $('pl-dust')]){ const dpr = Math.min(devicePixelRatio || 1, 1.5); cv.width = Math.round(P.fw*dpr); cv.height = Math.round(P.fh*dpr); cv._dpr = dpr; }
+    for(const cv of [$('pl-sky'), $('pl-season'), $('pl-dust')]){
+      const cap = SB.perf.touch || lite() ? 1 : 1.5, dpr = Math.min(devicePixelRatio || 1, cap);
+      cv.width = Math.round(P.fw*dpr); cv.height = Math.round(P.fh*dpr); cv._dpr = dpr;
+    }
   }
   function rebuild(keepT){
     if(!P.m) return;
@@ -4297,6 +4365,9 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   let pfAt = -1e9;
   function loop(now){
     if(!P.showing || SB.scenes.current !== 'player') return;
+    const minFrame = lite() ? 1000/30 : 1000/60;
+    if(P.renderAt && now - P.renderAt < minFrame){ P.raf = requestAnimationFrame(loop); return; }
+    P.renderAt = now;
     const dt = Math.min(80, now - (P.last || now)); P.last = now;
     if(P.playing){
       const waiting = waitingAt(P.T, dt);
@@ -4364,10 +4435,10 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
     const acts = $('pl-lobby-acts'); acts.innerHTML = '';
     if(SB.store.canEdit) acts.appendChild(SB.ui.button('编辑', 'small', () => SB.editor.open({cityId:m.cityId, memory:m}), 'quill'));
     acts.appendChild(SB.ui.button('返回', 'small', () => SB.scenes.back()));
+    prime(m);
     const cover = m.cover?.id || m.slides?.[0]?.id; const pimg = $('pl-poster-img'); pimg.classList.remove('ok');
-    if(cover){ const rec = await load(cover); if(P.m !== m) return;
+    if(cover){ const rec = await load(cover, 'high'); if(P.m !== m) return;
       if(rec?.url){ pimg.onload = () => pimg.classList.add('ok'); pimg.src = rec.url; $('pl-ambient').style.backgroundImage = `url("${rec.url}")`; } }
-    (m.slides || []).slice(0, 3).forEach(s => load(s.id));
   }
 
   /* ── 放映 ── */
@@ -4400,8 +4471,8 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
     SB.audio.unlock();
     prepareScreen();
     P.TL = buildTL(P.m, P.style); applyLayout(); buildBars();
-    P.T = 0; P.cur = -1; P.showing = true;
-    scene.classList.add('showing');
+    P.T = 0; P.cur = -1; P.showing = true; P.renderAt = 0;
+    scene.classList.add('showing'); SB.fx?.playback?.(true);
     setSeason(P.season, true);
     const scr = $('pl-screen'); scr.classList.remove('pl-flicker'); void scr.offsetWidth; scr.classList.add('pl-flicker');
     if(!again) SB.audio.set(P.m.bgmMode === 'none' ? undefined : (P.m.bgm || null)); else SB.audio.duck(1, 1200);
@@ -4411,7 +4482,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
     wake();
   }
   function stopShow(){
-    P.showing = false; setPlaying(false); cancelAnimationFrame(P.raf);
+    P.showing = false; setPlaying(false); cancelAnimationFrame(P.raf); SB.fx?.playback?.(false);
     clearNodes(); PS.list = [];
     $('pl-seasons').classList.remove('open');
     scene.classList.remove('showing', 'awake');
@@ -4475,7 +4546,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   /* 调试 / 自动化验收：在暂停状态下定位到时间线上的某一刻 */
   function seek(T){ if(!P.showing) return; setPlaying(false); P.T = Math.max(0, T); prefetch(P.T); render(); }
   SB.player = {
-    play:() => play(false), seek, jump,
+    play:() => play(false), seek, jump, prime,
     setStyle(id){ if(SB.cinema.styles.some(s => s.id === id)){ P.style = id; if(P.showing) rebuild(false); else if(P.m){ refreshStyleUI(); updateStat(); } } },
     setSeason(id){ P.seasonPref = id; setSeason(SB.cinema.resolveSeason(id, P.m?.date), true); },
     stepSeason(ms){ for(let k = 0; k < ms/50; k++) stepSeason(50); render(); },
@@ -4492,10 +4563,10 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 /* ── 块 12 · 回忆编辑器（v1.7.0「星屿手稿」）──
    左：实时海报预览（封面、标题、日期、地点、放映风格与季节）；右：四章——故事 / 影像 / 放映 / 乐章。
    手机：单列，预览缩成顶部横条。 */
-.sb-scroll.ed-book{width:min(1040px,100%);}
+.sb-scroll.ed-book{width:min(1120px,100%);}
 .sb-scroll.ed-book > header{padding-top:22px;}
 .sb-scroll.ed-book > .body{padding:6px 24px 18px;}
-.ed-wrap{display:grid;grid-template-columns:260px minmax(0,1fr);gap:26px;align-items:start;}
+.ed-wrap{display:grid;grid-template-columns:clamp(240px,25vw,300px) minmax(0,1fr);gap:clamp(20px,2.4vw,30px);align-items:start;}
 
 /* 预览海报 */
 .ed-side{position:sticky;top:0;display:flex;flex-direction:column;gap:12px;}
@@ -4547,7 +4618,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 .ed-count{align-self:flex-end;font-family:var(--f-num);font-size:12px;letter-spacing:.1em;color:var(--gold-dim);margin-top:-2px;}
 
 /* 照片网格 */
-.ed-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:14px;}
+.ed-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;}
 .ed-card{position:relative;display:flex;flex-direction:column;border-radius:10px;overflow:hidden;background:rgba(8,6,16,.55);border:1px solid rgba(244,184,96,.2);
   transition:border-color .3s, box-shadow .3s, transform .3s var(--ease-soft);}
 .ed-card:hover{border-color:rgba(244,184,96,.5);box-shadow:0 10px 26px rgba(0,0,0,.4),0 0 16px rgba(244,184,96,.12);}
@@ -4646,7 +4717,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 @media (max-width:860px){
   .ed-wrap{grid-template-columns:1fr;gap:18px;}
   .ed-side{position:relative;flex-direction:row;align-items:center;gap:14px;}
-  .ed-poster{width:96px;flex:none;}
+  .ed-poster{width:clamp(104px,24vw,136px);flex:none;}
   .ed-poster .cap,.ed-poster .shade,.ed-poster .badges,.ed-poster .empty span{display:none;}
   .ed-side .ed-mini{display:flex;}
   .ed-side > .ed-sum.main{display:none;}
@@ -4656,6 +4727,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 .ed-mini b{font-family:var(--f-display);font-weight:600;font-size:17px;letter-spacing:.08em;color:var(--gold-hi);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .ed-mini b:empty::before{content:"新的回忆";color:rgba(255,226,168,.45);}
 @media (max-width:560px){
+  .sb-scroll.ed-book{max-height:calc(100dvh - var(--safe-t));}
   .sb-scroll.ed-book > .body{padding:4px 16px 14px;}
   .ed-tale{grid-template-columns:1fr;}
   .ed-styles{grid-template-columns:1fr;}
@@ -4665,6 +4737,13 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   .ed-card textarea{min-height:56px;font-size:13.5px;padding:8px 10px;}
   .ed-add{min-height:150px;}
 }
+@media (max-width:430px){
+  .ed-side{align-items:flex-start;}
+  .ed-poster{width:112px;}
+  .ed-grid{grid-template-columns:1fr;}
+  .ed-card .ph{aspect-ratio:3/2;}
+}
+html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop-filter:none;}
 </style>
 
 <script>
@@ -4865,12 +4944,15 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
         if(fallKey !== eff){
           fallKey = eff; ui.fall.innerHTML = '';
           const F = FALL[eff];
-          if(F && SB.perf.level !== 'reduced') for(let k = 0; k < F.n; k++){
+          if(F && SB.perf.level !== 'reduced'){
+            const fallCount = SB.perf.level === 'low' ? Math.max(4, Math.ceil(F.n*.55)) : F.n;
+            for(let k = 0; k < fallCount; k++){
             const i = SB.el('i', '', F.html), dur = 5 + ((k*37) % 50)/10;
             i.style.left = ((k*61) % 100) + '%'; i.style.animationDuration = dur + 's'; i.style.animationDelay = (-(k*1.7) % dur) + 's';
             i.style.setProperty('--dx', (((k*13) % 40) - 10) + 'px'); i.style.setProperty('--rot', (eff === 'winter' || eff === 'summer' ? 0 : 200 + (k*47) % 300) + 'deg');
             if(F.up){ i.style.top = 'auto'; i.style.bottom = '-10%'; i.style.animationName = 'none'; i.style.animation = `edRise ${dur}s ease-in-out ${-(k*1.3) % dur}s infinite`; }
             ui.fall.appendChild(i);
+            }
           }
         }
         refreshSum();
@@ -4906,7 +4988,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
         const i = st.slides.indexOf(s), card = SB.el('div', 'ed-card' + (s.id && s.id === st.cover ? ' cover' : ''));
         const ph = SB.el('div', 'ph');
         if(s.pending){ const t = SB.el('span', 'st'); t.textContent = s.step || '上传中'; ph.appendChild(t); Object.defineProperty(s, '_st', {value:t, configurable:true, writable:true}); }
-        else ph.innerHTML = `<img alt="" src="${SB.esc(SB.store.url(s.id))}">`;
+        else ph.innerHTML = `<img alt="" loading="lazy" decoding="async" fetchpriority="low" src="${SB.esc(SB.store.url(s.id))}">`;
         const no = SB.el('span', 'no'); no.textContent = String(i + 1).padStart(2, '0'); ph.appendChild(no);
         if(s.id && s.id === st.cover){ ph.insertAdjacentHTML('beforeend', `<span class="cv">${SB.icon('star')}封面</span>`); }
         const ops = SB.el('div', 'ops');

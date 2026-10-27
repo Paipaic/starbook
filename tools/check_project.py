@@ -85,6 +85,31 @@ for prop in ('busy','open','reset','state','scene','cover','tilt','gemBtn','page
         print(f'ERROR: visual Magic Book property leaked back to SB.book: {prop}; use SB.magicBook')
         sys.exit(1)
 
+# v1.7.2 performance baseline guards.
+core_text = block_text.get('00-core.html','')
+store_text = block_text.get('05-store.html','')
+city_text = block_text.get('10-city-album.html','')
+editor_text = block_text.get('12-memory-editor.html','')
+if 'SB.nextPaint' not in core_text:
+    print('ERROR: v1.7.2 scene paint synchronization missing from 00-core.html')
+    sys.exit(1)
+if "prevEl?.classList.add('is-active')" in core_text:
+    print('ERROR: portal transition reactivates previous scene and can cause visual residue')
+    sys.exit(1)
+if 'st.prefetchUrls' not in store_text:
+    print('ERROR: Signed URL prefetch API missing from 05-store.html')
+    sys.exit(1)
+for marker in ('function prime(m)', 'SB.fx?.playback?.(true)', 'play:() => play(false), seek, jump, prime'):
+    if marker not in player_text:
+        print(f'ERROR: player performance marker {marker!r} missing from 11-memory-player.html')
+        sys.exit(1)
+if 'loading="lazy"' not in editor_text:
+    print('ERROR: memory editor image lazy loading missing')
+    sys.exit(1)
+if 'content-visibility:auto' not in city_text:
+    print('ERROR: city album offscreen rendering guard missing')
+    sys.exit(1)
+
 # Governance / release-document consistency checks.
 version = (root/'VERSION').read_text(encoding='utf-8-sig').strip()
 required_files = [
@@ -99,6 +124,7 @@ required_files = [
     root/'docs'/'RELEASE_WORKFLOW.md',
     root/'docs'/'PROJECT_DOCS_INDEX.md',
     root/'docs'/'RELEASE_AUTOMATION.md',
+    root/'docs'/'PERFORMANCE_GUIDE.md',
     root/'release-current.ps1',
     root/'scripts'/'releases'/f'release-v{version}.ps1',
     root/'docs'/'releases'/f'v{version}.md',
