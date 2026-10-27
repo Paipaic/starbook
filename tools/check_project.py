@@ -149,6 +149,15 @@ if "register('overview'" not in block_text.get('13-overview.html', '') or '时�
     print('ERROR: timeline (时光长卷) must stay registered as scene id overview')
     sys.exit(1)
 
+# v1.8.2 mobile guards: no WebGL warm-up during the visible book opening; rune ring stays out of the 3D context.
+if "prefetch?.('globe'" in block_text.get('04-book-opening.html', '') or "prefetch('globe'" in block_text.get('04-book-opening.html', ''):
+    print('ERROR: book opening must not prefetch the globe (WebGL init freezes the opening on phones)')
+    sys.exit(1)
+book_text = block_text.get('03-magic-book.html', '')
+if 'bk-runes-front' not in book_text or 'bk-runes-back' not in book_text:
+    print('ERROR: magic book rune ring must use the 2D front/back layers (3D ring causes WebKit plane splitting)')
+    sys.exit(1)
+
 # Governance / release-document consistency checks.
 version = (root/'VERSION').read_text(encoding='utf-8-sig').strip()
 required_files = [

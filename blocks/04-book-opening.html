@@ -1,51 +1,44 @@
 <script>
-/* ── 块 04 · 开书动画：启动 → 共鸣 → 翻开 → 入界 ── */
+/* ── 块 04 · 开书动画 v1.8.2「星尘启封」：唤醒 → 启封 → 入页 → 门钥匙（约 3.7 秒） ──
+   依据 prompts/04-book-opening.md：不再使用粒子汇聚、穿越光线与闪白（Owner 反馈过曝）；
+   开书期间不创建 3D 地球（WebGL / 着色器编译会卡住动画），地球在门钥匙盖满画面后才准备。 */
 (function(SB){
   SB.magicBook.open = async function(){
     const B = SB.magicBook;
     if(B.busy || document.body.classList.contains('is-busy')) return;
-    B.busy = true; SB.menu.close();
+    B.busy = true; SB.menu.close(); SB.dock?.close?.();
     B.scene.classList.add('is-opening');
     B.cover.classList.remove('is-hover');
     SB.audio?.unlock?.();
     if(SB.perf.level === 'reduced'){ await SB.scenes.go('globe', {}, {transition:'flash'}); return; }
+    const low = SB.perf.level !== 'high';
 
-    // 1 启动
-    B.setSpin(10);
+    // 1 唤醒（0–0.9s）：机匣加速、宝石柔和充能、烫金由内向外亮起；一圈细光环从宝石扩散
+    B.setSpin(low ? 3 : 4);
     B.cover.classList.add('is-charging', 'is-lit');
-    const g = B.gemCenter(); SB.fx.gather(g.x, g.y); SB.fx.orbitBoost(6);
-    B.fxSuck?.(true);
-    await SB.wait(1000);
+    SB.fx.orbitBoost(2.2);
+    await SB.wait(520);
+    const s = B.shocks[0]; s.classList.remove('go'); void s.offsetWidth; s.classList.add('go');
+    await SB.wait(380);
 
-    // 2 共鸣
-    B.shocks.forEach(s => { s.classList.remove('go'); void s.offsetWidth; s.classList.add('go'); });
-    SB.fx.burst(500);
-    B.stage.style.transition = 'transform .5s var(--ease-soft)';
-    B.stage.style.transform = 'scale(1.04)';
-    await SB.wait(400);
-
-    // v1.7.3：翻页阶段提前准备地球资源；真正切换仍由场景事务等到首帧完成后再揭罩。
-    SB.scenes.prefetch?.('globe',{});
-
-    // 3 翻开
+    // 2 启封（0.9–3.0s）：封面打开，书页柔光亮起，纸页轻轻翻动；星尘从书页向上缓缓飘散（只向外，不汇聚）
+    B.fxOpen?.(true);
     B.cover.classList.add('is-open');
-    B.setSpin(4); B.page.classList.add('lit');
+    B.setSpin(2); B.page.classList.add('lit');
     const z = 'translateZ(calc(var(--bt) / 2 - 2px))';
-    B.leaves.forEach((l, i) => setTimeout(() => {
+    B.leaves.slice(0, low ? 2 : 3).forEach((l, i) => setTimeout(() => {
       l.style.transition = 'transform 1.1s cubic-bezier(.4,0,.3,1), opacity .4s';
       l.style.opacity = '1'; l.style.transform = `${z} rotateY(${-28 - i*14}deg)`;
       setTimeout(() => { l.style.transition = 'transform 1s cubic-bezier(.4,0,.3,1), opacity .9s .2s'; l.style.transform = `${z} rotateY(0deg)`; l.style.opacity = '0'; }, 900);
-    }, 600 + i*180));
-    const r = document.getElementById('bk-float').getBoundingClientRect();
-    setTimeout(() => SB.fx.gather(r.left + r.width/2, r.top + r.height/2), 700);
-    await SB.wait(1800);
+    }, 500 + i*180));
+    SB.fx.orbit(null);
+    await SB.wait(low ? 1750 : 2100);   // 等扉页星图描完
 
-    // 4 入界
-    SB.fx.warp(true); SB.fx.orbit(null);
-    B.stage.style.transition = 'transform 1.5s cubic-bezier(.6,0,.35,1), opacity 1.3s ease-in';
-    B.stage.style.transform = 'scale(2.6)'; B.stage.style.opacity = '0';
-    await SB.wait(700);
-    // v1.8.0：门钥匙光门从书页中心打开。
+    // 3 入页（3.0–3.7s）：镜头推进书页中心并淡出，随后门钥匙光门从书页中心打开
+    const r = document.getElementById('bk-float').getBoundingClientRect();
+    B.stage.style.transition = `transform ${low ? 1 : 1.2}s cubic-bezier(.6,0,.35,1), opacity ${low ? .9 : 1.1}s ease-in`;
+    B.stage.style.transform = `scale(${low ? 1.5 : 1.9})`; B.stage.style.opacity = '0';
+    await SB.wait(low ? 520 : 680);
     await SB.scenes.go('globe', {fromBook:true}, {transition:'flash', x:r.left + r.width/2, y:r.top + r.height*.48});
   };
 })(window.SB);
