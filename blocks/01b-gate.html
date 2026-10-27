@@ -1,34 +1,39 @@
 <style>
-/* ── 块 01b · 秘境之门：门钥匙 / 幻影显形 / 熄灯器 三种奇幻转场（v1.8.0） ── */
+/* ── 块 01b · 秘境之门 v1.8.1：门钥匙（暮色漩涡）/ 幻影显形 / 墨金书页 / 冥想盆 / 熄灯器 ── */
 #sb-magic-gate{position:fixed;inset:0;width:100vw;height:100vh;z-index:53;pointer-events:none;display:none;}
 #sb-magic-gate.on{display:block;}
 </style>
 <canvas id="sb-magic-gate" aria-hidden="true"></canvas>
 <script>
-/* 依据 prompts/00-gate.md：只替换 Scene Runtime 的 cover / reveal 视觉，不改变 prepare → swap(await enter → nextPaint) → reveal 事务。 */
+/* 依据 prompts/00-gate.md（v1.8.1）：只替换 Scene Runtime 的 cover / reveal 视觉，不改变 prepare → swap(await enter → nextPaint) → reveal 事务。
+   曝光规则：全屏遮罩只用深色；亮色只是局部光源；叠加层 alpha ≤ .55；汇聚粒子随距离淡出。 */
 (function(SB){
   const cv = document.getElementById('sb-magic-gate'), g = cv.getContext('2d');
   const TAU = Math.PI*2;
   const clamp = (v, a = 0, b = 1) => v < a ? a : v > b ? b : v;
-  const eIn3 = k => k*k*k, eOut3 = k => 1 - Math.pow(1 - k, 3), eIO = k => k < .5 ? 4*k*k*k : 1 - Math.pow(-2*k + 2, 3)/2;
+  const sine = k => -(Math.cos(Math.PI*k) - 1)/2;              // easeInOutSine：柔和起止
+  const eOut3 = k => 1 - Math.pow(1 - k, 3), eOut5 = k => 1 - Math.pow(1 - k, 5), eIn2 = k => k*k;
   const rnd = (a, b) => a + Math.random()*(b - a);
   const NIGHT = '7,9,28';
   function sprite(r, stops){ const c = document.createElement('canvas'); c.width = c.height = r*2; const x = c.getContext('2d'), gr = x.createRadialGradient(r,r,0,r,r,r);
     stops.forEach(([o, col]) => gr.addColorStop(o, col)); x.fillStyle = gr; x.fillRect(0, 0, r*2, r*2); return c; }
-  const GLOW = sprite(64, [[0,'rgba(255,250,236,1)'],[.18,'rgba(255,226,168,.85)'],[.45,'rgba(244,184,96,.35)'],[1,'rgba(244,184,96,0)']]);
-  const SPARK = sprite(12, [[0,'rgba(255,252,236,1)'],[.3,'rgba(255,200,110,.85)'],[1,'rgba(0,0,0,0)']]);
+  // 柔光精灵：中心不纯白（峰值暖象牙色 .7），避免过曝
+  const GLOW = sprite(64, [[0,'rgba(255,232,196,.72)'],[.22,'rgba(244,196,120,.42)'],[.55,'rgba(214,150,70,.14)'],[1,'rgba(214,150,70,0)']]);
+  const COOL = sprite(64, [[0,'rgba(220,234,255,.6)'],[.25,'rgba(150,180,240,.3)'],[.6,'rgba(90,120,200,.08)'],[1,'rgba(90,120,200,0)']]);
+  const SPARK = sprite(12, [[0,'rgba(255,240,210,.95)'],[.3,'rgba(240,190,110,.6)'],[1,'rgba(0,0,0,0)']]);
+  const SILVER = sprite(12, [[0,'rgba(236,244,255,.9)'],[.35,'rgba(170,196,240,.5)'],[1,'rgba(0,0,0,0)']]);
   const VAPOR = (() => { const c = document.createElement('canvas'); c.width = c.height = 160; const x = c.getContext('2d');
     for(let i = 0; i < 11; i++){ const px = 80 + rnd(-34, 34), py = 80 + rnd(-34, 34), r = rnd(26, 52), gr = x.createRadialGradient(px,py,0,px,py,r);
-      gr.addColorStop(0,'rgba(255,240,214,.34)'); gr.addColorStop(.55,'rgba(255,206,140,.12)'); gr.addColorStop(1,'rgba(255,190,120,0)'); x.fillStyle = gr; x.fillRect(0,0,160,160); }
+      gr.addColorStop(0,'rgba(232,180,110,.24)'); gr.addColorStop(.55,'rgba(200,140,80,.08)'); gr.addColorStop(1,'rgba(200,140,80,0)'); x.fillStyle = gr; x.fillRect(0,0,160,160); }
     return c; })();
 
-  const G = { on:false, raf:0, mode:'', kind:'', t0:0, D:0, last:0, W:0, H:0, dpr:1, cx:0, cy:0, R:0,
-    done:null, safety:0, light:null, strands:[], comets:[], vapor:[], blobs:[], sparks:[], P:null, holdT:0 };
+  const G = { on:false, raf:0, mode:'', kind:'', t0:0, D:0, last:0, W:0, H:0, dpr:1, cx:0, cy:0, R:0, m:0,
+    done:null, safety:0, bg:null, strands:[], comets:[], vapor:[], blobs:[], wisps:[], dust:[], sparks:[], P:null, holdT:0 };
   const lowTier = () => SB.perf.level !== 'high';
 
   function size(){
     G.dpr = Math.min(devicePixelRatio || 1, lowTier() ? 1 : 1.5);
-    G.W = innerWidth; G.H = innerHeight;
+    G.W = innerWidth; G.H = innerHeight; G.m = Math.min(G.W, G.H);
     cv.width = Math.round(G.W*G.dpr); cv.height = Math.round(G.H*G.dpr);
   }
   function origin(at){
@@ -37,275 +42,382 @@
   }
   function show(){ if(!G.on){ size(); cv.classList.add('on'); G.on = true; G.last = performance.now(); } if(!G.raf) G.raf = requestAnimationFrame(frame); }
   function hide(){
-    G.on = false; G.mode = ''; G.P = null; G.sparks.length = 0;
+    G.on = false; G.mode = ''; G.P = null; G.sparks.length = 0; G.dust.length = 0;
     if(G.raf) cancelAnimationFrame(G.raf); G.raf = 0; clearTimeout(G.safety);
     g.setTransform(1,0,0,1,0,0); g.clearRect(0, 0, cv.width, cv.height); cv.classList.remove('on');
   }
   function settle(){ const d = G.done; G.done = null; d?.(); }
 
-  /* 门钥匙的「光幕」：一次绘制到半分辨率离屏画布，之后每帧只 drawImage。 */
-  function buildLight(){
-    const s = .5, c = G.light || document.createElement('canvas');
+  /* 每种门的底色：一次绘制到半分辨率离屏画布 */
+  function buildBg(kind){
+    const s = .5, c = G.bg || document.createElement('canvas');
     c.width = Math.max(2, Math.round(G.W*s)); c.height = Math.max(2, Math.round(G.H*s));
-    const x = c.getContext('2d'), gr = x.createRadialGradient(G.cx*s, G.cy*s, 0, G.cx*s, G.cy*s, G.R*s*1.05);
-    gr.addColorStop(0,'#fff8ea'); gr.addColorStop(.22,'#ffe7bc'); gr.addColorStop(.5,'#f6c47f'); gr.addColorStop(.8,'#b9702f'); gr.addColorStop(1,'#5a2c10');
-    x.fillStyle = gr; x.fillRect(0, 0, c.width, c.height); G.light = c;
+    const x = c.getContext('2d'), X = G.cx*s, Y = G.cy*s, R = G.R*s*1.05;
+    let gr;
+    if(kind === 'portkey'){ gr = x.createRadialGradient(X, Y, 0, X, Y, R);
+      gr.addColorStop(0,'#3a2a3e'); gr.addColorStop(.28,'#241d3c'); gr.addColorStop(.62,'#141530'); gr.addColorStop(1,'#08091c'); }
+    else if(kind === 'pensieve'){ gr = x.createRadialGradient(X, Y, 0, X, Y, R);
+      gr.addColorStop(0,'#16284f'); gr.addColorStop(.45,'#0c1834'); gr.addColorStop(1,'#050914'); }
+    else if(kind === 'quill'){ gr = x.createLinearGradient(0, 0, c.width, c.height);
+      gr.addColorStop(0,'#14163a'); gr.addColorStop(.55,'#0d0f2a'); gr.addColorStop(1,'#08091c'); }
+    else { gr = `rgb(${NIGHT})`; }
+    x.fillStyle = gr; x.fillRect(0, 0, c.width, c.height);
+    if(kind === 'quill' || kind === 'pensieve'){
+      // 极淡的纸纹 / 水纹：低频噪点
+      const n = kind === 'quill' ? 900 : 500;
+      for(let i = 0; i < n; i++){ x.fillStyle = kind === 'quill' ? `rgba(255,230,190,${rnd(.008,.03)})` : `rgba(170,200,255,${rnd(.01,.035)})`;
+        const r = rnd(1, kind === 'quill' ? 6 : 14); x.beginPath(); x.arc(rnd(0, c.width), rnd(0, c.height), r, 0, TAU); x.fill(); }
+    }
+    G.bg = c;
   }
   function seed(kind){
     const lo = lowTier();
-    G.strands = Array.from({length: kind === 'portkey' ? (lo ? 30 : 60) : 0}, () => ({ a:rnd(0, TAU), r0:G.R*rnd(.7, 1.15), d:rnd(0, .34), w:rnd(.7, 1.5), sp:rnd(.8, 1.3), f:rnd(.55, 1.25) }));
-    G.comets = Array.from({length: kind === 'nox' ? (lo ? 24 : 52) : 0}, () => ({ a:rnd(0, TAU), r0:G.R*rnd(.55, 1.05), d:rnd(0, .3), curl:rnd(.7, 1.6)*(Math.random() < .5 ? -1 : 1), s:rnd(.7, 1.4), f:rnd(.6, 1.3) }));
-    G.vapor = Array.from({length: kind === 'portkey' ? (lo ? 5 : 8) : 0}, (_, i, n) => ({ a:i/(lo ? 5 : 8)*TAU + rnd(-.3, .3), s:rnd(.32, .6), rot:rnd(0, TAU), vr:rnd(-.6, .6) }));
-    G.blobs = Array.from({length: lo ? 6 : 8}, (_, i) => ({ a:i/(lo ? 6 : 8)*TAU + rnd(-.35, .35), o:rnd(.62, .86), s:rnd(.28, .44) }));
+    G.strands = kind === 'portkey' ? Array.from({length: lo ? 12 : 24}, () => ({ a:rnd(0, TAU), r0:G.R*rnd(.65, 1.1), d:rnd(0, .3), w:rnd(.8, 1.5), sp:rnd(.85, 1.15), f:rnd(.55, 1) })) : [];
+    G.comets = kind === 'nox' ? Array.from({length: lo ? 12 : 26}, () => ({ a:rnd(0, TAU), r0:G.R*rnd(.55, 1.05), d:rnd(0, .3), curl:rnd(.5, 1.1)*(Math.random() < .5 ? -1 : 1), s:rnd(.7, 1.2), f:rnd(.6, 1) })) : [];
+    G.vapor = kind === 'portkey' ? Array.from({length: lo ? 4 : 6}, (_, i) => ({ a:i/(lo ? 4 : 6)*TAU + rnd(-.3, .3), s:rnd(.3, .52), rot:rnd(0, TAU), vr:rnd(-.4, .4) })) : [];
+    G.blobs = Array.from({length: lo ? 5 : 7}, (_, i) => ({ a:i/(lo ? 5 : 7)*TAU + rnd(-.35, .35), o:rnd(.7, .86), s:rnd(.2, .3) }));
+    G.wisps = kind === 'pensieve' ? Array.from({length: lo ? 4 : 6}, (_, i) => ({ a:i/(lo ? 4 : 6)*TAU + rnd(-.4, .4), r:G.m*rnd(.14, .36), span:rnd(1.1, 2.1), w:rnd(.8, 1.4), sp:rnd(.7, 1.2)*(i % 2 ? 1 : -1), ph:rnd(0, TAU) })) : [];
+    G.dust.length = 0;
   }
 
-  /* 旋转的符文刻度环（门钥匙等待态、幻影显形边缘共用） */
+  /* 旋转的符文刻度环 */
   function runeRing(x, y, r, rot, alpha, color, lw){
     if(alpha <= .01 || r < 2) return;
     g.save(); g.globalAlpha = alpha; g.strokeStyle = color; g.fillStyle = color; g.lineWidth = lw;
     g.beginPath(); g.arc(x, y, r, 0, TAU); g.stroke();
-    g.beginPath(); g.arc(x, y, r + Math.max(5, r*.07), 0, TAU); g.lineWidth = lw*.6; g.stroke();
-    const n = r < 40 ? 24 : r < 160 ? 48 : 72, inner = Math.max(3, r*.045);
-    g.lineWidth = lw*.7; g.beginPath();
+    g.beginPath(); g.arc(x, y, r + Math.max(4, r*.06), 0, TAU); g.lineWidth = lw*.55; g.stroke();
+    const n = r < 40 ? 24 : r < 160 ? 48 : 72, inner = Math.max(3, r*.04);
+    g.lineWidth = lw*.65; g.beginPath();
     for(let i = 0; i < n; i++){ const a = rot + i/n*TAU, l = i % 6 === 0 ? inner*1.9 : inner;
       g.moveTo(x + Math.cos(a)*r, y + Math.sin(a)*r); g.lineTo(x + Math.cos(a)*(r - l), y + Math.sin(a)*(r - l)); }
     g.stroke();
-    const dd = Math.max(3, r*.05);
+    const dd = Math.max(2.5, r*.04);
     for(let i = 0; i < 4; i++){ const a = -rot*1.3 + i*TAU/4 + Math.PI/4, px = x + Math.cos(a)*(r + dd*.6), py = y + Math.sin(a)*(r + dd*.6);
       g.beginPath(); g.moveTo(px + Math.cos(a)*dd, py + Math.sin(a)*dd); g.lineTo(px + Math.cos(a + 1.57)*dd*.55, py + Math.sin(a + 1.57)*dd*.55);
       g.lineTo(px - Math.cos(a)*dd, py - Math.sin(a)*dd); g.lineTo(px - Math.cos(a + 1.57)*dd*.55, py - Math.sin(a + 1.57)*dd*.55); g.closePath(); g.fill(); }
     g.restore();
   }
-  function glowAt(x, y, r, a){ if(a <= .01 || r < 1) return; g.globalAlpha = a; g.drawImage(GLOW, x - r, y - r, r*2, r*2); g.globalAlpha = 1; }
-
-  /* ── 门钥匙 Portkey ── */
-  function strandPath(s, p, outward){
-    const pts = [], N = 12;
-    for(let j = 0; j < N; j++){
-      const q = p - j*.035; if(q < 0) break;
-      const e = outward ? eOut3(q) : eIn3(q)*.6 + q*.4;
-      const r = outward ? G.R*.04 + e*s.r0*1.25 : s.r0*Math.pow(1 - e, 1.15) + 2;
-      const th = s.a + (outward ? -s.sp*(.9 + 2.6*e) : s.sp*(1.6*q + 2.4*q*q));
-      pts.push([G.cx + Math.cos(th)*r, G.cy + Math.sin(th)*r]);
-    }
-    return pts;
+  function glowAt(img, x, y, r, a){ if(a <= .01 || r < 1) return; g.globalAlpha = Math.min(a, .85); g.drawImage(img, x - r, y - r, r*2, r*2); g.globalAlpha = 1; }
+  /* 在底色上挖一个羽化的圆洞（可带不规则小圆） */
+  function hole(r, irregular, feather = .55){
+    if(r < 1) return;
+    g.globalCompositeOperation = 'destination-out';
+    const cut = (x, y, rr) => { const m = g.createRadialGradient(x, y, rr*feather, x, y, rr); m.addColorStop(0,'rgba(0,0,0,1)'); m.addColorStop(1,'rgba(0,0,0,0)'); g.fillStyle = m; g.fillRect(x - rr, y - rr, rr*2, rr*2); };
+    cut(G.cx, G.cy, r);
+    if(irregular) for(const b of G.blobs) cut(G.cx + Math.cos(b.a)*r*b.o, G.cy + Math.sin(b.a)*r*b.o, r*b.s + 2);
+    g.globalCompositeOperation = 'source-over';
   }
-  function drawStrands(k, outward){
-    const lo = lowTier();
+  /* 只在一个羽化圆内显示底色（用于从点向外扩张的遮罩） */
+  function bgDisc(r, feather = .6){
+    if(r < 1) return;
+    g.drawImage(G.bg, 0, 0, G.W, G.H);
+    g.globalCompositeOperation = 'destination-in';
+    const m = g.createRadialGradient(G.cx, G.cy, r*feather, G.cx, G.cy, r); m.addColorStop(0,'rgba(0,0,0,1)'); m.addColorStop(1,'rgba(0,0,0,0)');
+    g.fillStyle = m; g.fillRect(0, 0, G.W, G.H);
+    g.globalCompositeOperation = 'source-over';
+  }
+
+  /* ── 门钥匙 · 暮色漩涡 ── */
+  function drawStrands(k, outward, t){
+    const lo = lowTier(), core = G.m*.12;
     g.globalCompositeOperation = 'lighter'; g.lineCap = 'round';
     for(const s of G.strands){
-      const p = outward ? clamp(k*1.05 - s.d*.25) : clamp((k - s.d)/(1 - s.d)*1.08);
+      const p = outward ? clamp(k*1.05 - s.d*.2) : clamp((k - s.d)/(1 - s.d));
       if(p <= 0) continue;
-      const pts = strandPath(s, p, outward); if(pts.length < 2) continue;
-      const a = outward ? (1 - p)*.9 : (.25 + .75*p)*s.f;
+      const pts = [];
+      for(let j = 0; j < 14; j++){
+        const q = p - j*.045; if(q < 0) break;
+        const e = sine(q);
+        const r = outward ? core*.6 + e*s.r0*1.1 : s.r0*(1 - e*.9) + core*.25;
+        const th = s.a + (outward ? -1 : 1)*s.sp*(outward ? 1.6*e : 2.4*e) + t*.00008;
+        pts.push([G.cx + Math.cos(th)*r, G.cy + Math.sin(th)*r, r]);
+      }
+      if(pts.length < 2) continue;
+      // 越靠近中心越淡：被光门吸收，而不是堆成白斑
+      const near = clamp((pts[0][2] - core*.4)/(core*1.4));
+      const a = (outward ? (1 - p)*.45 : (.18 + .32*p))*s.f*(outward ? 1 : near);
+      if(a < .01) continue;
       g.beginPath(); g.moveTo(pts[0][0], pts[0][1]); for(let j = 1; j < pts.length; j++) g.lineTo(pts[j][0], pts[j][1]);
-      if(!lo){ g.strokeStyle = `rgba(255,190,110,${(a*.18).toFixed(3)})`; g.lineWidth = 5*s.w; g.stroke(); }
-      g.strokeStyle = `rgba(255,232,190,${(a*.85).toFixed(3)})`; g.lineWidth = 1.2*s.w; g.stroke();
-      const sz = 7*s.w; g.globalAlpha = clamp(a); g.drawImage(SPARK, pts[0][0] - sz/2, pts[0][1] - sz/2, sz, sz); g.globalAlpha = 1;
+      if(!lo){ g.strokeStyle = `rgba(214,150,80,${(a*.22).toFixed(3)})`; g.lineWidth = 4*s.w; g.stroke(); }
+      g.strokeStyle = `rgba(246,214,160,${a.toFixed(3)})`; g.lineWidth = 1*s.w; g.stroke();
     }
     g.globalCompositeOperation = 'source-over';
   }
   function drawVapor(k, t, outward){
     g.globalCompositeOperation = 'lighter';
     for(const v of G.vapor){
-      const rr = outward ? G.R*(.1 + .9*eOut3(k)) : G.R*(.08 + .55*Math.pow(1 - k, 1.2));
-      const a = v.a + t*.0009 + (outward ? -1.2*k : 2.4*k);
-      const s = G.R*v.s*(outward ? 1 + k*.6 : 1 - k*.25);
-      g.save(); g.globalAlpha = outward ? .55*(1 - k) : .18 + .5*k;
-      g.translate(G.cx + Math.cos(a)*rr, G.cy + Math.sin(a)*rr); g.rotate(v.rot + t*.0004*v.vr); g.drawImage(VAPOR, -s, -s, s*2, s*2); g.restore();
+      const rr = outward ? G.R*(.1 + .8*sine(k)) : G.R*(.12 + .5*Math.pow(1 - sine(k), 1.2));
+      const a = v.a + t*.00035 + (outward ? -.6*k : 1.1*k);
+      const s = G.R*v.s;
+      g.save(); g.globalAlpha = outward ? .28*(1 - k) : .1 + .18*sine(k);
+      g.translate(G.cx + Math.cos(a)*rr, G.cy + Math.sin(a)*rr); g.rotate(v.rot + t*.0002*v.vr); g.drawImage(VAPOR, -s, -s, s*2, s*2); g.restore();
     }
     g.globalCompositeOperation = 'source-over';
+  }
+  function gateLight(scale, a, t){
+    // 中心柔和琥珀光门（峰值亮度约 60%）
+    const r = G.m*.2*scale*(1 + .03*Math.sin(t*.003));
+    g.globalCompositeOperation = 'lighter'; glowAt(GLOW, G.cx, G.cy, r, .55*a); glowAt(GLOW, G.cx, G.cy, r*.45, .35*a); g.globalCompositeOperation = 'source-over';
   }
   function portkeyCover(k, t){
-    // 1. 中心光门从小迅速扩大（遮罩 + 光幕）
-    const gr = G.R*1.3*eIn3(k) + G.R*.04*k;
-    if(gr > 1){
-      g.save();
-      const m = g.createRadialGradient(G.cx, G.cy, gr*.55, G.cx, G.cy, gr);
-      m.addColorStop(0,'rgba(0,0,0,1)'); m.addColorStop(1,'rgba(0,0,0,0)');
-      g.beginPath(); g.arc(G.cx, G.cy, gr, 0, TAU); g.clip();
-      // 画布此时为空：先画光幕，再用 destination-in 羽化边缘
-      g.drawImage(G.light, 0, 0, G.W, G.H);
-      g.globalCompositeOperation = 'destination-in'; g.fillStyle = m; g.fillRect(0, 0, G.W, G.H);
-      g.restore(); g.globalCompositeOperation = 'source-over';
-    }
-    // 2. 旧画面四周微暗，像被吸入旋涡（画在光门之下）
-    g.globalCompositeOperation = 'destination-over'; g.fillStyle = `rgba(20,10,4,${(.35*eIn3(k)).toFixed(3)})`; g.fillRect(0, 0, G.W, G.H);
-    g.globalCompositeOperation = 'source-over';
-    if(k > .86){ g.globalAlpha = clamp((k - .86)/.14); g.drawImage(G.light, 0, 0, G.W, G.H); g.globalAlpha = 1; }
+    const e = sine(k);
+    g.drawImage(G.bg, 0, 0, G.W, G.H);
+    hole(G.R*1.25*(1 - e), false, .45);
     drawVapor(k, t, false);
-    drawStrands(k, false);
-    glowAt(G.cx, G.cy, G.R*(.06 + .3*eIn3(k)), .5 + .5*k);
+    drawStrands(k, false, t);
+    gateLight(.4 + .6*e, .35 + .65*e, t);
   }
   function portkeyHold(t){
-    g.drawImage(G.light, 0, 0, G.W, G.H);
+    g.drawImage(G.bg, 0, 0, G.W, G.H);
     drawVapor(1, t, false);
-    const h = clamp(G.holdT/420), r = Math.min(G.W, G.H)*.17;
-    runeRing(G.cx, G.cy, r, t*.0004, .42*h, 'rgba(140,72,20,1)', 1.4);
-    runeRing(G.cx, G.cy, r*.62, -t*.0007, .3*h, 'rgba(140,72,20,1)', 1);
-    glowAt(G.cx, G.cy, G.R*.36*(1 + .04*Math.sin(t*.004)), .9);
-  }
-  function holeMask(k, scale){
-    // 撕开的光门：主圆 + 偏移小圆，羽化边缘
-    const h = G.R*scale*eOut3(k);
-    if(h < 1) return h;
-    g.globalCompositeOperation = 'destination-out';
-    const cut = (x, y, r) => { const m = g.createRadialGradient(x, y, r*.74, x, y, r); m.addColorStop(0,'rgba(0,0,0,1)'); m.addColorStop(1,'rgba(0,0,0,0)'); g.fillStyle = m; g.fillRect(x - r, y - r, r*2, r*2); };
-    cut(G.cx, G.cy, h);
-    for(const b of G.blobs) cut(G.cx + Math.cos(b.a)*h*b.o, G.cy + Math.sin(b.a)*h*b.o, h*b.s + 2);
-    g.globalCompositeOperation = 'source-over';
-    return h;
-  }
-  function rim(h, a, warm){
-    if(h < 2 || a <= .01) return;
-    g.globalCompositeOperation = 'lighter';
-    const m = g.createRadialGradient(G.cx, G.cy, h*.72, G.cx, G.cy, h*1.08);
-    m.addColorStop(0,'rgba(255,230,180,0)'); m.addColorStop(.7, warm ? `rgba(255,226,170,${(.5*a).toFixed(3)})` : `rgba(255,236,200,${(.42*a).toFixed(3)})`); m.addColorStop(1,'rgba(255,200,120,0)');
-    g.fillStyle = m; g.beginPath(); g.arc(G.cx, G.cy, h*1.08, 0, TAU); g.fill();
-    g.globalCompositeOperation = 'source-over';
+    const h = clamp(G.holdT/500);
+    runeRing(G.cx, G.cy, G.m*.17, t*.00025, .32*h, 'rgba(232,196,130,1)', 1.1);
+    runeRing(G.cx, G.cy, G.m*.11, -t*.0004, .22*h, 'rgba(232,196,130,1)', .8);
+    gateLight(1, 1, t);
   }
   function portkeyReveal(k, t){
-    const fade = 1 - clamp((k - .72)/.28);
-    g.globalAlpha = fade; g.drawImage(G.light, 0, 0, G.W, G.H); g.globalAlpha = 1;
-    const h = holeMask(k, 1.25);
-    rim(h*.9, fade, true);
+    const e = sine(k);
+    g.drawImage(G.bg, 0, 0, G.W, G.H);
+    hole(G.R*1.2*e + G.m*.12*(1 - e)*clamp(k*6), true, .5);
     drawVapor(k, t, true);
-    drawStrands(k, true);
+    drawStrands(k, true, t);
+    gateLight(1 + 1.5*e, 1 - e, t);
   }
 
-  /* ── 熄灯器 Nox / 荧光闪烁 Lumos ── */
+  /* ── 熄灯器 / 荧光闪烁 ── */
   function nightClose(a){
-    // a：夜色边界半径（大 → 小）；外侧不透明、内侧透明
     if(a <= 0){ g.fillStyle = `rgb(${NIGHT})`; g.fillRect(0, 0, G.W, G.H); return; }
     const m = g.createRadialGradient(G.cx, G.cy, a*.55, G.cx, G.cy, a + G.R*.22);
     m.addColorStop(0, `rgba(${NIGHT},0)`); m.addColorStop(1, `rgba(${NIGHT},1)`);
     g.fillStyle = m; g.fillRect(0, 0, G.W, G.H);
   }
   function drawComets(k, outward){
+    const core = G.m*.1;
     g.globalCompositeOperation = 'lighter'; g.lineCap = 'round';
-    let absorbed = 0;
     for(const c of G.comets){
-      const u = outward ? clamp(k*1.1 - c.d*.3) : clamp((k - c.d)/(.84 - c.d));
-      if(!outward && u >= 1){ absorbed++; continue; }
-      if(u <= 0) continue;
-      const pos = q => { const e = outward ? eOut3(q) : eIn3(q)*.55 + q*.45; const r = outward ? G.R*.03 + e*c.r0*1.2 : c.r0*Math.pow(1 - e, 1.5);
-        const th = c.a + c.curl*(outward ? -e : e); return [G.cx + Math.cos(th)*r, G.cy + Math.sin(th)*r]; };
-      const head = pos(u), a = outward ? (1 - u)*c.f : (.35 + .65*u)*c.f;
+      const u = outward ? clamp(k*1.05 - c.d*.3) : clamp((k - c.d)/(.88 - c.d));
+      if(u <= 0 || (!outward && u >= 1)) continue;
+      const pos = q => { const e = sine(q); const r = outward ? core*.5 + e*c.r0*1.1 : c.r0*Math.pow(1 - e, 1.3);
+        const th = c.a + c.curl*(outward ? -e : e); return [G.cx + Math.cos(th)*r, G.cy + Math.sin(th)*r, r]; };
+      const head = pos(u);
+      const near = outward ? 1 : clamp((head[2] - core*.3)/core);
+      const a = (outward ? (1 - u)*.5 : (.25 + .3*u))*c.f*near;
+      if(a < .01) continue;
       g.beginPath(); g.moveTo(head[0], head[1]);
-      for(let j = 1; j < 9; j++){ const q = u - j*.028; if(q < 0) break; const p = pos(q); g.lineTo(p[0], p[1]); }
-      g.strokeStyle = `rgba(255,226,170,${(a*.55).toFixed(3)})`; g.lineWidth = 1.6*c.s; g.stroke();
-      const sz = 12*c.s; g.globalAlpha = clamp(a); g.drawImage(SPARK, head[0] - sz/2, head[1] - sz/2, sz, sz); g.globalAlpha = 1;
+      for(let j = 1; j < 9; j++){ const q = u - j*.03; if(q < 0) break; const p = pos(q); g.lineTo(p[0], p[1]); }
+      g.strokeStyle = `rgba(246,214,160,${(a*.8).toFixed(3)})`; g.lineWidth = 1.3*c.s; g.stroke();
+      const sz = 10*c.s; g.globalAlpha = clamp(a*1.4, 0, .7); g.drawImage(SPARK, head[0] - sz/2, head[1] - sz/2, sz, sz); g.globalAlpha = 1;
     }
     g.globalCompositeOperation = 'source-over';
-    return absorbed/(G.comets.length || 1);
   }
   function noxCover(k){
-    nightClose(G.R*1.15*(1 - k*k) - G.R*.05*k);
-    if(k > .88){ g.fillStyle = `rgba(${NIGHT},${clamp((k - .88)/.12).toFixed(3)})`; g.fillRect(0, 0, G.W, G.H); }
-    const got = drawComets(k, false);
-    // 中心最后一点光：吸收彗星后变亮，最后熄灭
-    const out = clamp((k - .8)/.2), flick = .9 + .1*Math.sin(k*90);
-    glowAt(G.cx, G.cy, G.R*(.05 + .07*got)*(1 - out*.7), (.35 + .65*got)*(1 - out)*flick);
+    const e = sine(k);
+    nightClose(G.R*1.15*(1 - e) - G.R*.04*k);
+    if(k > .86){ g.fillStyle = `rgba(${NIGHT},${clamp((k - .86)/.14).toFixed(3)})`; g.fillRect(0, 0, G.W, G.H); }
+    drawComets(k, false);
+    const out = clamp((k - .72)/.28);
+    g.globalCompositeOperation = 'lighter'; glowAt(GLOW, G.cx, G.cy, G.m*(.05 + .02*e)*(1 - out*.6), .45*(1 - out)); g.globalCompositeOperation = 'source-over';
   }
   function noxHold(t){
     g.fillStyle = `rgb(${NIGHT})`; g.fillRect(0, 0, G.W, G.H);
-    glowAt(G.cx, G.cy, 14 + 3*Math.sin(t*.005), .18 + .1*Math.sin(t*.005));
+    g.globalCompositeOperation = 'lighter'; glowAt(GLOW, G.cx, G.cy, 12 + 3*Math.sin(t*.004), .14 + .08*Math.sin(t*.004)); g.globalCompositeOperation = 'source-over';
   }
   function noxReveal(k){
-    // 0–22%：中心荧光闪烁亮起；之后光向外推开夜色
-    const lum = clamp(k/.22), push = clamp((k - .12)/.88), h = G.R*1.25*eIO(push);
+    const lum = clamp(k/.28), push = clamp((k - .14)/.86), h = G.R*1.2*sine(push);
     g.fillStyle = `rgb(${NIGHT})`; g.fillRect(0, 0, G.W, G.H);
-    if(h > 1){
-      g.globalCompositeOperation = 'destination-out';
-      const m = g.createRadialGradient(G.cx, G.cy, h*.5, G.cx, G.cy, h); m.addColorStop(0,'rgba(0,0,0,1)'); m.addColorStop(1,'rgba(0,0,0,0)');
-      g.fillStyle = m; g.beginPath(); g.arc(G.cx, G.cy, h, 0, TAU); g.fill();
-      g.globalCompositeOperation = 'source-over';
-    }
-    rim(h*.82, (1 - push)*.8, false);
+    hole(h, false, .45);
     drawComets(push, true);
-    const fl = lum*(1 - clamp((k - .35)/.5));
-    glowAt(G.cx, G.cy, G.R*(.04 + .16*eOut3(lum)), fl);
+    const fl = sine(lum)*(1 - clamp((k - .4)/.5));
+    g.globalCompositeOperation = 'lighter'; glowAt(GLOW, G.cx, G.cy, G.m*(.04 + .06*sine(lum)), .7*fl); g.globalCompositeOperation = 'source-over';
   }
 
-  /* ── 幻影显形 Apparition（装饰 Scene Runtime 的圆形揭示） ── */
+  /* ── 墨金书页（从右向左翻过） ── */
+  function pageEdge(front, t){
+    // 返回前缘曲线上的点（书页轻微弯曲）
+    const pts = [], n = 18, bulge = G.W*.05;
+    for(let i = 0; i <= n; i++){ const y = i/n*G.H; pts.push([front + Math.sin(i/n*Math.PI)*bulge + Math.sin(t*.002 + i*.5)*1.2, y]); }
+    return pts;
+  }
+  function quillPage(front, coverRight, t){
+    // coverRight = true：书页覆盖前缘右侧（翻入）；false：覆盖左侧（翻出）
+    const pts = pageEdge(front, t);
+    // 投在场景上的阴影（前缘外侧 40px）
+    g.save();
+    const dir = coverRight ? -1 : 1;
+    const sh = g.createLinearGradient(front, 0, front + dir*48, 0);
+    sh.addColorStop(0,'rgba(0,0,0,.38)'); sh.addColorStop(1,'rgba(0,0,0,0)');
+    g.fillStyle = sh; g.beginPath(); g.moveTo(pts[0][0], 0);
+    for(const p of pts) g.lineTo(p[0], p[1]);
+    g.lineTo(pts[pts.length - 1][0] + dir*60, G.H); g.lineTo(pts[0][0] + dir*60, 0); g.closePath(); g.fill();
+    // 书页本体
+    g.beginPath(); g.moveTo(pts[0][0], 0); for(const p of pts) g.lineTo(p[0], p[1]);
+    if(coverRight){ g.lineTo(G.W + 4, G.H); g.lineTo(G.W + 4, 0); } else { g.lineTo(-4, G.H); g.lineTo(-4, 0); }
+    g.closePath(); g.clip(); g.drawImage(G.bg, 0, 0, G.W, G.H);
+    // 前缘内侧一道纸页卷曲的高光
+    const hl = g.createLinearGradient(front, 0, front - dir*70, 0);
+    hl.addColorStop(0,'rgba(255,226,170,.10)'); hl.addColorStop(1,'rgba(255,226,170,0)');
+    g.fillStyle = hl; g.fillRect(0, 0, G.W, G.H);
+    g.restore();
+    // 香槟金书边光
+    g.globalCompositeOperation = 'lighter'; g.lineJoin = 'round';
+    g.beginPath(); g.moveTo(pts[0][0], pts[0][1]); for(const p of pts) g.lineTo(p[0], p[1]);
+    if(!lowTier()){ g.strokeStyle = 'rgba(214,170,100,.12)'; g.lineWidth = 18; g.stroke(); }
+    g.strokeStyle = 'rgba(214,170,100,.22)'; g.lineWidth = 6; g.stroke();
+    g.strokeStyle = 'rgba(246,222,170,.6)'; g.lineWidth = 1.6; g.stroke();
+    g.globalCompositeOperation = 'source-over';
+    return pts;
+  }
+  function quillDust(pts, dt, rate){
+    if(pts && rate){ G.dacc = (G.dacc || 0) + dt*rate; while(G.dacc > 1){ G.dacc--; const p = pts[(Math.random()*pts.length)|0];
+      G.dust.push({x:p[0] + rnd(-6, 6), y:p[1], vx:rnd(-14, -2), vy:rnd(6, 26), life:rnd(1, 1.8), age:0, s:rnd(3, 6)}); } }
+    g.globalCompositeOperation = 'lighter';
+    for(let i = G.dust.length - 1; i >= 0; i--){ const d = G.dust[i]; d.age += dt; if(d.age > d.life){ G.dust.splice(i, 1); continue; }
+      d.x += d.vx*dt; d.y += d.vy*dt; g.globalAlpha = .55*Math.sin(Math.PI*d.age/d.life); g.drawImage(SPARK, d.x - d.s/2, d.y - d.s/2, d.s, d.s); }
+    g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+  }
+  function quillCover(k, t, dt){ const front = G.W*(1.04 - 1.16*sine(k)); quillDust(quillPage(front, true, t), dt, lowTier() ? 14 : 30); }
+  function quillHold(t, dt){ g.drawImage(G.bg, 0, 0, G.W, G.H); quillDust(null, dt, 0);
+    const h = clamp(G.holdT/500); runeRing(G.W/2, G.H/2, G.m*.12, t*.0002, .16*h, 'rgba(214,184,130,1)', .9); }
+  function quillReveal(k, t, dt){ const front = G.W*(1.04 - 1.16*sine(k)); quillDust(quillPage(front, false, t), dt, lowTier() ? 10 : 22); }
+
+  /* ── 冥想盆（银蓝涟漪 + 记忆丝缕） ── */
+  function ripples(t0k, k, maxR, alpha){
+    g.globalCompositeOperation = 'lighter';
+    for(let i = 0; i < 5; i++){
+      const p = clamp((k - t0k - i*.13)/.62); if(p <= 0 || p >= 1) continue;
+      const r = 6 + maxR*eOut3(p), a = alpha*(1 - p);
+      g.beginPath(); g.arc(G.cx, G.cy, r, 0, TAU);
+      if(!lowTier()){ g.strokeStyle = `rgba(150,180,240,${(a*.18).toFixed(3)})`; g.lineWidth = 7; g.stroke(); }
+      g.strokeStyle = `rgba(214,228,255,${a.toFixed(3)})`; g.lineWidth = 1.2; g.stroke();
+    }
+    g.globalCompositeOperation = 'source-over';
+  }
+  function wisps(a, t, spread){
+    if(a <= .01) return;
+    g.save(); g.translate(G.cx, G.cy); g.rotate(Math.sin(t/2400*TAU)*.026);   // 记忆「透过水看」：缓慢左右倾斜
+    g.globalCompositeOperation = 'lighter'; g.lineCap = 'round';
+    for(const w of G.wisps){
+      const r = w.r*(1 + spread*1.6), a0 = w.a + t*.00022*w.sp;
+      g.beginPath();
+      for(let j = 0; j <= 20; j++){ const q = j/20, th = a0 + w.span*q, rr = r*(1 + .18*Math.sin(q*Math.PI*2 + w.ph + t*.0007));
+        const x = Math.cos(th)*rr, y = Math.sin(th)*rr*.82; j ? g.lineTo(x, y) : g.moveTo(x, y); }
+      if(!lowTier()){ g.strokeStyle = `rgba(150,180,240,${(a*.12).toFixed(3)})`; g.lineWidth = 6*w.w; g.stroke(); }
+      g.strokeStyle = `rgba(220,232,255,${(a*.4).toFixed(3)})`; g.lineWidth = w.w; g.stroke();
+    }
+    g.restore();
+  }
+  function pensieveCover(k, t){
+    const e = sine(k);
+    bgDisc(G.R*1.3*e + 2, .5);
+    if(k > .84){ g.globalAlpha = clamp((k - .84)/.16); g.drawImage(G.bg, 0, 0, G.W, G.H); g.globalAlpha = 1; }
+    ripples(0, k, G.R*.9, .45);
+    wisps(.9*e, t, 0);
+    g.globalCompositeOperation = 'lighter'; glowAt(COOL, G.cx, G.cy, G.m*.14, .35*e); g.globalCompositeOperation = 'source-over';
+  }
+  function pensieveHold(t){
+    g.drawImage(G.bg, 0, 0, G.W, G.H);
+    const k = (G.holdT % 2600)/2600; ripples(0, k*1.1, G.m*.5, .25);
+    wisps(.9, t, 0);
+    g.globalCompositeOperation = 'lighter'; glowAt(COOL, G.cx, G.cy, G.m*.14, .35); g.globalCompositeOperation = 'source-over';
+  }
+  function pensieveReveal(k, t){
+    const e = sine(k);
+    g.drawImage(G.bg, 0, 0, G.W, G.H);
+    hole(G.R*1.2*e, true, .5);
+    ripples(-.05, k, G.R*1.1, .4*(1 - e));
+    wisps(.9*(1 - e), t, e);
+    g.globalCompositeOperation = 'lighter'; glowAt(COOL, G.cx, G.cy, G.m*(.14 + .2*e), .35*(1 - e)); g.globalCompositeOperation = 'source-over';
+  }
+
+  /* ── 幻影显形（装饰 Scene Runtime 的圆形揭示） ── */
   function portalDraw(t, dt){
     const P = G.P; if(!P) return;
     const lo = lowTier();
     if(P.phase === 'prep'){
-      const b = .5 + .5*Math.sin(t*.008);
-      glowAt(P.x, P.y, 46 + 10*b, .35 + .25*b);
-      runeRing(P.x, P.y, 20 + 3*b, t*.003, .85, 'rgba(255,226,168,1)', 1.3);
+      const b = .5 + .5*Math.sin(t*.005);
+      g.globalCompositeOperation = 'lighter'; glowAt(GLOW, P.x, P.y, 40 + 8*b, .22 + .14*b); g.globalCompositeOperation = 'source-over';
+      runeRing(P.x, P.y, 18 + 2*b, t*.0015, .75, 'rgba(240,214,160,1)', 1.1);
       return;
     }
-    const r = Math.max(22, P.r), k = P.k, a = Math.pow(1 - k, .8);
-    // 边缘外侧柔光：照亮周围
+    const r = Math.max(20, P.r), k = P.k, a = Math.pow(1 - k, .9);
     g.globalCompositeOperation = 'lighter';
-    const m = g.createRadialGradient(P.x, P.y, Math.max(0, r - 8), P.x, P.y, r + 80);
-    m.addColorStop(0,'rgba(255,214,150,0)'); m.addColorStop(.1, `rgba(255,214,150,${(.38*a).toFixed(3)})`); m.addColorStop(1,'rgba(244,184,96,0)');
-    g.fillStyle = m; g.beginPath(); g.arc(P.x, P.y, r + 80, 0, TAU); g.fill();
+    const m = g.createRadialGradient(P.x, P.y, Math.max(0, r - 6), P.x, P.y, r + 70);
+    m.addColorStop(0,'rgba(232,186,120,0)'); m.addColorStop(.1, `rgba(232,186,120,${(.26*a).toFixed(3)})`); m.addColorStop(1,'rgba(214,150,80,0)');
+    g.fillStyle = m; g.beginPath(); g.arc(P.x, P.y, r + 70, 0, TAU); g.fill();
     g.globalCompositeOperation = 'source-over';
-    runeRing(P.x, P.y, r, k*1.4 + t*.0005, .9*a, 'rgba(255,230,180,1)', 1.5);
-    // 6 条螺旋金丝绕边缘旋转
+    runeRing(P.x, P.y, r, k*.7 + t*.00025, .7*a, 'rgba(240,218,170,1)', 1.2);
     g.globalCompositeOperation = 'lighter'; g.lineCap = 'round';
-    for(let i = 0; i < 6; i++){
-      const a0 = i/6*TAU + t*.0035 + k*2.2, span = .9, rr = r + 6 + 9*Math.sin(t*.006 + i);
+    for(let i = 0; i < 3; i++){
+      const a0 = i/3*TAU + t*.0016 + k*1.1, span = 1.1, rr = r + 5 + 7*Math.sin(t*.003 + i);
       g.beginPath();
-      for(let j = 0; j <= 14; j++){ const q = j/14, th = a0 + span*q, rq = rr + 10*Math.sin(q*Math.PI)*(i % 2 ? 1 : -1); const px = P.x + Math.cos(th)*rq, py = P.y + Math.sin(th)*rq; j ? g.lineTo(px, py) : g.moveTo(px, py); }
-      if(!lo){ g.strokeStyle = `rgba(255,190,110,${(.2*a).toFixed(3)})`; g.lineWidth = 5; g.stroke(); }
-      g.strokeStyle = `rgba(255,236,200,${(.8*a).toFixed(3)})`; g.lineWidth = 1.3; g.stroke();
+      for(let j = 0; j <= 16; j++){ const q = j/16, th = a0 + span*q, rq = rr + 8*Math.sin(q*Math.PI); const px = P.x + Math.cos(th)*rq, py = P.y + Math.sin(th)*rq; j ? g.lineTo(px, py) : g.moveTo(px, py); }
+      if(!lo){ g.strokeStyle = `rgba(214,160,90,${(.16*a).toFixed(3)})`; g.lineWidth = 4; g.stroke(); }
+      g.strokeStyle = `rgba(246,224,180,${(.6*a).toFixed(3)})`; g.lineWidth = 1.1; g.stroke();
     }
     g.globalCompositeOperation = 'source-over';
-    // 向外抛出火星
-    if(k < .9){ P.acc += dt*(lo ? 50 : 110); while(P.acc > 1){ P.acc--; const th = rnd(0, TAU), sp = rnd(60, 180);
-      G.sparks.push({x:P.x + Math.cos(th)*r, y:P.y + Math.sin(th)*r, vx:Math.cos(th)*sp, vy:Math.sin(th)*sp, life:rnd(.35, .7), age:0, s:rnd(4, 9)}); } }
+    if(k < .85){ P.acc += dt*(lo ? 18 : 40); while(P.acc > 1){ P.acc--; const th = rnd(0, TAU), sp = rnd(30, 80);
+      G.sparks.push({x:P.x + Math.cos(th)*r, y:P.y + Math.sin(th)*r, vx:Math.cos(th)*sp, vy:Math.sin(th)*sp, life:rnd(.6, 1.1), age:0, s:rnd(3.5, 7)}); } }
   }
   function sparksStep(dt){
     if(!G.sparks.length) return;
     g.globalCompositeOperation = 'lighter';
     for(let i = G.sparks.length - 1; i >= 0; i--){ const s = G.sparks[i]; s.age += dt; if(s.age > s.life){ G.sparks.splice(i, 1); continue; }
-      s.x += s.vx*dt; s.y += s.vy*dt; s.vx *= .96; s.vy *= .96;
-      g.globalAlpha = 1 - s.age/s.life; g.drawImage(SPARK, s.x - s.s/2, s.y - s.s/2, s.s, s.s); }
+      s.x += s.vx*dt; s.y += s.vy*dt; s.vx *= .97; s.vy *= .97;
+      g.globalAlpha = .7*(1 - s.age/s.life); g.drawImage(SPARK, s.x - s.s/2, s.y - s.s/2, s.s, s.s); }
     g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
   }
 
+  const DRAW = {
+    portkey:{ cover:portkeyCover, hold:portkeyHold, reveal:portkeyReveal },
+    nox:{ cover:(k) => noxCover(k), hold:noxHold, reveal:(k) => noxReveal(k) },
+    quill:{ cover:quillCover, hold:quillHold, reveal:quillReveal },
+    pensieve:{ cover:pensieveCover, hold:pensieveHold, reveal:pensieveReveal }
+  };
   function frame(now){
     G.raf = 0; if(!G.on) return;
     const dt = Math.min(.05, (now - G.last)/1000); G.last = now;
     g.setTransform(G.dpr, 0, 0, G.dpr, 0, 0); g.clearRect(0, 0, G.W, G.H);
-    const k = G.D ? clamp((now - G.t0)/G.D) : 1;
-    if(G.mode === 'cover'){ G.kind === 'portkey' ? portkeyCover(k, now) : noxCover(k); if(k >= 1){ G.mode = 'hold'; G.holdT = 0; settle(); } }
-    else if(G.mode === 'hold'){ G.holdT += dt*1000; G.kind === 'portkey' ? portkeyHold(now) : noxHold(now); }
-    else if(G.mode === 'reveal'){ G.kind === 'portkey' ? portkeyReveal(k, now) : noxReveal(k); if(k >= 1){ hide(); settle(); return; } }
+    const k = G.D ? clamp((now - G.t0)/G.D) : 1, D = DRAW[G.kind];
+    if(G.mode === 'cover'){ D.cover(k, now, dt); if(k >= 1){ G.mode = 'hold'; G.holdT = 0; settle(); } }
+    else if(G.mode === 'hold'){ G.holdT += dt*1000; D.hold(now, dt); }
+    else if(G.mode === 'reveal'){ D.reveal(k, now, dt); if(k >= 1){ hide(); settle(); return; } }
     else if(G.mode === 'portal'){ portalDraw(now, dt); }
     sparksStep(dt);
     if(G.mode === 'portal-end' && !G.sparks.length){ hide(); return; }
     G.raf = requestAnimationFrame(frame);
   }
-  function run(mode, kind, D, at){
-    // 后台标签页 RAF 暂停时，用定时器兜底，保证场景事务不会卡住。
+  function run(mode, kind, D){
     settle(); clearTimeout(G.safety);
     G.mode = mode; G.kind = kind; G.D = D; G.t0 = performance.now();
     return new Promise(res => {
       G.done = res;
-      G.safety = setTimeout(() => { if(G.done !== res) return; if(mode === 'reveal') hide(); else G.mode = 'hold'; settle(); }, D + 400);
+      // 后台标签页 RAF 暂停时，用定时器兜底，保证场景事务不会卡住。
+      G.safety = setTimeout(() => { if(G.done !== res) return; if(mode === 'reveal') hide(); else G.mode = 'hold'; settle(); }, D + 450);
       show();
     });
   }
-  const DUR = { portkey:{cover:[620, 420], reveal:[760, 520]}, nox:{cover:[520, 360], reveal:[620, 420]} };
+  // 时长（ms）：[high, low]；v1.8.1 统一放慢，光线流速约为 v1.8.0 的 55%
+  const DUR = { portkey:{cover:[950, 700], reveal:[1050, 750]}, nox:{cover:[720, 520], reveal:[820, 600]},
+    quill:{cover:[700, 520], reveal:[800, 580]}, pensieve:{cover:[850, 600], reveal:[950, 680]} };
+  const KINDS = Object.keys(DUR);
+  const norm = kind => KINDS.includes(kind) ? kind : 'nox';
   const dur = (kind, ph) => DUR[kind][ph][lowTier() ? 1 : 0];
 
   SB.gate = {
+    kinds:KINDS,
+    has:kind => KINDS.includes(kind),
+    portalDuration:() => lowTier() ? 620 : 860,
     cover(kind = 'portkey', at){
-      kind = kind === 'nox' ? 'nox' : 'portkey';
-      size(); origin(at); seed(kind); if(kind === 'portkey') buildLight();
+      kind = norm(kind);
+      size(); origin(at); seed(kind); buildBg(kind);
       G.P = null; G.sparks.length = 0;
-      return run('cover', kind, dur(kind, 'cover'), at);
+      return run('cover', kind, dur(kind, 'cover'));
     },
     reveal(kind = 'portkey', at){
-      kind = kind === 'nox' ? 'nox' : 'portkey';
-      if(G.kind !== kind || !G.on){ size(); origin(at); seed(kind); if(kind === 'portkey') buildLight(); }
-      else seed(kind);
-      return run('reveal', kind, dur(kind, 'reveal'), at);
+      kind = norm(kind);
+      if(G.kind !== kind || !G.on){ size(); origin(at); buildBg(kind); }
+      seed(kind);
+      return run('reveal', kind, dur(kind, 'reveal'));
     },
     portalStart(x, y){ settle(); size(); G.mode = 'portal'; G.kind = 'portal'; G.D = 0; G.P = {x, y, r:0, k:0, phase:'prep', acc:0}; G.sparks.length = 0; show(); },
     portalFrame(x, y, r, k){ if(!G.P) return; G.P.x = x; G.P.y = y; G.P.r = r; G.P.k = k; G.P.phase = 'open'; },
@@ -313,6 +425,6 @@
     abort(){ settle(); hide(); },
     get active(){ return G.on; }
   };
-  addEventListener('resize', () => { if(!G.on) return; size(); if(G.kind === 'portkey' || G.kind === 'nox'){ origin({x:G.cx, y:G.cy}); if(G.kind === 'portkey') buildLight(); } }, {passive:true});
+  addEventListener('resize', () => { if(!G.on) return; size(); if(DRAW[G.kind]){ origin({x:Math.min(G.cx, G.W), y:Math.min(G.cy, G.H)}); buildBg(G.kind); } }, {passive:true});
 })(window.SB);
 </script>

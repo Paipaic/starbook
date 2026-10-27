@@ -194,7 +194,7 @@
         const b = SB.el('button','city'); b.type = 'button';
         const mN = SB.store.memoriesOf(c.id).length;
         b.innerHTML = `${STAR}<span></span>${mN ? `<em>${mN} 段回忆</em>` : ''}`; b.querySelector('span').textContent = c.name;
-        b.addEventListener('click', e => { hidePop(true); SB.scenes.go('city', {id:c.id}, {transition:'portal', x:e.clientX, y:e.clientY}); });
+        b.addEventListener('click', e => { hidePop(true); SB.scenes.go('city', {id:c.id}, {transition:'quill', x:e.clientX, y:e.clientY}); });
         li.appendChild(b);
         if(SB.store.canEdit){
           const ed = SB.el('button','edit'); ed.type = 'button'; ed.setAttribute('aria-label', '编辑 ' + c.name); ed.innerHTML = SB.icon('quill');

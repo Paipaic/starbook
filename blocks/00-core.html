@@ -438,17 +438,21 @@ window.SB = window.SB || {};
     SB.menu?.close?.();
     const veil = document.getElementById('sb-veil'), flash = document.getElementById('sb-flash');
     const gate = SB.gate || null;
+    const gateKind = gate ? (tr === 'flash' ? 'portkey' : tr === 'veil' ? 'nox' : gate.has?.(tr) ? tr : null) : null;
     try{
       if(SB.perf.level === 'reduced' || tr === 'none'){
         await prepareTarget(id, params, opts);
         await swap(id, params, opts);
-      }else if(tr === 'flash' && gate){
-        // v1.8.0 秘境之门 · 门钥匙：光丝旋入 → 光门盖满 → 等目标场景首帧 → 光门撕开
+      }else if(gateKind){
+        // v1.8.1 秘境之门：按路线选择门（flash=门钥匙、veil=熄灯器、quill=墨金书页、pensieve=冥想盆）；
+        // 门只负责 cover / reveal 视觉，事务顺序不变：cover → prepare → swap(await enter → nextPaint) → reveal
         const at = {x:opts.x, y:opts.y};
-        await gate.cover('portkey', at);
+        if(gateKind === 'nox') SB.fx?.gather?.(innerWidth/2, innerHeight/2);
+        await gate.cover(gateKind, at);
         await prepareTarget(id, params, opts);
         await swap(id, params, opts);
-        await gate.reveal('portkey', at);
+        if(gateKind === 'nox'){ SB.fx?.calm?.(); SB.fx?.burst?.(low ? 320 : 500); }
+        await gate.reveal(gateKind, at);
       }else if(tr === 'flash'){
         const tin = low ? 260 : 380, tout = low ? 360 : 520;
         flash.style.animationDuration = tin + 'ms';
@@ -474,19 +478,12 @@ window.SB = window.SB || {};
         const el = scenes.el(id); el.classList.add('is-entering'); el.style.clipPath = `circle(0px at ${x}px ${y}px)`;
         await swap(id, params, opts);
         SB.fx?.burst?.(low ? 260 : 380);
-        const t0 = performance.now(), D = low ? 390 : 560;
+        const t0 = performance.now(), D = gate?.portalDuration?.() || (low ? 390 : 560);
         await new Promise(res => { const step = now => { const k = Math.min(1,(now-t0)/D), e = 1-Math.pow(1-k,3), r = e*R;
           el.style.clipPath = `circle(${r}px at ${x}px ${y}px)`; gate?.portalFrame(x, y, r, k);
           if(ring){ ring.style.width = ring.style.height = (r*2)+'px'; ring.style.opacity = String(1-k*.9); }
           k < 1 ? requestAnimationFrame(step) : res(); }; requestAnimationFrame(step); });
         el.style.clipPath = ''; el.classList.remove('is-entering'); ring?.remove(); back.remove(); gate?.portalEnd();
-      }else if(gate){
-        // v1.8.0 秘境之门 · 熄灯器：彗星光点被吸向中心、夜色收拢 → 熄灭 → 荧光闪烁推开夜色
-        SB.fx?.gather?.(innerWidth/2, innerHeight/2);
-        await gate.cover('nox');
-        await prepareTarget(id, params, opts);
-        await swap(id, params, opts); SB.fx?.calm?.(); SB.fx?.burst?.(low ? 320 : 500);
-        await gate.reveal('nox');
       }else{
         const tin = low ? 260 : 400, tout = low ? 320 : 480;
         SB.fx?.gather?.(innerWidth/2, innerHeight/2);

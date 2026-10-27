@@ -133,12 +133,16 @@
       if(!(Math.abs(x) < 1e5 && Math.abs(y) < 1e5)){ spawn(p, false); p.ox = p.oy = 0; continue; }
       if(y < -80 || x < -100 || x > W + 100 || y > H + 100){ spawn(p, false); continue; }
       const ctx = p.front ? fctx : bctx;
-      const a = p.a*(p.kind === 'bokeh' ? 1 : .55 + .45*Math.sin(t*p.tw + p.ph*3));
+      let a = p.a*(p.kind === 'bokeh' ? 1 : .55 + .45*Math.sin(t*p.tw + p.ph*3));
+      // v1.8.1 柔光：汇聚时粒子越靠近汇聚点越透明（被吸收），整体亮度设上限，避免叠加成白斑
+      if(mode.gather > .01){ const dg = Math.hypot(x - gx, y - gy), f = SB.clamp((dg - 40)/120, 0, 1);
+        a *= 1 - mode.gather*(1 - f*f*(3 - 2*f)); a *= 1 - .4*mode.gather; }
+      if(mode.warp > .01 || mode.burst > .01){ const dc = Math.hypot(x - cx, y - cy); a *= SB.clamp((dc - 60)/140, 0, 1)*.7 + .3*(1 - Math.max(mode.warp, mode.burst)); }
       ctx.globalAlpha = SB.clamp(a, 0, 1);
       if(mode.warp > .05 && p.kind !== 'bokeh'){
-        const dx = x - cx, dy = y - cy, d = Math.hypot(dx,dy) + 1, L = 8 + d*.18*mode.warp;
-        ctx.strokeStyle = sp.trail + (.5*mode.warp) + ')'; ctx.lineWidth = p.size*.5;
-        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - dx/d*L, y - dy/d*L); ctx.stroke();
+        const dx = x - cx, dy = y - cy, d = Math.hypot(dx,dy) + 1, L = 8 + d*.14*mode.warp;
+        if(d > 120){ ctx.strokeStyle = sp.trail + (.3*mode.warp*SB.clamp((d - 120)/160, 0, 1)).toFixed(3) + ')'; ctx.lineWidth = p.size*.45;
+          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - dx/d*L, y - dy/d*L); ctx.stroke(); }
       }else if(p.kind === 'ember'){
         const L = 6 + p.vy*.5;
         const gr = ctx.createLinearGradient(x, y, x - Math.cos(p.ph)*p.sway*.15, y + L);
@@ -173,7 +177,7 @@
         const x = orbit.cx + ex*ct - ey*st, y = orbit.cy + ex*st + ey*ct;
         const depth = Math.sin(o.a), isFront = depth > 0;
         const ctx = isFront ? fctx : bctx;
-        const a = orbit.k*(isFront ? .55 + .45*depth : .25 + .25*(1+depth))*(.6 + .4*Math.sin(t*2 + o.tw));
+        const a = orbit.k*(isFront ? .55 + .45*depth : .25 + .25*(1+depth))*(.6 + .4*Math.sin(t*2 + o.tw))*(1 - .75*mode.gather);
         const s = o.size*(isFront ? 1 + depth*.7 : .7)*(o.big ? 2.4 : 1)*2;
         ctx.globalAlpha = SB.clamp(a, 0, 1);
         ctx.drawImage(o.big ? sp.glint : sp.dust, x - s/2, y - s/2, s, s);

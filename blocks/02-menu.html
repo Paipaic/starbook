@@ -118,7 +118,7 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
     icons: ICONS,
     add(item){ items.push(item); items.sort((a,b)=>(a.order||0)-(b.order||0)); if(menu._ready) render(); },
     update(id, patch){ const it = items.find(i=>i.id===id); if(it){ Object.assign(it, patch); if(menu._ready) render(); } },
-    open(){ render(); nav.classList.add('open'); btn.setAttribute('aria-expanded','true'); },
+    open(){ SB.dock?.close?.(); render(); nav.classList.add('open'); btn.setAttribute('aria-expanded','true'); },
     close(){ nav.classList.remove('open'); btn.setAttribute('aria-expanded','false'); },
     toggle(){ nav.classList.contains('open') ? menu.close() : menu.open(); },
     status(text){ document.getElementById('sb-status').textContent = text || ''; },
@@ -187,17 +187,7 @@ body[data-world="night"] #sb-menu{background:radial-gradient(120% 60% at 50% 0%,
     menu.refresh();
   });
 
-  menu.add({id:'book', order:10, icon:'book', label:'合上魔法书', desc:'回到封面，重新开启旅程', scene:'book'});
-  menu.add({id:'motion', order:90, icon:'spark', label:'动效强度', desc:'手机或旧电脑建议选柔和', keepOpen:true,
-    tag:()=>`<span class="sb-seg"><span class="${SB.perf.level!=='high'?'on':''}">柔和</span><span class="${SB.perf.level==='high'?'on':''}">华丽</span></span>`,
-    action(){
-      if(SB.perf.reduced){ SB.toast('系统已开启"减少动态效果"'); return; }
-      SB.perf.level = SB.perf.level === 'high' ? 'low' : 'high';
-      try{ localStorage.setItem('sb-motion', SB.perf.level); }catch(e){}
-      SB.fx.refresh(); document.dispatchEvent(new Event('sb:perf'));
-      SB.toast(SB.perf.level === 'high' ? '已切换为华丽动效' : '已切换为柔和动效');
-    }});
-  menu.add({divider:true, order:50});
+  // v1.8.1：菜单只保留「世界星图」与「时光长卷」；音乐 / 动效 / 账户移到右上角 SB.dock 标识
   menu._ready = true; render();
 })(window.SB);
 </script>

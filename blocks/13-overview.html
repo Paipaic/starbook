@@ -1,138 +1,282 @@
 <style>
-/* ── 块 13 · 回忆总览 ── */
-.sb-scene[data-scene="overview"]{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}
-.ov-wrap{padding-block:calc(84px + var(--safe-t)) calc(50px + var(--safe-b));padding-left:max(16px,var(--safe-l));padding-right:max(16px,var(--safe-r));
-  max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:34px;}
-.ov-head{text-align:center;display:flex;flex-direction:column;gap:6px;align-items:center;}
-.ov-head small{font-family:var(--f-rune);font-weight:500;font-size:11.5px;letter-spacing:.4em;padding-left:.4em;color:var(--gold-dim);}
-.ov-head h1{margin:0;padding-left:.26em;font-family:var(--f-display);font-weight:var(--fw-display);font-size:clamp(34px,6vw,58px);letter-spacing:.26em;color:var(--gold-hi);text-shadow:0 0 30px rgba(244,184,96,.6);}
-.ov-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
-.ov-stat{display:flex;flex-direction:column;align-items:center;gap:4px;padding:18px 8px;border-radius:14px;border:1px solid rgba(244,184,96,.25);
-  background:radial-gradient(80% 80% at 50% 0%, rgba(244,184,96,.12), transparent 70%), rgba(14,14,40,.6);}
-.ov-stat b{font-family:var(--f-num);font-weight:600;font-size:clamp(38px,6vw,58px);line-height:1;color:var(--gold-hi);text-shadow:0 0 22px rgba(244,184,96,.7);font-variant-numeric:lining-nums tabular-nums;}
-.ov-stat span{font-family:var(--f-display);font-weight:var(--fw-display);font-size:13.5px;letter-spacing:.2em;padding-left:.2em;color:var(--text-dim);}
-.ov-sec h2{margin:0 0 14px;font-family:var(--f-display);font-weight:var(--fw-display);font-size:21px;letter-spacing:.18em;color:var(--gold-hi);display:flex;align-items:center;gap:12px;}
-.ov-sec h2::after{content:"";flex:1;height:1px;background:linear-gradient(90deg, var(--line), transparent);}
-.ov-recent{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin;}
-.ov-mem{flex:none;width:200px;border:0;padding:0;background:none;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:8px;}
-.ov-mem .im{aspect-ratio:4/3;border-radius:10px;overflow:hidden;background:#151230;box-shadow:inset 0 0 0 1px rgba(255,226,168,.5), 0 10px 24px rgba(0,0,0,.4);transition:box-shadow .3s, transform .3s;}
-.ov-mem:hover .im{transform:translateY(-3px);box-shadow:inset 0 0 0 1px rgba(255,226,168,.9), 0 0 24px rgba(244,184,96,.35);}
-.ov-mem img{width:100%;height:100%;object-fit:cover;display:block;}
-.ov-mem b{font-family:var(--f-display);font-weight:var(--fw-display);font-size:15.5px;color:var(--text);letter-spacing:.06em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.ov-mem span{font-size:12px;color:var(--text-dim);}
-.ov-tree{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;}
-.ov-country{padding:14px 16px;border-radius:14px;border:1px solid rgba(244,184,96,.22);background:rgba(14,14,40,.55);}
-.ov-country h3{margin:0 0 8px;font-family:var(--f-display);font-weight:var(--fw-display);font-size:19px;letter-spacing:.12em;color:var(--gold-hi);cursor:pointer;}
-.ov-region{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;padding:6px 0;border-top:1px dashed rgba(244,184,96,.15);}
-.ov-region > span{font-size:13px;color:var(--text-dim);min-width:4.5em;}
-.ov-region button{border:0;background:none;cursor:pointer;padding:2px 4px;font-family:var(--f-display);font-weight:var(--fw-display);font-size:15.5px;display:inline-flex;align-items:center;gap:5px;color:var(--text);letter-spacing:.06em;border-radius:6px;}
-.ov-region button:hover{color:var(--gold-hi);background:rgba(244,184,96,.1);}
-.ov-region button::before{content:"";width:12px;height:12px;flex:none;background:var(--gold-hi);filter:drop-shadow(0 0 4px #f4b860);-webkit-mask:var(--ico-spark) center/contain no-repeat;mask:var(--ico-spark) center/contain no-repeat;}
-.ov-music{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:16px;border-radius:14px;border:1px solid rgba(244,184,96,.22);background:rgba(14,14,40,.55);}
-.ov-music .t{flex:1;min-width:200px;font-family:var(--f-display);font-weight:var(--fw-display);font-size:16.5px;letter-spacing:.08em;}
-@media (max-width:620px){ .ov-stats{grid-template-columns:repeat(2,1fr);} .ov-tree{grid-template-columns:1fr;} }
+/* ── 块 13 ·「时光长卷」时间轴（v1.8.1，取代「回忆总览」；场景 id 仍为 overview，保持深链与历史兼容） ── */
+.sb-scene[data-scene="overview"]{overflow:hidden;touch-action:pan-y;user-select:none;-webkit-user-select:none;}
+.tl-head{position:absolute;left:0;right:0;top:calc(66px + var(--safe-t));z-index:3;text-align:center;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:4px;padding:0 16px;}
+.tl-head small{font-family:var(--f-rune);font-weight:500;font-size:11px;letter-spacing:.42em;padding-left:.42em;color:var(--gold-dim);}
+.tl-head h1{margin:0;padding-left:.24em;font-weight:900;font-size:clamp(28px,4.6vw,46px);letter-spacing:.24em;color:var(--gold-hi);text-shadow:0 0 26px rgba(244,184,96,.45);}
+.tl-head p{margin:0;font-size:13px;letter-spacing:.12em;color:var(--text-dim);}
+.tl-view{position:absolute;inset:0;cursor:grab;outline:none;}
+.tl-view.drag{cursor:grabbing;}
+.tl-years{position:absolute;inset:0;pointer-events:none;will-change:transform;}
+.tl-year{position:absolute;top:calc(var(--river) - 17vh);font-family:var(--f-num);font-weight:600;font-size:34vh;line-height:1;letter-spacing:.02em;white-space:nowrap;
+  color:transparent;-webkit-text-stroke:1px rgba(236,206,140,.13);transform:translateY(-50%);}
+.tl-track{position:absolute;left:0;top:0;height:100%;will-change:transform;}
+/* 时光河 */
+.tl-river{position:absolute;top:var(--river);height:2px;margin-top:-1px;border-radius:2px;
+  background:linear-gradient(90deg,transparent,rgba(232,200,140,.55) 3%,rgba(232,200,140,.55) 97%,transparent);
+  box-shadow:0 0 10px rgba(244,184,96,.35);}
+.tl-river::after{content:"";position:absolute;inset:-1px 0;border-radius:2px;
+  background:repeating-linear-gradient(90deg,transparent 0 180px,rgba(255,240,206,.9) 220px,transparent 260px 420px);background-size:420px 100%;
+  animation:tlFlow 9s linear infinite;mix-blend-mode:screen;opacity:.8;}
+@keyframes tlFlow{to{background-position:420px 0}}
+.sb-scene[data-scene="overview"].intro .tl-river{animation:tlDraw 1s var(--ease-soft) both;}
+@keyframes tlDraw{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+/* 节点与茎 */
+.tl-item{position:absolute;top:var(--river);width:0;height:0;}
+.tl-node{position:absolute;left:-7px;top:-7px;width:14px;height:14px;transform:rotate(45deg);border:1px solid rgba(240,214,160,.8);background:#14163a;
+  box-shadow:0 0 0 3px rgba(20,22,58,.9);transition:background .4s, box-shadow .4s;}
+.tl-item.near .tl-node{background:var(--gold-hi);box-shadow:0 0 0 3px rgba(20,22,58,.9),0 0 16px rgba(244,184,96,.9);}
+.tl-stem{position:absolute;left:-.5px;width:1px;background:linear-gradient(var(--sd,180deg),rgba(232,200,140,.7),rgba(232,200,140,.12));}
+.tl-item.up .tl-stem{bottom:9px;height:var(--gap);--sd:0deg;}
+.tl-item.down .tl-stem{top:9px;height:var(--gap);}
+.tl-mon{position:absolute;left:0;transform:translateX(-50%);white-space:nowrap;font-family:var(--f-num);font-weight:600;font-size:13px;letter-spacing:.14em;color:rgba(232,206,150,.75);}
+.tl-item.up .tl-mon{top:14px;} .tl-item.down .tl-mon{bottom:14px;}
+/* 相片卡 */
+.tl-card{position:absolute;left:calc(var(--cw) / -2);width:var(--cw);border:0;padding:0;background:none;cursor:pointer;text-align:left;color:var(--text);
+  transform-origin:50% var(--orig);will-change:transform,opacity;}
+.tl-item.up .tl-card{bottom:calc(var(--gap) + 9px);--orig:100%;}
+.tl-item.down .tl-card{top:calc(var(--gap) + 9px);--orig:0%;}
+.tl-frame{position:relative;display:block;aspect-ratio:4/5;border-radius:6px;overflow:hidden;background:#12142f;
+  box-shadow:inset 0 0 0 1px rgba(240,214,160,.55), 0 0 0 4px rgba(14,15,40,.85), 0 0 0 5px rgba(240,214,160,.22), 0 16px 34px rgba(0,0,0,.5);transition:box-shadow .4s;}
+.tl-item.near .tl-frame{box-shadow:inset 0 0 0 1px rgba(255,232,190,.9), 0 0 0 4px rgba(14,15,40,.85), 0 0 0 5px rgba(240,214,160,.5), 0 16px 40px rgba(0,0,0,.5), 0 0 30px rgba(244,184,96,.25);}
+.tl-frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;-webkit-user-drag:none;}
+.tl-frame .ph{position:absolute;inset:0;display:grid;place-items:center;color:rgba(232,200,140,.22);background:radial-gradient(circle at 50% 40%,rgba(80,90,170,.25),transparent 70%),#12142f;}
+.tl-frame .ph svg{width:46%;}
+.tl-frame .cap{position:absolute;left:0;right:0;bottom:0;padding:34% 12px 11px;display:flex;flex-direction:column;gap:4px;
+  background:linear-gradient(transparent,rgba(6,7,20,.55) 30%,rgba(6,7,20,.92));}
+.tl-frame .dt{font-family:var(--f-num);font-weight:600;font-size:13px;letter-spacing:.14em;color:var(--gold);}
+.tl-frame b{font-family:var(--f-display);font-weight:600;font-size:15.5px;line-height:1.4;letter-spacing:.04em;color:#f6ecd6;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.tl-city{position:absolute;top:8px;left:8px;display:inline-flex;align-items:center;gap:4px;padding:3px 9px 3px 7px;border-radius:999px;border:1px solid rgba(240,214,160,.45);
+  background:rgba(8,9,26,.66);font-family:var(--f-display);font-weight:var(--fw-display);font-size:12px;letter-spacing:.08em;color:var(--gold-hi);cursor:pointer;}
+.tl-city:hover{background:rgba(244,184,96,.2);}
+.tl-city svg{width:11px;height:11px;}
+.sb-scene[data-scene="overview"].intro .tl-card.rise{animation:tlRise .9s var(--ease-soft) both;}
+@keyframes tlRise{from{opacity:0;translate:0 26px;filter:blur(4px)}to{opacity:1;translate:0 0;filter:none}}
+.tl-item.up .tl-card.rise{animation-name:tlRiseUp;}
+@keyframes tlRiseUp{from{opacity:0;translate:0 -26px;filter:blur(4px)}to{opacity:1;translate:0 0;filter:none}}
+/* 年轮刻度条 */
+.tl-scrub{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(22px + var(--safe-b));width:min(720px, calc(100% - 40px));height:38px;z-index:3;cursor:pointer;touch-action:none;}
+.tl-scrub .ln{position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(232,200,140,.32);}
+.tl-scrub .dot{position:absolute;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:rgba(240,214,160,.75);}
+.tl-scrub .yr{position:absolute;top:0;transform:translateX(-50%);font-family:var(--f-num);font-weight:600;font-size:12px;letter-spacing:.1em;color:var(--gold-dim);}
+.tl-scrub .yr::after{content:"";position:absolute;left:50%;top:15px;width:1px;height:8px;background:rgba(232,200,140,.45);}
+.tl-scrub .win{position:absolute;top:50%;height:16px;margin-top:-8px;border-radius:999px;border:1px solid rgba(255,226,168,.75);background:rgba(244,184,96,.14);box-shadow:0 0 12px rgba(244,184,96,.3);min-width:12px;}
+.tl-hint{position:absolute;right:calc(22px + var(--safe-r));bottom:calc(30px + var(--safe-b));z-index:3;font-size:12px;letter-spacing:.14em;color:var(--text-dim);opacity:.7;pointer-events:none;}
+.tl-empty{position:absolute;left:50%;top:var(--river);transform:translate(-50%,-50%);z-index:3;width:min(440px,calc(100% - 40px));text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px;
+  padding:26px 22px;border-radius:16px;border:1px solid rgba(240,214,160,.3);background:rgba(12,13,36,.78);}
+.tl-empty p{margin:0;font-family:var(--f-display);font-weight:var(--fw-display);font-size:17px;line-height:1.9;letter-spacing:.1em;color:var(--gold-hi);}
+@media (max-width:760px){
+  .tl-head{top:calc(62px + var(--safe-t));} .tl-head h1{font-size:30px;} .tl-head p{font-size:12px;}
+  .tl-year{font-size:22vh;top:calc(var(--river) - 11vh);}
+  .tl-hint{display:none;}
+  .tl-scrub{height:44px;}
+}
+@media (prefers-reduced-motion:reduce){ .tl-river::after{animation:none;} }
 </style>
 
-<section class="sb-scene" data-scene="overview" aria-label="回忆总览">
-  <div class="ov-wrap" id="ov-wrap"></div>
+<section class="sb-scene" data-scene="overview" aria-label="时光长卷">
+  <header class="tl-head"><small>VOLUMEN TEMPORIS</small><h1>时光长卷</h1><p id="tl-sub"></p></header>
+  <div class="tl-view" id="tl-view" tabindex="0" role="list" aria-label="按时间排列的全部回忆，可左右拖动">
+    <div class="tl-years" id="tl-years" aria-hidden="true"></div>
+    <div class="tl-track" id="tl-track"></div>
+  </div>
+  <div class="tl-scrub" id="tl-scrub" aria-hidden="true"></div>
+  <div class="tl-hint" id="tl-hint">拖动 · 滚轮 · ← → 穿越时光</div>
 </section>
 
 <script>
+/* 依据 prompts/13-overview.md（v1.8.1「时光长卷」）。只读现有 memory 字段，无数据变化。 */
 (function(SB){
-  const wrap = document.getElementById('ov-wrap');
-  let previewA = null;
-  function countUp(el, n){
-    const t0 = performance.now(), D = 1200;
-    const step = now => { const k = Math.min(1, (now - t0)/D); el.textContent = Math.round(n*(1 - Math.pow(1-k, 3))); if(k < 1) requestAnimationFrame(step); };
-    requestAnimationFrame(step);
+  const $ = id => document.getElementById(id);
+  const scene = document.querySelector('.sb-scene[data-scene="overview"]');
+  const view = $('tl-view'), track = $('tl-track'), yearsEl = $('tl-years'), scrub = $('tl-scrub');
+  const S = { list:[], xs:[], items:[], years:[], W:0, H:0, cw:200, river:0, min:0, max:0, x:0, target:0, v:0, raf:0, drag:null, moved:0, near:-1, t0:0, t1:1 };
+  const reduced = () => SB.perf.level === 'reduced';
+  const PH = '<svg viewBox="-50 -50 100 100" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.4"><circle r="40"/><circle r="32" stroke-dasharray="2 4"/><path d="M0 -30 L9 -6 L32 0 L9 6 L0 30 L-9 6 L-32 0 L-9 -6Z"/></g></svg>';
+  const PIN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-6.1-6.5-11a6.5 6.5 0 0 1 13 0c0 4.9-6.5 11-6.5 11Z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>';
+
+  const sorted = () => [...SB.store.memories].sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999') || (a.createdAt || '').localeCompare(b.createdAt || ''));
+  const coverOf = m => m.cover?.id || (m.slides || []).find(s => s.id)?.id || null;
+  const ym = d => { const [y, m] = String(d || '').split('-'); return {y:+y || null, m:+m || null}; };
+  const tval = d => { const {y, m} = ym(d); return y ? y + ((m || 6) - .5)/12 : null; };
+
+  function metrics(){
+    S.W = view.clientWidth || innerWidth; S.H = view.clientHeight || innerHeight;
+    const narrow = S.W <= 760;
+    const top = narrow ? 150 : 158, bottom = narrow ? 84 : 78;
+    S.river = Math.round(top + (S.H - top - bottom)/2);
+    const half = (S.H - top - bottom)/2 - (narrow ? 26 : 30);
+    S.gap = narrow ? 22 : 30;
+    S.cw = Math.round(Math.max(120, Math.min(narrow ? Math.min(S.W*.56, 230) : Math.min(S.W*.19, 240), (half - S.gap)/1.25)));
+    scene.style.setProperty('--river', S.river + 'px'); scene.style.setProperty('--cw', S.cw + 'px'); scene.style.setProperty('--gap', S.gap + 'px');
   }
-  function render(animate){
-    const s = SB.store.stats();
-    wrap.innerHTML = '';
-    const head = SB.el('header','ov-head','<small>SUMMA MEMORIAE</small><h1>回忆总览</h1>'); wrap.appendChild(head);
-    const stats = SB.el('div','ov-stats');
-    [['countries','国家'],['regions','省份'],['cities','城市'],['memories','回忆']].forEach(([k,l]) => {
-      const d = SB.el('div','ov-stat', `<b>0</b><span>${l}</span>`); stats.appendChild(d);
-      const b = d.querySelector('b'); animate ? countUp(b, s[k]) : (b.textContent = s[k]);
+  function build(intro){
+    metrics();
+    S.list = sorted(); track.innerHTML = ''; yearsEl.innerHTML = ''; S.items = []; S.xs = []; S.years = [];
+    $('tl-sub').textContent = '';
+    scene.querySelector('.tl-empty')?.remove();
+    const n = S.list.length;
+    const step = S.cw*.66, yearGap = S.cw*.55;
+    let x = 0, lastY = null, lastMon = '';
+    S.list.forEach((m, i) => {
+      const {y, m:mo} = ym(m.date);
+      if(i && y !== lastY) x += yearGap;
+      if(y !== lastY){ S.years.push({y, x}); lastY = y; }
+      S.xs.push(x); x += step;
     });
-    wrap.appendChild(stats);
-
-    if(!s.cities){
-      const e = SB.el('div','sb-empty'); e.innerHTML = '<p style="margin:0">星屿还是一片寂静<br>从世界星图开始点亮第一颗星吧</p>';
-      e.appendChild(SB.ui.button('前往世界星图', 'primary', () => SB.scenes.go('globe', {}, {transition:'flash'})));
-      wrap.appendChild(e);
+    const span = n ? S.xs[n - 1] : 0, pad = S.W*.5;
+    track.style.width = (span + pad*2) + 'px';
+    const river = SB.el('div', 'tl-river'); river.style.left = '0px'; river.style.width = (span + pad*2) + 'px'; track.appendChild(river);
+    S.list.forEach((m, i) => {
+      const it = SB.el('div', 'tl-item ' + (i % 2 ? 'down' : 'up')); it.style.left = (S.xs[i] + pad) + 'px'; it.setAttribute('role', 'listitem');
+      const {y, m:mo} = ym(m.date), monKey = `${y}-${mo}`;
+      it.innerHTML = `<i class="tl-stem"></i><i class="tl-node"></i>${monKey !== lastMon && y ? `<span class="tl-mon">${y} · ${mo ? mo + ' 月' : ''}</span>` : ''}`;
+      lastMon = monKey;
+      const c = SB.store.city(m.cityId), cov = coverOf(m), url = cov ? SB.store.url(cov) : '';
+      const card = SB.el('button', 'tl-card'); card.type = 'button';
+      card.setAttribute('aria-label', `${m.title || '回忆'}，${SB.fmtDate(m.date)}${c ? '，' + c.name : ''}，打开放映`);
+      card.innerHTML = `<span class="tl-frame">${url ? `<img alt="" loading="lazy" decoding="async" draggable="false" src="${SB.esc(url)}">` : `<span class="ph">${PH}</span>`}
+        ${c ? `<span class="tl-city" role="link" tabindex="-1">${PIN}<span></span></span>` : ''}<span class="cap"><span class="dt"></span><b></b></span></span>`;
+      card.querySelector('.dt').textContent = SB.fmtDate(m.date); card.querySelector('b').textContent = m.title || '未命名的回忆';
+      if(c){ const ce = card.querySelector('.tl-city'); ce.querySelector('span').textContent = c.name;
+        ce.addEventListener('click', e => { e.stopPropagation(); if(S.moved > 6) return; SB.scenes.go('city', {id:c.id}, {transition:'quill', x:e.clientX, y:e.clientY}); }); }
+      card.addEventListener('click', e => { if(S.moved > 6) return; SB.scenes.go('player', {id:m.id, from:'overview'}, {transition:'pensieve', x:e.clientX, y:e.clientY}); });
+      card.addEventListener('focus', () => { center(i); });
+      it.appendChild(card); track.appendChild(it); S.items.push({el:it, card, i});
+    });
+    S.years.forEach(o => { const d = SB.el('div', 'tl-year'); d.textContent = o.y || '…'; o.el = d; yearsEl.appendChild(d); });
+    S.pad = pad;
+    S.min = pad + (n ? S.xs[0] : 0) - S.W/2; S.max = pad + span - S.W/2;
+    // 默认停在最新的回忆附近
+    S.x = S.target = S.max; S.v = 0;
+    // 副标题 + 刻度条
+    const cities = new Set(S.list.map(m => m.cityId)).size, first = S.list.find(m => m.date), last = [...S.list].reverse().find(m => m.date);
+    $('tl-sub').textContent = n ? `${n} 段回忆 · ${cities} 座城市${first && last ? ' · 从 ' + SB.fmtDate(first.date) + ' 到 ' + SB.fmtDate(last.date) : ''}` : '';
+    buildScrub();
+    $('tl-hint').hidden = !n;
+    if(!n){
+      const e = SB.el('div', 'tl-empty', '<p>时光长卷还是空白<br>从世界星图点亮第一座城市，写下第一段回忆吧</p>');
+      e.appendChild(SB.ui.button('前往世界星图', 'primary', () => SB.scenes.go('globe', {}, {transition:'flash'}))); scene.appendChild(e);
     }
-
-    // 最近的回忆
-    const recent = [...SB.store.memories].sort((a,b) => (b.date||'').localeCompare(a.date||'') || (b.createdAt||'').localeCompare(a.createdAt||'')).slice(0, 8);
-    if(recent.length){
-      const sec = SB.el('section','ov-sec','<h2>最近的回忆</h2>'); const row = SB.el('div','ov-recent');
-      recent.forEach(m => {
-        const c = SB.store.city(m.cityId); const b = SB.el('button','ov-mem'); b.type = 'button';
-        const cov = m.cover?.id || m.slides?.[0]?.id;
-        b.innerHTML = `<div class="im">${cov ? `<img alt="" loading="lazy" src="${SB.esc(SB.store.url(cov))}">` : ''}</div><b></b><span></span>`;
-        b.querySelector('b').textContent = m.title; b.querySelector('span').textContent = `${c?.name || ''} · ${SB.fmtDate(m.date)}`;
-        b.addEventListener('click', e => SB.scenes.go('player', {id:m.id}, {transition:'portal', x:e.clientX, y:e.clientY}));
-        row.appendChild(b);
-      });
-      sec.appendChild(row); wrap.appendChild(sec);
+    if(intro && !reduced()){
+      scene.classList.remove('intro'); void scene.offsetWidth; scene.classList.add('intro');
+      const vis = S.items.filter(o => Math.abs(S.xs[o.i] + pad - S.max - S.W/2) < S.W*.7).slice(-12);
+      vis.forEach((o, k) => { o.card.classList.add('rise'); o.card.style.animationDelay = (380 + k*70) + 'ms'; });
+      clearTimeout(S.introT); S.introT = setTimeout(() => { scene.classList.remove('intro'); S.items.forEach(o => { o.card.classList.remove('rise'); o.card.style.animationDelay = ''; }); }, 2200);
     }
-
-    // 足迹：国家 → 省份 → 城市
-    if(s.cities){
-      const sec = SB.el('section','ov-sec','<h2>我们的足迹</h2>'); const tree = SB.el('div','ov-tree');
-      const byC = {}; SB.store.cities.forEach(c => { (byC[c.country] ||= {name:c.countryName, regions:{}}); (byC[c.country].regions[c.region] ||= {name:c.regionName, cities:[]}).cities.push(c); });
-      Object.entries(byC).sort((a,b) => Object.keys(b[1].regions).length - Object.keys(a[1].regions).length).forEach(([k, v]) => {
-        const box = SB.el('div','ov-country'); const h = SB.el('h3'); h.textContent = v.name; h.addEventListener('click', () => SB.scenes.go('country', {k}));
-        box.appendChild(h);
-        Object.values(v.regions).forEach(r => {
-          const row = SB.el('div','ov-region'); const n = SB.el('span'); n.textContent = r.name; row.appendChild(n);
-          r.cities.forEach(c => { const b = SB.el('button'); b.type = 'button'; b.textContent = c.name; b.addEventListener('click', () => SB.scenes.go('city', {id:c.id})); row.appendChild(b); });
-          box.appendChild(row);
-        });
-        tree.appendChild(box);
-      });
-      sec.appendChild(tree); wrap.appendChild(sec);
-    }
-
-    // 全站背景音乐
-    const sec = SB.el('section','ov-sec','<h2>全站背景音乐</h2>'); const box = SB.el('div','ov-music');
-    const t = SB.el('div','t'); const bgm = SB.store.settings?.bgm;
-    t.textContent = bgm ? '♪ ' + bgm.name : '还没有设置，上传一首属于你们的歌吧';
-    box.appendChild(t);
-    if(bgm) box.appendChild(SB.ui.button('试听', 'small', e => {
-      if(previewA && !previewA.paused){ previewA.pause(); e.target.textContent = '试听'; return; }
-      previewA = SB.audio.preview(bgm.id); previewA.play().catch(()=>{}); e.target.textContent = '停止'; }));
-    if(SB.store.canEdit && SB.store.canUpload){
-      const up = SB.el('label','sb-btn small primary'); up.style.position = 'relative'; up.textContent = bgm ? '换一首' : '上传音乐';
-      const inp = SB.el('input'); inp.type = 'file'; inp.accept = 'audio/*,.mp3,.m4a,.aac,.wav,.mp4'; inp.style.cssText = 'position:absolute;inset:0;opacity:0;cursor:pointer';
-      inp.setAttribute('aria-label','选择音乐文件');
-      inp.addEventListener('change', async () => {
-        const f = inp.files[0]; if(!f) return; inp.value = '';
-        try{ const r = await SB.store.uploadAudio(f, step => t.textContent = step);
-          const old = SB.store.settings?.bgm?.id;
-          await SB.store.saveSettings({bgm:r});
-          if(old && !SB.store.memories.some(m => m.bgm?.id === old)) SB.store.deleteFile(old);
-          SB.toast('全站背景音乐已更新'); SB.audio.unlock();
-        }catch(e){ SB.toast(e.msg || SB.store.errText(e), 4200); render(); }
-      });
-      up.appendChild(inp); box.appendChild(up);
-      if(bgm) box.appendChild(SB.ui.button('移除', 'small danger', async () => {
-        if(!await SB.ui.confirm('移除全站背景音乐？', '移除')) return;
-        try{ await SB.store.saveSettings({bgm:null}); if(!SB.store.memories.some(m => m.bgm?.id === bgm.id)) SB.store.deleteFile(bgm.id); }catch(e){ SB.toast(SB.store.errText(e)); }
-      }));
-    }
-    sec.appendChild(box); wrap.appendChild(sec);
+    render();
   }
-  document.addEventListener('sb:data', () => { if(SB.scenes.current === 'overview') render(false); });
+  function buildScrub(){
+    scrub.innerHTML = '<i class="ln"></i>';
+    const ts = S.list.map(m => tval(m.date)).filter(v => v != null);
+    if(!ts.length){ scrub.hidden = true; return; }
+    scrub.hidden = false;
+    S.t0 = Math.min(...ts); S.t1 = Math.max(...ts); if(S.t1 - S.t0 < .5){ S.t0 -= .5; S.t1 += .5; }
+    const f = t => (t - S.t0)/(S.t1 - S.t0)*100;
+    for(let y = Math.ceil(S.t0); y <= Math.floor(S.t1); y++){ const d = SB.el('span', 'yr'); d.textContent = y; d.style.left = f(y) + '%'; scrub.appendChild(d); }
+    S.list.forEach(m => { const t = tval(m.date); if(t == null) return; const d = SB.el('i', 'dot'); d.style.left = f(t) + '%'; scrub.appendChild(d); });
+    S.win = SB.el('i', 'win'); scrub.appendChild(S.win);
+  }
+  function render(){
+    const x = S.x;
+    track.style.transform = `translate3d(${(-x).toFixed(1)}px,0,0)`;
+    // 年份数字视差（0.45 倍速）
+    const par = reduced() ? 1 : .45;
+    S.years.forEach(o => { const sx = (o.x + S.pad - x)*par + S.W*(1 - par)*.5 - S.cw*.4; o.el.style.transform = `translate3d(${sx.toFixed(1)}px,-50%,0)`; });
+    // 景深：离中心越远越小、越暗，并略微转向中心
+    let best = -1, bd = 1e9;
+    for(const o of S.items){
+      const cx = S.xs[o.i] + S.pad - x - S.W/2, d = cx/(S.W*.6), ad = Math.min(1, Math.abs(d));
+      if(Math.abs(cx) > S.W*1.2){ continue; }
+      const sc = 1 - .14*ad, op = 1 - .45*ad, ry = SB.clamp(-d*8, -8, 8);
+      o.card.style.transform = `perspective(900px) rotateY(${ry.toFixed(2)}deg) scale(${sc.toFixed(3)})`;
+      o.card.style.opacity = op.toFixed(3);
+      if(Math.abs(cx) < bd){ bd = Math.abs(cx); best = o.i; }
+    }
+    if(best !== S.near){ S.items[S.near]?.el.classList.remove('near'); S.items[best]?.el.classList.add('near'); S.near = best; }
+    // 刻度条窗口
+    if(S.win && S.list.length){
+      const vis = S.items.filter(o => { const cx = S.xs[o.i] + S.pad - x; return cx > 0 && cx < S.W; }).map(o => tval(S.list[o.i].date)).filter(v => v != null);
+      if(vis.length){ const a = (Math.min(...vis) - S.t0)/(S.t1 - S.t0)*100, b = (Math.max(...vis) - S.t0)/(S.t1 - S.t0)*100;
+        S.win.style.left = `calc(${a.toFixed(2)}% - 6px)`; S.win.style.width = `calc(${(b - a).toFixed(2)}% + 12px)`; }
+    }
+  }
+  /* 运动：拖动 / 惯性 / 缓动跳转，只在运动时运行 RAF */
+  function loop(now){
+    S.raf = 0;
+    const dt = Math.min(.05, (now - (S.last || now))/1000) || 1/60; S.last = now;
+    if(!S.drag){
+      if(Math.abs(S.v) > .05){ S.target += S.v*dt*60; S.v *= Math.pow(.92, dt*60); } else S.v = 0;
+      // 两端回弹
+      if(S.target < S.min){ S.target = SB.lerp(S.target, S.min, Math.min(1, dt*10)); S.v *= .5; }
+      if(S.target > S.max){ S.target = SB.lerp(S.target, S.max, Math.min(1, dt*10)); S.v *= .5; }
+    }
+    S.x = reduced() || S.drag ? S.target : SB.lerp(S.x, S.target, Math.min(1, dt*9));
+    render();
+    if(S.drag || Math.abs(S.v) > .05 || Math.abs(S.x - S.target) > .4 || S.target < S.min - .5 || S.target > S.max + .5){ S.raf = requestAnimationFrame(loop); }
+    else { S.x = S.target = SB.clamp(S.target, S.min, S.max); render(); S.last = 0; }
+  }
+  const kick = () => { if(!S.raf){ S.last = 0; S.raf = requestAnimationFrame(loop); } };
+  function center(i){ if(i < 0 || i >= S.list.length) return; S.v = 0; S.target = S.xs[i] + S.pad - S.W/2; if(reduced()) S.x = S.target; kick(); }
+  const rubber = t => t < S.min ? S.min - Math.min(80, (S.min - t)*.35) : t > S.max ? S.max + Math.min(80, (t - S.max)*.35) : t;
+
+  view.addEventListener('pointerdown', e => {
+    if(e.button !== 0 && e.pointerType === 'mouse') return;
+    S.drag = {id:e.pointerId, px:e.clientX, x0:S.target, lastX:e.clientX, lastT:performance.now(), v:0}; S.moved = 0; S.v = 0;
+    kick();
+  });
+  view.addEventListener('pointermove', e => {
+    const d = S.drag; if(!d || d.id !== e.pointerId) return;
+    const dx = e.clientX - d.px; S.moved = Math.max(S.moved, Math.abs(dx));
+    if(S.moved > 6 && !view.classList.contains('drag')){ view.classList.add('drag'); try{ view.setPointerCapture(e.pointerId); }catch(_){} }
+    const now = performance.now(), ddt = Math.max(1, now - d.lastT);
+    d.v = SB.lerp(d.v, -(e.clientX - d.lastX)/ddt*16.7, .5); d.lastX = e.clientX; d.lastT = now;
+    S.target = rubber(d.x0 - dx);
+  });
+  const up = e => {
+    const d = S.drag; if(!d || d.id !== e.pointerId) return;
+    S.drag = null; view.classList.remove('drag');
+    if(performance.now() - d.lastT < 90) S.v = SB.clamp(d.v, -60, 60);
+    kick(); setTimeout(() => { S.moved = 0; }, 0);
+  };
+  view.addEventListener('pointerup', up); view.addEventListener('pointercancel', up);
+  view.addEventListener('wheel', e => {
+    const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    if(!d) return; e.preventDefault();
+    S.v = 0; S.target = SB.clamp(S.target + d*(e.deltaMode === 1 ? 30 : 1), S.min - 40, S.max + 40); kick();
+  }, {passive:false});
+  view.addEventListener('keydown', e => {
+    if(e.key === 'ArrowRight' || e.key === 'ArrowLeft'){ e.preventDefault(); center(SB.clamp((S.near < 0 ? 0 : S.near) + (e.key === 'ArrowRight' ? 1 : -1), 0, S.list.length - 1)); }
+    else if(e.key === 'Home'){ e.preventDefault(); center(0); } else if(e.key === 'End'){ e.preventDefault(); center(S.list.length - 1); }
+  });
+  // 刻度条：点击 / 拖动跳到最接近该时间的回忆
+  function scrubTo(clientX){
+    const r = scrub.getBoundingClientRect(), t = S.t0 + SB.clamp((clientX - r.left)/r.width, 0, 1)*(S.t1 - S.t0);
+    let bi = 0, bd = 1e9; S.list.forEach((m, i) => { const v = tval(m.date); if(v != null && Math.abs(v - t) < bd){ bd = Math.abs(v - t); bi = i; } });
+    center(bi);
+  }
+  scrub.addEventListener('pointerdown', e => { scrub.setPointerCapture(e.pointerId); scrub._d = true; scrubTo(e.clientX); });
+  scrub.addEventListener('pointermove', e => { if(scrub._d) scrubTo(e.clientX); });
+  scrub.addEventListener('pointerup', () => { scrub._d = false; }); scrub.addEventListener('pointercancel', () => { scrub._d = false; });
+  addEventListener('resize', () => { if(SB.scenes.current === 'overview'){ const keep = S.near; build(false); if(keep >= 0) { center(keep); S.x = S.target; render(); } } });
+  document.addEventListener('sb:data', () => { if(SB.scenes.current === 'overview') build(false); });
 
   SB.scenes.register('overview', {
     world:'night', deepLink:true,
-    title:() => '回忆总览',
+    title:() => '时光长卷',
     parent:() => ({id:'globe', params:{}}),
-    enter(){ SB.fx.palette('night'); render(true); document.querySelector('.sb-scene[data-scene="overview"]').scrollTop = 0; },
-    leave(){ previewA?.pause(); }
+    async prepare(){
+      // 先签名离「最新」最近的若干封面，进入时首屏不出现空白相框
+      const ids = sorted().slice(-14).map(coverOf).filter(Boolean);
+      if(ids.length) await SB.store.prefetchUrls?.(ids);
+    },
+    enter(p, opts){ SB.fx.palette('night'); build(!opts?.back); },
+    leave(){ cancelAnimationFrame(S.raf); S.raf = 0; S.drag = null; }
   });
-  SB.menu.add({id:'overview', order:40, icon:'scroll', label:'回忆总览', desc:() => { const s = SB.store.stats(); return s.cities ? `${s.countries} 国 · ${s.cities} 城 · ${s.memories} 段回忆` : '我们走过的国家、城市与时光'; }, scene:'overview'});
+  SB.menu.add({id:'overview', order:40, icon:'scroll', label:'时光长卷',
+    desc:() => { const l = sorted().filter(m => m.date); const n = SB.store.memories.length;
+      return n ? `${n} 段回忆${l.length ? ' · 从 ' + ym(l[0].date).y + ' 到 ' + ym(l[l.length - 1].date).y : ''}` : '我们的故事从这里开始'; },
+    scene:'overview', sceneOpts:{transition:'quill'}});
 })(window.SB);
 </script>

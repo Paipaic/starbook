@@ -126,7 +126,7 @@ for marker in ('SB.gate = ', 'portalFrame', 'abort()'):
     if marker not in gate_text:
         print(f'ERROR: magic gate marker {marker!r} missing from 01b-gate.html')
         sys.exit(1)
-if "gate.cover('portkey'" not in core_text or 'SB.gate?.abort?.()' not in core_text:
+if 'gate.cover(gateKind' not in core_text or 'SB.gate?.abort?.()' not in core_text:
     print('ERROR: Scene Runtime must route flash/veil through SB.gate and abort it on failure')
     sys.exit(1)
 if 'SB.WORLD_CITIES = ' not in block_text.get('06-world-cities.html', ''):
@@ -134,6 +134,19 @@ if 'SB.WORLD_CITIES = ' not in block_text.get('06-world-cities.html', ''):
     sys.exit(1)
 if "register('continent'" in ''.join(block_text.values()):
     print('ERROR: continent directory scene was removed in v1.8.0 and must not return')
+    sys.exit(1)
+
+# v1.8.1 guards: settings live in SB.dock, menu only holds scene navigation, timeline scene keeps id 'overview'.
+if 'SB.dock = ' not in block_text.get('02y-dock.html', ''):
+    print('ERROR: SB.dock utility icons missing (02y-dock.html)')
+    sys.exit(1)
+all_blocks = ''.join(block_text.values())
+for legacy in ("menu.add({id:'music'", "menu.add({id:'motion'", "SB.menu.add({id:'account'", "menu.add({id:'book'", "SB.menu.add({id:'continents'"):
+    if legacy in all_blocks:
+        print(f'ERROR: settings / legacy item must not return to the menu: {legacy}')
+        sys.exit(1)
+if "register('overview'" not in block_text.get('13-overview.html', '') or '时光长卷' not in block_text.get('13-overview.html', ''):
+    print('ERROR: timeline (时光长卷) must stay registered as scene id overview')
     sys.exit(1)
 
 # Governance / release-document consistency checks.

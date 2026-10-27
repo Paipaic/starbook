@@ -1,0 +1,140 @@
+<style>
+/* ── 块 02y · 右上角工具标识（v1.8.1）：音乐 / 动效 / 账户，无文字小标识，点开小面板 ── */
+#sb-dock{position:fixed;z-index:60;top:calc(14px + var(--safe-t));right:calc(14px + var(--safe-r));display:flex;gap:6px;align-items:flex-start;
+  transition:opacity .5s var(--ease-soft), top .4s var(--ease-soft);}
+#sb-dock[hidden]{display:none!important;}
+.sb-dk{position:relative;width:36px;height:36px;border-radius:50%;padding:0;display:grid;place-items:center;cursor:pointer;color:#ecd7a4;opacity:.82;
+  border:1px solid var(--line);background:linear-gradient(180deg, rgba(48,28,15,.78), rgba(20,11,6,.78));
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 0 0 1px rgba(0,0,0,.35) inset, 0 4px 16px rgba(0,0,0,.4);
+  transition:opacity .3s, border-color .3s, box-shadow .3s, transform .25s var(--ease-soft);}
+body[data-world="night"] .sb-dk{background:linear-gradient(180deg, rgba(26,24,58,.78), rgba(10,10,28,.78));}
+.sb-dk::after{content:"";position:absolute;inset:-4px;border-radius:50%;}   /* 触控区外扩到 44px */
+.sb-dk svg{width:18px;height:18px;}
+.sb-dk:hover,.sb-dk[aria-expanded="true"]{opacity:1;border-color:rgba(255,226,168,.7);box-shadow:0 0 0 1px rgba(0,0,0,.35) inset,0 4px 16px rgba(0,0,0,.4),0 0 16px rgba(244,184,96,.3);}
+.sb-dk:active{transform:scale(.94);}
+.sb-dk .eq{position:absolute;right:5px;bottom:6px;display:flex;gap:1px;align-items:flex-end;height:7px;opacity:0;transition:opacity .4s;}
+.sb-dk .eq i{width:1.5px;height:100%;background:currentColor;border-radius:1px;transform-origin:bottom;animation:sbEq 1.1s ease-in-out infinite;}
+.sb-dk .eq i:nth-child(2){animation-delay:-.4s}.sb-dk .eq i:nth-child(3){animation-delay:-.75s}
+.sb-dk.playing .eq{opacity:.9;}
+@keyframes sbEq{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+.sb-dk.playing svg{transform:translateX(-2px);}
+.sb-dkp{position:absolute;top:calc(100% + 10px);right:0;width:min(320px, calc(100vw - 24px - var(--safe-l) - var(--safe-r)));
+  padding:16px 16px 14px;border-radius:14px;border:1px solid var(--line);color:var(--text);
+  background:radial-gradient(120% 60% at 50% 0%, rgba(244,184,96,.10), transparent 70%), var(--glass);
+  box-shadow:0 0 0 4px rgba(20,11,6,.55), 0 0 0 5px rgba(244,184,96,.2), 0 18px 46px rgba(0,0,0,.6);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  transform-origin:calc(100% - 18px) -8px;opacity:0;transform:scale(.9) translateY(-4px);visibility:hidden;pointer-events:none;
+  transition:opacity .35s var(--ease-soft), transform .35s var(--ease-soft), visibility 0s .35s;}
+body[data-world="night"] .sb-dkp{background:radial-gradient(120% 60% at 50% 0%, rgba(244,184,96,.10), transparent 70%), var(--glass-night);}
+html[data-sb-perf="low"] .sb-dkp{backdrop-filter:none;-webkit-backdrop-filter:none;}
+#sb-dock.open .sb-dkp{opacity:1;transform:none;visibility:visible;pointer-events:auto;transition:opacity .35s var(--ease-soft), transform .35s var(--ease-soft), visibility 0s;}
+.sb-dkp h4{margin:0 0 4px;font-size:16px;letter-spacing:.14em;color:var(--gold-hi);display:flex;align-items:center;gap:8px;}
+.sb-dkp .rn{margin:0 0 12px;font-family:var(--f-rune);font-weight:500;font-size:9.5px;letter-spacing:.32em;color:var(--gold-dim);}
+.sb-dkp .row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px dashed rgba(244,184,96,.16);}
+.sb-dkp .row:first-of-type{border-top:0;}
+.sb-dkp .lb{font-family:var(--f-display);font-weight:var(--fw-display);font-size:14.5px;letter-spacing:.06em;}
+.sb-dkp .sm{font-size:12.5px;color:var(--text-dim);line-height:1.6;letter-spacing:.02em;word-break:break-all;}
+.sb-dkp .acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+/* 开关 */
+.sb-switch{position:relative;width:46px;height:26px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.06);cursor:pointer;flex:none;padding:0;transition:background .3s;}
+.sb-switch::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#bfae86;transition:transform .3s var(--ease-soft), background .3s;}
+.sb-switch[aria-checked="true"]{background:rgba(244,184,96,.35);}
+.sb-switch[aria-checked="true"]::after{transform:translateX(20px);background:var(--gold-hi);box-shadow:0 0 10px rgba(244,184,96,.8);}
+/* 动效三档 */
+.sb-tiers{display:flex;flex-direction:column;gap:6px;}
+.sb-tier{display:grid;grid-template-columns:22px 1fr;gap:2px 10px;align-items:center;text-align:left;padding:10px 12px;border-radius:10px;cursor:pointer;
+  border:1px solid rgba(244,184,96,.18);background:rgba(244,184,96,.03);transition:border-color .25s, background .25s;}
+.sb-tier:hover{border-color:rgba(244,184,96,.45);}
+.sb-tier[aria-checked="true"]{border-color:var(--gold);background:rgba(244,184,96,.12);box-shadow:0 0 14px rgba(244,184,96,.18) inset;}
+.sb-tier .dot{grid-row:span 2;width:14px;height:14px;border-radius:50%;border:1px solid var(--gold-dim);justify-self:center;}
+.sb-tier[aria-checked="true"] .dot{background:var(--gold-hi);border-color:var(--gold-hi);box-shadow:0 0 8px rgba(244,184,96,.8);}
+.sb-tier b{font-family:var(--f-display);font-weight:var(--fw-display);font-size:15px;letter-spacing:.1em;color:var(--text);}
+.sb-tier span{font-size:12px;color:var(--text-dim);}
+.sb-badge{display:inline-block;padding:2px 9px;border-radius:999px;border:1px solid var(--line);font-size:11.5px;color:var(--gold-hi);letter-spacing:.08em;}
+/* 放映进行中：跟随放映控件醒来 / 隐藏，并下移到「编辑 / 退出放映」下方 */
+body:has(.sb-scene[data-scene="player"].showing) #sb-dock{top:calc(64px + var(--safe-t));}
+body:has(.sb-scene[data-scene="player"].showing:not(.awake)) #sb-dock:not(.open){opacity:0;pointer-events:none;}
+@media (max-width:480px){ #sb-dock{top:calc(14px + var(--safe-t));right:calc(10px + var(--safe-r));gap:5px;} }
+@media (prefers-reduced-motion:reduce){ .sb-dk .eq i{animation:none;} }
+</style>
+
+<div id="sb-dock" aria-label="设置" hidden>
+  <div class="sb-dkp" id="sb-dkp" role="dialog" aria-modal="false"></div>
+</div>
+
+<script>
+/* ── SB.dock：右上角工具标识。各块通过 SB.dock.add({id, order, icon, label, render(panel)}) 注册；一次只展开一个面板 ── */
+(function(SB){
+  const dock = document.getElementById('sb-dock'), panel = document.getElementById('sb-dkp');
+  const items = []; let openId = null;
+  function btnOf(id){ return dock.querySelector(`.sb-dk[data-id="${id}"]`); }
+  function layout(){
+    dock.querySelectorAll('.sb-dk').forEach(b => b.remove());
+    items.sort((a, b) => a.order - b.order).forEach(it => {
+      const b = SB.el('button', 'sb-dk', it.icon + (it.eq ? '<span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>' : ''));
+      b.type = 'button'; b.dataset.id = it.id; b.setAttribute('aria-label', it.label); b.title = it.label;
+      b.setAttribute('aria-haspopup', 'dialog'); b.setAttribute('aria-expanded', 'false');
+      b.addEventListener('click', e => { e.stopPropagation(); openId === it.id ? api.close() : api.open(it.id); });
+      dock.insertBefore(b, panel);
+    });
+    api.sync();
+  }
+  function render(){
+    const it = items.find(x => x.id === openId); if(!it) return;
+    panel.innerHTML = ''; panel.setAttribute('aria-label', it.label);
+    it.render(panel);
+  }
+  const api = SB.dock = {
+    add(it){ items.push({order:50, ...it}); layout(); },
+    open(id){
+      SB.menu?.close?.();
+      openId = id; render(); dock.classList.add('open');
+      dock.querySelectorAll('.sb-dk').forEach(b => b.setAttribute('aria-expanded', String(b.dataset.id === id)));
+      // 面板箭头对齐：面板右缘与被点的标识右缘对齐
+      const b = btnOf(id), r = dock.getBoundingClientRect(), br = b.getBoundingClientRect();
+      const pw = panel.offsetWidth || 320, maxRight = Math.max(0, r.right - 12 - pw);   // 不超出屏幕左缘
+      panel.style.right = Math.min(Math.max(0, r.right - br.right), maxRight) + 'px';
+    },
+    close(){ openId = null; dock.classList.remove('open'); dock.querySelectorAll('.sb-dk').forEach(b => b.setAttribute('aria-expanded', 'false')); },
+    refresh(id){ if(openId && (!id || id === openId)) render(); api.sync(); },
+    sync(){ items.forEach(it => { const b = btnOf(it.id); if(b && it.state) it.state(b); }); },
+    get openId(){ return openId; }
+  };
+  document.addEventListener('click', e => { if(openId && !dock.contains(e.target)) api.close(); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape' && openId){ api.close(); e.stopPropagation(); } }, true);
+  document.addEventListener('sb:scene', () => api.close());
+  // 菜单打开时收起面板
+  document.getElementById('sb-nav-btn')?.addEventListener('click', () => api.close());
+  // 登录后才显示
+  const vis = () => { dock.hidden = !SB.user?.current; };
+  document.addEventListener('sb:book', vis); document.addEventListener('sb:scene', vis);
+  vis();
+
+  /* ── 动效强度 ── */
+  const TIERS = [
+    {lv:'high', name:'华丽', desc:'完整粒子、光效与转场'},
+    {lv:'low', name:'柔和', desc:'手机与旧电脑推荐，更省电'},
+    {lv:'reduced', name:'静止', desc:'几乎没有动画，直接切换页面'}
+  ];
+  api.add({id:'motion', order:20, label:'动效强度',
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20 15.5 8.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M17 3.5l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9z" fill="currentColor"/><circle cx="20" cy="12.5" r=".9" fill="currentColor"/><circle cx="11.5" cy="4.5" r=".9" fill="currentColor"/></svg>',
+    render(p){
+      p.innerHTML = '<h4>动效强度</h4><p class="rn">MOTUS · ARCANUM</p>';
+      if(SB.perf.reduced){ const d = SB.el('p', 'sm'); d.textContent = '设备已开启「减少动态效果」，星屿之书会保持静止。可在系统设置中关闭后再选择。'; p.appendChild(d); return; }
+      const box = SB.el('div', 'sb-tiers'); box.setAttribute('role', 'radiogroup'); box.setAttribute('aria-label', '动效强度');
+      TIERS.forEach(t => {
+        const b = SB.el('button', 'sb-tier', `<i class="dot"></i><b></b><span></span>`); b.type = 'button'; b.setAttribute('role', 'radio');
+        b.setAttribute('aria-checked', String(SB.perf.level === t.lv)); b.querySelector('b').textContent = t.name; b.querySelector('span').textContent = t.desc;
+        b.addEventListener('click', () => {
+          if(SB.perf.level === t.lv) return;
+          SB.perf.level = t.lv; document.documentElement.dataset.sbPerf = t.lv;
+          try{ localStorage.setItem('sb-motion', t.lv); }catch(e){}
+          SB.fx.refresh(); document.dispatchEvent(new Event('sb:perf'));
+          SB.toast(`已切换为「${t.name}」动效`); api.refresh('motion');
+        });
+        box.appendChild(b);
+      });
+      p.appendChild(box);
+    }});
+})(window.SB);
+</script>

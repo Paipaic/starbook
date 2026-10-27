@@ -570,7 +570,8 @@
     card.querySelector('h2').textContent = o.zh; card.querySelector('p').textContent = sub;
     card.querySelector('.x').addEventListener('click', () => endFocus());
     const acts = card.querySelector('.acts');
-    const go = (id, params, btn) => { const r = btn.getBoundingClientRect(); SB.scenes.go(id, params, {transition:'portal', x:r.left + r.width/2, y:r.top + r.height/2}); };
+    // v1.8.1 分路转场：进入国家 = 幻影显形；直接打开城市 = 墨金书页
+    const go = (id, params, btn) => { const r = btn.getBoundingClientRect(); SB.scenes.go(id, params, {transition:id === 'city' ? 'quill' : 'portal', x:r.left + r.width/2, y:r.top + r.height/2}); };
     if(mine){ const b = SB.ui.button('打开我们的回忆', 'primary', () => go('city', {id:mine.id}, b), 'star'); acts.appendChild(b); }
     if(ctry){ const b = SB.ui.button(`进入${ctry.zh}地图`, mine ? '' : 'primary', () => go('country', {k:ctry.key}, b)); acts.appendChild(b); }
     if(!acts.children.length){ const p = SB.el('p'); p.textContent = '这里暂时没有可以进入的地图'; acts.appendChild(p); }
@@ -789,14 +790,5 @@
   SB.menu.add({id:'globe', order:20, icon:'globe', label:'世界星图', desc:'旋转地球，搜索任意城市，寻找我们的足迹',
     current:() => SB.scenes.current === 'globe',
     action(){ if(SB.scenes.current === 'book') SB.magicBook.open(); else SB.scenes.go('globe', {}, {transition:'flash'}); } });
-  // v1.8.0：大洲目录页已删除；菜单「七大洲」改为让地球转向对应大洲。
-  SB.menu.add({id:'continents', order:30, icon:'compass', label:'七大洲', desc:'让地球转向某个大洲',
-    children:() => { const vis = SB.store.visitedCountries();
-      return SB.geo.CONTINENTS.map(c => { const n = SB.geo.inContinent(c.code).filter(x => vis.has(x.key)).length;
-        return {label:c.name, badge: n ? String(n) : '', async action(){
-          if(SB.scenes.current === 'book') await SB.magicBook.open();
-          else if(SB.scenes.current !== 'globe') await SB.scenes.go('globe', {}, {transition:'flash'});
-          if(SB.scenes.current === 'globe') toCont(c);
-        }}; }); }});
 })(window.SB);
 </script>

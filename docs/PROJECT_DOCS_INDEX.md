@@ -20,7 +20,9 @@
 - `../prompts/11-memory-player.md` — 「光影放映」多图编排放映、三种放映风格与四季主题提示词（v1.7.0，取代 v1.6.0 版本）。
 - `../prompts/12-memory-editor.md` — 回忆编辑器「星屿手稿」提示词（v1.7.0）。
 - `../prompts/10-city-album.md` — 城市回忆目录页「星屿手稿 · 目录页」提示词（v1.7.1）。
-- `../prompts/00-gate.md` — 「秘境之门」门钥匙 / 幻影显形 / 熄灯器转场提示词（v1.8.0）。
+- `../prompts/00-gate.md` — 「秘境之门」转场提示词（v1.8.1 重写：五种门按路线区分、曝光规则、放慢光线）。
+- `../prompts/02-menu.md` — 菜单（只保留世界星图 / 时光长卷）与右上角工具标识 `SB.dock`（v1.8.1）。
+- `../prompts/13-overview.md` — 「时光长卷」横向时间轴（v1.8.1，取代回忆总览）。
 - `../prompts/03-magic-book.md`、`../prompts/07-globe.md` — 「星辉层次」魔法书与地球特效、地球搜索栏（v1.8.0）。
 - `../prompts/09-country-map.md` — 国家地图；v1.8.0 起返回直接回到地球（大洲目录页已删除）。
 - `../tools/make_cities.py` — 生成离线城市库 `blocks/06-world-cities.html`（v1.8.0）。
