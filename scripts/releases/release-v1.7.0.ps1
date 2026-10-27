@@ -1,5 +1,5 @@
 ﻿param(
-    [string]$Message = "Starbook v1.7.0 release"
+    [string]$Message = "光影放映：多图编排放映、三种放映风格、四季主题与编辑器升级"
 )
 
 $ErrorActionPreference = "Stop"

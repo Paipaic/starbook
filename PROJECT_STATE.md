@@ -2,11 +2,11 @@
 
 ## Current Release
 
-- Version: `1.7.0` (銆屽厜褰辨斁鏄犮€嶅鍥炬斁鏄?路 涓夌椋庢牸 路 鍥涘涓婚 路 缂栬緫鍣ㄥ崌绾?
+- Version: `1.7.1` (鍩庡競鍥炲繂鐩綍椤点€屾槦灞挎墜绋?路 鐩綍椤点€嶅崌绾?
 - Deadline: `2026-10-29`
 - Delivery goal: 绉佸瘑銆佺ǔ瀹氥€佹墜鏈哄彲鐢ㄧ殑鍛ㄥ勾绾康绀肩墿銆?
 - Base: V1 `blocks + build.py + site/index.html`銆?
-- Runtime config version: `1.7.0`銆?
+- Runtime config version: `1.7.1`銆?
 
 ## Current Architecture
 
@@ -128,6 +128,12 @@ release/vX.X.X or feature/*
 - `SB.cinema`锛氶鏍?/ 瀛ｈ妭鍏叡瀹氫箟锛沗SB.player` 鏂板 `setStyle / setSeason / estimate`銆?
 - 鎻愮ず璇嶏細`prompts/11-memory-player.md`銆乣prompts/12-memory-editor.md`锛涜皟鐮旓細`docs/design/VISUAL_UPGRADE_PLAN.md` 绗?7 鑺傘€?
 
+## Visual / City Album (v1.7.1)
+
+- 鍩庡競鍥炲繂鐩綍锛堝潡 10锛夋敼涓哄崟鍒楅噾鑹叉椂闂寸嚎 + 绔犺妭鍗＄墖锛氱綏椹暟瀛楃珷鑺傚窘璁般€佺儷閲戞捣鎶ワ紙椋庢牸 / 瀛ｈ妭寰界珷涓庡鑺傝皟鑹诧級銆佹爣棰樸€佺収鐗囨暟涓庨璁℃斁鏄犳椂闀裤€佷竴娈佃瘽鎽樺綍銆佺収鐗囩缉褰辨潯锛屽崱鐗囦笂鐩存帴銆屾斁鏄?/ 鏀炬槧鍘?/ 缂栬緫銆嶃€?
+- 椤电湁锛氱紦鎱㈡棆杞殑娉曢樀銆佸煄甯傚悕銆佺粺璁¤兌鍥婏紙鍥炲繂鏁?/ 鐓х墖鏁?/ 鏃堕棿璺ㄥ害锛夈€併€屾柊鐨勫洖蹇嗐€嶆寜閽紱鏃堕棿绾挎湯灏俱€屽啓涓嬬 N 绔犮€嶏紱绌虹姸鎬佹敼涓烘繁鑹茬儷閲戙€岀┖鐧界珷鑺傘€嶃€?
+- 鍙鐜版湁瀛楁锛屾棤鏁版嵁鍙樺寲锛涙彁绀鸿瘝 `prompts/10-city-album.md`锛岃皟鐮?`docs/design/VISUAL_UPGRADE_PLAN.md` 7.6 鑺傘€?
+
 ## Known Technical Debt
 
 - `book_data.payload` 鏄暣浣?JSONB锛屽悗缁渶瑕佹瑙勫寲銆?
@@ -188,8 +194,8 @@ Confirmed by owner on 2026-10-26:
 
 ## Highest Priority Next
 
-1. 鍙戝竷 v1.7.0锛坄.\release-current.ps1`锛夛紝鍦ㄦ墜鏈轰笂鐢ㄧ湡瀹炲洖蹇嗗垎鍒互涓夌椋庢牸銆佸洓涓鑺傚悇鏀炬槧涓€閬嶏紝纭鐓х墖鍔犺浇銆佸瓧骞曘€侀煶涔愪笌娴佺晠搴︼紱涓烘瘡娈靛洖蹇嗗湪缂栬緫鍣ㄩ噷閫夊ソ椋庢牸涓庡鑺傘€?
-1a. 缁х画瑙嗚鍗囩骇锛歷1.7.1 杞満 鈫?v1.7.2 榄旀硶涔?鍦扮悆鐗规晥锛?0/28 Feature Freeze 鍓嶏紱鍙『寤跺埌鍛ㄥ勾涔嬪悗锛夈€?
+1. 鍙戝竷 v1.7.1锛坄.\release-current.ps1`锛夛紝鍦ㄦ墜鏈轰笂鎵撳紑姣忓骇鍩庡競纭鍥炲繂鐩綍銆佹捣鎶ヤ笌缂╁奖鍥惧姞杞斤紝浠庡崱鐗囩洿鎺ャ€屾斁鏄犮€嶄竴閬嶏紱鑻?v1.7.0 灏氭湭鍦ㄧ湡瀹炲洖蹇嗕笂楠屾敹锛屼竴骞跺畬鎴愪笁绉嶉鏍?/ 鍥涘鐨勬斁鏄犳鏌ャ€?
+1a. 缁х画瑙嗚鍗囩骇锛歷1.7.2 杞満 鈫?v1.7.3 榄旀硶涔?鍦扮悆鐗规晥锛?0/28 Feature Freeze 鍓嶏紱鍙『寤跺埌鍛ㄥ勾涔嬪悗锛夈€?
 2. 瀹屾垚 Private Storage 姝ｅ紡鐓х墖涓?BGM 鐨勫疄闄呭唴瀹瑰～鍏呫€?
 3. 鏍稿績绋冲畾鍚庡疄鐜板懆骞存墘椤?/ 鐚瘝 / 缁撳熬锛圓NN-008锛夈€?
 4. 杩涜鏈€缁堟墜鏈虹 Production URL 楠屾敹銆?

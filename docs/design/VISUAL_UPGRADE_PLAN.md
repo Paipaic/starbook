@@ -19,13 +19,14 @@
 | **v1.5.2** | 「星文」字体系统：修复乱码，统一中文 / 拉丁 / 数字 / 图标 | 00-core 及各场景的字体与符号 | 低 |
 | v1.6.0 | 「冥想盆放映厅」电影式回忆放映 + 放映按钮（新增用户能力 → 次版本号） | 11-memory-player、10-city-album | 中 |
 | **v1.7.0** | 「光影放映」多图编排放映引擎 + 三种放映风格（银幕 / 星图 / 手札）+ 编辑器风格选择（新增用户能力 → 次版本号） | 11-memory-player、12-memory-editor | 中 |
-| v1.7.1 | 「秘境之门」奇幻转场系统 | 00-core（转场层）、01-ambient-fx、04-book-opening | 中 |
-| v1.7.2 | 「星辉层次」魔法书与地球特效 | 03-magic-book、07-globe、01-ambient-fx | 中 |
+| **v1.7.1** | 城市回忆目录页「星屿手稿 · 目录页」升级（Owner 追加） | 10-city-album | 低 |
+| v1.7.2 | 「秘境之门」奇幻转场系统 | 00-core（转场层）、01-ambient-fx、04-book-opening | 中 |
+| v1.7.3 | 「星辉层次」魔法书与地球特效 | 03-magic-book、07-globe、01-ambient-fx | 中 |
 
 拆分原则：
 - 每版只动一类视觉，便于在 Production 上单独验证与回滚；
 - 版本号按**交付顺序**递增（语义化版本不能回退）。放映排在第二：它是周年当天最常被观看的部分，若 2026-10-28 晚 Feature Freeze 前时间不足，转场与特效可顺延到周年之后。
-- Owner 原始需求编号与版本对应：需求 1 → v1.5.2，需求 4 → v1.6.0 / v1.7.0（Owner 2026-10-26 反馈后重做），需求 3 → v1.7.1，需求 2 → v1.7.2。
+- Owner 原始需求编号与版本对应：需求 1 → v1.5.2，需求 4 → v1.6.0 / v1.7.0（Owner 2026-10-26 反馈后重做），需求 3 → v1.7.2，需求 2 → v1.7.3；城市目录页追加优化 → v1.7.1。
 
 ## 3. v1.5.2 调研：乱码根因（实测）
 
@@ -135,6 +136,12 @@
 - 季节在编辑器里保存为回忆的默认值（可选「按月份」自动：3–5 月春、6–8 月夏、9–11 月秋、12–2 月冬），观看时可以在放映控制条里随时切换，粒子与调色 1.2–1.4 秒交叉渐变。
 - 粒子数量随画面面积缩放；「柔和」档减半；「减少动态效果」只保留调色、不画粒子。
 
+### 7.6 v1.7.1：城市回忆目录页（Owner 2026-10-27 反馈：点进城市后的回忆列表界面没有优化）
+
+- 现状问题（实测截图）：左右交错的时间线两侧大量留白、卡片稀疏；卡片只有封面 + 标题 + 日期，看不到 v1.7.0 新增的放映风格 / 季节 / 预计时长；「新的回忆」卡片与空状态（米色羊皮纸）和编辑器「星屿手稿」风格不一致。
+- 资料：Huemor《Timelines》——纵向时间线适合长内容与移动端，只放关键节点，节点要用醒目的标记便于扫读，用交互逐步展开细节；Kombai「Reel Fest」电影节节目单——标题为第一层级、时长为第二层级、类别用颜色标签表达，入场用 0.06s 错开的批量淡入。
+- 结论：改为**单列时间线 + 章节卡片**（左海报、右信息），节点使用与编辑器相同的罗马数字章节徽记；卡片层级 = 标题 > 时间 / 时长 > 风格与季节徽章 > 摘录与缩影；「放映」作为主操作直接放在卡片上；空状态与「新的一页」改用深色烫金手稿语言。
+
 ## 8. 参考来源
 
 - Typotheque — Typesetting principles of CJK text: https://www.typotheque.com/articles/typesetting-cjk-text
@@ -165,3 +172,5 @@
 - Boris FX — BCC Snow: https://borisfx.com/documentation/continuum/bcc-snow
 - AEJuice — How to make falling petals in After Effects: https://aejuice.com/blog/how-to-make-falling-petals-in-after-effects
 - Toolfarm — Creation Effects: Falling Leaves: https://www.toolfarm.com/news/new-creation-effects-falling-leaves-is-now-available-at-toolfarm/
+- Huemor — Timelines (glossary): https://huemor.rocks/glossary/timelines/
+- Kombai — Reel Fest film festival design: https://kombai.com/gallery/inspirations/reel-fest/
