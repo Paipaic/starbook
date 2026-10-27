@@ -240,10 +240,23 @@ html[data-sb-perf="low"] .ca-badge{backdrop-filter:none;-webkit-backdrop-filter:
   }
   document.addEventListener('sb:data', () => { if(SB.scenes.current === 'city') render(); });
 
+
+  async function prepareCity(p){
+    const memories = SB.store.memoriesOf(p.id);
+    const limit = SB.perf.touch ? 2 : 4, ids = [];
+    for(const m of memories.slice(0, limit)){
+      const slides = (m.slides || []).filter(s => s.id);
+      const cover = m.cover?.id || slides[0]?.id;
+      if(cover) ids.push(cover);
+    }
+    if(ids.length) await SB.store.prefetchUrls?.(ids);
+  }
+
   SB.scenes.register('city', {
     world:'night',
     title:p => SB.store.city(p.id)?.name || '城市',
     parent:p => { const c = SB.store.city(p.id); return c ? {id:'country', params:{k:c.country}} : {id:'globe', params:{}}; },
+    prepare:prepareCity,
     enter(p){ cityId = p.id; SB.fx.palette('night'); render(); document.querySelector('.sb-scene[data-scene="city"]').scrollTop = 0; }
   });
 })(window.SB);

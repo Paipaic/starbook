@@ -2,9 +2,9 @@
 
 ## Current Release
 
-- Version: `1.7.2` (鎬ц兘銆佺収鐗囧姞杞戒笌鍝嶅簲寮忔瘮渚嬩紭鍖?
+- Version: `1.7.3` (鍦烘櫙浜嬪姟涓庨甯хǔ瀹氭€т紭鍖?
 - Deadline: `2026-10-29`
-- Delivery goal: 绉佸瘑銆佺ǔ瀹氥€佹墜鏈哄彲鐢ㄧ殑鍛ㄥ勾绾康绀肩墿銆?- Base: V1 `blocks + build.py + site/index.html`銆?- Runtime config version: `1.7.2`銆?
+- Delivery goal: 绉佸瘑銆佺ǔ瀹氥€佹墜鏈哄彲鐢ㄧ殑鍛ㄥ勾绾康绀肩墿銆?- Base: V1 `blocks + build.py + site/index.html`銆?- Runtime config version: `1.7.3`銆?
 ## Current Architecture
 
 Frontend: GitHub Pages 闈欐€侀〉闈€?
@@ -65,6 +65,10 @@ release/vX.X.X or feature/*
 ```
 
 `main` 鏄敮涓€ Production branch銆傛櫘閫氫唬鐮佸彂甯冧笉閲嶇疆 Supabase 鏁版嵁銆?
+
+## Scene Runtime / Performance Baseline (v1.7.3)
+
+- Scene 鐢熷懡鍛ㄦ湡锛歚prepare 鈫?cover 鈫?await enter 鈫?nextPaint 鈫?reveal 鈫?cleanup`銆?- `SB.scenes.prefetch(id, params)` 鍙鐑紝涓嶆敼鍙樺綋鍓嶅満鏅€?- 鐧诲綍 Gate 蹇呴』绛?`SB.store.ready + scenes.boot(book) + first paint` 鍚庡啀鎻紑銆?- Store 鍚姩鍙鍙?JSONB锛屼笉鍏ㄩ噺绛炬暣鏈功濯掍綋 URL銆?- Globe / Country / City / Player 閮藉簲鍦ㄦ彮绀哄墠鍑嗗棣栧睆鍏抽敭璧勬簮銆?- 瀵瑰簲閫愰摼璺?Prompt 浣嶄簬 `prompts/performance/`銆?
 ## Visual / Typography (v1.5.2)
 
 - 涓枃鍏ㄧ珯缁熶竴 Noto Serif SC锛堟€濇簮瀹嬩綋锛夛紱鎷変竵閾枃 Cinzel锛涙暟瀛?Cormorant Garamond锛涘潎鏉ヨ嚜 Google Fonts銆?- ZCOOL XiaoWei 涓?Cinzel Decorative 宸茬Щ闄わ紙瀛楀舰鎹熷潖 / 鏁板瓧闅捐鲸锛夛紝`tools/check_project.py` 闃插洖褰掋€?- 鍥炬爣缁熶竴鐢?`SB.icon(name)` 鍐呰仈 SVG锛屼笉渚濊禆绯荤粺绗﹀彿瀛椾綋銆?- 瑙嗚鍗囩骇鍚庣画鐗堟湰璁″垝锛歚docs/design/VISUAL_UPGRADE_PLAN.md`锛坴1.6.0 鐢靛奖寮忔斁鏄犮€乿1.6.1 杞満銆乿1.6.2 榄旀硶涔?鍦扮悆鐗规晥锛夈€?

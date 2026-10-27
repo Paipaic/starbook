@@ -58,3 +58,15 @@
 ### `docs/RELEASE_AUTOMATION.md`
 
 v1.6.0+ 一键版本发布机制。说明 `release-current.ps1`、自动 Release Record、版本专属脚本、数据安全边界和失败处理。
+
+## 场景性能逐链路 Prompt（v1.7.3）
+
+- `prompts/performance/01-login-to-book.md`
+- `prompts/performance/02-book-to-globe.md`
+- `prompts/performance/03-globe-to-country.md`
+- `prompts/performance/04-country-city-deep-scenes.md`
+- `prompts/performance/05-scene-runtime-transaction.md`
+
+## v1.7.3 转场专项验收
+
+- `docs/TRANSITION_STABILITY_TEST.md`：登录→Book→Globe→Country→City→Player 全链路真机验收。

@@ -121,6 +121,8 @@
       card.style.animationDelay = Math.min(i*30, 900) + 'ms';
       card.innerHTML = `<canvas aria-hidden="true"></canvas><span class="nm"></span><span class="en"></span>${lit ? `<span class="badge sb-num">${SB.icon('star')}${n}</span>` : ''}`;
       card.querySelector('.nm').textContent = c.zh; card.querySelector('.en').textContent = c.en;
+      card.addEventListener('pointerenter', () => SB.scenes.prefetch?.('country',{k:c.key}));
+      card.addEventListener('focusin', () => SB.scenes.prefetch?.('country',{k:c.key}));
       card.addEventListener('click', e => SB.scenes.go('country', {k:c.key}, {transition:'portal', x:e.clientX, y:e.clientY}));
       grid.appendChild(card);
     });

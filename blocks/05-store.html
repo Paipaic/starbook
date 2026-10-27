@@ -104,7 +104,8 @@
 
   async function applyRemote(row){
     st.revision = Number(row?.revision)||0;
-    await warmUrls(row?.payload || empty());
+    // v1.7.3：启动阶段只读取 JSONB，不再为整本书所有照片/音频批量签名。
+    // 媒体 URL 由城市首屏 / 播放器 prepare 按需批量预取，避免登录后长时间只有背景。
     setData(row?.payload || empty());
   }
 

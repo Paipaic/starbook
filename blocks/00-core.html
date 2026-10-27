@@ -88,6 +88,12 @@ body[data-world="night"] .sb-mist{background:radial-gradient(closest-side, rgba(
 .sb-scene{position:absolute;inset:0;display:none;overflow:hidden;contain:layout style paint;isolation:isolate;}
 .sb-scene.is-active{display:block;}
 .sb-scene.is-entering{z-index:2;will-change:clip-path;}
+/* v1.7.3：转场期间强制只有当前/目标场景可见，避免异步 enter 导致旧页面或其他块闪现。 */
+body.is-busy .sb-scene:not(.is-active):not(.is-entering){display:none!important;}
+.sb-portal-backdrop{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0;
+  background:radial-gradient(55% 45% at 50% 48%,rgba(48,50,110,.42),transparent 72%),linear-gradient(180deg,#090a21,#050611);
+  transition:opacity .14s ease-out;}
+.sb-portal-backdrop.show{opacity:1;}
 
 /* ── 转场 ── */
 #sb-veil{position:fixed;inset:0;z-index:50;pointer-events:none;opacity:0;
@@ -106,6 +112,8 @@ body[data-world="night"] #sb-veil{background:radial-gradient(circle at 50% 50%, 
 .sb-portal-ring{position:fixed;z-index:52;pointer-events:none;border-radius:50%;
   border:2px solid rgba(255,226,168,.9);box-shadow:0 0 40px 10px rgba(244,184,96,.55), inset 0 0 30px rgba(255,214,150,.5);
   transform:translate(-50%,-50%);}
+.sb-portal-ring.preparing{width:32px;height:32px;opacity:.72;animation:sbPortalReady .8s ease-in-out infinite alternate;}
+@keyframes sbPortalReady{from{transform:translate(-50%,-50%) scale(.8);box-shadow:0 0 18px 4px rgba(244,184,96,.38)}to{transform:translate(-50%,-50%) scale(1.15);box-shadow:0 0 34px 9px rgba(244,184,96,.62)}}
 body.is-busy #sb-stage,body.is-busy #sb-nav{pointer-events:none;}
 
 /* ── 提示条 ── */
@@ -375,68 +383,104 @@ window.SB = window.SB || {};
       else history.pushState(state,'',url);
     }catch(e){}
   }
-  function swap(id, params, opts){
+  const preparing = new Map();
+  const prepKey = (id, params) => id + '|' + JSON.stringify(params || {});
+  async function prepareTarget(id, params={}, opts={}){
+    const h = scenes.map[id]; if(!h?.prepare) return;
+    const key = prepKey(id, params);
+    if(preparing.has(key)) return preparing.get(key);
+    const job = Promise.resolve().then(() => h.prepare(params || {}, opts)).finally(() => preparing.delete(key));
+    preparing.set(key, job); return job;
+  }
+  scenes.prefetch = (id, params={}) => prepareTarget(id, params, {prefetch:true}).catch(e => console.warn('[Starbook prefetch]', id, e));
+
+  function scrubScenes(except){
+    // v1.7.3：每次真正 swap 时强制清除所有非目标 scene 的 active/transition 状态。
+    // 即使旧异步逻辑曾遗留 class，也不会在下一次转场中“闪出一堆页面”。
+    document.querySelectorAll('.sb-scene').forEach(el => {
+      if(el === except) return;
+      el.classList.remove('is-active','is-entering'); el.style.clipPath = ''; el.style.zIndex = '';
+      el.setAttribute('aria-hidden','true');
+    });
+  }
+  async function swap(id, params, opts){
     const prev = scenes.current ? {id:scenes.current, params:scenes.params} : null;
-    if(prev){ scenes.el(prev.id)?.classList.remove('is-active'); scenes.map[prev.id]?.leave?.(opts); }
+    const prevEl = prev ? scenes.el(prev.id) : null, nextEl = scenes.el(id), nextHook = scenes.map[id];
+    if(!nextEl) return;
+    scrubScenes(nextEl);
+    if(prev && prev.id !== id){
+      prevEl?.classList.remove('is-active'); prevEl?.setAttribute('aria-hidden','true');
+      await Promise.resolve(scenes.map[prev.id]?.leave?.(opts));
+    }else if(prev && opts?.force){
+      await Promise.resolve(scenes.map[prev.id]?.leave?.(opts));
+      prevEl?.classList.remove('is-active');
+    }
     scenes.current = id; scenes.params = params || {};
     document.body.dataset.scene = id;
-    document.body.dataset.world = scenes.map[id].world || 'night';
-    scenes.el(id)?.classList.add('is-active');
-    scenes.map[id]?.enter?.(scenes.params, opts);
+    document.body.dataset.world = nextHook.world || 'night';
+    nextEl.classList.add('is-active'); nextEl.setAttribute('aria-hidden','false');
+    // v1.7.3：enter 可以异步；遮罩不会在目标场景首帧真正准备好之前退场。
+    await Promise.resolve(nextHook.enter?.(scenes.params, opts));
+    await SB.nextPaint();
     syncHistory(id,scenes.params,opts||{},prev);
     document.dispatchEvent(new CustomEvent('sb:scene', {detail:{id, params:scenes.params}}));
   }
   scenes.go = async (id, params={}, opts={}) => {
     if(!scenes.map[id]) return;
     if(document.body.classList.contains('is-busy')){
-      // Android/浏览器可能在转场动画期间连续触发 popstate。
-      // 永远保留最后一次历史目标，动画结束后再追上，避免 URL 与画面不同步。
       if(opts?.fromHistory) scenes._pendingHistory = {id, params:params||{}, opts:{...opts}};
       return;
     }
     if(id === scenes.current && JSON.stringify(params) === JSON.stringify(scenes.params) && !opts.force) return;
     const tr = opts.transition || 'veil';
-    const low = SB.perf.level === 'low';
+    const low = SB.perf.level !== 'high';
     document.body.classList.add('is-busy');
     SB.menu?.close?.();
     const veil = document.getElementById('sb-veil'), flash = document.getElementById('sb-flash');
     try{
       if(SB.perf.level === 'reduced' || tr === 'none'){
-        swap(id, params, opts);
-        await SB.nextPaint();
+        await prepareTarget(id, params, opts);
+        await swap(id, params, opts);
       }else if(tr === 'flash'){
-        const tin = low ? 360 : 520, tout = low ? 520 : 760;
+        const tin = low ? 260 : 380, tout = low ? 360 : 520;
         flash.style.animationDuration = tin + 'ms';
         flash.className = 'flash-in'; await SB.wait(tin);
-        swap(id, params, opts); await SB.nextPaint();
+        // 目标场景的网络/Three.js/首屏内容全部在遮罩完全盖住时准备。
+        await prepareTarget(id, params, opts);
+        await swap(id, params, opts);
         flash.style.animationDuration = tout + 'ms';
         flash.className = 'flash-out'; await SB.wait(tout); flash.className = ''; flash.style.animationDuration = '';
       }else if(tr === 'portal'){
         const x = opts.x ?? innerWidth/2, y = opts.y ?? innerHeight/2;
-        const ring = SB.el('div','sb-portal-ring'); ring.style.left = x+'px'; ring.style.top = y+'px';
-        document.body.appendChild(ring);
+        // 点击后立刻给出同一 portal 光环反馈；准备阶段旧页保持完整，不出现空背景或半页残留。
+        const ring = SB.el('div','sb-portal-ring preparing'); ring.style.left = x+'px'; ring.style.top = y+'px'; document.body.appendChild(ring);
+        await prepareTarget(id, params, opts);
+        ring.classList.remove('preparing'); ring.style.width = ring.style.height = '0px';
+        const stage = document.getElementById('sb-stage');
+        const back = SB.el('div','sb-portal-backdrop'); stage.appendChild(back);
+        requestAnimationFrame(() => back.classList.add('show')); await SB.wait(low ? 90 : 120);
         const R = Math.hypot(Math.max(x, innerWidth-x), Math.max(y, innerHeight-y)) + 40;
-        const el = scenes.el(id);
-        el.classList.add('is-entering');
-        el.style.clipPath = `circle(0px at ${x}px ${y}px)`;
-        // v1.7.2：旧场景在切换时立即卸载，避免圆形展开期间残留在新画面后方。
-        swap(id, params, opts);
-        await SB.nextPaint();
-        SB.fx?.burst?.(low ? 320 : 450);
-        const t0 = performance.now(), D = low ? 520 : 760;
+        const el = scenes.el(id); el.classList.add('is-entering'); el.style.clipPath = `circle(0px at ${x}px ${y}px)`;
+        await swap(id, params, opts);
+        SB.fx?.burst?.(low ? 260 : 380);
+        const t0 = performance.now(), D = low ? 390 : 560;
         await new Promise(res => { const step = now => { const k = Math.min(1,(now-t0)/D), e = 1-Math.pow(1-k,3), r = e*R;
           el.style.clipPath = `circle(${r}px at ${x}px ${y}px)`; ring.style.width = ring.style.height = (r*2)+'px'; ring.style.opacity = String(1-k*.9);
           k < 1 ? requestAnimationFrame(step) : res(); }; requestAnimationFrame(step); });
-        el.style.clipPath = ''; el.classList.remove('is-entering'); ring.remove();
+        el.style.clipPath = ''; el.classList.remove('is-entering'); ring.remove(); back.remove();
       }else{
-        const tin = low ? 360 : 540, tout = low ? 440 : 640;
+        const tin = low ? 260 : 400, tout = low ? 320 : 480;
         SB.fx?.gather?.(innerWidth/2, innerHeight/2);
-        veil.style.animationDuration = tin + 'ms';
-        veil.className = 'veil-in'; await SB.wait(tin);
-        swap(id, params, opts); await SB.nextPaint(); SB.fx?.calm?.(); SB.fx?.burst?.(low ? 420 : 600);
-        veil.style.animationDuration = tout + 'ms';
-        veil.className = 'veil-out'; await SB.wait(tout); veil.className = ''; veil.style.animationDuration = '';
+        veil.style.animationDuration = tin + 'ms'; veil.className = 'veil-in'; await SB.wait(tin);
+        await prepareTarget(id, params, opts);
+        await swap(id, params, opts); SB.fx?.calm?.(); SB.fx?.burst?.(low ? 320 : 500);
+        veil.style.animationDuration = tout + 'ms'; veil.className = 'veil-out'; await SB.wait(tout); veil.className = ''; veil.style.animationDuration = '';
       }
+    }catch(e){
+      console.error('[Starbook scene transition]', id, e);
+      veil && (veil.className = ''); flash && (flash.className = '');
+      document.querySelectorAll('.sb-portal-backdrop,.sb-portal-ring').forEach(x => x.remove());
+      SB.toast?.('场景暂时没有准备好，请再试一次');
     }finally{
       document.body.classList.remove('is-busy');
       const pending = scenes._pendingHistory; scenes._pendingHistory = null;
@@ -445,15 +489,16 @@ window.SB = window.SB || {};
       }
     }
   };
-  scenes.boot = (fallback) => {
-    // 各块的场景写在 <main> 之外，这里统一收进舞台，保证点击能落到场景上
+  scenes.boot = async (fallback) => {
     const stage = document.getElementById('sb-stage');
-    document.querySelectorAll('.sb-scene').forEach(s => stage.appendChild(s));
+    document.querySelectorAll('.sb-scene').forEach(s => { s.classList.remove('is-active','is-entering'); s.style.clipPath=''; s.setAttribute('aria-hidden','true'); stage.appendChild(s); });
     const hs = history.state;
     const want = hs?.starbook ? hs.scene : (location.hash||'').slice(1);
     const h = scenes.map[want];
     const params = hs?.starbook && h ? (hs.params||{}) : {};
-    swap(h && h.deepLink ? want : fallback, params, {boot:true});
+    const target = h && h.deepLink ? want : fallback;
+    await prepareTarget(target, params, {boot:true});
+    await swap(target, params, {boot:true});
   };
   window.addEventListener('popstate', e => {
     const st = e.state;

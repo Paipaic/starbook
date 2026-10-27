@@ -23,6 +23,9 @@
     B.stage.style.transform = 'scale(1.04)';
     await SB.wait(400);
 
+    // v1.7.3：翻页阶段提前准备地球资源；真正切换仍由场景事务等到首帧完成后再揭罩。
+    SB.scenes.prefetch?.('globe',{});
+
     // 3 翻开
     B.cover.classList.add('is-open');
     B.setSpin(4); B.page.classList.add('lit');

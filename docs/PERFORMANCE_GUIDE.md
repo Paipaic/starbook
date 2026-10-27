@@ -1,14 +1,20 @@
 # Starbook Performance Guide
 
-> v1.7.2 起的性能基线。新 Agent 修改场景、照片、放映、编辑器或视觉特效前必须遵守。
+> v1.7.3 起的性能与场景事务基线。新 Agent 修改场景、照片、放映、编辑器或视觉特效前必须遵守。
 
 ## 1. 场景切换
 
-- 旧场景不得在新场景显示后继续保持 `is-active`。
-- 场景切换顺序优先：遮罩 / portal 建立 → `swap()` → `SB.nextPaint()` → 退场动画。
-- 不要用长时间 `setTimeout` 让旧 DOM 留在视觉层中。
-- 视觉特效可以保留，但必须优先作用在轻量 overlay，而不是让两个完整 scene 长时间同时绘制。
-- low / touch 设备允许缩短同一种转场的持续时间，但不要改变 Theme 的视觉语义。
+统一生命周期：
+
+`prepare target → transition cover → activate → await enter → await nextPaint → reveal → cleanup`
+
+- `prepare()` 用于网络 / Three.js / 地图 / Signed URL 等目标资源预热，不改变当前 scene。
+- `enter()` 允许 async，Scene Manager 必须 await。
+- 旧场景不得在目标场景揭示后继续保持 `is-active`。
+- Portal 外圈必须由稳定 backdrop 隔离旧 scene，禁止把旧 DOM 当 portal 背景。
+- Login Gate 只有在 Book 首帧完成后才能隐藏。
+- 不允许 Store 启动全量签名全部媒体。
+- 对应逐链路 Prompt：`prompts/performance/01-05`。
 
 ## 2. 性能档
 
@@ -55,7 +61,7 @@
 
 除非 Owner 明确要求，不要为了性能删除既有主题、季节、放映风格或核心视觉语言。
 
-## 7. v1.7.2 验收
+## 7. v1.7.3 验收
 
 至少实测：
 - 手机连续切换 Globe → Country → City → Player → Back，无上一页残影；

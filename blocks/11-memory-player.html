@@ -701,11 +701,13 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
     cache.set(id, rec); return rec.p;
   }
   const isReady = id => !id || cache.get(id)?.ready;
-  function prime(m){
+  async function prime(m){
     const ids = [...new Set([m?.cover?.id, ...(m?.slides || []).map(s => s.id)].filter(Boolean))];
     const n = SB.perf.touch || lite() ? 6 : 10, first = ids.slice(0, n);
-    SB.store.prefetchUrls?.(first);
-    first.slice(0, SB.perf.touch || lite() ? 4 : 6).forEach((id, i) => load(id, i < 2 ? 'high' : 'auto'));
+    await SB.store.prefetchUrls?.(first);
+    // 转场只等待封面/第一张真正 decode，后续照片继续后台预热，避免点击后长时间“没有反应”。
+    await Promise.all(first.slice(0, 2).map((id, i) => load(id, i === 0 ? 'high' : 'auto')));
+    first.slice(2, SB.perf.touch || lite() ? 4 : 6).forEach(id => load(id, 'auto'));
   }
   function prefetch(T){
     if(!P.TL) return;
@@ -1262,6 +1264,7 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
     world:'night', hash:false,
     title:p => SB.store.memory(p.id)?.title || '回忆',
     parent:p => { const m = SB.store.memory(p.id); return m ? {id:'city', params:{id:m.cityId}} : {id:'globe', params:{}}; },
+    prepare(p){ const m = SB.store.memory(p.id); return m ? prime(m) : Promise.resolve(); },
     async enter(p){
       SB.fx.palette('warm'); SB.fx.calm();
       const m = SB.store.memory(p.id);

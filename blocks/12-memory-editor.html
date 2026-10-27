@@ -207,6 +207,7 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
       const city = SB.store.city(cityId);
       if(!SB.store.canEdit){ SB.toast('你目前只有查看权限'); return; }
       const orig = memory ? JSON.parse(JSON.stringify(memory)) : null;
+      if(orig){ const ids = [...new Set([orig.cover?.id, ...(orig.slides||[]).map(s=>s.id)].filter(Boolean))]; SB.store.prefetchUrls?.(ids.slice(0, SB.perf.touch ? 8 : 14)); }
       const now = new Date();
       const st = {
         title: orig?.title || '', note: orig?.note || '',

@@ -6,7 +6,7 @@
 ## 1. 褰撳墠椤圭洰韬唤
 
 - Project: **Starbook / 鏄熷笨涔嬩功**
-- Current version: **1.7.2**
+- Current version: **1.7.3**
 - Production branch: **`main`**
 - Production deploy: **GitHub Pages via GitHub Actions**
 - Runtime backend: **Supabase Anniversary Bridge**
@@ -110,3 +110,5 @@ python tools/check_project.py
 - 鑴氭湰鑷姩鐢熸垚 `scripts/releases/release-vX.X.X.ps1` 浣滀负鐗堟湰瀹¤璁板綍锛?- `publish.ps1` 浠嶆槸搴曞眰鍙戝竷鎵ц鍣紝涓嶅缓璁柊 Agent鍙﹂€犲彂甯冩祦绋嬶紱
 - 鏁版嵁搴?migration 缁濅笉鐢卞彂甯冭剼鏈嚜鍔ㄦ墽琛屻€?
 瀹屾暣璇存槑锛歚docs/RELEASE_AUTOMATION.md`銆?
+### v1.7.3 鍦烘櫙鎬ц兘 Prompt
+淇敼鐧诲綍銆侀瓟娉曚功銆丟lobe銆丆ountry銆丆ity銆丳layer 鎴?Scene Runtime 鍓嶏紝蹇呴』鍏堥槄璇?`prompts/performance/` 涓搴旈摼璺枃浠讹紱涓嶅緱缁曡繃 `prepare 鈫?await enter 鈫?nextPaint 鈫?reveal` 鐢熷懡鍛ㄦ湡銆?

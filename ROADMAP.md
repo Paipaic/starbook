@@ -1,3 +1,12 @@
+
+## v1.7.3 — Scene Transaction / First-frame Stability
+
+- [x] 登录 Gate 延迟到 Book 首帧后揭开
+- [x] Scene Manager await prepare / enter / nextPaint
+- [x] Globe / Country / City / Player 首屏资源预取
+- [x] Portal backdrop 防旧页残留
+- [x] 逐链路性能 Prompt 固化
+
 # Starbook Roadmap
 
 ## Visual Upgrade — Magic Celestial Theme（计划见 `docs/design/VISUAL_UPGRADE_PLAN.md`）

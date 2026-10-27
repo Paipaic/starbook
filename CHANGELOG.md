@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.7.3] - 2026-10-27
+
+### Performance / Stability
+- **Scene Transaction 重构**：目标场景统一按 `prepare → cover → await enter → nextPaint → reveal` 生命周期切换，修复 async enter 未完成就揭罩造成的空背景、错页闪现和旧页残留。
+- **登录 → 魔法书**：Gate 直到 Store JSONB、Book scene 与首帧 paint 完成后才退场；Store 启动不再全量创建整本书所有媒体 Signed URL。
+- **魔法书 → 地球**：Three.js 脚本 idle 预热，Globe 增加 `prepare()`；手机降低 WebGL 初始化几何细分、纹理尺寸和粒子数量，Flash 只在地球首帧准备完成后退场。
+- **地球 → 国家**：Globe hover 与 Continent focus/pointerenter 提前预取国家地图；Country `prepare()` 复用地图缓存，`enter()` 由 Scene Runtime await。
+- **国家 → 城市 → 回忆**：City 首屏 cover 批量签名；Player `prime()` 可 await 并在 portal 揭示前预热封面/前几张照片；Editor 后台批量预取已有照片 URL。
+- **Portal 稳定层**：Portal 使用 stage 内 backdrop 隔离旧场景，目标 scene 完成首帧后再圆形揭示；转场结束强制清理 clip-path/ring/backdrop。
+
+### Governance
+- 新增 `prompts/performance/` 下 5 份逐链路性能 Prompt，分别约束 Login→Book、Book→Globe、Globe→Country、深层页面和 Scene Runtime。
+- `docs/PERFORMANCE_GUIDE.md` 升级为 v1.7.3 场景事务基线。
+
+### Data
+- **无数据库、RLS、schema_version 或 Storage 路径变化；无需 SQL。**
+
+
 ## [1.7.2] - 2026-10-27
 
 ### Performance

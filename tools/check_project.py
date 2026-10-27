@@ -85,21 +85,28 @@ for prop in ('busy','open','reset','state','scene','cover','tilt','gemBtn','page
         print(f'ERROR: visual Magic Book property leaked back to SB.book: {prop}; use SB.magicBook')
         sys.exit(1)
 
-# v1.7.2 performance baseline guards.
+# v1.7.3 performance / scene-transaction baseline guards.
 core_text = block_text.get('00-core.html','')
 store_text = block_text.get('05-store.html','')
 city_text = block_text.get('10-city-album.html','')
 editor_text = block_text.get('12-memory-editor.html','')
 if 'SB.nextPaint' not in core_text:
-    print('ERROR: v1.7.2 scene paint synchronization missing from 00-core.html')
+    print('ERROR: scene paint synchronization missing from 00-core.html')
     sys.exit(1)
+for marker in ('prepareTarget', 'scenes.prefetch', 'await prepareTarget', 'await Promise.resolve(nextHook.enter'):
+    if marker not in core_text:
+        print(f'ERROR: v1.7.3 scene transaction marker missing: {marker}')
+        sys.exit(1)
 if "prevEl?.classList.add('is-active')" in core_text:
     print('ERROR: portal transition reactivates previous scene and can cause visual residue')
     sys.exit(1)
 if 'st.prefetchUrls' not in store_text:
     print('ERROR: Signed URL prefetch API missing from 05-store.html')
     sys.exit(1)
-for marker in ('function prime(m)', 'SB.fx?.playback?.(true)', 'play:() => play(false), seek, jump, prime'):
+if re.search(r'async function applyRemote\(row\)\s*\{[^}]*await\s+warmUrls', store_text, re.S):
+    print('ERROR: Store startup must not await full-library warmUrls; use scene-level prefetch')
+    sys.exit(1)
+for marker in ('async function prime(m)', 'SB.fx?.playback?.(true)', 'play:() => play(false), seek, jump, prime'):
     if marker not in player_text:
         print(f'ERROR: player performance marker {marker!r} missing from 11-memory-player.html')
         sys.exit(1)
