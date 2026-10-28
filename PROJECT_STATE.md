@@ -2,9 +2,9 @@
 
 ## Current Release
 
-- Version: `1.8.2` (鍥炲埌榄旀硶涔︽爣璇?路 寮€涔︾壒鏁堛€屾槦灏樺惎灏併€?路 鎵嬫満鎬ц兘淇)
+- Version: `1.8.3` (寮€涔︺€屾満鍏冲惎灏併€嶏細鏈哄叧閫愮骇鍟悎銆佸疂鐭虫棆杞€佽兘閲忔弿绾裤€佽В閿?
 - Deadline: `2026-10-29`
-- Delivery goal: 绉佸瘑銆佺ǔ瀹氥€佹墜鏈哄彲鐢ㄧ殑鍛ㄥ勾绾康绀肩墿銆?- Base: V1 `blocks + build.py + site/index.html`銆?- Runtime config version: `1.8.2`銆?
+- Delivery goal: 绉佸瘑銆佺ǔ瀹氥€佹墜鏈哄彲鐢ㄧ殑鍛ㄥ勾绾康绀肩墿銆?- Base: V1 `blocks + build.py + site/index.html`銆?- Runtime config version: `1.8.3`銆?
 ## Current Architecture
 
 Frontend: GitHub Pages 闈欐€侀〉闈€?
@@ -66,6 +66,9 @@ release/vX.X.X or feature/*
 
 `main` 鏄敮涓€ Production branch銆傛櫘閫氫唬鐮佸彂甯冧笉閲嶇疆 Supabase 鏁版嵁銆?
 
+## Book Opening (v1.8.3)
+
+- 寮€涔?= 鏈哄叧鍚皝锛坄SB.magicBook.awaken(on)` / `unlock()`锛?.9s锛夆啋 鍚皝锛坄fxOpen`锛屾墘椤甸噾澧ㄦ槦鍥?+ 鏄熷皹锛夆啋 鍏ラ〉 鈫?闂ㄩ挜鍖欍€傝瑙?`prompts/04-book-opening.md`銆?- 鍙敤 transform / opacity / 鐭椂鎻忕嚎锛涘皬榻胯疆 SVG 鑷浆鍙湪鏈哄叧鍚姩鐨?2 绉掑唴瀵规墍鏈夋。浣嶅紑鍚€?
 ## Mobile Performance (v1.8.2)
 
 - 寮€涔︽湡闂寸姝㈠垱寤?WebGL锛堜笉璋冪敤 `SB.scenes.prefetch('globe')`锛夛紱鍦扮悆鍦ㄩ棬閽ュ寵鐩栨弧鍚庡噯澶囥€?- 榄旀硶涔︾鏂囩幆鏄?2D 鎶曞奖鐨勫墠 / 鍚庝袱灞傦紙`#bk-runes-front` / `#bk-runes-back`锛夛紝涓嶅緱鏀惧洖 3D `preserve-3d` 涓婁笅鏂囷紙鎵嬫満 WebKit 浼氬垏鍓茬浉浜ゅ钩闈㈠鑷撮棯鐑侊級銆?- 鏌斿拰妗ｏ紙鎵嬫満榛樿锛夊叧闂槀璐电殑娣峰悎妯″紡 / 閬僵灞傚苟浣跨敤寤変环鐑噾婊ら暅锛涜杽鐑熷彧鍦ㄥ崕涓芥。銆佹甯告贩鍚堛€?- 鐨潻 / 绾稿紶绾圭悊缂撳瓨鍦?localStorage锛涙斁鏄犲櫒绾圭悊寤惰繜鐢熸垚銆?- 鍙充笂瑙掓爣璇嗙粍鏂板銆屽洖鍒伴瓟娉曚功銆嶏紙`SB.dock` 鐨?action 绫绘爣璇嗭級銆?
@@ -131,7 +134,7 @@ Confirmed by owner on 2026-10-26:
 - 鍏ㄥ眬瑙嗗彛浼樺厛浣跨敤 `100dvh`锛屼繚鐣?`100vh` fallback銆?- coarse pointer 涓嬮€氱敤鎸夐挳銆佸鑸拰鑿滃崟鎵╁ぇ瑙︽帶鐩爣銆?- `SB.loadScript()` 澧炲姞鍗曟簮瓒呮椂涓庤嚜鍔?fallback銆?- Three.js 褰撳墠淇濈暀涓?CDN fallback锛涙湰鍦?vendor 鍖栦粛鏄悗缁彲閫変紭鍖栵紝涓嶉樆濉炲懆骞翠氦浠樸€?- 鍦烘櫙鍘嗗彶鍔犲叆 `_pendingHistory`锛岃繛缁?Android / 娴忚鍣ㄨ繑鍥炴椂浠ユ渶鍚庝竴娆?history state 涓哄噯銆?- bfcache 鎭㈠浼氭竻鐞嗗彲鑳芥畫鐣欑殑 busy / veil / flash銆?- Globe / Country Map 鍦ㄨЕ鎺ц澶囦笂浣跨敤鏇村鏉剧殑鎷栧姩闃堝€硷紝鍑忓皯璇Е銆?
 ## Highest Priority Next
 
-1. 鍙戝竷 v1.8.2锛坄.\release-current.ps1`锛夛紝鐢?iPhone 瀹炴祴锛氶椤垫墦寮€閫熷害锛堢浜屾搴旀槑鏄炬洿蹇級銆侀瓟娉曚功鏄惁杩橀棯鐑?/ 鏈夊厜鐞冦€佸紑涔︺€屾槦灏樺惎灏併€嶆槸鍚﹀畬鏁村彲瑙併€佸洖鍒伴瓟娉曚功鏍囪瘑銆?2. 瀹屾垚 Private Storage 姝ｅ紡鐓х墖涓?BGM 鐨勫疄闄呭唴瀹瑰～鍏咃紝骞朵紭鍏堜娇鐢?v1.7.2 涔嬪悗鐨勬柊涓婁紶缂撳瓨绛栫暐銆?3. 鏍稿績绋冲畾鍚庡疄鐜板懆骞存墘椤?/ 鐚瘝 / 缁撳熬锛圓NN-008锛夈€?4. 杩涜鏈€缁堟墜鏈虹 Production URL 楠屾敹锛涢噸鐐硅瀵熷急缃戠収鐗囩瓑寰呫€佸彂鐑€佹帀甯т笌椤甸潰娈嬪奖銆?5. 2026-10-28 鏅?Feature Freeze锛泇1.8.0 涔嬪悗鍙慨 bug銆傝嫢鐪熸満涓婃柊杞満鍗￠】锛屽彲鍦ㄨ彍鍗曘€屽姩鏁堝己搴︺€嶉€夋嫨鏌斿拰 / 鍏抽棴锛坮educed 妗ｄ笉鏄剧ず闂級銆?
+1. 鍙戝竷 v1.8.3锛坄.\release-current.ps1`锛夛紝鐢?iPhone 瀹炴祴寮€涔︺€屾満鍏冲惎灏併€嶏細榻胯疆閫愮骇鍜斿搾杞姩銆佸疂鐭虫棆杞€佺儷閲戞弿浜€佽В閿侊紝鍐嶆帴鏄熷浘涓庡厜闂紱鍚屾椂纭娌℃湁鍗￠】涓庤繃鏇濄€?2. 瀹屾垚 Private Storage 姝ｅ紡鐓х墖涓?BGM 鐨勫疄闄呭唴瀹瑰～鍏咃紝骞朵紭鍏堜娇鐢?v1.7.2 涔嬪悗鐨勬柊涓婁紶缂撳瓨绛栫暐銆?3. 鏍稿績绋冲畾鍚庡疄鐜板懆骞存墘椤?/ 鐚瘝 / 缁撳熬锛圓NN-008锛夈€?4. 杩涜鏈€缁堟墜鏈虹 Production URL 楠屾敹锛涢噸鐐硅瀵熷急缃戠収鐗囩瓑寰呫€佸彂鐑€佹帀甯т笌椤甸潰娈嬪奖銆?5. 2026-10-28 鏅?Feature Freeze锛泇1.8.0 涔嬪悗鍙慨 bug銆傝嫢鐪熸満涓婃柊杞満鍗￠】锛屽彲鍦ㄨ彍鍗曘€屽姩鏁堝己搴︺€嶉€夋嫨鏌斿拰 / 鍏抽棴锛坮educed 妗ｄ笉鏄剧ず闂級銆?
 ## Release Automation (v1.6.0+)
 
 鐗堟湰瀹屾垚鍚庣殑棣栭€夊叆鍙ｏ細

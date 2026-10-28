@@ -1,11 +1,3 @@
-﻿param(
-    [string]$Message = "v1.8.2移动端与性能优化"
-)
-
+param([string]$Message = "v1.8.2回到魔法书、星尘启封与手机性能修复")
 $ErrorActionPreference = "Stop"
-Set-StrictMode -Version Latest
-$Root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
-Set-Location $Root
-
-Write-Host "Publishing Starbook v1.8.2" -ForegroundColor Cyan
-& (Join-Path $Root "publish.ps1") -Version "1.8.2" -Message $Message
+& "$PSScriptRoot\..\..\release-current.ps1" -Message $Message
