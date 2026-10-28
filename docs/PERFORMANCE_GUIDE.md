@@ -92,3 +92,9 @@
 - 手机档：不用 `mix-blend-mode`、大面积 `mask`、`feSpecularLighting`；不对带滤镜的 SVG 每帧改属性；按钮不用 `backdrop-filter`。
 - 程序纹理结果缓存到 localStorage（带版本号键名）；只在首次访问生成。
 - 验证方式：手机仿真 + 4× CPU 降速 + 长任务观测（`PerformanceObserver('longtask')`）+ CDP 采样，比较修改前后。
+
+## 11. v1.9.2 放映流畅度
+- 时钟循环：华丽档不设帧间隔下限（跟随 rAF）；柔和档 30fps 且允许 4ms 误差——不要再写 `now - last < 1000/60` 这种会在 60Hz 屏幕上随机丢帧的判断。
+- 文字元素在进场完成、未开始退场时进入「定格」状态（`n.settled`），只更新整体位置 / 透明度，不再逐字写样式。
+- 放映开始前预载前 12 张照片（最多 8 秒），其余顺序后台解码；`waitingAt()` 仍是最后的保护。
+- 新画框（拱窗 / 卡纸 / 侧栏）只用 border-radius、box-shadow 与静态渐变遮层，不使用 mask；照片虚焦 / 压暗（rack）在柔和档只改亮度。

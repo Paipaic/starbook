@@ -1,11 +1,3 @@
-﻿param(
-    [string]$Message = "v1.9.1版本更新"
-)
-
+param([string]$Message = "v1.9.1照片分组、自动/手动放映与搜索面板去掉数据来源行")
 $ErrorActionPreference = "Stop"
-Set-StrictMode -Version Latest
-$Root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
-Set-Location $Root
-
-Write-Host "Publishing Starbook v1.9.1" -ForegroundColor Cyan
-& (Join-Path $Root "publish.ps1") -Version "1.9.1" -Message $Message
+& "$PSScriptRoot\..\..\release-current.ps1" -Message $Message
