@@ -1,6 +1,6 @@
 # 鏄熷笨涔嬩功 Starbook
 
-褰撳墠姝ｅ紡椤圭洰鐗堟湰锛?*v1.8.3**銆?
+褰撳墠姝ｅ紡椤圭洰鐗堟湰锛?*v1.9.1**銆?
 杩欐槸涓€涓互娌夋蹈寮忊€滆蹇嗕功鈥濅负鏍稿績鐨勭浜烘暟瀛楄蹇嗛」鐩€傚綋鍓嶇敓浜у舰鎬佹槸 `romantic + magic-celestial + world-map`锛屼絾搴曞眰鏋舵瀯宸茬粡涓哄鐢ㄦ埛銆佸 Book銆佸鍏崇郴绫诲瀷銆佸 Theme銆佸 Experience 鐨勫悗缁墿灞曚繚鐣欒竟鐣屻€?
 ## 鏂?Agent / 鏂板紑鍙戠獥鍙?
 **涓嶈鐩存帴浠庝唬鐮佸紑濮嬨€?*
@@ -41,3 +41,8 @@ python tools/check_project.py
 ```
 
 鑴氭湰浠?`VERSION` 鑷姩璇嗗埆鐗堟湰锛岃嚜鍔ㄨˉ榻愮己澶?Release Record銆佺敓鎴?`scripts/releases/release-vX.X.X.ps1`锛屽啀鎵ц build / validation / PR / Auto-merge銆傝缁嗚鏄庤 [`docs/RELEASE_AUTOMATION.md`](docs/RELEASE_AUTOMATION.md)銆?
+## 鏁版嵁鏉ユ簮
+
+涓栫晫鏄熷浘鎼滅储浣跨敤鐨勫叕寮€鏁版嵁锛堥〉闈笂涓嶅啀鏄剧ず鏉ユ簮琛岋紝鍦ㄦ缃插悕锛夛細
+
+- 涓浗琛屾斂鍖哄垝锛歔Vonng/adcode](https://github.com/Vonng/adcode)锛堝浗瀹剁粺璁″眬 2016 鍖哄垝浠ｇ爜 + 姘戞斂閮ㄥ彉鏇?+ 楂樺痉鍦板浘鍦扮悊涓績锛夈€?- 缇庡浗宸?/ 鍘匡細缇庡浗浜哄彛鏅煡灞€ 2010 鍘垮嚑浣曚腑蹇冿紙via [btskinner/spatial](https://github.com/btskinner/spatial)锛? [kjhealy/fips-codes](https://github.com/kjhealy/fips-codes)銆?- 涓栫晫鍩庡競锛歔GeoNames](https://www.geonames.org/)锛圕C BY 4.0锛変笌 Unicode CLDR 涓枃鍚嶏紙`tools/make_cities.py`锛夈€?- 鍦ㄧ嚎鍦板悕琛ュ厖鎼滅储锛歔Open-Meteo Geocoding API](https://open-meteo.com/)锛圕C BY 4.0锛屽彧鍙戦€佹悳绱㈣瘝锛夈€?

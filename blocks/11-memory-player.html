@@ -207,6 +207,18 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
 .pl-seasons .pl-chip{min-height:34px;}
 .pl-buffer{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;opacity:0;transition:opacity .4s;pointer-events:none;}
 .pl-buffer.on{opacity:1;}
+/* v1.9.1 手动放映：停住时右侧的「继续」提示（只用 transform / opacity） */
+.pl-hold{position:absolute;right:max(14px,var(--safe-r));top:50%;z-index:4;width:54px;height:76px;margin-top:-38px;padding:0;border:0;background:none;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--gold-hi);opacity:0;pointer-events:none;transform:translateX(8px);
+  transition:opacity .45s, transform .45s var(--ease-soft);-webkit-tap-highlight-color:transparent;}
+.pl-hold i{position:relative;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,226,168,.6);background:rgba(10,8,24,.55);box-shadow:0 0 18px rgba(244,184,96,.3);}
+.pl-hold i::before{content:"";position:absolute;left:50%;top:50%;width:11px;height:11px;margin:-6px 0 0 -8px;border:solid currentColor;border-width:1.8px 1.8px 0 0;transform:rotate(45deg);}
+.pl-hold i::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1px solid rgba(255,226,168,.45);animation:plHold 2.2s ease-out infinite;}
+.pl-hold span{font-family:var(--f-display);font-weight:600;font-size:11.5px;letter-spacing:.3em;padding-left:.3em;text-shadow:0 1px 6px rgba(0,0,0,.8);}
+@keyframes plHold{0%{transform:scale(.85);opacity:.9}100%{transform:scale(1.35);opacity:0}}
+.sb-scene[data-scene="player"].showing.held .pl-hold{opacity:1;pointer-events:auto;transform:none;}
+html[data-sb-perf="reduced"] .pl-hold i::after{animation:none;opacity:.5;}
+@media (max-width:600px){ .pl-hold{right:max(8px,var(--safe-r));} .pl-hold i{width:38px;height:38px;} }
 </style>
 
 <section class="sb-scene" data-scene="player" aria-label="回忆放映">
@@ -222,6 +234,7 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
     <div class="pl-opts">
       <div class="pl-opt-row" id="pl-o-style" role="radiogroup" aria-label="放映风格"></div>
       <div class="pl-opt-row" id="pl-o-season" role="radiogroup" aria-label="季节主题"></div>
+      <div class="pl-opt-row" id="pl-o-mode" role="radiogroup" aria-label="放映方式"></div>
     </div>
     <button type="button" class="pl-start" id="pl-start" aria-label="开始放映">
       <svg class="ring" viewBox="-60 -60 120 120" aria-hidden="true"><g fill="none" stroke="currentColor"><circle r="57" stroke-width=".8"/><circle r="52" stroke-width=".5" stroke-dasharray="1 4"/></g></svg>
@@ -266,6 +279,7 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
   <div class="pl-bar t"></div><div class="pl-bar b"></div>
   <div class="pl-count" id="pl-count"></div>
   <div class="pl-top" id="pl-top"></div>
+  <button type="button" class="pl-hold" id="pl-hold" aria-label="下一张"><i></i><span>继续</span></button>
   <div class="pl-ui" id="pl-ui">
     <div class="pl-bars" id="pl-bars"></div>
     <div class="pl-ctl">
@@ -274,6 +288,7 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
       <button type="button" id="pl-play" class="big" aria-label="暂停"></button>
       <button type="button" id="pl-next" aria-label="下一张"></button>
       <button type="button" id="pl-season-btn" aria-label="季节主题" aria-expanded="false"></button>
+      <button type="button" id="pl-mode" aria-label="放映方式"></button>
       <button type="button" id="pl-music" aria-label="背景音乐开关"></button>
     </div>
   </div>
@@ -371,6 +386,9 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
     journal:`<rect x="4.5" y="6.5" width="11" height="12" rx="1" transform="rotate(-8 10 12.5)" ${S}/><rect x="9" y="4.5" width="11" height="12" rx="1" transform="rotate(7 14.5 10.5)" ${S}/><path d="M11 18.5c2-1 4 .8 6-.2" ${S}/>`,
     auto:`<circle cx="12" cy="12" r="8.5" ${S}/><path d="M12 3.5a8.5 8.5 0 0 1 0 17Z" fill="currentColor" opacity=".55"/>`,
     none:`<circle cx="12" cy="12" r="8" ${S}/><path d="M6.5 17.5 17.5 6.5" ${S}/>`,
+    // v1.9.1 放映方式：自动（循环箭头 + 播放）/ 手动（手指轻点）
+    playauto:`<path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" ${S}/><path d="M17.8 3.4v3.6h-3.6" ${S}/><path d="M10 9v6l5-3Z" fill="currentColor"/>`,
+    playmanual:`<path d="M9.5 11.5V5.2a1.5 1.5 0 0 1 3 0v5.3l3.9.8a2 2 0 0 1 1.6 2.2l-.6 4.3A2.5 2.5 0 0 1 14.9 20h-3.6a2.5 2.5 0 0 1-2-1l-3-4a1.4 1.4 0 0 1 2-2l1.2 1.2" ${S}/><path d="M6.2 6.8a4.5 4.5 0 0 1 9.6 0" ${S} opacity=".6"/>`,
     spring:`<g ${S}><circle cx="12" cy="7" r="3.1"/><circle cx="16.8" cy="10.5" r="3.1"/><circle cx="15" cy="16" r="3.1"/><circle cx="9" cy="16" r="3.1"/><circle cx="7.2" cy="10.5" r="3.1"/></g><circle cx="12" cy="12" r="1.6" fill="currentColor"/>`,
     summer:`<circle cx="12" cy="12" r="4" ${S}/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1" ${S}/>`,
     autumn:`<path d="M12 2.8l1.5 3.9 3-1.5-.7 3.5 3.6.4-2.6 2.7 2 2.1-3.6.6.3 3-2.8-1.7L12 21l-.7-5.2-2.8 1.7.3-3-3.6-.6 2-2.1-2.6-2.7 3.6-.4-.7-3.5 3 1.5Z" ${S}/><path d="M12 21v-9" ${S}/>`,
@@ -418,7 +436,9 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
   $('pl-buffer').appendChild(SB.ui.spinner('正在冲洗胶片…'));
 
   const P = { m:null, style:'cinema', seasonPref:'auto', season:'none', TL:null, T:0, playing:false, showing:false, raf:0, last:0, renderAt:0,
-              W:0, H:0, bar:0, fw:0, fh:0, idleT:0, endShown:false, cur:0, liveKey:'', nodes:new Map() };
+              W:0, H:0, bar:0, fw:0, fh:0, idleT:0, endShown:false, cur:0, liveKey:'', nodes:new Map(),
+              mode:'auto', held:false, rush:null, amb:0 };
+  try{ if(localStorage.getItem('sb-play-mode') === 'manual') P.mode = 'manual'; }catch(e){}   // v1.9.1 观看偏好：自动 / 手动放映
   const lite = () => SB.perf.level !== 'high';
   const reduced = () => SB.perf.level === 'reduced';
   const hash = (n, k = 1) => { const x = Math.sin(n*127.1 + k*311.7)*43758.5453; return x - Math.floor(x); };   // 固定伪随机：同一张照片每次都一样
@@ -501,6 +521,30 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
     return {items: out, end: out.length ? t - CUE_GAP : t0};
   }
   const focusOf = (B, readEnd, t0) => Math.max(B, readEnd - t0 + 600);
+  /* v1.9.1 分组：连续且属于同一个「描述不为空」的组的照片 = 组单元 {gid, text, sl:[…]}；其余连续照片合成普通单元 {gid:null, sl} */
+  function unitsOf(S, m){
+    const txt = new Map(); (Array.isArray(m.groups) ? m.groups : []).forEach(g => { const t = String(g?.text || '').trim(); if(g?.id && t) txt.set(g.id, t); });
+    const out = [];
+    for(const sl of S){
+      const gid = sl.s.g && txt.has(sl.s.g) ? sl.s.g : null, last = out[out.length - 1];
+      if(last && last.gid === gid) last.sl.push(sl); else out.push({gid, text:gid ? txt.get(gid) : '', sl:[sl]});
+    }
+    out.forEach(u => { if(u.gid) u.sl.forEach(x => x.gu = u); });
+    return out;
+  }
+  const readLen = (text, per) => cueItems(text, 0, per, () => 0).end;   // 一段文字按字幕节奏读完需要的时长
+  /* 组描述铺满 [t0, t1]：按标点切句，句子停留时间按比例拉长 */
+  function spanCues(text, t0, t1, per, make, max = per*2){
+    const cues = splitCues(text, max); if(!cues.length) return [];
+    const need = cues.map(cueDur), tot = need.reduce((a, b) => a + b, 0) + CUE_GAP*(cues.length - 1), f = Math.max(1, (t1 - t0)/tot);
+    let t = t0;
+    return cues.map((cue, k) => { const a = t, b = k === cues.length - 1 ? t1 : t + need[k]*f; t = b + CUE_GAP*f; return make(cue, a, b); });
+  }
+  /* 组单元的起止：第一张照片的标记时刻 → 下一单元第一张的标记时刻（或结束） */
+  function unitSpan(u, marks, end){
+    const a = marks.find(x => x.i === u.sl[0].i), z = u.sl[u.sl.length - 1].i, b = marks.find(x => x.i > z);
+    return [a ? a.t : end, b ? b.t : end];
+  }
 
   /* 风格一 · 银幕 */
   function dCinema(S, c){
@@ -509,13 +553,18 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
     const per = Math.max(8, Math.min(14, Math.floor(fw*.84/(fs*1.18))));
     const isPort = x => x && x.a < .9, wide = x => x && x.a > 1.15;
     const shortCap = x => len(x.s.caption) <= 24;
-    const G = []; let i = 0;
-    while(i < S.length){
-      const a = S[i], b = S[i+1], d = S[i+2];
-      if(land && !c.lite && isPort(a) && isPort(b) && isPort(d) && shortCap(a) && shortCap(b) && shortCap(d) && G.length % 3 !== 0){ G.push({k:'trio', s:[a, b, d]}); i += 3; }
-      else if(land && isPort(a) && isPort(b)){ if(isPort(d) && !isPort(S[i+3])){ G.push({k:'duo', s:[a, b, d]}); i += 3; } else { G.push({k:'duo', s:[a, b]}); i += 2; } }
-      else if(!land && wide(a) && wide(b) && a.a > 1.2 && b.a > 1.2){ G.push({k:'stack', s:[a, b]}); i += 2; }
-      else { G.push({k:'full', s:[a]}); i++; }
+    // 自动编排只在单元内部进行（v1.9.1：组内照片不会和组外照片拼进同一画面）
+    const G = [];
+    for(const u of c.U){
+      const T = u.sl, gu = u.gid ? u : null, capOK = x => !!gu || shortCap(x); let i = 0;
+      if(gu) gu.D = Math.max(c.B*.72, (readLen(gu.text, per) + 1600)/T.length);   // 组内每张的停留时长
+      while(i < T.length){
+        const a = T[i], b = T[i+1], d = T[i+2];
+        if(land && !c.lite && isPort(a) && isPort(b) && isPort(d) && capOK(a) && capOK(b) && capOK(d) && G.length % 3 !== 0){ G.push({k:'trio', s:[a, b, d], gu}); i += 3; }
+        else if(land && isPort(a) && isPort(b)){ if(isPort(d) && !isPort(T[i+3])){ G.push({k:'duo', s:[a, b, d], gu}); i += 3; } else { G.push({k:'duo', s:[a, b], gu}); i += 2; } }
+        else if(!land && wide(a) && wide(b) && a.a > 1.2 && b.a > 1.2){ G.push({k:'stack', s:[a, b], gu}); i += 2; }
+        else { G.push({k:'full', s:[a], gu}); i++; }
+      }
     }
     const FT = ['bloom', 'slit', 'iris', 'wipe', 'blinds', 'bloom', 'wipe', 'slit', 'iris'];
     const COVER = new Set(['slit', 'iris', 'wipe', 'blinds', 'ink']);
@@ -532,8 +581,10 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
     };
     G.forEach((g, gi) => {
       const next = G[gi + 1];
+      // 组内：不显示单张描述，每张停留 gu.D；组内相邻画面之间用柔和溶接
+      const step = (B, e, t0) => g.gu ? g.gu.D : focusOf(B, e, t0), cont = !!g.gu && G[gi - 1]?.gu === g.gu;
       if(g.k === 'full'){
-        const sl = g.s[0], type = gi === 0 ? 'ink' : FT[nf++ % FT.length], dir = ['l', 'r', 'b', 't'][gi % 4];
+        const sl = g.s[0], type = gi === 0 ? 'ink' : cont ? 'bloom' : FT[nf++ % FT.length], dir = ['l', 'r', 'b', 't'][gi % 4];
         // 上一组的退场：被覆盖型转场时保持到被完全盖住；溶解时同步淡出
         if(prev) prev.forEach(p => { if(p.t1 == null){ p.t1 = t + TRD[type]; p.exit = COVER.has(type) ? {type:'hold', dur:1} : {type:'fade', dur:TRD[type]}; } });
         const framed = land && sl.a < .8;
@@ -546,29 +597,29 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
         items.push(...its); marks.push({t, i:sl.i});
         const cap = sl.s.caption ? splitCues(sl.s.caption, per*2) : [];
         const vertical = land && cap.length === 1 && len(cap[0]) <= 12 && !framed;
-        const cu = capFull(sl, t + 700, vertical); items.push(...cu.items);
+        const cu = g.gu ? {items:[], end:t} : capFull(sl, t + 700, vertical); items.push(...cu.items);
         if(type !== 'bloom' && gi % 4 === 3) items.push({kind:'leak', t0:t - 200, t1:t + 1500});
-        t += focusOf(c.B, cu.end, t); prev = its;
+        t += step(c.B, cu.end, t); prev = its;
         return;
       }
       // 多图组：双联 / 三联 / 上下叠放
       if(prev) prev.forEach(p => { if(p.t1 == null){ p.t1 = t + 1200; p.exit = {type:'fade', dur:1200}; } });
       const gap = .004, its = [], doors = [];
       let tt = t;
-      const placeCap = (sl, at) => { const cu = cueItems(sl.s.caption, at, per, (lines, a, b) => ({kind:'text', look:'cinema', lines, t0:a, t1:b, fs, box:{x:.5, y:land ? .9 : .88, w:.9, ax:'c', ay:'b'}, scrim:true})); items.push(...cu.items); return cu.end; };
+      const placeCap = (sl, at) => { if(g.gu) return at; const cu = cueItems(sl.s.caption, at, per, (lines, a, b) => ({kind:'text', look:'cinema', lines, t0:a, t1:b, fs, box:{x:.5, y:land ? .9 : .88, w:.9, ax:'c', ay:'b'}, scrim:true})); items.push(...cu.items); return cu.end; };
       if(g.k === 'duo'){
         const slot = k => ({x:k ? .75 + gap/2 : .25 - gap/2, y:.5, w:.5 - gap, h:1});
         const [a, b, d] = g.s;
         const A1 = photo({slide:a.s, i:a.i, t0:tt, z:z++, keys:[{t:tt, ...slot(0)}], enter:{type:'wipe', dir:'l', dur:1100}, kb:{s0:1.04, s1:1, x0:50, x1:50, y0:40, y1:58}});
         const B1 = photo({slide:b.s, i:b.i, t0:tt + 450, z:z++, keys:[{t:tt, ...slot(1)}], enter:{type:'wipe', dir:'r', dur:1100}, kb:{s0:1, s1:1.04, x0:50, x1:50, y0:58, y1:42}});
         its.push(A1, B1); marks.push({t:tt, i:a.i});
-        let e = placeCap(a, tt + 700); tt += focusOf(c.B, e, tt);
-        marks.push({t:tt, i:b.i}); e = placeCap(b, tt + 200); tt += focusOf(c.B*.85, e, tt);
+        let e = placeCap(a, tt + 700); tt += step(c.B, e, tt);
+        marks.push({t:tt, i:b.i}); e = placeCap(b, tt + 200); tt += step(c.B*.85, e, tt);
         let last = B1, other = A1;
         if(d){
           A1.t1 = tt + 150 + 1100; A1.exit = {type:'hold', dur:1};          // 新照片擦入覆盖旧照片，不出现黑缝
           const C1 = photo({slide:d.s, i:d.i, t0:tt + 150, z:z++, keys:[{t:tt, ...slot(0)}], enter:{type:'wipe', dir:'l', dur:1100}, kb:{s0:1.04, s1:1, x0:50, x1:50, y0:45, y1:55}});
-          its.push(C1); marks.push({t:tt, i:d.i}); e = placeCap(d, tt + 600); tt += focusOf(c.B, e, tt);
+          its.push(C1); marks.push({t:tt, i:d.i}); e = placeCap(d, tt + 600); tt += step(c.B, e, tt);
           last = C1; other = B1;
         }
         const expand = next?.k === 'full' && mg++ % 2 === 0 && !reduced();
@@ -591,7 +642,7 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
           const p = photo({slide:sl.s, i:sl.i, t0:tt + k*260, z:z++, keys:[{t:tt, x:w/2 + k*(w + gap), y:.5, w, h:1}], enter:{type:'slide', dir:k % 2 ? 'b' : 't', dur:1300}, kb:{s0:1.05, s1:1, x0:50, x1:50, y0:k % 2 ? 60 : 40, y1:50}});
           its.push(p);
         });
-        g.s.forEach((sl, k) => { marks.push({t:tt, i:sl.i}); const e = placeCap(sl, tt + (k ? 200 : 900)); tt += focusOf(k ? c.B*.8 : c.B, e, tt); });
+        g.s.forEach((sl, k) => { marks.push({t:tt, i:sl.i}); const e = placeCap(sl, tt + (k ? 200 : 900)); tt += step(k ? c.B*.8 : c.B, e, tt); });
         its.forEach((p, k) => { p.t1 = tt + 1100 + k*180; p.exit = {type:'slide', dir:k % 2 ? 't' : 'b', dur:1100}; });
         doors.push(...its); prev = null;
       } else {   // stack：竖屏上两张横图上下叠放
@@ -599,8 +650,8 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
         const [a, b] = g.s;
         its.push(photo({slide:a.s, i:a.i, t0:tt, z:z++, keys:[{t:tt, ...slot(0)}], enter:{type:'wipe', dir:'l', dur:1100}, kb:{s0:1.02, s1:1.03, x0:0, x1:100, y0:50, y1:50}}));
         its.push(photo({slide:b.s, i:b.i, t0:tt + 450, z:z++, keys:[{t:tt, ...slot(1)}], enter:{type:'wipe', dir:'r', dur:1100}, kb:{s0:1.03, s1:1.02, x0:100, x1:0, y0:50, y1:50}}));
-        marks.push({t:tt, i:a.i}); let e = placeCap(a, tt + 700); tt += focusOf(c.B, e, tt);
-        marks.push({t:tt, i:b.i}); e = placeCap(b, tt + 200); tt += focusOf(c.B*.85, e, tt);
+        marks.push({t:tt, i:a.i}); let e = placeCap(a, tt + 700); tt += step(c.B, e, tt);
+        marks.push({t:tt, i:b.i}); e = placeCap(b, tt + 200); tt += step(c.B*.85, e, tt);
         its.forEach((p, k) => { p.t1 = tt + 1200; p.exit = {type:'slide', dir:k ? 'b' : 't', dur:1200}; });
         doors.push(...its); prev = null;
       }
@@ -615,6 +666,9 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
     });
     if(prev) prev.forEach(p => { if(p.t1 == null){ p.t1 = t + 1100; p.exit = {type:'fade', dur:1100}; } });
     items.filter(x => x.kind === 'photo').forEach(p => { if(p.t1 == null) p.t1 = t + 1100; });
+    // 组描述：第一张出现 0.7 秒后浮现，停留到下一单元开始
+    c.U.filter(u => u.gid).forEach(u => { const [a, b] = unitSpan(u, marks, t);
+      items.push(...spanCues(u.text, a + 700, b + 250, per, (cue, x, y) => ({kind:'text', look:'cinema', lines:wrap(cue, per), t0:x, t1:y, fs, box:{x:.5, y:land ? .9 : .88, w:.9, ax:'c', ay:'b'}, scrim:true}))); });
     return {items, marks, end:t + 300};
   }
 
@@ -633,14 +687,14 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
     const {fw, fh, land} = c, items = [], marks = [];
     let tpls = land ? TPL_LAND : TPL_PORT; if(c.lite && land) tpls = tpls.slice(0, 2);
     const fs = land ? clamp(fw*.026, 21, 36) : clamp(fw*.058, 20, 25);
-    let ti = 0, tpl = tpls[0], occ = [], filled = 0, t = c.C0 + 100, prevIt = null, z = 100;
+    let ti = 0, tpl = tpls[0], occ = [], filled = 0, t = c.C0 + 100, prevIt = null, z = 100, fresh = false;
     const retire = (it, at, k = 0) => { it.t1 = at + k*220; it.exit = {type:'stardust', dur:1200}; };
-    S.forEach((sl, n) => {
-      if(filled >= tpl.order.length){
-        occ.forEach((it, k) => it && retire(it, t + 300, k)); t += 900;
-        ti = (ti + 1) % tpls.length; tpl = tpls[ti]; occ = []; filled = 0; prevIt = null;
-      }
-      const si = tpl.order[filled], slot = tpl.slots[si], old = occ[si];
+    const perOf = tb => Math.max(7, Math.min(16, Math.floor(tb.w*fw/(fs*1.06))));
+    const idxOf = i => String(i + 1).padStart(2, '0');
+    // 翻到新的一页星图：旧照片化作星尘，换下一个模板
+    const newPage = k => { occ.forEach((it, j) => it && retire(it, t + 300, j)); t += 900; ti = k ?? (ti + 1) % tpls.length; tpl = tpls[ti]; occ = []; filled = 0; prevIt = null; fresh = false; };
+    const put = (sl, si) => {
+      const slot = tpl.slots[si], old = occ[si];
       if(old) retire(old, t + 500);
       const bx = fitBox(sl.a, slot.sw, slot.sh, fw, fh);
       const t0 = t - 200 + (old ? 300 : 0);
@@ -648,13 +702,31 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
         enter:{type:'bloom', dur:1400}, kb:{s0:1, s1:1.06, x0:50, x1:50, y0:50, y1:47}, tilt:true});
       items.push(it); marks.push({t, i:sl.i});
       if(prevIt) items.push({kind:'line', a:prevIt, b:it, t0:t + 300});
-      const tb = tpl.text, per = Math.max(7, Math.min(16, Math.floor(tb.w*fw/(fs*1.06))));
-      const cu = cueItems(sl.s.caption, t + 700, per, (lines, a, b) => ({kind:'text', look:'editorial', lines, t0:a, t1:b, fs, idx:String(sl.i + 1).padStart(2, '0'), center:!!tpl.center, box:{...tb}}));
-      if(!cu.items.length) items.push({kind:'text', look:'editorial', lines:[], t0:t + 700, t1:t + 2600, fs, idx:String(sl.i + 1).padStart(2, '0'), center:!!tpl.center, box:{...tb}});
-      items.push(...cu.items);
       occ[si] = it; filled++; prevIt = it;
+    };
+    const one = sl => {
+      if(fresh || filled >= tpl.order.length) newPage();
+      put(sl, tpl.order[filled]);
+      const tb = tpl.text, per = perOf(tb);
+      const cu = cueItems(sl.s.caption, t + 700, per, (lines, a, b) => ({kind:'text', look:'editorial', lines, t0:a, t1:b, fs, idx:idxOf(sl.i), center:!!tpl.center, box:{...tb}}));
+      if(!cu.items.length) items.push({kind:'text', look:'editorial', lines:[], t0:t + 700, t1:t + 2600, fs, idx:idxOf(sl.i), center:!!tpl.center, box:{...tb}});
+      items.push(...cu.items);
       t += focusOf(c.B, cu.end, t);
-    });
+    };
+    // v1.9.1 组单元：独占一页星图（3 张以上且横屏用三联模板），组内照片星线相连，组描述占用文字区，编号显示范围
+    const group = u => {
+      const N = u.sl.length, want = N >= 3 ? 3 : 2;
+      const cand = tpls.map((x, j) => j).filter(j => tpls[j].slots.length === want);
+      const pool = cand.length ? cand : tpls.map((x, j) => j).filter(j => tpls[j].slots.length >= 2);
+      const k = pool.find(j => j > ti) ?? pool[0];
+      if(filled || fresh) newPage(k); else { ti = k; tpl = tpls[k]; }
+      const tb = tpl.text, per = perOf(tb), D = Math.max(c.B*.72, (readLen(u.text, per) + 1600)/N), t0 = t;
+      u.sl.forEach((sl, j) => { put(sl, j < tpl.order.length ? tpl.order[j] : j % tpl.slots.length); t += D; });
+      const idx = N > 1 ? `${idxOf(u.sl[0].i)} — ${idxOf(u.sl[N - 1].i)}` : idxOf(u.sl[0].i), box = {...tb}, ctr = !!tpl.center;
+      items.push(...spanCues(u.text, t0 + 700, t + 300, per, (cue, a, b) => ({kind:'text', look:'editorial', lines:wrap(cue, per), t0:a, t1:b, fs, idx, center:ctr, box:{...box}})));
+      fresh = true;   // 组结束后，下一张照片换新的一页
+    };
+    c.U.forEach(u => u.gid ? group(u) : u.sl.forEach(one));
     occ.forEach((it, k) => it && retire(it, t + 300, k));
     items.filter(x => x.kind === 'line').forEach(l => { l.t1 = Math.min(l.a.t1, l.b.t1); });
     return {items, marks, end:t + 900};
@@ -665,41 +737,74 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
     const {fw, fh, land} = c, items = [], marks = [], cam = [];
     const fs = land ? clamp(fw*.026, 22, 38) : clamp(fw*.06, 21, 26);
     const per = land ? Math.max(8, Math.floor(fw*.36/(fs*1.06))) : Math.max(8, Math.min(15, Math.floor(fw*.84/(fs*1.06))));
-    let t = c.C0 + 250, px = 0, py = 0, pw = 0, ph = 0, z = 100;
-    const prints = [];
-    S.forEach((sl, n) => {
-      const bx = fitBox(sl.a, land ? .34 : .72, land ? .52 : .38, fw, fh);
-      const bpx = Math.max(7, Math.min(bx.w*fw, bx.h*fh)*.045);
-      const w = bx.w + bpx*2/fw, h = bx.h + bpx*3.4/fh;
+    let t = c.C0 + 250, px = 0, py = 0, pw = 0, ph = 0, z = 100, n = 0;
+    const prints = [], inks = [];
+    const dimOf = sl => { const bx = fitBox(sl.a, land ? .34 : .72, land ? .52 : .38, fw, fh), bpx = Math.max(7, Math.min(bx.w*fw, bx.h*fh)*.045);
+      return {bpx, w:bx.w + bpx*2/fw, h:bx.h + bpx*3.4/fh}; };
+    const drop = (sl, at, x, y, d, r, seal) => {
+      const it = photo({slide:sl.s, i:sl.i, t0:at - 250, frame:'print', space:'desk', z:z++, border:d.bpx, seal,
+        keys:[{t:at, x, y, w:d.w, h:d.h, r}], enter:{type:'drop', dur:950, dir:n % 2 ? 1 : -1}, kb:{s0:1, s1:1.04, x0:50, x1:50, y0:50, y1:50}});
+      items.push(it); prints.push(it); marks.push({t:at, i:sl.i}); return it;
+    };
+    // 镜头沿桌面移到 (cx, cy)
+    const look = (at, cx, cy) => cam.push({t:n ? at - 700 : at - 1000, x:cam.length ? cam[cam.length - 1].x : cx, y:cam.length ? cam[cam.length - 1].y : cy}, {t:at + 800, x:cx, y:cy});
+    const writeNeed = n2 => 500 + n2*110 + 900 + Math.max(0, n2/CPS*1000 - n2*110);
+    const one = sl => {
+      const d = dimOf(sl), {w, h} = d;
       let x, y;
       if(land){ x = n ? px + (pw + w)/2*.8 + .025 : .5; y = .40 + (hash(n, 3) - .5)*.06; }
       else { y = n ? py + (ph + h)/2*.74 + .02 : .38; x = (n % 2 ? .57 : .43) + (hash(n, 3) - .5)*.04; }
       const r = (n % 2 ? 1 : -1)*(2.5 + hash(n, 5)*4.5);
-      const it = photo({slide:sl.s, i:sl.i, t0:t - 250, frame:'print', space:'desk', z:z++, border:bpx, seal:n % 3 === 2,
-        keys:[{t, x, y, w, h, r}], enter:{type:'drop', dur:950, dir:n % 2 ? 1 : -1}, kb:{s0:1, s1:1.04, x0:50, x1:50, y0:50, y1:50}});
-      items.push(it); prints.push(it); marks.push({t, i:sl.i});
-      // 镜头沿桌面跟随最新的相片
-      const cx = land ? x - .06 : .5, cy = land ? .5 : y + .1;
-      cam.push({t:n ? t - 700 : t - 1000, x:cam.length ? cam[cam.length - 1].x : cx, y:cam.length ? cam[cam.length - 1].y : cy}, {t:t + 800, x:cx, y:cy});
-      let tx;
+      const it = drop(sl, t, x, y, d, r, n % 3 === 2);
+      look(t, land ? x - .06 : .5, land ? .5 : y + .1);
       const text = String(sl.s.caption || '').trim();
       if(text){
-        const lines = wrap(text, per).slice(0, 6), n2 = len(text), writeEnd = 500 + n2*110 + 900;
-        if(land) tx = {kind:'text', look:'ink', space:'desk', lines, t0:t + 450, t1:null, fs:n2 > 40 ? fs*.85 : fs, rot:r*.35,
-          box:{x:x - w/2 + .012, y:y + h/2 + .035, w:.4, ax:'l', ay:'t'}};
-        else tx = {kind:'text', look:'ink', center:true, lines, t0:t + 450, t1:null, fs, box:{x:.5, y:.80, w:.86, ax:'c', ay:'t'}};
-        items.push(tx); it.caption = tx;
-        t += Math.max(c.B, writeEnd + Math.max(0, n2/CPS*1000 - n2*110));
+        const lines = wrap(text, per).slice(0, 6), n2 = len(text);
+        const tx = land ? {kind:'text', look:'ink', space:'desk', lines, t0:t + 450, t1:null, fs:n2 > 40 ? fs*.85 : fs, rot:r*.35, box:{x:x - w/2 + .012, y:y + h/2 + .035, w:.4, ax:'l', ay:'t'}}
+                        : {kind:'text', look:'ink', center:true, lines, t0:t + 450, t1:null, fs, box:{x:.5, y:.80, w:.86, ax:'c', ay:'t'}};
+        tx.owner = it; items.push(tx); inks.push(tx);
+        t += Math.max(c.B, writeNeed(n2));
       } else t += c.B*.85;
-      px = x; py = y; pw = w; ph = h;
-    });
-    // 旧相片在镜头移开后退场；文字跟随相片
+      px = x; py = y; pw = w; ph = h; n++;
+    };
+    // v1.9.1 组单元：一小叠相片（重叠更多、左右交替倾斜、第一张盖火漆星印），整叠不超过画面 80%；镜头停在这叠中心；组描述写在下方
+    const group = u => {
+      const N = u.sl.length, D = u.sl.map(dimOf), L = k => land ? D[k].w : D[k].h;
+      let sum = 0; for(let k = 1; k < N; k++) sum += (L(k - 1) + L(k))/2;
+      const f = N > 1 ? clamp(((land ? .8 : .62) - (L(0) + L(N - 1))/2)/sum, .14, .46) : 0;
+      const pos = []; let a = land ? (n ? px + (pw + D[0].w)/2*.8 + .025 : .5) : (n ? py + (ph + D[0].h)/2*.74 + .02 : .38);
+      for(let k = 0; k < N; k++){ if(k) a += (L(k - 1) + L(k))/2*f; const jit = (hash(n + k, 3) - .5);
+        pos.push(land ? {x:a, y:.40 + (k % 2 ? .022 : -.02) + jit*.02} : {x:(k % 2 ? .58 : .42) + jit*.04, y:a}); }
+      // 组描述：较长时分段书写
+      const x0 = pos[0].x - D[0].w/2, x1 = pos[N - 1].x + D[N - 1].w/2, bw = land ? clamp(x1 - x0 - .02, .4, .62) : .86;
+      const gper = land ? Math.max(8, Math.floor(bw*fw/(fs*1.06))) : per;
+      const cues = splitCues(u.text, gper*2), need = cues.map(q => writeNeed(len(q))), tot = need.reduce((p, q) => p + q, 0);
+      const span = Math.max(c.B*.72*N, tot + 1050), gap = span/N, k2 = Math.max(1, (span - 1050)/Math.max(1, tot)), t0 = t;
+      const r0 = (n % 2 ? 1 : -1)*(2.5 + hash(n, 5)*3);
+      let last;
+      u.sl.forEach((sl, k) => { last = drop(sl, t0 + k*gap, pos[k].x, pos[k].y, D[k], r0*(k % 2 ? -1 : 1)*(1 + hash(n + k, 5)*.6), k === 0);
+        if(!land) look(t0 + k*gap, .5, pos[k].y + .1); n++; });
+      if(land) look(t0, (x0 + x1)/2 - .03, .5);
+      const by = Math.min(.76, Math.max(...pos.map((q, k) => q.y + D[k].h/2)) + .035);
+      let tc = t0 + 450;
+      cues.forEach((q, j) => {
+        const lines = wrap(q, gper).slice(0, 6);
+        const tx = land ? {kind:'text', look:'ink', space:'desk', lines, t0:tc, t1:null, fs:len(q) > 40 ? fs*.85 : fs, rot:r0*.3, box:{x:x0 + .012, y:by, w:bw, ax:'l', ay:'t'}}
+                        : {kind:'text', look:'ink', center:true, lines, t0:tc, t1:null, fs, box:{x:.5, y:.80, w:.86, ax:'c', ay:'t'}};
+        tx.owner = last; items.push(tx); inks.push(tx); tc += need[j]*k2;
+      });
+      u.sl.forEach((sl, k) => { prints[prints.length - N + k].gLast = prints.length - 1; });
+      t = t0 + span;
+      const lp = pos[N - 1]; px = lp.x; py = lp.y; pw = D[N - 1].w; ph = D[N - 1].h;
+    };
+    c.U.forEach(u => u.gid ? group(u) : u.sl.forEach(one));
+    // 旧相片在镜头移开后退场（一叠相片等这一叠之后再落下几张才退场）
     prints.forEach((p, k) => {
-      const later = prints[k + (land ? 3 : 2)];
+      const later = p.gLast != null ? prints[p.gLast + (land ? 2 : 1)] : prints[k + (land ? 3 : 2)];
       p.t1 = later ? later.t0 + 1800 : t + 1200; p.exit = {type:'fade', dur:700};
-      // 上一段墨迹在下一段开始书写时淡去，避免相邻文字重叠
-      if(p.caption){ const nx = prints.slice(k + 1).find(q => q.caption); p.caption.t1 = nx ? nx.caption.t0 + 700 : (land ? p.t1 : t + 1000); }
     });
+    // 上一段墨迹在下一段开始书写时淡去，避免相邻文字重叠
+    inks.forEach((x, k) => { const nx = inks[k + 1]; x.t1 = nx ? nx.t0 + 700 : (land ? x.owner.t1 : t + 1000); });
     return {items, marks, end:t + 500, cam};
   }
   const DIRECT = {cinema:dCinema, constellation:dConstellation, journal:dJournal};
@@ -708,11 +813,25 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
     const dim = measure(style);
     const S = (m.slides || []).filter(s => s.id).map((s, i) => ({s, i, a:aspect(s)}));
     const C0 = Math.min(9000, Math.max(4200, 3600 + (len(m.title) + len(m.note))/CPS*1000));
-    const ctx = {...dim, C0, B:BASE[style], lite:lite()};
+    const ctx = {...dim, C0, B:BASE[style], lite:lite(), U:unitsOf(S, m)};
     const r = S.length ? DIRECT[style](S, ctx) : {items:[], marks:[], end:C0};
     r.items.forEach((it, k) => { it.id = 'e' + k; });
     r.items.sort((a, b) => a.t0 - b.t0);
-    return {...r, ...dim, style, C0, endT:Math.max(r.end, C0 + 600), n:S.length};
+    const TL = {...r, ...dim, style, C0, endT:Math.max(r.end, C0 + 600), n:S.length, ng:ctx.U.filter(u => u.gid).length};
+    TL.holds = holdsOf(TL);
+    return TL;
+  }
+  /* v1.9.1 手动放映的停靠点：每段（扉页 / 每张照片）最后一句描述开始淡出前 0.75 秒；不晚于下一张前 0.45 秒、不早于本段开始后 1.2 秒 */
+  function holdsOf(TL){
+    const bounds = [...TL.marks.map(m => m.t), TL.endT], texts = TL.items.filter(x => x.kind === 'text' && x.t1 != null && x.lines.length);
+    const out = []; let a = 0;
+    for(const b of bounds){
+      let h = b - 450;
+      const end = texts.reduce((mx, x) => x.t1 > a + 800 && x.t1 <= b + 400 ? Math.max(mx, x.t1) : mx, -1);
+      if(end > 0) h = Math.min(h, end - 750);
+      out.push(Math.max(a + 1200, h)); a = b;
+    }
+    return out;
   }
   const estimate = TL => TL.endT + END_EST;
 
@@ -776,7 +895,7 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
   function rebuild(keepT){
     if(!P.m) return;
     const old = P.TL, T = P.T;
-    clearNodes();
+    clearNodes(); resetHold();
     P.TL = buildTL(P.m, P.style); applyLayout();
     if(keepT && old && T > old.C0) P.T = T >= old.endT ? P.TL.endT + (T - old.endT) : P.TL.C0 + (T - old.C0)/(old.endT - old.C0)*(P.TL.endT - P.TL.C0);
     buildBars();
@@ -956,7 +1075,7 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
     if(P.TL.style !== 'constellation') return;
     const cv = $('pl-sky'), g = cv.getContext('2d'), dpr = cv._dpr || 1, d = drift(T);
     g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, P.fw, P.fh);
-    for(const s of SKY){ const a = .25 + .55*(.5 + .5*Math.sin(T/900*s.d + s.ph));
+    for(const s of SKY){ const a = .25 + .55*(.5 + .5*Math.sin(P.amb/900*s.d + s.ph));
       g.fillStyle = `rgba(255,240,215,${a.toFixed(3)})`; g.beginPath(); g.arc((s.x + d.x*s.d*.4)*P.fw, (s.y + d.y*s.d*.4)*P.fh, s.r, 0, 6.283); g.fill(); }
   }
   /* 光尘：星图退场化星尘、手札相片落下扬起的微尘 */
@@ -1143,7 +1262,13 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
     if(P.playing){
       const waiting = waitingAt(P.T, dt);
       $('pl-buffer').classList.toggle('on', waiting);
-      if(!waiting){ P.T += dt; stepSeason(dt); if(P.T - pfAt > 1000){ pfAt = P.T; prefetch(P.T); } }
+      if(!waiting){
+        // v1.9.1：手动放映在停靠点停住；翻页时以 3 倍速平滑播到下一张转场开始
+        let adv = dt*(P.rush != null ? 3 : 1);
+        if(P.mode === 'manual' && P.rush == null){ const h = holdAt(P.T); if(h != null && P.T + adv >= h){ adv = Math.max(0, h - P.T); if(!P.held) setHeld(true); } }
+        P.T += adv; if(P.rush != null && P.T >= P.rush) P.rush = null;
+        P.amb += dt; stepSeason(dt); if(P.T - pfAt > 1000){ pfAt = P.T; prefetch(P.T); }
+      }
     }
     render();
     P.raf = requestAnimationFrame(loop);
@@ -1154,8 +1279,20 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
     $('pl-grain').style.animationPlayState = v ? 'running' : 'paused';
     $('pl-desk').style.animationPlayState = v ? 'running' : 'paused';
   }
+  const holdAt = T => { const H = P.TL?.holds || []; for(const h of H) if(h >= T - .5) return h; return null; };
+  function setHeld(v){ P.held = v; scene.classList.toggle('held', v); }
+  function resetHold(){ P.rush = null; setHeld(false); }
+  /* 手动放映的翻页：已在（或接近）停靠点 → 加速播到下一张；描述还没读完 → 直接切到下一张 */
+  function advance(d){
+    const TL = P.TL; if(!TL) return;
+    if(P.mode !== 'manual' || d < 0 || P.T >= TL.endT) return step(d);
+    const k = markIndex(P.T), nextT = k + 1 < TL.marks.length ? TL.marks[k + 1].t : TL.endT, h = holdAt(P.T);
+    if(h != null && P.T < h - 400 && P.rush == null) jumpTo(nextT - 150);
+    else { setHeld(false); P.rush = Math.max(P.T, nextT - 250); }
+    if(!P.playing) setPlaying(true);
+  }
   function cut(){ const c = $('pl-cut'); c.classList.remove('go'); void c.offsetWidth; c.classList.add('go'); }
-  function jumpTo(T){ P.T = Math.max(0, T); if(T < P.TL.endT){ P.endShown = false; SB.audio.duck(1, 800); } prefetch(P.T); cut(); render(); }
+  function jumpTo(T){ resetHold(); P.T = Math.max(0, T); if(T < P.TL.endT){ P.endShown = false; SB.audio.duck(1, 800); } prefetch(P.T); cut(); render(); }
   function jump(k){                           // k = 进度条段：0 扉页，1..n 照片
     const mk = P.TL.marks;
     if(k <= 0) return jumpTo(0);
@@ -1184,10 +1321,26 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
     const row = $('pl-o-style'); row.innerHTML = '<span>STYLE</span>';
     SB.cinema.styles.forEach(s => row.appendChild(chip(s.id, s.name, s.id, P.style === s.id, id => { P.style = id; refreshStyleUI(); updateStat(); })));
   }
+  /* v1.9.1 放映方式：放映厅一行 + 控制条按钮 */
+  const MODES = [{id:'auto', name:'自动放映', icon:'playauto'}, {id:'manual', name:'手动放映', icon:'playmanual'}];
+  function setMode(id, announce){
+    if(!MODES.some(x => x.id === id) || id === P.mode){ refreshModeUI(); return; }
+    P.mode = id; try{ localStorage.setItem('sb-play-mode', id); }catch(e){}
+    if(id === 'auto') resetHold();
+    refreshModeUI(); updateStat();
+    if(announce) SB.toast(id === 'manual' ? '手动放映：轻触画面或按 → 翻到下一张' : '自动放映：照片会按节奏自己播放', 2600);
+  }
+  function refreshModeUI(){
+    const row = $('pl-o-mode'); row.innerHTML = '<span>MODE</span>';
+    MODES.forEach(x => row.appendChild(chip(x.id, x.name, x.icon, P.mode === x.id, id => setMode(id))));
+    const b = $('pl-mode'), cur = MODES.find(x => x.id === P.mode);
+    b.innerHTML = SB.cinema.icon(cur.icon); b.setAttribute('aria-label', `放映方式：${cur.name}（点按切换）`); b.title = cur.name;
+  }
   function updateStat(){
     const m = P.m; if(!m) return;
     const n = (m.slides || []).length, TL = buildTL(m, P.style);
-    $('pl-l-stat').innerHTML = `<span>${n} 张照片</span><i></i><span>${fmtDur(estimate(TL))}</span>${m.bgmMode !== 'none' && (m.bgm || SB.store.settings?.bgm) ? `<i></i><span>${SB.icon('note')} 配乐</span>` : ''}`;
+    const ng = TL.ng || 0;
+    $('pl-l-stat').innerHTML = `<span>${n} 张照片</span>${ng ? `<i></i><span>${ng} 组</span>` : ''}<i></i><span>${P.mode === 'manual' ? '按你的节奏翻页' : fmtDur(estimate(TL))}</span>${m.bgmMode !== 'none' && (m.bgm || SB.store.settings?.bgm) ? `<i></i><span>${SB.icon('note')} 配乐</span>` : ''}`;
   }
 
   /* ── 放映厅 ── */
@@ -1199,7 +1352,7 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
     $('pl-l-title').textContent = SB.fmtTitle(m.title);
     const place = placeOf(m); $('pl-l-place').textContent = place; $('pl-l-place').hidden = !place;
     const n = (m.slides || []).length;
-    updateStat(); refreshStyleUI();
+    updateStat(); refreshStyleUI(); refreshModeUI();
     P.season = SB.cinema.resolveSeason(P.seasonPref, m.date); refreshSeasonUI();
     $('pl-start').disabled = !n;
     $('pl-wait').textContent = n ? '' : '这段回忆还没有照片';
@@ -1242,7 +1395,7 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
     SB.audio.unlock();
     prepareScreen();
     P.TL = buildTL(P.m, P.style); applyLayout(); buildBars();
-    P.T = 0; P.cur = -1; P.showing = true; P.renderAt = 0;
+    P.T = 0; P.cur = -1; P.showing = true; P.renderAt = 0; resetHold(); refreshModeUI();
     scene.classList.add('showing'); SB.fx?.playback?.(true);
     setSeason(P.season, true);
     const scr = $('pl-screen'); scr.classList.remove('pl-flicker'); void scr.offsetWidth; scr.classList.add('pl-flicker');
@@ -1253,7 +1406,7 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
     wake();
   }
   function stopShow(){
-    P.showing = false; setPlaying(false); cancelAnimationFrame(P.raf); SB.fx?.playback?.(false);
+    P.showing = false; setPlaying(false); resetHold(); cancelAnimationFrame(P.raf); SB.fx?.playback?.(false);
     clearNodes(); PS.list = [];
     $('pl-seasons').classList.remove('open');
     scene.classList.remove('showing', 'awake');
@@ -1261,8 +1414,10 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
 
   /* ── 交互 ── */
   $('pl-start').addEventListener('click', () => play(false));
-  $('pl-prev').addEventListener('click', e => { e.stopPropagation(); step(-1); wake(); });
-  $('pl-next').addEventListener('click', e => { e.stopPropagation(); step(1); wake(); });
+  $('pl-prev').addEventListener('click', e => { e.stopPropagation(); advance(-1); wake(); });
+  $('pl-next').addEventListener('click', e => { e.stopPropagation(); advance(1); wake(); });
+  $('pl-hold').addEventListener('click', e => { e.stopPropagation(); advance(1); });
+  $('pl-mode').addEventListener('click', e => { e.stopPropagation(); setMode(P.mode === 'manual' ? 'auto' : 'manual', true); wake(); });
   $('pl-play').addEventListener('click', e => { e.stopPropagation(); setPlaying(!P.playing); wake(); });
   $('pl-music').addEventListener('click', e => { e.stopPropagation(); SB.audio.toggle(); $('pl-music').classList.toggle('off', !SB.audio.on); wake(); });
   $('pl-season-btn').addEventListener('click', e => { e.stopPropagation(); const o = $('pl-seasons').classList.toggle('open'); $('pl-season-btn').setAttribute('aria-expanded', o ? 'true' : 'false'); wake(); });
@@ -1273,7 +1428,12 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
     if(!P.showing || e.target.closest('button')) return;
     if($('pl-seasons').classList.contains('open')){ $('pl-seasons').classList.remove('open'); return; }
     const dx = e.clientX - sx, dy = e.clientY - sy;
-    if(Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)){ step(dx < 0 ? 1 : -1); wake(); }
+    if(Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)){ advance(dx < 0 ? 1 : -1); wake(); }
+    else if(P.mode === 'manual' && performance.now() - st < 400 && P.T < P.TL.endT){
+      // 手动放映：轻触右侧 2/3 下一张、左侧 1/3 上一张；电脑点击 = 下一张
+      const r = $('pl-screen').getBoundingClientRect(), left = e.pointerType !== 'mouse' && e.clientX < r.left + r.width/3;
+      advance(left ? -1 : 1); if(e.pointerType !== 'mouse') wake();
+    }
     else if(performance.now() - st < 300){
       if(e.pointerType === 'mouse') { setPlaying(!P.playing); wake(); }
       else scene.classList.contains('awake') ? scene.classList.remove('awake') : wake();
@@ -1282,7 +1442,8 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
   document.addEventListener('keydown', e => {
     if(SB.scenes.current !== 'player' || document.querySelector('.sb-modal')) return;
     if(!P.showing){ if((e.key === 'Enter' || e.key === ' ') && document.activeElement === document.body){ e.preventDefault(); play(false); } return; }
-    if(e.key === 'ArrowRight'){ step(1); wake(); } else if(e.key === 'ArrowLeft'){ step(-1); wake(); }
+    if(e.key === 'ArrowRight' || e.key === 'PageDown' || (e.key === 'Enter' && P.mode === 'manual' && !e.target.closest?.('button,input,textarea'))){ e.preventDefault(); advance(1); wake(); }
+    else if(e.key === 'ArrowLeft' || e.key === 'PageUp'){ advance(-1); wake(); }
     else if(e.key === ' '){ e.preventDefault(); setPlaying(!P.playing); wake(); }
     else if(e.key === 'Escape' && !document.getElementById('sb-nav').classList.contains('open')) SB.scenes.back();
   });
@@ -1317,15 +1478,16 @@ html[data-sb-perf="low"] .pl-poster::after{animation:none;opacity:.35;}
   });
 
   /* 调试 / 自动化验收：在暂停状态下定位到时间线上的某一刻 */
-  function seek(T){ if(!P.showing) return; setPlaying(false); P.T = Math.max(0, T); prefetch(P.T); render(); }
+  function seek(T){ if(!P.showing) return; setPlaying(false); resetHold(); P.T = Math.max(0, T); prefetch(P.T); render(); }
   SB.player = {
-    play:() => play(false), seek, jump, prime,
+    play:() => play(false), seek, jump, prime, next:() => advance(1), prev:() => advance(-1), setMode:id => setMode(id),
     setStyle(id){ if(SB.cinema.styles.some(s => s.id === id)){ P.style = id; if(P.showing) rebuild(false); else if(P.m){ refreshStyleUI(); updateStat(); } } },
     setSeason(id){ P.seasonPref = id; setSeason(SB.cinema.resolveSeason(id, P.m?.date), true); },
     stepSeason(ms){ for(let k = 0; k < ms/50; k++) stepSeason(50); render(); },
     estimate:(m, style) => estimate(buildTL(m, style || SB.cinema.styleOf(m))),
-    get state(){ const TL = P.TL; return {T:P.T, playing:P.playing, showing:P.showing, style:P.style, season:P.season, C0:TL?.C0, endT:TL?.endT,
-      marks:TL?.marks.map(m => ({t:Math.round(m.t), i:m.i})) || [], items:TL ? TL.items.filter(x => x.kind === 'photo').map(x => ({i:x.i, t0:Math.round(x.t0), t1:Math.round(x.t1), enter:x.enter.type, exit:x.exit.type, frame:x.frame})) : []}; }
+    get state(){ const TL = P.TL; return {T:P.T, playing:P.playing, mode:P.mode, held:P.held, holds:(TL?.holds || []).map(Math.round), showing:P.showing, style:P.style, season:P.season, C0:TL?.C0, endT:TL?.endT,
+      marks:TL?.marks.map(m => ({t:Math.round(m.t), i:m.i})) || [], items:TL ? TL.items.filter(x => x.kind === 'photo').map(x => ({i:x.i, t0:Math.round(x.t0), t1:Math.round(x.t1), enter:x.enter.type, exit:x.exit.type, frame:x.frame})) : [],
+      texts:TL ? TL.items.filter(x => x.kind === 'text').map(x => ({t0:Math.round(x.t0), t1:Math.round(x.t1 ?? -1), look:x.look, text:x.lines.join(''), idx:x.idx})) : [], groups:TL?.ng || 0}; }
   };
 })(window.SB);
 </script>

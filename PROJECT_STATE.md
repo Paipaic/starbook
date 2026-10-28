@@ -2,9 +2,9 @@
 
 ## Current Release
 
-- Version: `1.8.3` (寮€涔︺€屾満鍏冲惎灏併€嶏細鏈哄叧閫愮骇鍟悎銆佸疂鐭虫棆杞€佽兘閲忔弿绾裤€佽В閿?
+- Version: `1.9.1` (鐓х墖鍒嗙粍銆屽悓涓€鏃跺埢銆?路 鑷姩 / 鎵嬪姩鏀炬槧 路 鎼滅储闈㈡澘鍘绘帀鏁版嵁鏉ユ簮琛?
 - Deadline: `2026-10-29`
-- Delivery goal: 绉佸瘑銆佺ǔ瀹氥€佹墜鏈哄彲鐢ㄧ殑鍛ㄥ勾绾康绀肩墿銆?- Base: V1 `blocks + build.py + site/index.html`銆?- Runtime config version: `1.8.3`銆?
+- Delivery goal: 绉佸瘑銆佺ǔ瀹氥€佹墜鏈哄彲鐢ㄧ殑鍛ㄥ勾绾康绀肩墿銆?- Base: V1 `blocks + build.py + site/index.html`銆?- Runtime config version: `1.9.1`銆?
 ## Current Architecture
 
 Frontend: GitHub Pages 闈欐€侀〉闈€?
@@ -66,6 +66,12 @@ release/vX.X.X or feature/*
 
 `main` 鏄敮涓€ Production branch銆傛櫘閫氫唬鐮佸彂甯冧笉閲嶇疆 Supabase 鏁版嵁銆?
 
+## Photo Groups (v1.9.1)
+
+- 鍥炲繂鏁版嵁鏂板鍙€?`groups: [{id, text}]` 涓庣収鐗?`g`锛堢粍 id锛夛紝瀛樹簬 `book_data.payload`锛屾棤 migration銆?- 缂栬緫鍣ㄧ淮鎸佺粍鎴愬憳鍦?`slides` 涓繛缁紙`normalizeGroups`锛夛紱鎵归噺鎿嶄綔 `group` / `ungroup` 娉ㄥ唽鍦?`SB.editor.photoActions`锛涙敞鍐岃〃 `label` 鍙负鍑芥暟銆?- 鏀炬槧鍣?`unitsOf()` 鎶婄収鐗囧垏鎴愬崟鍏冿紝涓夌瀵兼紨鍒嗗埆缂栨帓缁勫崟鍏冿紱缁勬弿杩颁负绌虹殑缁勬寜鏅€氱収鐗囨斁鏄犮€?- 鏀炬槧鏂瑰紡锛歚P.mode = auto | manual`锛坙ocalStorage `sb-play-mode`锛夛紱`buildTL()` 浜у嚭 `holds`锛堝仠闈犵偣锛夛紝鎵嬪姩妯″紡鏃堕挓鍦ㄥ仠闈犵偣鍋滀綇锛宍advance()` 缈婚〉锛? 鍊嶉€?rush 鍒颁笅涓€寮犳垨鐩存帴璺宠浆锛夈€?
+## Search / Editor / Gate (v1.9.0)
+
+- 鍦扮悆鎼滅储锛歚SB.ADMIN_DIVISIONS`锛坄blocks/06-admin-divisions.html`锛宍tools/make_admin.py` 浠?Vonng/adcode銆乥tskinner/spatial銆乲jhealy/fips-codes 鏈湴鍏嬮殕鐢熸垚锛夈€備腑鍥藉尯鍒掑熀绾?2016銆佺編鍥藉幙 2010銆?- 缂栬緫鍣細`SB.editor.photoActions` 鎵归噺鎿嶄綔娉ㄥ唽琛紱涓婁紶骞跺彂 2锛涘垹闄ゅ彲鎾ら攢锛堟枃浠朵粛鍦ㄤ繚瀛樻椂娓呯悊锛夈€?- 鐧诲綍闂細`html[data-gate-type="web|local"]` 涓€娆℃€у瓧浣撳喅绛栵紱鍔ㄧ敾鍙敤 transform / opacity锛沗SB.fx.start()` 绉诲埌 `store.ready` 涔嬪悗銆?
 ## Book Opening (v1.8.3)
 
 - 寮€涔?= 鏈哄叧鍚皝锛坄SB.magicBook.awaken(on)` / `unlock()`锛?.9s锛夆啋 鍚皝锛坄fxOpen`锛屾墘椤甸噾澧ㄦ槦鍥?+ 鏄熷皹锛夆啋 鍏ラ〉 鈫?闂ㄩ挜鍖欍€傝瑙?`prompts/04-book-opening.md`銆?- 鍙敤 transform / opacity / 鐭椂鎻忕嚎锛涘皬榻胯疆 SVG 鑷浆鍙湪鏈哄叧鍚姩鐨?2 绉掑唴瀵规墍鏈夋。浣嶅紑鍚€?
@@ -134,7 +140,7 @@ Confirmed by owner on 2026-10-26:
 - 鍏ㄥ眬瑙嗗彛浼樺厛浣跨敤 `100dvh`锛屼繚鐣?`100vh` fallback銆?- coarse pointer 涓嬮€氱敤鎸夐挳銆佸鑸拰鑿滃崟鎵╁ぇ瑙︽帶鐩爣銆?- `SB.loadScript()` 澧炲姞鍗曟簮瓒呮椂涓庤嚜鍔?fallback銆?- Three.js 褰撳墠淇濈暀涓?CDN fallback锛涙湰鍦?vendor 鍖栦粛鏄悗缁彲閫変紭鍖栵紝涓嶉樆濉炲懆骞翠氦浠樸€?- 鍦烘櫙鍘嗗彶鍔犲叆 `_pendingHistory`锛岃繛缁?Android / 娴忚鍣ㄨ繑鍥炴椂浠ユ渶鍚庝竴娆?history state 涓哄噯銆?- bfcache 鎭㈠浼氭竻鐞嗗彲鑳芥畫鐣欑殑 busy / veil / flash銆?- Globe / Country Map 鍦ㄨЕ鎺ц澶囦笂浣跨敤鏇村鏉剧殑鎷栧姩闃堝€硷紝鍑忓皯璇Е銆?
 ## Highest Priority Next
 
-1. 鍙戝竷 v1.8.3锛坄.\release-current.ps1`锛夛紝鐢?iPhone 瀹炴祴寮€涔︺€屾満鍏冲惎灏併€嶏細榻胯疆閫愮骇鍜斿搾杞姩銆佸疂鐭虫棆杞€佺儷閲戞弿浜€佽В閿侊紝鍐嶆帴鏄熷浘涓庡厜闂紱鍚屾椂纭娌℃湁鍗￠】涓庤繃鏇濄€?2. 瀹屾垚 Private Storage 姝ｅ紡鐓х墖涓?BGM 鐨勫疄闄呭唴瀹瑰～鍏咃紝骞朵紭鍏堜娇鐢?v1.7.2 涔嬪悗鐨勬柊涓婁紶缂撳瓨绛栫暐銆?3. 鏍稿績绋冲畾鍚庡疄鐜板懆骞存墘椤?/ 鐚瘝 / 缁撳熬锛圓NN-008锛夈€?4. 杩涜鏈€缁堟墜鏈虹 Production URL 楠屾敹锛涢噸鐐硅瀵熷急缃戠収鐗囩瓑寰呫€佸彂鐑€佹帀甯т笌椤甸潰娈嬪奖銆?5. 2026-10-28 鏅?Feature Freeze锛泇1.8.0 涔嬪悗鍙慨 bug銆傝嫢鐪熸満涓婃柊杞満鍗￠】锛屽彲鍦ㄨ彍鍗曘€屽姩鏁堝己搴︺€嶉€夋嫨鏌斿拰 / 鍏抽棴锛坮educed 妗ｄ笉鏄剧ず闂級銆?
+1. 鍙戝竷 v1.9.1锛坄.\release-current.ps1`锛夛紝瀹炴祴锛氱紪杈戝櫒鎶?3 寮犵収鐗囩紪涓轰竴缁勫苟鍐欑粍鎻忚堪 鈫?淇濆瓨 鈫?涓夌鏀炬槧椋庢牸鍚勭湅涓€閬嶏紱鎷嗙粍 / 鎾ら攢锛涙斁鏄犲巺鍒囧埌銆屾墜鍔ㄦ斁鏄犮€嶉€愬紶缈婚〉锛涙悳绱㈤潰鏉夸笉鍐嶆樉绀烘暟鎹潵婧愯銆?2. 鍛ㄥ勾涔嬪悗锛歷1.10.0 鍦扮悆鐪?/ 宸炵煝閲忚竟鐣屼笌灞€閮ㄩ珮娓咃紙GLB-001锛夛紝v1.10.1 鍥藉鍦板浘銆屾槦鍥炬墜绋裤€嶏紙MAP-001锛夈€?3. 瀹屾垚 Private Storage 姝ｅ紡鐓х墖涓?BGM 鐨勫疄闄呭唴瀹瑰～鍏咃紝骞朵紭鍏堜娇鐢?v1.7.2 涔嬪悗鐨勬柊涓婁紶缂撳瓨绛栫暐銆?4. 鏍稿績绋冲畾鍚庡疄鐜板懆骞存墘椤?/ 鐚瘝 / 缁撳熬锛圓NN-008锛夈€?5. 杩涜鏈€缁堟墜鏈虹 Production URL 楠屾敹锛涢噸鐐硅瀵熷急缃戠収鐗囩瓑寰呫€佸彂鐑€佹帀甯т笌椤甸潰娈嬪奖銆?6. 2026-10-28 鏅?Feature Freeze锛泇1.8.0 涔嬪悗鍙慨 bug銆傝嫢鐪熸満涓婃柊杞満鍗￠】锛屽彲鍦ㄨ彍鍗曘€屽姩鏁堝己搴︺€嶉€夋嫨鏌斿拰 / 鍏抽棴锛坮educed 妗ｄ笉鏄剧ず闂級銆?
 ## Release Automation (v1.6.0+)
 
 鐗堟湰瀹屾垚鍚庣殑棣栭€夊叆鍙ｏ細

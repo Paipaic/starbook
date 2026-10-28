@@ -1,10 +1,12 @@
 <script>
 /* ── 块 99 · v1.7.3 启动事务：认证 → Store → 首场景首帧 → 揭开 Gate ── */
 (function(SB){
-  SB.fx.start();
   (async()=>{
     try{
       await SB.store.ready;
+      SB.fx.start();   // v1.9.0：登录门遮住画面时不运行背景粒子，登录完成后再启动
+      SB.runtime?.showLoading?.('正在翻开书页…');   // v1.9.0 启动门状态行
+      await SB.nextPaint();
       await SB.scenes.boot('book');
       document.dispatchEvent(new CustomEvent('sb:data'));
       await SB.nextPaint();

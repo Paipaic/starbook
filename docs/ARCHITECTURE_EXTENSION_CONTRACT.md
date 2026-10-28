@@ -96,6 +96,12 @@ World Map Experience 的地球搜索：离线 `SB.WORLD_CITIES` + Open-Meteo 在
 - 在线服务不可用不影响任何核心链路（降级为离线库）；
 - 搜索结果只用于转动地球与导航，不写入 Store。
 
+### `SB.editor.photoActions`（v1.9.0）
+
+回忆编辑器「影像管理台」的批量操作注册表：`{id, label, icon, danger?, when(sel, st), run(sel, ctx)}`。只修改编辑中的 `st.slides` / `st.cover` / `st.groups`，不直接读写 Store；保存、文件清理仍由编辑器统一完成。新增批量能力时追加注册项即可。
+
+v1.9.1：`label` 可以是函数 `label(sel, st)`（例如「编为一组 / 加入这一组 / 合并为一组」）；改变照片顺序的操作结束前必须调用编辑器的分组规范化（组成员保持连续），撤销快照用 `snapOf(st)`（含每张照片的组与组描述）。
+
 ### `SB.theme`
 
 当前只有 Context：

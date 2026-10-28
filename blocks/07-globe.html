@@ -40,7 +40,6 @@
 .gl-opt .tag{flex:none;font-size:11px;letter-spacing:.08em;color:#2a1608;background:linear-gradient(180deg,#ffe7b5,#f4b860);padding:2px 8px;border-radius:999px;}
 .gl-res .note{padding:8px 12px;font-size:12.5px;color:var(--text-dim);letter-spacing:.06em;}
 .gl-res .note.wait{color:var(--gold);}
-.gl-res .src{padding:6px 12px 4px;font-size:10.5px;color:rgba(191,165,130,.6);letter-spacing:.08em;text-align:right;}
 
 /* 定位信息卡 */
 .gl-card{position:absolute;left:50%;bottom:calc(64px + var(--safe-b));z-index:3;width:min(440px, calc(100vw - 32px));transform:translate(-50%,16px);opacity:0;pointer-events:none;
@@ -549,7 +548,7 @@
     Object.assign(focus, {on:true, kind:o.kind, key:o.key, t0:performance.now(), o, ctry});
     if(o.kind !== 'cont') placeFocusMarker(o.lon, o.lat, o.kind); else focusGroup.visible = false;
     view.idle = -8;                                   // 飞到后多停一会儿再自转
-    const zoom = o.kind === 'place' || o.kind === 'mine' ? .8 : o.kind === 'cont' ? 1.05 : .9;
+    const zoom = o.zoom || (o.kind === 'place' || o.kind === 'mine' ? .8 : o.kind === 'cont' ? 1.05 : .9);
     await flyTo(o.lon, o.lat, zoom);
     if(focus.o !== o) return;
     if(o.kind !== 'cont' && !o.silent) showCard(o, ctry);
@@ -562,9 +561,11 @@
   function hideCard(){ $('gl-card').classList.remove('show'); }
   function showCard(o, ctry){
     const card = $('gl-card'); card.innerHTML = '';
-    const mine = o.kind === 'mine' ? SB.store.city(o.id) : SB.store.cities.find(c => c.name === o.zh && (!ctry || c.country === ctry.key));
+    // v1.9.0：行政区划名带「市 / 县 / County」后缀，也按去后缀名或 30km 内的距离匹配我们的城市
+    const bare = t => String(t || '').replace(/(特别行政区|维吾尔自治区|壮族自治区|回族自治区|自治区|自治州|地区|盟|省|市|县|区|旗|\s+(County|Parish|Borough|Census Area|Municipality|City and Borough))$/i, '');
+    const mine = o.kind === 'mine' ? SB.store.city(o.id) : SB.store.cities.find(c => (!ctry || c.country === ctry.key) && (c.name === o.zh || bare(c.name) === bare(o.zh) || (o.admin && o.admin !== 'state' && o.admin !== 'prov' && c.lon != null && Math.abs(c.lat - o.lat) < .27 && Math.abs(c.lon - o.lon) < .3)));
     const n = ctry ? SB.store.citiesIn(ctry.key).length : 0;
-    const kicker = o.kind === 'country' ? 'TERRA' : 'URBS';
+    const kicker = o.kind === 'country' ? 'TERRA' : o.admin === 'state' || o.admin === 'prov' ? 'REGIO' : 'URBS';
     const sub = o.kind === 'country' ? (n ? `已点亮 ${n} 座城市` : (SB.geo.continent(ctry?.cont)?.name || '')) : (o.sub || '');
     card.innerHTML = `<button type="button" class="x" aria-label="关闭">${SB.icon('close')}</button><small>${kicker}</small><h2></h2><p></p><div class="acts"></div>`;
     card.querySelector('h2').textContent = o.zh; card.querySelector('p').textContent = sub;
@@ -580,9 +581,27 @@
   }
 
   /* ── 搜索 ── */
-  const index = { countries:null, places:null, mine:null };
+  const index = { countries:null, places:null, mine:null, admin:null };
   const norm = s => String(s || '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[\s·・'’\-_.,，]/g, '');
+  /* v1.9.0 中国（省 / 地级市 / 县级）与美国（州 / 县）行政区划：SB.ADMIN_DIVISIONS（块 06-admin-divisions，tools/make_admin.py 生成） */
+  const SUFFIX = /(特别行政区|维吾尔自治区|壮族自治区|回族自治区|自治区|自治州|地区|盟|省|市|县|区|旗)$/;
+  function buildAdmin(){
+    const A = SB.ADMIN_DIVISIONS; if(!A) return [];
+    const out = [], rows = t => (t || '').split(';').filter(Boolean).map(r => r.split(','));
+    const P = rows(A.cn?.p), C = rows(A.cn?.c), D = rows(A.cn?.d);
+    const add = (o) => { o.kind = 'place'; o.nz = norm(o.zh); o.ne = norm(o.en || ''); o.na = norm(String(o.alias || '')); out.push(o); };
+    P.forEach(([n, lon, lat]) => add({admin:'prov', zh:n, en:'', cc:'CN', lon:+lon, lat:+lat, alias:n.replace(SUFFIX, ''), sub:'中国 · 省级行政区', zoom:.95, rank:12}));
+    C.forEach(([n, p, lon, lat]) => add({admin:'city', zh:n, en:'', cc:'CN', lon:+lon, lat:+lat, alias:n.replace(SUFFIX, ''), sub:`中国 · ${P[+p]?.[0] || ''}`, rank:9}));
+    D.forEach(([n, p, c, lon, lat]) => add({admin:'dist', zh:n, en:'', cc:'CN', lon:+lon, lat:+lat, alias:n.replace(SUFFIX, ''),
+      sub:['中国', P[+p]?.[0], +c >= 0 ? C[+c]?.[0] : ''].filter(Boolean).join(' · '), rank:/市$/.test(n) ? 5 : 0}));
+    const ST = rows(A.us?.s), UC = rows(A.us?.c);
+    ST.forEach(([ab, en, zh, lon, lat, alt]) => add({admin:'state', zh, en, cc:'US', lon:+lon, lat:+lat, alias:zh.replace(/州$/, ''), alt:(alt || '').split(' ').filter(Boolean).map(norm), ab:norm(ab), sub:`美国 · ${en} · ${ab}`, zoom:.95, rank:12}));
+    UC.forEach(([n, st, lon, lat]) => { const s = ST[+st] || [];
+      add({admin:'county', zh:n, en:n, cc:'US', lon:+lon, lat:+lat, alias:n.replace(/\s+(County|Parish|Borough|Census Area|Municipality|City and Borough)$/i, ''), sub:`美国 · ${s[2] || ''} ${s[1] || ''}`.trim(), rank:2}); });
+    return out;
+  }
   function buildIndex(){
+    if(!index.admin) index.admin = buildAdmin();
     if(!index.countries) index.countries = SB.geo.countries.map(c => ({kind:'country', zh:c.zh, en:c.en, key:c.key, lon:c.mid[0], lat:c.mid[1], nz:norm(c.zh), ne:norm(c.en)}));
     if(!index.places) index.places = (SB.WORLD_CITIES || []).map(([zh, en, cc, lon, lat, tier]) => ({kind:'place', zh, en, cc, lon, lat, tier, nz:norm(zh), ne:norm(en)}));
     if(!index.mine) index.mine = SB.store.cities.filter(c => c.lon != null).map(c => ({kind:'mine', id:c.id, zh:c.name, en:'', key:c.country, lon:c.lon, lat:c.lat,
@@ -590,17 +609,19 @@
   }
   function score(e, q){
     let s = -1;
-    for(const n of [e.nz, e.ne]){ if(!n) continue; if(n === q) s = Math.max(s, 100); else if(n.startsWith(q)) s = Math.max(s, 80 - Math.min(20, n.length - q.length)); else if(n.includes(q)) s = Math.max(s, 55); }
+    for(const n of [e.nz, e.ne, e.na, ...(e.alt || []), e.ab]){ if(!n) continue; if(n === q) s = Math.max(s, 100); else if(n.startsWith(q)) s = Math.max(s, 80 - Math.min(20, n.length - q.length)); else if(n.includes(q)) s = Math.max(s, 55); }
     return s;
   }
   function localSearch(raw){
-    buildIndex(); const q = norm(raw); if(!q) return {mine:[], countries:[], places:[]};
-    const pick = (arr, n, bonus) => arr.map(e => ({e, s:score(e, q)})).filter(x => x.s >= 0).map(x => ({...x, s:x.s + (bonus ? bonus(x.e) : 0)})).sort((a, b) => b.s - a.s).slice(0, n).map(x => x.e);
+    buildIndex(); const q = norm(raw); if(!q) return {mine:[], countries:[], places:[], admin:[]};
+    const pick = (arr, n, bonus, min = 0) => arr.map(e => ({e, s:score(e, q)})).filter(x => x.s >= min).map(x => ({...x, s:x.s + (bonus ? bonus(x.e) : 0)})).sort((a, b) => b.s - a.s).slice(0, n).map(x => x.e);
     const vis = SB.store.visitedCountries();
     return {
       mine: pick(index.mine, 5),
       countries: pick(index.countries, 6, e => vis.has(e.key) ? 6 : 0),
-      places: pick(index.places, 8, e => e.tier === 1 ? 6 : 0)
+      places: pick(index.places, 8, e => e.tier === 1 ? 6 : 0),
+      admin: pick(index.admin, 10, e => e.rank || 0, 60),   // 行政区划只取完全相同 / 前缀匹配（避免 Paris 命中 Parish）
+      q
     };
   }
   const online = { cache:new Map(), ctl:null, timer:0, state:'' };
@@ -624,7 +645,7 @@
   if(matchMedia('(max-width: 560px)').matches) qIn.placeholder = '搜索城市或国家 · 京都、冰岛';
   qx.innerHTML = SB.icon('close');
   const S = { opts:[], act:-1, q:'', local:null, remote:null, remoteState:'' };
-  const ICON = { mine:SB.icon('star'), country:'<svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M3.5 12h17M12 3.5c3 3.2 3 13.8 0 17M12 3.5c-3 3.2-3 13.8 0 17" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>',
+  const ICON = { region:'<svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5 9 4l6 2.5L20 4v13.5L15 20l-6-2.5L4 20Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M9 4v13.5M15 6.5V20" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>', mine:SB.icon('star'), country:'<svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M3.5 12h17M12 3.5c3 3.2 3 13.8 0 17M12 3.5c-3 3.2-3 13.8 0 17" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>',
     place:'<svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-6.1-6.5-11a6.5 6.5 0 0 1 13 0c0 4.9-6.5 11-6.5 11Z" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="12" cy="10" r="2.2" fill="currentColor"/></svg>' };
   function hl(name, q){
     const n = String(name || ''), nq = String(q || '').trim(); if(!nq) return SB.esc(n);
@@ -632,7 +653,8 @@
     return SB.esc(n.slice(0, i)) + '<mark>' + SB.esc(n.slice(i, i + nq.length)) + '</mark>' + SB.esc(n.slice(i + nq.length));
   }
   function render(){
-    const L = S.local || {mine:[], countries:[], places:[]};
+    const L = S.local || {mine:[], countries:[], places:[], admin:[]};
+    const admin = [...(L.admin || [])];
     const vis = SB.store.visitedCountries();
     // 合并本地城市与在线城市（同名同国家或很近的去重）
     const places = [...L.places];
@@ -640,13 +662,21 @@
       const dup = places.some(p => (p.cc || '').toUpperCase() === (r.cc || '').toUpperCase() && (p.zh === r.zh || (Math.abs(p.lat - r.lat) < .35 && Math.abs(p.lon - r.lon) < .35)));
       if(!dup && places.length < 12) places.push(r);
     }
+    // v1.9.0：与行政区划结果同一地点（约 30km 内、同国家）的城市不再重复显示（行政区划带省 / 州信息，更完整）
+    // 只合并「同名」的中国城市（如「长沙」与「长沙市」）；美国县的中心离城市很近但不是同一个地方，不合并
+    const same = (a, n) => a.cc === 'CN' && (a.alias === n || a.zh === n);
+    for(let i = places.length - 1; i >= 0; i--){ const p = places[i];
+      if(admin.some(a => a.admin !== 'prov' && same(a, p.zh) && Math.abs(a.lat - p.lat) < .4 && Math.abs(a.lon - p.lon) < .45)) places.splice(i, 1); }
+    // 已经是「我们的足迹」的城市，行政区划里同名的那条不再重复
+    for(let i = admin.length - 1; i >= 0; i--){ const a = admin[i];
+      if(L.mine.some(m => (a.alias === m.zh || a.zh === m.zh) && Math.abs(a.lat - m.lat) < .4 && Math.abs(a.lon - m.lon) < .45)) admin.splice(i, 1); }
     // 已在「我们的足迹」中出现的城市（约 40km 内）不再在「城市」组重复显示。
     for(let i = places.length - 1; i >= 0; i--){ const p = places[i];
       if(L.mine.some(m => Math.abs(m.lat - p.lat) < .35 && Math.abs(m.lon - p.lon) < .35)) places.splice(i, 1); }
     S.opts = []; res.innerHTML = '';
     const group = (title, arr, row) => { if(!arr.length) return; const h = SB.el('h4'); h.textContent = title; res.appendChild(h); arr.forEach(e => { const b = row(e); b.dataset.i = S.opts.length; S.opts.push(e); res.appendChild(b); }); };
     const opt = (e, name, sub, tag) => {
-      const b = SB.el('button', 'gl-opt', `<span class="ic">${ICON[e.kind]}</span><span class="tx"><b>${hl(name, S.q)}</b><span>${SB.esc(sub || '')}</span></span>${tag ? `<span class="tag">${SB.esc(tag)}</span>` : ''}`);
+      const b = SB.el('button', 'gl-opt', `<span class="ic">${ICON[e.admin ? 'region' : e.kind]}</span><span class="tx"><b>${hl(name, S.q)}</b><span>${SB.esc(sub || '')}</span></span>${tag ? `<span class="tag">${SB.esc(tag)}</span>` : ''}`);
       b.type = 'button'; b.setAttribute('role', 'option'); b.id = 'gl-opt-' + S.opts.length;
       b.addEventListener('pointerdown', ev => ev.preventDefault());
       b.addEventListener('click', () => choose(e)); return b;
@@ -654,11 +684,15 @@
     group('OUR STARS · 我们的足迹', L.mine, e => opt(e, e.zh, e.sub, '已点亮'));
     group('TERRAE · 国家与地区', L.countries, e => { const n = SB.store.citiesIn(e.key).length;
       return opt(e, e.zh, [e.en, SB.geo.continent(SB.geo.country(e.key)?.cont)?.name].filter(Boolean).join(' · '), vis.has(e.key) ? `已点亮 ${n}` : ''); });
-    group('URBES · 城市', places, e => opt(e, e.zh, e.sub || [countryLabel(e.cc), e.en && e.en !== e.zh ? e.en : ''].filter(Boolean).join(' · ')));
+    // 行政区划与城市两组：谁的最佳匹配更好谁在前
+    const best = arr => arr.reduce((m, e) => Math.max(m, score(e, L.q || '')), -1);
+    const gA = () => group('REGIONES · 州省 · 市县', admin, e => opt(e, e.zh, e.sub, ({prov:'省级', state:'州', city:'地级市', county:'县', dist:/市$/.test(e.zh) ? '县级市' : /区$/.test(e.zh) ? '区' : '县级'})[e.admin] || ''));
+    const gP = () => group('URBES · 城市', places, e => opt(e, e.zh, e.sub || [countryLabel(e.cc), e.en && e.en !== e.zh ? e.en : ''].filter(Boolean).join(' · ')));
+    if(places.length && best(places) >= best(admin)){ gP(); gA(); } else { gA(); gP(); }
     if(S.remoteState === 'wait'){ const d = SB.el('div', 'note wait'); d.textContent = '正在星图中寻找更多城市…'; res.appendChild(d); }
     else if(S.remoteState === 'fail'){ const d = SB.el('div', 'note'); d.textContent = '在线城市搜索暂时不可用，已显示本地结果'; res.appendChild(d); }
     if(!S.opts.length && S.remoteState !== 'wait'){ const d = SB.el('div', 'note'); d.textContent = '星图里没有找到「' + S.q + '」，换个写法试试（中文或英文）'; res.appendChild(d); }
-    if(places.length || S.remoteState){ const d = SB.el('div', 'src'); d.textContent = '城市数据：GeoNames · Open-Meteo · CLDR'; res.appendChild(d); }
+    // v1.9.1：数据来源行已从页面移除（Owner 要求），署名保留在 README「数据来源」一节
     S.act = S.opts.length ? 0 : -1; markAct();
     res.hidden = false; sBox.classList.add('on'); qIn.setAttribute('aria-expanded', 'true');
   }

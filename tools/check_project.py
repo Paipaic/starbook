@@ -158,6 +158,28 @@ if 'bk-runes-front' not in book_text or 'bk-runes-back' not in book_text:
     print('ERROR: magic book rune ring must use the 2D front/back layers (3D ring causes WebKit plane splitting)')
     sys.exit(1)
 
+# v1.9.0 guards: admin-division search data, editor batch-action registry, gate font decision.
+if 'SB.ADMIN_DIVISIONS = ' not in block_text.get('06-admin-divisions.html', ''):
+    print('ERROR: admin-division search data missing (06-admin-divisions.html, run tools/make_admin.py)')
+    sys.exit(1)
+if 'photoActions' not in block_text.get('12-memory-editor.html', ''):
+    print('ERROR: editor batch photo action registry (SB.editor.photoActions) missing')
+    sys.exit(1)
+if 'gateType' not in block_text.get('00-runtime.html', ''):
+    print('ERROR: login gate one-time font decision (data-gate-type) missing')
+    sys.exit(1)
+
+# v1.9.1 guards: photo groups in editor + player; no data-source line in the globe search panel.
+if 'normalizeGroups' not in block_text.get('12-memory-editor.html', '') or "id:'group'" not in block_text.get('12-memory-editor.html', ''):
+    print('ERROR: editor photo groups (normalizeGroups / group action) missing')
+    sys.exit(1)
+if 'unitsOf' not in block_text.get('11-memory-player.html', '') or 'holdsOf' not in block_text.get('11-memory-player.html', ''):
+    print('ERROR: player group units (unitsOf) / manual-playback holds (holdsOf) missing')
+    sys.exit(1)
+if '数据：国家统计局' in block_text.get('07-globe.html', ''):
+    print('ERROR: globe search panel must not show the data-source line (Owner request v1.9.1; credit lives in README)')
+    sys.exit(1)
+
 # Governance / release-document consistency checks.
 version = (root/'VERSION').read_text(encoding='utf-8-sig').strip()
 required_files = [
