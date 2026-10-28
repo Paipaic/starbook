@@ -62,6 +62,7 @@ starbook-media
 
 - `style`：放映风格 `cinema | constellation | journal`，缺省视为 `cinema`；
 - `season`：季节主题 `auto | none | spring | summer | autumn | winter`，缺省视为 `auto`。
+- `groups`（v1.9.1）：`[{id, text}]`，照片分组「同一时刻」的共同描述；照片 `slides[k].g` 为所属组 id。均为可选字段，缺省 = 没有分组；组成员在 `slides` 中连续；只保存仍有成员的组。
 
 它们是当前 Theme（`magic-celestial`）的**表现偏好**，不是业务数据：只在用户编辑并保存回忆时写入，旧数据无需迁移，`schema_version` 不变；其他 Theme 可以忽略。未来正规化 Memory 表时，应作为可空的 presentation 列或 JSON 偏好保留。
 

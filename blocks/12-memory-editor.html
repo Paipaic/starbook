@@ -89,6 +89,117 @@
 .ed-add span{font-size:11.5px;line-height:1.6;color:var(--text-dim);}
 .ed-add input{position:absolute;inset:0;opacity:0;cursor:pointer;}
 .ed-note{font-size:12px;color:var(--text-dim);line-height:1.7;margin:0;}
+/* v1.9.0 影像管理台：工具栏 / 上传进度 / 选择模式 / 批量操作栏 / 撤销 / 拖动排序 / 紧凑视图 */
+.ed-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:-4px;}
+.ed-tools .cnt{flex:1;min-width:110px;font-family:var(--f-display);font-weight:var(--fw-display);font-size:13.5px;letter-spacing:.1em;color:var(--text-dim);}
+.ed-tools .cnt b{font-family:var(--f-num);font-weight:600;font-size:16px;color:var(--gold-hi);margin:0 2px;}
+.ed-tools .sb-btn{min-height:36px;}
+.ed-tools .sb-btn .sb-ico{width:15px;height:15px;}
+.ed-tools label.sb-btn{position:relative;overflow:hidden;}
+.ed-tools label.sb-btn input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.ed-seg{display:inline-flex;border:1px solid rgba(244,184,96,.32);border-radius:999px;overflow:hidden;}
+.ed-seg button{border:0;background:transparent;color:var(--text-dim);padding:7px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:var(--f-display);font-weight:var(--fw-display);font-size:13px;letter-spacing:.08em;}
+.ed-seg button.on{background:rgba(244,184,96,.2);color:var(--gold-hi);}
+.ed-seg button .sb-ico{width:14px;height:14px;}
+.ed-up{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:10px;border:1px solid rgba(244,184,96,.22);background:rgba(10,8,22,.5);}
+.ed-up[hidden]{display:none!important;}
+.ed-up .row{display:flex;align-items:center;gap:10px;font-size:12.5px;letter-spacing:.06em;color:var(--text-dim);}
+.ed-up .row b{color:var(--gold-hi);font-family:var(--f-num);font-weight:600;}
+.ed-up .bar{height:3px;border-radius:2px;background:rgba(244,184,96,.16);overflow:hidden;}
+.ed-up .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#c99a4c,#fbe7b8);box-shadow:0 0 8px rgba(244,184,96,.6);transition:width .35s var(--ease-soft);}
+.ed-up .fail{color:#f0a48a;}
+.ed-up .fail button{border:0;background:none;color:var(--gold-hi);cursor:pointer;text-decoration:underline;font-size:12.5px;padding:0 4px;}
+.ed-sec.drop-on{outline:1.5px dashed rgba(255,226,168,.75);outline-offset:8px;border-radius:12px;}
+.ed-sec .drop-tip{display:none;text-align:center;font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.14em;color:var(--gold-hi);}
+.ed-sec.drop-on .drop-tip{display:block;}
+/* 选择模式 */
+.ed-card .pick{position:absolute;left:6px;top:6px;z-index:2;width:30px;height:30px;border-radius:50%;border:1.5px solid rgba(255,240,210,.85);background:rgba(8,6,18,.55);
+  display:none;place-items:center;color:#2a1608;cursor:pointer;padding:0;}
+.ed-card .pick::after{content:"";position:absolute;inset:-8px;}
+.ed-card .pick .sb-ico{width:16px;height:16px;opacity:0;}
+.ed-grid.selecting .ed-card .pick{display:grid;}
+.ed-grid.selecting .ed-card .ops{display:none;}
+.ed-grid.selecting .ed-card .no{left:42px;}
+.ed-grid.selecting .ed-card{cursor:pointer;}
+.ed-grid.selecting .ed-card.picked{border-color:var(--gold-hi);box-shadow:0 0 0 2px rgba(255,226,168,.55),0 0 22px rgba(244,184,96,.3);}
+.ed-grid.selecting .ed-card.picked .pick{background:var(--gold-hi);border-color:var(--gold-hi);}
+.ed-grid.selecting .ed-card.picked .pick .sb-ico{opacity:1;}
+.ed-grid.selecting .ed-card.picked .ph img{transform:scale(.94);filter:brightness(.85);}
+.ed-card .ph img{transition:transform .25s var(--ease-soft), filter .25s;}
+.ed-grid.selecting .ed-card textarea{pointer-events:none;opacity:.6;}
+.ed-grid.selecting .ed-add{display:none;}
+/* 批量操作栏 */
+.ed-bulk{position:sticky;bottom:6px;z-index:5;display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:14px;
+  border:1px solid rgba(255,226,168,.5);background:linear-gradient(180deg,rgba(30,24,52,.96),rgba(14,11,28,.97));box-shadow:0 14px 34px rgba(0,0,0,.55),0 0 20px rgba(244,184,96,.15);
+  overflow-x:auto;scrollbar-width:none;}
+.ed-bulk[hidden]{display:none!important;}
+.ed-bulk .k{flex:none;font-family:var(--f-display);font-weight:600;font-size:14px;letter-spacing:.1em;color:var(--gold-hi);padding-right:6px;margin-right:2px;border-right:1px solid rgba(244,184,96,.25);}
+.ed-bulk .k b{font-family:var(--f-num);font-size:17px;margin:0 2px;}
+.ed-bulk .sb-btn{flex:none;min-height:36px;white-space:nowrap;}
+.ed-bulk .sb-btn .sb-ico{width:14px;height:14px;}
+.ed-undo{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;border:1px solid rgba(244,184,96,.3);background:rgba(20,14,30,.85);font-size:13px;color:var(--text);}
+.ed-undo[hidden]{display:none!important;}
+.ed-undo span{flex:1;}
+.ed-undo button{border:1px solid rgba(255,226,168,.6);background:transparent;color:var(--gold-hi);border-radius:999px;padding:4px 12px;cursor:pointer;font-family:var(--f-display);font-weight:600;letter-spacing:.1em;}
+/* 拖动排序 */
+.ed-card[draggable="true"] .ph{cursor:grab;}
+.ed-card.dragging{opacity:.4;}
+.ed-card.drop-before::before,.ed-card.drop-after::after{content:"";position:absolute;top:0;bottom:0;width:3px;border-radius:2px;background:var(--gold-hi);box-shadow:0 0 12px rgba(244,184,96,.9);z-index:3;}
+.ed-card.drop-before::before{left:-9px;} .ed-card.drop-after::after{right:-9px;}
+.ed-card{overflow:visible;} .ed-card .ph{border-radius:10px 10px 0 0;}
+/* 紧凑视图：只看缩略图，便于一次管理很多照片 */
+.ed-grid.dense{grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px;}
+.ed-grid.dense .ed-card textarea{display:none;}
+.ed-grid.dense .ed-card .ph{aspect-ratio:1;border-radius:10px;}
+.ed-grid.dense .ed-card .no{font-size:15px;}
+.ed-grid.dense .ed-card .cv{font-size:0;padding:4px;}
+.ed-grid.dense .ed-card .ops{padding:14px 4px 5px;gap:3px;}
+.ed-grid.dense .ed-card .ops button{width:26px;height:26px;font-size:12px;}
+.ed-grid.dense .ed-add{min-height:104px;padding:8px;}
+.ed-grid.dense .ed-add span{display:none;}
+@media (max-width:640px){
+  .ed-tools .lbl{display:none;}
+  .ed-grid.dense{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .ed-bulk{bottom:calc(6px + var(--safe-b));}
+}
+
+/* v1.9.1 照片分组「同一时刻」：横跨整行的金色括线框 */
+.ed-group{grid-column:1/-1;position:relative;display:flex;flex-direction:column;gap:10px;padding:12px 14px 14px 24px;border-radius:12px;
+  border:1px solid rgba(244,184,96,.34);background:linear-gradient(180deg,rgba(72,48,20,.26),rgba(16,11,28,.34) 70%);
+  box-shadow:inset 0 0 0 1px rgba(255,226,168,.05),0 0 24px rgba(244,184,96,.07);}
+.ed-group::before{content:"";position:absolute;left:9px;top:14px;bottom:14px;width:6px;border:1.5px solid rgba(255,226,168,.72);border-right:0;border-radius:5px 0 0 5px;box-shadow:-2px 0 10px rgba(244,184,96,.22);}
+.ed-group::after{content:"";position:absolute;left:5px;top:50%;width:6px;height:6px;margin-top:-3px;transform:rotate(45deg);background:var(--gold-hi);box-shadow:0 0 8px rgba(244,184,96,.85);}
+.ed-ghead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.ed-ghead .gk{display:flex;align-items:center;gap:8px;flex:1;min-width:0;}
+.ed-ghead .gk .sb-ico{width:22px;height:22px;color:var(--gold-hi);flex:none;}
+.ed-ghead .gk b{font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.14em;color:var(--gold-hi);white-space:nowrap;}
+.ed-ghead .gk small{font-family:var(--f-display);font-size:12px;letter-spacing:.1em;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ed-ghead .gops{display:flex;align-items:center;gap:6px;}
+.ed-ghead .gops .sb-btn{min-height:32px;}
+.ed-ghead .gops .sb-btn .sb-ico{width:14px;height:14px;}
+.ed-ghead .gmv{width:32px;height:32px;border-radius:50%;border:1px solid rgba(244,184,96,.45);background:rgba(10,8,22,.6);color:var(--gold-hi);cursor:pointer;display:grid;place-items:center;padding:0;}
+.ed-ghead .gmv:hover{background:rgba(244,184,96,.18);}
+.ed-ghead .gmv[disabled]{opacity:.3;pointer-events:none;}
+.ed-ghead .gmv .sb-ico{width:16px;height:16px;}
+.ed-gtext-w{position:relative;}
+.ed-gtext{display:block;box-sizing:border-box;width:100%;min-height:68px;resize:none;overflow:hidden;padding:10px 12px 20px;border-radius:10px;border:1px solid rgba(244,184,96,.3);background:rgba(8,6,16,.55);
+  color:var(--text);font-family:var(--f-body);font-size:15px;line-height:1.7;outline:none;transition:border-color .25s, box-shadow .25s;}
+.ed-gtext:focus{border-color:var(--gold-hi);box-shadow:0 0 14px rgba(244,184,96,.22);}
+.ed-gtext::placeholder{color:rgba(191,165,130,.5);}
+.ed-gtext-w .n{position:absolute;right:10px;bottom:5px;font-family:var(--f-num);font-size:11px;letter-spacing:.06em;color:var(--gold-dim);pointer-events:none;}
+.ed-ggrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;}
+.ed-group .ed-card textarea{display:none;}          /* 组内单张描述收起（数据保留） */
+.ed-grid.dense .ed-ggrid{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;}
+.ed-grid.selecting .ed-group{border-color:rgba(255,226,168,.5);}
+@media (max-width:640px){ .ed-grid.dense .ed-ggrid{grid-template-columns:repeat(3,minmax(0,1fr));} }
+@media (max-width:560px){
+  .ed-group{padding:10px 10px 12px 20px;}
+  .ed-group::before{left:7px;} .ed-group::after{left:3px;}
+  .ed-ggrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+  .ed-gtext{font-size:16px;}
+  .ed-ghead .gk small .sub{display:none;}
+}
+@media (max-width:430px){ .ed-group .ed-card .ph{aspect-ratio:4/3;} }
 
 /* 放映风格卡片 */
 .ed-styles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
@@ -202,7 +313,79 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
   };
   const GRADE = {none:'transparent', spring:'rgba(255,170,195,.6)', summer:'rgba(255,205,120,.6)', autumn:'rgba(235,120,40,.65)', winter:'rgba(150,190,255,.65)'};
 
+  const CHECK = '<svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 10 17.5 19 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const GRID_I = '<svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4 15h7M4 18h5M13 15h7M13 18h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+  const DENSE_I = '<svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true">' + [4,10,16].map(x => [4,10,16].map(y => `<rect x="${x}" y="${y}" width="4.5" height="4.5" rx="1" fill="currentColor" opacity=".85"/>`).join('')).join('') + '</svg>';
+  const ACT_I = {
+    cover:'<svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8L3.5 9.7l5.9-.8Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>',
+    first:'<svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5v14M18 6l-7 6 7 6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    last:'<svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 5v14M6 6l7 6-7 6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    clear:'<svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h11M4 12h8M4 17h6M15 14l5 5M20 14l-5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+    del:'<svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    group:'<svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 4.5h-3v15h3M16.5 4.5h3v15h-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 9h6M9 12h6M9 15h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+    ungroup:'<svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4.5H4.5v15H8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 12h9.5M16 8.5l3.5 3.5-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+  };
+  // 组框头的「一叠相片」图形
+  const STACK_I = '<svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.8" y="7.2" width="12" height="9.6" rx="1.4" transform="rotate(-9 8.8 12)" fill="none" stroke="currentColor" stroke-width="1.3" opacity=".7"/><g transform="rotate(6 14.6 11.4)"><rect x="8.6" y="6.6" width="12" height="9.6" rx="1.4" fill="rgba(244,184,96,.16)" stroke="currentColor" stroke-width="1.5"/><path d="M10.6 14.2l2.6-2.7 2.1 2 1.6-1.5 2.1 2.2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><circle cx="17.4" cy="9.4" r="1" fill="currentColor"/></g></svg>';
+  const PREV_I = '<svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const NEXT_I = '<svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  /* v1.9.1 照片分组「同一时刻」：slides[k].g = 组 id；st.groups: Map(id → {id, text})；组成员在 slides 里必须连续 */
+  const newGid = () => 'g' + Math.random().toString(36).slice(2, 8);
+  // 把照片切成单元：同组连续照片为一段，其余每张单独一段
+  const runsOf = slides => { const out = []; for(const x of slides){ const last = out[out.length - 1]; if(x.g && last && last.g === x.g) last.items.push(x); else out.push({g:x.g || null, items:[x]}); } return out; };
+  // 同一组被拆成多段时：成员最多的一段保留组身份，其余照片离开该组
+  function normalizeGroups(st){
+    const runs = runsOf(st.slides).filter(r => r.g), best = new Map();
+    runs.forEach(r => { const b = best.get(r.g); if(!b || r.items.length > b.items.length) best.set(r.g, r); });
+    runs.forEach(r => { if(best.get(r.g) !== r) r.items.forEach(x => delete x.g); });
+    st.slides.forEach(x => { if(x.g && !st.groups.has(x.g)) st.groups.set(x.g, {id:x.g, text:''}); });
+  }
+  // 撤销快照：顺序、封面、每张照片的组、每组的描述
+  function snapOf(st, text){
+    const gs = st.slides.map(x => [x, x.g]), gt = [...st.groups.values()].map(g => [g.id, g.text]);
+    return {slides:[...st.slides], cover:st.cover, text, restore:() => { gs.forEach(([x, g]) => { if(g) x.g = g; else delete x.g; }); st.groups = new Map(gt.map(([id, text]) => [id, {id, text}])); }};
+  }
+  const touchedGroups = sel => [...new Set(sel.map(x => x.g).filter(Boolean))];
+  /* v1.9.0 批量操作注册表：以后增加「旋转」「移动到其他回忆」等，只需在这里追加一项（{id, label, icon, danger?, when(sel, st), run(sel, ctx)}） */
+  const moveTo = (sel, st, front) => { const rest = st.slides.filter(x => !sel.includes(x)); st.slides = front ? [...sel, ...rest] : [...rest, ...sel]; normalizeGroups(st); };
+  const photoActions = [
+    {id:'group', icon:ACT_I.group,
+      label:sel => { const n = touchedGroups(sel).length; return n === 0 ? '编为一组' : n === 1 ? '加入这一组' : '合并为一组'; },
+      // 选中 ≥ 2 张，且不全在同一组里
+      when:sel => sel.length >= 2 && new Set(sel.map(x => x.g || x)).size > 1,
+      run:(sel, c) => { const st = c.st, snap = snapOf(st), tg = touchedGroups(sel), id = tg[0] || newGid();
+        if(!st.groups.has(id)) st.groups.set(id, {id, text:''});
+        const g = st.groups.get(id);
+        if(!String(g.text || '').trim()){ const t = tg.map(k => String(st.groups.get(k)?.text || '').trim()).find(Boolean); if(t) g.text = t; }
+        // 选中的照片 + 涉及的组的全部成员，按原顺序聚到第一张所在位置
+        const mem = st.slides.filter(x => sel.includes(x) || (x.g && tg.includes(x.g))), at = st.slides.indexOf(mem[0]);
+        const rest = st.slides.filter(x => !mem.includes(x)); rest.splice(at, 0, ...mem); mem.forEach(x => x.g = id); st.slides = rest;
+        normalizeGroups(st); st.sel.clear(); st.selecting = false; st.focusGroup = id;
+        c.render(); c.undo({...snap, text:tg.length ? `已把 ${mem.length} 张照片放进同一组` : `已把 ${mem.length} 张照片编为一组`}); }},
+    {id:'ungroup', label:'移出分组', icon:ACT_I.ungroup, when:sel => sel.some(x => x.g),
+      run:(sel, c) => { const st = c.st, snap = snapOf(st), out = st.slides.filter(x => sel.includes(x) && x.g), byG = new Map();
+        out.forEach(x => { if(!byG.has(x.g)) byG.set(x.g, []); byG.get(x.g).push(x); });
+        // 移出的照片放到原组最后一张之后，组保持连续
+        for(const [g, xs] of byG){ xs.forEach(x => delete x.g); const remain = st.slides.filter(x => x.g === g); if(!remain.length) continue;
+          st.slides = st.slides.filter(x => !xs.includes(x)); st.slides.splice(st.slides.indexOf(remain[remain.length - 1]) + 1, 0, ...xs); }
+        normalizeGroups(st); c.render(); c.undo({...snap, text:`已把 ${out.length} 张照片移出分组`}); }},
+    {id:'cover', label:'设为封面', icon:ACT_I.cover, when:sel => sel.length === 1, run:(sel, c) => { c.st.cover = sel[0].id; c.render(); c.toast('已设为封面'); }},
+    {id:'first', label:'移到最前', icon:ACT_I.first, run:(sel, c) => { moveTo(sel, c.st, true); c.render(); }},
+    {id:'last', label:'移到最后', icon:ACT_I.last, run:(sel, c) => { moveTo(sel, c.st, false); c.render(); }},
+    {id:'clear', label:'清空描述', icon:ACT_I.clear, when:sel => sel.some(x => (x.caption || '').trim()), run:(sel, c) => { const snap = {slides:c.st.slides.map(x => x), cover:c.st.cover, caps:sel.map(x => [x, x.caption])};
+      sel.forEach(x => x.caption = ''); c.render(); c.undo({...snap, text:`已清空 ${sel.length} 张照片的描述`, slides:snap.slides, restore:() => snap.caps.forEach(([x, t]) => x.caption = t)}); }},
+    {id:'delete', label:'删除', icon:ACT_I.del, danger:true, run:async (sel, c) => {
+      if(!await c.confirm(`从这段回忆中移除 ${sel.length} 张照片？`)) return;
+      const snap = {slides:[...c.st.slides], cover:c.st.cover, text:`已移除 ${sel.length} 张照片`};
+      c.st.slides = c.st.slides.filter(x => !sel.includes(x)); c.st.sel.clear();
+      if(!c.st.slides.some(x => x.id === c.st.cover)) c.st.cover = c.st.slides.find(x => x.id)?.id || null;
+      if(!c.st.slides.some(x => !x.pending)) c.st.selecting = false;
+      c.render(); c.undo(snap); }}
+  ];
+
   SB.editor = {
+    photoActions,
     open({cityId, memory}){
       const city = SB.store.city(cityId);
       if(!SB.store.canEdit){ SB.toast('你目前只有查看权限'); return; }
@@ -214,13 +397,17 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
         year: (orig?.date || '').split('-')[0] || String(now.getFullYear()),
         month: (orig?.date || '').split('-')[1] || String(now.getMonth() + 1).padStart(2, '0'),
         slides: (orig?.slides || []).map(s => ({...s})),
+        groups: new Map((Array.isArray(orig?.groups) ? orig.groups : []).filter(g => g?.id).map(g => [g.id, {id:g.id, text:String(g.text || '')}])), focusGroup:null,
         cover: orig?.cover?.id || orig?.slides?.[0]?.id || null,
         bgmMode: orig?.bgmMode || (orig?.bgm ? 'own' : 'global'),
         bgm: orig?.bgm || null,
         style: SB.cinema.styleOf(orig), season: SB.cinema.seasonPref(orig),
-        uploading: 0, sessionFiles: []
+        uploading: 0, sessionFiles: [],
+        // v1.9.0 影像管理台
+        selecting:false, sel:new Set(), lastPick:-1, upTotal:0, upDone:0, failed:[], undo:null,
+        dense:(() => { try{ return localStorage.getItem('sb-ed-density') === 'dense'; }catch(e){ return false; } })()
       };
-      let grid, saveBtn, preview, done = false, ui = {}, fallKey = '';
+      let grid, saveBtn, preview, done = false, ui = {}, fallKey = '', tools, upBox, bulk, undoBar, sec2;
       const place = city ? [city.countryName, city.regionName, city.name].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(' · ') : '';
       const dlg = SB.ui.dialog({
         title: memory ? '编辑回忆' : '新的回忆', sub: [city?.name, city?.regionName].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(' · ').toUpperCase(), wide:true,
@@ -261,13 +448,23 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
           const nf = SB.ui.field('一段话', note); nf.classList.add('full'); nf.appendChild(cnt); tale.appendChild(nf);
 
           /* Ⅱ 影像 */
-          const s2 = section('II', '影像', 'THE IMAGES');
+          const s2 = sec2 = section('II', '影像', 'THE IMAGES');
+          // v1.9.0 影像管理台：工具栏 → 上传进度 → 撤销条 → 网格 → 批量操作栏
+          tools = SB.el('div', 'ed-tools'); s2.appendChild(tools);
+          upBox = SB.el('div', 'ed-up'); upBox.hidden = true; s2.appendChild(upBox);
+          undoBar = SB.el('div', 'ed-undo'); undoBar.hidden = true; s2.appendChild(undoBar);
+          const dropTip = SB.el('div', 'drop-tip'); s2.appendChild(dropTip);
           grid = SB.el('div', 'ed-grid'); s2.appendChild(grid);
-          const tip = SB.el('p', 'ed-note'); tip.textContent = '每张照片下面写一句它的故事，放映时会逐字出现。★ 设为封面，‹ › 调整顺序。'; s2.appendChild(tip);
+          bulk = SB.el('div', 'ed-bulk'); bulk.hidden = true; bulk.setAttribute('role', 'toolbar'); bulk.setAttribute('aria-label', '批量操作'); s2.appendChild(bulk);
+          const tip = SB.el('p', 'ed-note'); tip.textContent = '每张照片下面写一句它的故事，放映时会逐字出现。几张照片拍的是同一个瞬间时，点「选择」勾选它们 →「编为一组」，为这一组写一段共同的描述，放映到这几张时会一直浮现。★ 设为封面；电脑上可直接拖动照片排序（拖到组里的照片旁边即加入该组）。'; s2.appendChild(tip);
           if(!SB.store.canUpload){ const n = SB.el('p','ed-note'); n.textContent = '上传照片需要「编辑者」权限，请让网页的主人在分享设置里把你设为编辑者。'; s2.appendChild(n); }
-          s2.addEventListener('dragover', e => { if(!SB.store.canUpload) return; e.preventDefault(); grid.querySelector('.ed-add')?.classList.add('over'); });
-          s2.addEventListener('dragleave', e => { if(!s2.contains(e.relatedTarget)) grid.querySelector('.ed-add')?.classList.remove('over'); });
-          s2.addEventListener('drop', e => { if(!SB.store.canUpload) return; e.preventDefault(); grid.querySelector('.ed-add')?.classList.remove('over'); addFiles([...e.dataTransfer.files]); });
+          const hasFiles = e => [...(e.dataTransfer?.types || [])].includes('Files');
+          s2.addEventListener('dragover', e => { if(!SB.store.canUpload || !hasFiles(e)) return; e.preventDefault();
+            const n = e.dataTransfer.items ? [...e.dataTransfer.items].filter(i => i.kind === 'file').length : 0;
+            dropTip.textContent = n ? `松开即可添加 ${n} 张照片` : '松开即可添加照片'; s2.classList.add('drop-on'); grid.querySelector('.ed-add')?.classList.add('over'); });
+          s2.addEventListener('dragleave', e => { if(!s2.contains(e.relatedTarget)){ s2.classList.remove('drop-on'); grid.querySelector('.ed-add')?.classList.remove('over'); } });
+          s2.addEventListener('drop', e => { if(!SB.store.canUpload || !hasFiles(e)) return; e.preventDefault(); s2.classList.remove('drop-on'); grid.querySelector('.ed-add')?.classList.remove('over'); addFiles([...e.dataTransfer.files]); });
+          s2.addEventListener('keydown', e => { if(e.key === 'Escape' && st.selecting){ e.stopPropagation(); setSelecting(false); } }, true);
 
           /* Ⅲ 放映 */
           const s3 = section('III', '放映', 'THE SCREENING');
@@ -311,7 +508,7 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
           mus.append(radios, track);
           const renderTrack = () => {
             track.innerHTML = '';
-            if(st.bgmMode !== 'own'){ if(st.bgmMode === 'global'){ const s = SB.el('span'); s.style.color = 'var(--text-dim)'; s.textContent = SB.store.settings?.bgm ? '♪ ' + SB.store.settings.bgm.name : '还没有设置全站音乐（可在「回忆总览」上传）'; track.appendChild(s); } return; }
+            if(st.bgmMode !== 'own'){ if(st.bgmMode === 'global'){ const s = SB.el('span'); s.style.color = 'var(--text-dim)'; s.textContent = SB.store.settings?.bgm ? '♪ ' + SB.store.settings.bgm.name : '还没有设置全站音乐（可在右上角「音乐」标识里上传）'; track.appendChild(s); } return; }
             if(st.bgm){
               const s = SB.el('span'); s.textContent = '♪ ' + st.bgm.name; track.appendChild(s);
               track.appendChild(SB.ui.button('试听', 'small', (e) => { if(preview && !preview.paused){ preview.pause(); e.currentTarget.textContent = '试听'; return; } preview = SB.audio.preview(st.bgm.id); preview.play(); e.currentTarget.textContent = '停止'; }));
@@ -344,8 +541,12 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
             if(!st.title.trim()){ SB.toast('请写一个标题'); return false; }
             if(!st.slides.length){ SB.toast('至少添加一张照片'); return false; }
             btn.disabled = true;
+            normalizeGroups(st);
+            const live = new Set(st.slides.map(s => s.g).filter(Boolean));
+            const groups = [...st.groups.values()].filter(g => live.has(g.id)).map(g => ({id:g.id, text:String(g.text || '').trim()}));
             const data = { id: memory?.id, cityId, title: st.title.trim(), date: `${st.year}-${st.month}`, note: st.note.trim(),
-              slides: st.slides.map(s => ({id:s.id, w:s.w, h:s.h, caption:(s.caption || '').trim()})),
+              slides: st.slides.map(s => ({id:s.id, w:s.w, h:s.h, caption:(s.caption || '').trim(), ...(s.g ? {g:s.g} : {})})),
+              ...(groups.length ? {groups} : {}),
               cover: {id: st.slides.some(s => s.id === st.cover) ? st.cover : st.slides[0].id},
               bgmMode: st.bgmMode, bgm: st.bgmMode === 'own' ? st.bgm : null,
               style: st.style, season: st.season };
@@ -363,9 +564,10 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
       function refreshSum(){
         const n = st.slides.filter(s => s.id).length;
         let dur = '';
-        try{ if(n && SB.player?.estimate){ const s = Math.round(SB.player.estimate({title:st.title, note:st.note, date:`${st.year}-${st.month}`, slides:st.slides.filter(s => s.id)}, st.style)/1000);
+        try{ if(n && SB.player?.estimate){ const s = Math.round(SB.player.estimate({title:st.title, note:st.note, date:`${st.year}-${st.month}`, slides:st.slides.filter(s => s.id), groups:[...st.groups.values()]}, st.style)/1000);
           dur = s < 60 ? `约 ${s} 秒` : `约 ${Math.floor(s/60)} 分${s % 60 ? ' ' + s % 60 + ' 秒' : ''}`; } }catch(e){}
-        const html = `<span>${n} 张照片</span>${dur ? `<i></i><span>${dur}</span>` : ''}`;
+        const ng = runsOf(st.slides).filter(r => r.g).length;
+        const html = `<span>${n} 张照片</span>${ng ? `<i></i><span>${ng} 组</span>` : ''}${dur ? `<i></i><span>${dur}</span>` : ''}`;
         ui.sums?.forEach(x => x.innerHTML = html);
       }
       function refreshPoster(){
@@ -407,22 +609,118 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
         const candidates = [...st.sessionFiles, ...(saved && orig ? [...(orig.slides||[]).map(s => s.id), orig.bgm?.id] : [])].filter(Boolean);
         for(const id of new Set(candidates)) if(!keep.has(id) && !used.has(id)) SB.store.deleteFile(id);
       }
+      /* v1.9.0 批量添加：排队、并发 2 张、整体进度、失败可重试 */
       async function addFiles(files){
         files = files.filter(f => IMG_TYPES.test(f.type) || /\.(heic|heif)$/i.test(f.name));
-        if(!files.length) return;
-        for(const f of files){ const ph = { pending:true, name:f.name, step:'等待中' }; st.slides.push(ph); st.uploading++; }
-        refresh(); renderGrid();
-        for(const f of files){
-          const ph = st.slides.find(s => s.pending && s.name === f.name && !s.started); if(!ph) continue; ph.started = true;
-          try{
-            // 只更新这一张卡片的进度文字，不打断正在输入的描述
-            const r = await SB.store.uploadImage(f, t => { ph.step = t; if(ph._st) ph._st.textContent = t; });
-            Object.assign(ph, r, {pending:false, caption:''}); delete ph.step; st.sessionFiles.push(r.id);
-            if(!st.cover){ st.cover = r.id; renderGrid(); } else replaceCard(ph);
-            refreshPoster();
-          }catch(e){ st.slides.splice(st.slides.indexOf(ph), 1); ph._card?.remove(); renumber(); SB.toast(e.msg || SB.store.errText(e), 4200); }
-          st.uploading--; refresh();
+        if(!files.length){ SB.toast('没有可以添加的图片文件'); return; }
+        const jobs = files.map(f => ({ f, ph:{ pending:true, name:f.name, step:'等待中' } }));
+        if(!st.uploading){ st.upTotal = 0; st.upDone = 0; }   // 新的一批：重新计数
+        jobs.forEach(j => { st.slides.push(j.ph); st.uploading++; });
+        st.upTotal += jobs.length; refresh(); renderGrid(); renderUp();
+        let next = 0, added = 0;
+        const worker = async () => {
+          while(next < jobs.length){
+            const {f, ph} = jobs[next++];
+            try{
+              // 只更新这一张卡片的进度文字，不打断正在输入的描述
+              const r = await SB.store.uploadImage(f, t => { ph.step = t; if(ph._st) ph._st.textContent = t; });
+              Object.assign(ph, r, {pending:false, caption:''}); delete ph.step; st.sessionFiles.push(r.id); added++;
+              if(!st.cover){ st.cover = r.id; renderGrid(); } else replaceCard(ph);
+              refreshPoster();
+            }catch(e){ const k = st.slides.indexOf(ph); if(k >= 0) st.slides.splice(k, 1); ph._card?.remove(); renumber(); st.failed.push({f, msg:e.msg || SB.store.errText(e)}); }
+            st.uploading--; st.upDone++; refresh(); renderUp(); renderTools();
+          }
+        };
+        await Promise.all([worker(), worker()]);
+        if(!st.uploading){ if(added) SB.toast(`已添加 ${added} 张照片`); setTimeout(renderUp, 1600); }
+      }
+      function renderUp(){
+        if(!upBox) return;
+        const busy = st.uploading > 0, fails = st.failed.length;
+        upBox.hidden = !busy && !fails;
+        if(upBox.hidden){ st.upTotal = st.upDone = 0; return; }
+        upBox.innerHTML = '';
+        if(busy){ const r = SB.el('div', 'row', `<span>正在上传 <b>${st.upDone + 1 > st.upTotal ? st.upTotal : st.upDone + 1}</b> / <b>${st.upTotal}</b></span><span>· 已完成 ${st.upDone}</span>`); upBox.appendChild(r);
+          const bar = SB.el('div', 'bar', '<i></i>'); upBox.appendChild(bar); requestAnimationFrame(() => { bar.firstChild.style.width = (st.upTotal ? st.upDone/st.upTotal*100 : 0) + '%'; }); }
+        if(fails){ const r = SB.el('div', 'row fail', `<span>${fails} 张未能上传：${SB.esc(st.failed[0].msg || '')}</span>`);
+          const retry = SB.el('button'); retry.type = 'button'; retry.textContent = '重试'; retry.addEventListener('click', () => { const fs = st.failed.map(x => x.f); st.failed = []; addFiles(fs); });
+          const skip = SB.el('button'); skip.type = 'button'; skip.textContent = '忽略'; skip.addEventListener('click', () => { st.failed = []; renderUp(); });
+          r.append(retry, skip); upBox.appendChild(r); }
+      }
+
+      /* v1.9.0 工具栏 / 选择模式 / 批量操作栏 / 撤销 */
+      function ready(){ return st.slides.filter(x => !x.pending); }   // 函数声明：在弹窗 build 期间就可用
+      function setSelecting(on){ st.selecting = on; st.sel.clear(); st.lastPick = -1; renderGrid(); }
+      function renderTools(){
+        if(!tools) return;
+        tools.innerHTML = '';
+        const n = ready().length;
+        const cnt = SB.el('span', 'cnt'); cnt.innerHTML = st.selecting ? `已选 <b>${st.sel.size}</b> / ${n}` : `<b>${n}</b> 张照片`; tools.appendChild(cnt);
+        if(st.selecting){
+          tools.appendChild(SB.ui.button('全选', 'small', () => { ready().forEach(x => st.sel.add(x)); renderGrid(); }));
+          tools.appendChild(SB.ui.button('反选', 'small', () => { ready().forEach(x => st.sel.has(x) ? st.sel.delete(x) : st.sel.add(x)); renderGrid(); }));
+          if(st.sel.size) tools.appendChild(SB.ui.button('取消选择', 'small', () => { st.sel.clear(); renderGrid(); }));
+          tools.appendChild(SB.ui.button('完成', 'small primary', () => setSelecting(false)));
+          return;
         }
+        if(SB.store.canUpload){
+          const up = SB.el('label', 'sb-btn small primary', `${SB.icon('plus')}<span>批量添加</span>`);
+          const fin = SB.el('input'); fin.type = 'file'; fin.accept = 'image/*'; fin.multiple = true; fin.setAttribute('aria-label', '批量选择照片');
+          fin.addEventListener('change', () => { addFiles([...fin.files]); fin.value = ''; }); up.appendChild(fin); tools.appendChild(up);
+        }
+        if(n){ const b = SB.ui.button('选择', 'small', () => setSelecting(true)); b.insertAdjacentHTML('afterbegin', CHECK); tools.appendChild(b); }
+        const seg = SB.el('div', 'ed-seg'); seg.setAttribute('role', 'radiogroup'); seg.setAttribute('aria-label', '照片视图');
+        [['cards', GRID_I, '卡片'], ['dense', DENSE_I, '紧凑']].forEach(([id, ic, lb]) => {
+          const b = SB.el('button', (st.dense ? 'dense' : 'cards') === id ? 'on' : '', `${ic}<span class="lbl">${lb}</span>`); b.type = 'button'; b.setAttribute('role', 'radio');
+          b.setAttribute('aria-checked', String((st.dense ? 'dense' : 'cards') === id)); b.title = lb + '视图';
+          b.addEventListener('click', () => { st.dense = id === 'dense'; try{ localStorage.setItem('sb-ed-density', st.dense ? 'dense' : 'cards'); }catch(e){} renderGrid(); });
+          seg.appendChild(b); });
+        tools.appendChild(seg);
+      }
+      function actx(){ return { st, render:() => { renderGrid(); refreshPoster(); }, confirm:t => SB.ui.confirm(t, '确定', 'danger'), toast:t => SB.toast(t), undo:snap => showUndo(snap) }; }
+      function renderBulk(){
+        if(!bulk) return;
+        bulk.hidden = !st.selecting || !st.sel.size; if(bulk.hidden) return;
+        bulk.innerHTML = `<span class="k">已选<b>${st.sel.size}</b>张</span>`;
+        const sel = st.slides.filter(x => st.sel.has(x));
+        for(const a of SB.editor.photoActions){
+          if(a.when && !a.when(sel, st)) continue;
+          const b = SB.ui.button(typeof a.label === 'function' ? a.label(sel, st) : a.label, 'small' + (a.danger ? ' danger' : ''), async () => { await a.run(sel, actx()); });
+          if(a.icon) b.insertAdjacentHTML('afterbegin', a.icon);
+          bulk.appendChild(b);
+        }
+      }
+      function showUndo(snap){
+        clearTimeout(st.undoT); st.undo = snap;
+        undoBar.innerHTML = ''; const t = SB.el('span'); t.textContent = snap.text; const b = SB.el('button'); b.type = 'button'; b.textContent = '撤销';
+        b.addEventListener('click', () => { snap.restore?.(); st.slides = snap.slides; st.cover = snap.cover; st.undo = null; undoBar.hidden = true; renderGrid(); refreshPoster(); SB.toast('已恢复'); });
+        undoBar.append(t, b); undoBar.hidden = false;
+        st.undoT = setTimeout(() => { undoBar.hidden = true; st.undo = null; }, 6000);
+      }
+      function pick(s, e){
+        const list = ready(), k = list.indexOf(s);
+        if(e?.shiftKey && st.lastPick >= 0){ const [a, b] = [Math.min(st.lastPick, k), Math.max(st.lastPick, k)]; for(let i = a; i <= b; i++) st.sel.add(list[i]); }
+        else st.sel.has(s) ? st.sel.delete(s) : st.sel.add(s);
+        st.lastPick = k;
+        s._card?.classList.toggle('picked', st.sel.has(s)); s._card?.querySelector('.pick')?.setAttribute('aria-checked', String(st.sel.has(s)));
+        if(e?.shiftKey) renderGrid(); else { renderTools(); renderBulk(); }
+      }
+      /* 电脑上拖动卡片排序 */
+      var dragS = null;   // var：buildCard 在弹窗 build 期间就会用到
+      function wireDrag(card, s){
+        if(s.pending || !matchMedia('(pointer:fine)').matches || st.selecting) return;
+        card.draggable = true;
+        card.addEventListener('dragstart', e => { dragS = s; card.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; try{ e.dataTransfer.setData('text/plain', 'photo'); }catch(_){} });
+        card.addEventListener('dragend', () => { dragS = null; card.classList.remove('dragging'); grid.querySelectorAll('.drop-before,.drop-after').forEach(x => x.classList.remove('drop-before', 'drop-after')); });
+        card.addEventListener('dragover', e => { if(!dragS || dragS === s) return; e.preventDefault(); e.stopPropagation();
+          const r = card.getBoundingClientRect(), after = e.clientX > r.left + r.width/2;
+          grid.querySelectorAll('.drop-before,.drop-after').forEach(x => x !== card && x.classList.remove('drop-before', 'drop-after'));
+          card.classList.toggle('drop-after', after); card.classList.toggle('drop-before', !after); });
+        card.addEventListener('drop', e => { if(!dragS || dragS === s) return; e.preventDefault(); e.stopPropagation();
+          const after = card.classList.contains('drop-after'); const from = st.slides.indexOf(dragS); st.slides.splice(from, 1);
+          let to = st.slides.indexOf(s) + (after ? 1 : 0); st.slides.splice(to, 0, dragS);
+          if(s.g) dragS.g = s.g; else delete dragS.g;   // v1.9.1：放到哪张照片旁边，就加入它所在的组
+          dragS = null; renderGrid(); refreshPoster(); });
       }
       function buildCard(s){
         const i = st.slides.indexOf(s), card = SB.el('div', 'ed-card' + (s.id && s.id === st.cover ? ' cover' : ''));
@@ -431,20 +729,62 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
         else ph.innerHTML = `<img alt="" loading="lazy" decoding="async" fetchpriority="low" src="${SB.esc(SB.store.url(s.id))}">`;
         const no = SB.el('span', 'no'); no.textContent = String(i + 1).padStart(2, '0'); ph.appendChild(no);
         if(s.id && s.id === st.cover){ ph.insertAdjacentHTML('beforeend', `<span class="cv">${SB.icon('star')}封面</span>`); }
+        if(!s.pending){
+          const pk = SB.el('button', 'pick', CHECK); pk.type = 'button'; pk.setAttribute('role', 'checkbox'); pk.setAttribute('aria-checked', String(st.sel.has(s)));
+          pk.setAttribute('aria-label', `选择第 ${i + 1} 张照片`); pk.addEventListener('click', e => { e.stopPropagation(); pick(s, e); }); ph.appendChild(pk);
+          if(st.sel.has(s)) card.classList.add('picked');
+          card.addEventListener('click', e => { if(st.selecting && e.target.tagName !== 'TEXTAREA') pick(s, e); });
+        }
         const ops = SB.el('div', 'ops');
         const mk = (icon, label, fn, on, flip) => { const b = SB.el('button', on ? 'on' : ''); b.type = 'button'; b.innerHTML = SB.icon(icon); if(flip) b.querySelector('svg').style.transform = 'scaleX(-1)';
           b.title = label; b.setAttribute('aria-label', label); b.disabled = !!s.pending; b.addEventListener('click', e => { e.stopPropagation(); fn(); }); ops.appendChild(b); return b; };
         const at = () => st.slides.indexOf(s);
-        mk('chevron', '前移', () => { const k = at(); if(k > 0){ [st.slides[k-1], st.slides[k]] = [st.slides[k], st.slides[k-1]]; renderGrid(); } }, false, true).disabled ||= i === 0;
+        // v1.9.1：组内照片在组内移动，到组边缘再向外 = 离开这一组；组外照片遇到相邻的组时整组跳过
+        mk('chevron', s.g && st.slides[i-1]?.g !== s.g ? '移出这一组' : '前移', () => { const k = at(), p = st.slides[k-1];
+          if(s.g && p?.g !== s.g){ delete s.g; renderGrid(); SB.toast('已移出这一组'); return; }
+          if(p?.g){ let b = k - 1; while(b > 0 && st.slides[b-1].g === p.g) b--; st.slides.splice(k, 1); st.slides.splice(b, 0, s); renderGrid(); return; }
+          if(k > 0){ [st.slides[k-1], st.slides[k]] = [st.slides[k], st.slides[k-1]]; renderGrid(); } }, false, true).disabled ||= i === 0 && !s.g;
         mk('star', '设为封面', () => { st.cover = s.id; renderGrid(); refreshPoster(); }, s.id === st.cover);
-        mk('close', '移除', () => { st.slides.splice(at(), 1); if(st.cover === s.id) st.cover = st.slides.find(x => x.id)?.id || null; renderGrid(); refreshPoster(); });
-        mk('chevron', '后移', () => { const k = at(); if(k < st.slides.length - 1){ [st.slides[k+1], st.slides[k]] = [st.slides[k], st.slides[k+1]]; renderGrid(); } }).disabled ||= i === st.slides.length - 1;
+        mk('close', '移除', () => { const snap = {slides:[...st.slides], cover:st.cover, text:'已移除 1 张照片'}; st.slides.splice(at(), 1); if(st.cover === s.id) st.cover = st.slides.find(x => x.id)?.id || null; renderGrid(); refreshPoster(); showUndo(snap); });
+        mk('chevron', s.g && st.slides[i+1]?.g !== s.g ? '移出这一组' : '后移', () => { const k = at(), q = st.slides[k+1];
+          if(s.g && q?.g !== s.g){ delete s.g; renderGrid(); SB.toast('已移出这一组'); return; }
+          if(q?.g){ let e = k + 1; while(st.slides[e+1]?.g === q.g) e++; st.slides.splice(k, 1); st.slides.splice(e, 0, s); renderGrid(); return; }
+          if(k < st.slides.length - 1){ [st.slides[k+1], st.slides[k]] = [st.slides[k], st.slides[k+1]]; renderGrid(); } }).disabled ||= i === st.slides.length - 1 && !s.g;
         ph.appendChild(ops);
         const cap = SB.el('textarea'); cap.maxLength = 120; cap.placeholder = '这张照片的故事…'; cap.setAttribute('aria-label', `第 ${i + 1} 张照片的描述`);
         cap.value = s.caption || ''; cap.disabled = !!s.pending; cap.addEventListener('input', () => { s.caption = cap.value; refreshSum(); });
         card.append(ph, cap);
         Object.defineProperty(s, '_card', {value:card, configurable:true, writable:true});
+        wireDrag(card, s);
         return card;
+      }
+      /* v1.9.1 组框：框头（第 N 组 · k 张 + 整组前移 / 后移 / 拆组）→ 组描述 → 组内照片 */
+      function buildGroup(r, no){
+        const g = st.groups.get(r.g), box = SB.el('section', 'ed-group'); box.setAttribute('aria-label', `第 ${no} 组照片`);
+        const head = SB.el('div', 'ed-ghead', `<span class="gk">${STACK_I}<b>第 ${no} 组</b><small>${r.items.length} 张<span class="sub"> · 同一时刻</span></small></span>`);
+        const ops = SB.el('span', 'gops'); head.appendChild(ops);
+        const R = runsOf(st.slides), k = R.findIndex(x => x.items[0] === r.items[0]);
+        const moveRun = d => { const j = k + d; if(j < 0 || j >= R.length) return; [R[k], R[j]] = [R[j], R[k]]; st.slides = R.flatMap(x => x.items); renderGrid(); refreshPoster(); };
+        if(st.selecting){
+          const b = SB.ui.button('选中本组', 'small', () => { r.items.filter(x => !x.pending).forEach(x => st.sel.add(x)); renderGrid(); }); b.insertAdjacentHTML('afterbegin', CHECK); ops.appendChild(b);
+        } else {
+          [[PREV_I, '整组前移', -1, k === 0], [NEXT_I, '整组后移', 1, k === R.length - 1]].forEach(([ic, lb, d, off]) => {
+            const b = SB.el('button', 'gmv', ic); b.type = 'button'; b.title = lb; b.setAttribute('aria-label', lb); b.disabled = off; b.addEventListener('click', () => moveRun(d)); ops.appendChild(b); });
+          const un = SB.ui.button('拆组', 'small', () => { const snap = snapOf(st); r.items.forEach(x => delete x.g); renderGrid(); refreshPoster(); showUndo({...snap, text:`已拆开第 ${no} 组`}); });
+          un.insertAdjacentHTML('afterbegin', ACT_I.ungroup); ops.appendChild(un);
+        }
+        box.appendChild(head);
+        const tw = SB.el('div', 'ed-gtext-w'), ta = SB.el('textarea', 'ed-gtext'); ta.maxLength = 300; ta.rows = 2;
+        ta.placeholder = '为这一组写一段共同的故事——放映到这几张照片时，它会一直浮现。（组内单张描述会暂时收起，拆组后恢复；留空则仍按单张描述放映）';
+        ta.setAttribute('aria-label', `第 ${no} 组照片的共同描述`); ta.value = g?.text || '';
+        const cn = SB.el('span', 'n'); const upN = () => cn.textContent = `${[...ta.value].length} / 300`; upN();
+        // 描述框随内容长高，不压住字数
+        const fit = () => { ta.style.height = 'auto'; ta.style.height = Math.max(68, ta.scrollHeight + 2) + 'px'; };
+        ta.addEventListener('input', () => { if(g) g.text = ta.value; upN(); fit(); refreshSum(); });
+        tw.append(ta, cn); box.appendChild(tw); requestAnimationFrame(fit);
+        const inner = SB.el('div', 'ed-ggrid'); r.items.forEach(s => inner.appendChild(buildCard(s))); box.appendChild(inner);
+        if(st.focusGroup === r.g){ st.focusGroup = null; requestAnimationFrame(() => { box.scrollIntoView({block:'nearest', behavior:'smooth'}); try{ ta.focus({preventScroll:true}); }catch(e){ ta.focus(); } }); }
+        return box;
       }
       function addTile(){
         const tile = SB.el('label', 'ed-add', `<span class="ring">${SB.icon('plus')}</span><b>添加照片</b><span>点击选择或拖进来<br>可一次选多张，自动压缩上传</span>`);
@@ -457,9 +797,13 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
       function renderGrid(){
         if(!grid) return;
         grid.innerHTML = '';
-        st.slides.forEach(s => grid.appendChild(buildCard(s)));
+        grid.classList.toggle('selecting', st.selecting); grid.classList.toggle('dense', st.dense);
+        for(const x of [...st.sel]) if(!st.slides.includes(x)) st.sel.delete(x);
+        normalizeGroups(st);
+        let gno = 0;
+        runsOf(st.slides).forEach(r => { if(r.g) grid.appendChild(buildGroup(r, ++gno)); else r.items.forEach(s => grid.appendChild(buildCard(s))); });
         if(SB.store.canUpload) grid.appendChild(addTile());
-        refreshSum();
+        refreshSum(); renderTools(); renderBulk();
       }
     }
   };
