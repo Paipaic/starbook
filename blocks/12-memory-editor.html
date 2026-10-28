@@ -191,6 +191,24 @@
 .ed-group .ed-card textarea{display:none;}          /* 组内单张描述收起（数据保留） */
 .ed-grid.dense .ed-ggrid{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;}
 .ed-grid.selecting .ed-group{border-color:rgba(255,226,168,.5);}
+/* v1.9.2 拖放：所有组框进入可放入状态；进入组框高亮 + 提示；组内照片拖动时出现「移出」区 */
+.ed-ghead .ghandle{display:grid;place-items:center;width:26px;height:30px;margin:-4px -2px -4px -6px;border-radius:6px;color:var(--gold-dim);cursor:grab;flex:none;}
+.ed-ghead .ghandle:hover{color:var(--gold-hi);background:rgba(244,184,96,.12);}
+.ed-ghead .ghandle .sb-ico{width:16px;height:16px;}
+.ed-group.dragging{opacity:.45;}
+.ed-grid.dnd .ed-group{border-style:dashed;border-color:rgba(255,226,168,.5);transition:border-color .2s, box-shadow .2s, background .2s;}
+.ed-group.drop-in{border-style:solid!important;border-color:var(--gold-hi)!important;box-shadow:0 0 0 2px rgba(255,226,168,.3),0 0 34px rgba(244,184,96,.3);
+  background:linear-gradient(180deg,rgba(110,74,28,.34),rgba(24,16,36,.4) 70%);}
+.ed-gdrop{position:absolute;left:50%;top:-15px;transform:translateX(-50%);white-space:nowrap;z-index:3;display:none;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;pointer-events:none;
+  font-family:var(--f-display);font-weight:600;font-size:13px;letter-spacing:.12em;color:#2a1608;background:linear-gradient(180deg,#ffe7b5,#f4b860);box-shadow:0 6px 18px rgba(0,0,0,.45);}
+.ed-gdrop .sb-ico{width:14px;height:14px;}
+.ed-group.drop-in .ed-gdrop{display:inline-flex;}
+.ed-gout{display:none;align-items:center;justify-content:center;gap:8px;min-height:52px;border-radius:10px;border:1.5px dashed rgba(240,164,138,.6);
+  color:#f3c2ae;font-family:var(--f-display);font-weight:600;font-size:13.5px;letter-spacing:.12em;background:rgba(60,20,16,.22);transition:background .2s, border-color .2s;}
+.ed-gout .sb-ico{width:16px;height:16px;}
+.ed-grid.dnd .ed-group.dnd-src .ed-gout{display:flex;}
+.ed-gout.drop-out{border-style:solid;border-color:#f3a88a;background:rgba(120,40,24,.38);color:#ffe1d4;}
+.ed-grid.dnd .ed-group.dnd-src.drop-in .ed-gdrop{display:none;}
 @media (max-width:640px){ .ed-grid.dense .ed-ggrid{grid-template-columns:repeat(3,minmax(0,1fr));} }
 @media (max-width:560px){
   .ed-group{padding:10px 10px 12px 20px;}
@@ -327,6 +345,7 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
   };
   // 组框头的「一叠相片」图形
   const STACK_I = '<svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.8" y="7.2" width="12" height="9.6" rx="1.4" transform="rotate(-9 8.8 12)" fill="none" stroke="currentColor" stroke-width="1.3" opacity=".7"/><g transform="rotate(6 14.6 11.4)"><rect x="8.6" y="6.6" width="12" height="9.6" rx="1.4" fill="rgba(244,184,96,.16)" stroke="currentColor" stroke-width="1.5"/><path d="M10.6 14.2l2.6-2.7 2.1 2 1.6-1.5 2.1 2.2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><circle cx="17.4" cy="9.4" r="1" fill="currentColor"/></g></svg>';
+  const GRIP_I = '<svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true">' + [7, 12, 17].map(y => [9, 15].map(x => `<circle cx="${x}" cy="${y}" r="1.5" fill="currentColor"/>`).join('')).join('') + '</svg>';
   const PREV_I = '<svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   const NEXT_I = '<svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
@@ -456,7 +475,7 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
           const dropTip = SB.el('div', 'drop-tip'); s2.appendChild(dropTip);
           grid = SB.el('div', 'ed-grid'); s2.appendChild(grid);
           bulk = SB.el('div', 'ed-bulk'); bulk.hidden = true; bulk.setAttribute('role', 'toolbar'); bulk.setAttribute('aria-label', '批量操作'); s2.appendChild(bulk);
-          const tip = SB.el('p', 'ed-note'); tip.textContent = '每张照片下面写一句它的故事，放映时会逐字出现。几张照片拍的是同一个瞬间时，点「选择」勾选它们 →「编为一组」，为这一组写一段共同的描述，放映到这几张时会一直浮现。★ 设为封面；电脑上可直接拖动照片排序（拖到组里的照片旁边即加入该组）。'; s2.appendChild(tip);
+          const tip = SB.el('p', 'ed-note'); tip.textContent = '每张照片下面写一句它的故事，放映时会逐字出现。几张照片拍的是同一个瞬间时，点「选择」勾选它们 →「编为一组」，为这一组写一段共同的描述，放映到这几张时会一直浮现。★ 设为封面；电脑上可直接拖动照片排序：把照片拖进组框即加入该组，拖到组框下方的「移出」区即移出；拖组框左上角的把手可整组移动。'; s2.appendChild(tip);
           if(!SB.store.canUpload){ const n = SB.el('p','ed-note'); n.textContent = '上传照片需要「编辑者」权限，请让网页的主人在分享设置里把你设为编辑者。'; s2.appendChild(n); }
           const hasFiles = e => [...(e.dataTransfer?.types || [])].includes('Files');
           s2.addEventListener('dragover', e => { if(!SB.store.canUpload || !hasFiles(e)) return; e.preventDefault();
@@ -705,22 +724,66 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
         s._card?.classList.toggle('picked', st.sel.has(s)); s._card?.querySelector('.pick')?.setAttribute('aria-checked', String(st.sel.has(s)));
         if(e?.shiftKey) renderGrid(); else { renderTools(); renderBulk(); }
       }
-      /* 电脑上拖动卡片排序 */
-      var dragS = null;   // var：buildCard 在弹窗 build 期间就会用到
+      /* 电脑上拖动卡片排序；v1.9.2：拖进组框 = 加入该组，拖到「移出」区 / 组外 = 离开该组，拖组框头把手 = 整组移动 */
+      var drag = null;   // var：buildCard 在弹窗 build 期间就会用到
+      function DND(){ return matchMedia('(pointer:fine)').matches && !st.selecting; }   // 函数声明：弹窗 build 期间就可用
+      function gnoOf(g){ return runsOf(st.slides).filter(r => r.g).findIndex(r => r.g === g) + 1; }
+      function dragBegin(items, run, el, e){
+        drag = {items, run, g:items[0].g || null, no:items[0].g ? gnoOf(items[0].g) : 0, snap:snapOf(st)};
+        el.classList.add('dragging'); grid.classList.add('dnd');
+        if(drag.g && !run) grid.querySelectorAll('.ed-group').forEach(b => b.dataset.g === drag.g && b.classList.add('dnd-src'));
+        e.dataTransfer.effectAllowed = 'move'; try{ e.dataTransfer.setData('text/plain', 'photo'); }catch(_){}
+      }
+      function dragClear(){
+        grid.classList.remove('dnd');
+        grid.querySelectorAll('.dragging,.drop-before,.drop-after,.dnd-src,.drop-in,.drop-out').forEach(x => x.classList.remove('dragging', 'drop-before', 'drop-after', 'dnd-src', 'drop-in', 'drop-out'));
+      }
+      // 把拖动的照片（或整组）放到 slides 的 index 位置；g = 放入的组（null = 不在组里）
+      function dropAt(index, g, msg){
+        const d = drag; if(!d) return;
+        const before = st.slides.slice(0, index).filter(x => !d.items.includes(x)).length;
+        st.slides = st.slides.filter(x => !d.items.includes(x)); st.slides.splice(before, 0, ...d.items);
+        if(!d.run) d.items.forEach(x => { if(g) x.g = g; else delete x.g; });
+        normalizeGroups(st); drag = null; dragClear(); renderGrid(); refreshPoster();
+        const text = typeof msg === 'function' ? msg() : msg;
+        if(text) showUndo({...d.snap, text});
+      }
+      function runEnd(g){ let k = -1; st.slides.forEach((x, i) => { if(x.g === g) k = i; }); return k + 1; }
       function wireDrag(card, s){
-        if(s.pending || !matchMedia('(pointer:fine)').matches || st.selecting) return;
+        if(s.pending || !DND()) return;
         card.draggable = true;
-        card.addEventListener('dragstart', e => { dragS = s; card.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; try{ e.dataTransfer.setData('text/plain', 'photo'); }catch(_){} });
-        card.addEventListener('dragend', () => { dragS = null; card.classList.remove('dragging'); grid.querySelectorAll('.drop-before,.drop-after').forEach(x => x.classList.remove('drop-before', 'drop-after')); });
-        card.addEventListener('dragover', e => { if(!dragS || dragS === s) return; e.preventDefault(); e.stopPropagation();
+        card.addEventListener('dragstart', e => { e.stopPropagation(); dragBegin([s], false, card, e); });
+        card.addEventListener('dragend', () => { drag = null; dragClear(); });
+        card.addEventListener('dragover', e => { if(!drag || drag.items.includes(s)) return; e.preventDefault(); e.stopPropagation();
           const r = card.getBoundingClientRect(), after = e.clientX > r.left + r.width/2;
-          grid.querySelectorAll('.drop-before,.drop-after').forEach(x => x !== card && x.classList.remove('drop-before', 'drop-after'));
+          grid.querySelectorAll('.drop-before,.drop-after,.drop-in,.drop-out').forEach(x => x !== card && x.classList.remove('drop-before', 'drop-after', 'drop-in', 'drop-out'));
           card.classList.toggle('drop-after', after); card.classList.toggle('drop-before', !after); });
-        card.addEventListener('drop', e => { if(!dragS || dragS === s) return; e.preventDefault(); e.stopPropagation();
-          const after = card.classList.contains('drop-after'); const from = st.slides.indexOf(dragS); st.slides.splice(from, 1);
-          let to = st.slides.indexOf(s) + (after ? 1 : 0); st.slides.splice(to, 0, dragS);
-          if(s.g) dragS.g = s.g; else delete dragS.g;   // v1.9.1：放到哪张照片旁边，就加入它所在的组
-          dragS = null; renderGrid(); refreshPoster(); });
+        card.addEventListener('drop', e => { if(!drag || drag.items.includes(s)) return; e.preventDefault(); e.stopPropagation();
+          const after = card.classList.contains('drop-after');
+          if(drag.run){
+            // 整组：放到目标照片旁；目标在另一组里时放到那一组的前 / 后
+            const tr = s.g ? runsOf(st.slides).find(r => r.items.includes(s)) : null;
+            const idx = tr ? (after ? st.slides.indexOf(tr.items[tr.items.length - 1]) + 1 : st.slides.indexOf(tr.items[0])) : st.slides.indexOf(s) + (after ? 1 : 0);
+            const no = drag.no; dropAt(idx, null, `已移动第 ${no} 组`); return;
+          }
+          const from = drag.g, no = drag.no, g = s.g || null;
+          dropAt(st.slides.indexOf(s) + (after ? 1 : 0), g, () => g && g !== from ? `已加入第 ${gnoOf(g)} 组` : from && !g ? `已移出第 ${no} 组` : '');
+        });
+      }
+      // 组框：放入 = 加入该组（放到组的最后）；组框下方「移出」区 = 离开该组
+      function wireGroupDrop(box, r, out){
+        const g = r.g;
+        box.addEventListener('dragover', e => { if(!drag || (drag.run && drag.g === g)) return; e.preventDefault();
+          grid.querySelectorAll('.drop-before,.drop-after,.drop-in').forEach(x => x !== box && x.classList.remove('drop-before', 'drop-after', 'drop-in'));
+          box.classList.add('drop-in'); });
+        box.addEventListener('dragleave', e => { if(!box.contains(e.relatedTarget)) box.classList.remove('drop-in'); });
+        box.addEventListener('drop', e => { if(!drag || (drag.run && drag.g === g)) return; e.preventDefault(); e.stopPropagation();
+          if(drag.run){ const no = drag.no; dropAt(runEnd(g), null, `已移动第 ${no} 组`); return; }
+          const from = drag.g; dropAt(runEnd(g), g, () => from !== g ? `已加入第 ${gnoOf(g)} 组` : ''); });
+        out.addEventListener('dragover', e => { if(!drag || drag.run || drag.g !== g) return; e.preventDefault(); e.stopPropagation(); box.classList.remove('drop-in'); out.classList.add('drop-out'); });
+        out.addEventListener('dragleave', () => out.classList.remove('drop-out'));
+        out.addEventListener('drop', e => { if(!drag || drag.run || drag.g !== g) return; e.preventDefault(); e.stopPropagation();
+          const no = drag.no; dropAt(runEnd(g), null, `已移出第 ${no} 组`); });
       }
       function buildCard(s){
         const i = st.slides.indexOf(s), card = SB.el('div', 'ed-card' + (s.id && s.id === st.cover ? ' cover' : ''));
@@ -760,8 +823,8 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
       }
       /* v1.9.1 组框：框头（第 N 组 · k 张 + 整组前移 / 后移 / 拆组）→ 组描述 → 组内照片 */
       function buildGroup(r, no){
-        const g = st.groups.get(r.g), box = SB.el('section', 'ed-group'); box.setAttribute('aria-label', `第 ${no} 组照片`);
-        const head = SB.el('div', 'ed-ghead', `<span class="gk">${STACK_I}<b>第 ${no} 组</b><small>${r.items.length} 张<span class="sub"> · 同一时刻</span></small></span>`);
+        const g = st.groups.get(r.g), box = SB.el('section', 'ed-group'); box.setAttribute('aria-label', `第 ${no} 组照片`); box.dataset.g = r.g;
+        const head = SB.el('div', 'ed-ghead', `<span class="gk">${DND() ? `<span class="ghandle" draggable="true" title="拖动整组" aria-hidden="true">${GRIP_I}</span>` : ''}${STACK_I}<b>第 ${no} 组</b><small>${r.items.length} 张<span class="sub"> · 同一时刻</span></small></span>`);
         const ops = SB.el('span', 'gops'); head.appendChild(ops);
         const R = runsOf(st.slides), k = R.findIndex(x => x.items[0] === r.items[0]);
         const moveRun = d => { const j = k + d; if(j < 0 || j >= R.length) return; [R[k], R[j]] = [R[j], R[k]]; st.slides = R.flatMap(x => x.items); renderGrid(); refreshPoster(); };
@@ -783,6 +846,15 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
         ta.addEventListener('input', () => { if(g) g.text = ta.value; upN(); fit(); refreshSum(); });
         tw.append(ta, cn); box.appendChild(tw); requestAnimationFrame(fit);
         const inner = SB.el('div', 'ed-ggrid'); r.items.forEach(s => inner.appendChild(buildCard(s))); box.appendChild(inner);
+        // v1.9.2 拖放提示：「松开 · 加入第 N 组」/「拖到这里 · 移出这一组」
+        box.appendChild(SB.el('span', 'ed-gdrop', `${SB.icon('plus')}<span>松开 · 加入第 ${no} 组</span>`));
+        const out = SB.el('div', 'ed-gout', `${ACT_I.ungroup}<span>拖到这里 · 移出这一组</span>`); box.appendChild(out);
+        if(DND()){
+          wireGroupDrop(box, r, out);
+          const hd = head.querySelector('.ghandle');
+          hd?.addEventListener('dragstart', e => { e.stopPropagation(); dragBegin(r.items, true, box, e); try{ e.dataTransfer.setDragImage(box, 30, 20); }catch(_){} });
+          hd?.addEventListener('dragend', () => { drag = null; dragClear(); });
+        }
         if(st.focusGroup === r.g){ st.focusGroup = null; requestAnimationFrame(() => { box.scrollIntoView({block:'nearest', behavior:'smooth'}); try{ ta.focus({preventScroll:true}); }catch(e){ ta.focus(); } }); }
         return box;
       }
@@ -800,6 +872,13 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
         grid.classList.toggle('selecting', st.selecting); grid.classList.toggle('dense', st.dense);
         for(const x of [...st.sel]) if(!st.slides.includes(x)) st.sel.delete(x);
         normalizeGroups(st);
+        if(!grid._dnd){ grid._dnd = true;
+          const blank = e => e.target === grid || !!e.target.closest?.('.ed-add');
+          grid.addEventListener('dragover', e => { if(drag && blank(e)){ e.preventDefault(); grid.querySelectorAll('.drop-before,.drop-after,.drop-in,.drop-out').forEach(x => x.classList.remove('drop-before', 'drop-after', 'drop-in', 'drop-out')); } });
+          grid.addEventListener('drop', e => { if(!drag || !blank(e)) return; e.preventDefault();
+            if(drag.g && !drag.run){ const no = drag.no; dropAt(runEnd(drag.g), null, `已移出第 ${no} 组`); }
+            else dropAt(st.slides.filter(x => !x.pending).length, null, drag.run ? `已移动第 ${drag.no} 组` : ''); });
+        }
         let gno = 0;
         runsOf(st.slides).forEach(r => { if(r.g) grid.appendChild(buildGroup(r, ++gno)); else r.items.forEach(s => grid.appendChild(buildCard(s))); });
         if(SB.store.canUpload) grid.appendChild(addTile());
