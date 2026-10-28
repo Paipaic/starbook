@@ -6,7 +6,7 @@
 ## 1. 褰撳墠椤圭洰韬唤
 
 - Project: **Starbook / 鏄熷笨涔嬩功**
-- Current version: **1.8.2**
+- Current version: **1.8.3**
 - Production branch: **`main`**
 - Production deploy: **GitHub Pages via GitHub Actions**
 - Runtime backend: **Supabase Anniversary Bridge**

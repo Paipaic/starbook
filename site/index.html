@@ -16,10 +16,10 @@
 <body>
 <!-- ████ BLOCK 00-config START ████ -->
 <script>
-/* 鈹€鈹€ Starbook v1.8.2 路 鍏紑瀹㈡埛绔厤缃?鈹€鈹€
+/* 鈹€鈹€ Starbook v1.8.3 路 鍏紑瀹㈡埛绔厤缃?鈹€鈹€
    Publishable Key 璁捐涓婂厑璁稿嚭鐜板湪娴忚鍣紱涓嶈鍦ㄦ鏂囦欢鏀?Secret / service_role / 鏁版嵁搴撳瘑鐮併€?*/
 window.STARBOOK_CONFIG = Object.freeze({
-  version: '1.8.2',
+  version: '1.8.3',
   supabaseUrl: 'https://xowbbcumcxtsrrnulunb.supabase.co',
   supabasePublishableKey: 'sb_publishable_SYGBrk2PiwwzRXZm03Patg_oDlYSIGd',
   storageBucket: 'starbook-media',
@@ -1955,6 +1955,29 @@ html[data-sb-perf="high"] .bk-page.lit .bk-const{filter:drop-shadow(0 0 2px rgba
 .cv-art,.cv-art-hot,.cv-blind,.cv-stars{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
 /* v1.8.1 镶嵌星辰蓝宝石：错开闪烁 */
 .cv-stars g{transform-box:fill-box;transform-origin:center;animation:cvTwinkle 7s ease-in-out infinite;}
+/* v1.8.3 机关启封 */
+.cv-ignite{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity .4s;}
+.cv-ignite .ln{fill:none;stroke:#f4e2ae;stroke-width:1.7;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;}
+.cv-ignite .bead{fill:none;stroke:#fff3d2;stroke-width:3.4;stroke-linecap:round;stroke-dasharray:.028 .972;opacity:0;}
+html[data-sb-perf="high"] .cv-ignite{filter:drop-shadow(0 0 3px rgba(240,200,120,.6));}
+.bk-cover.is-awake .cv-ignite{opacity:1;}
+.bk-cover.is-awake .cv-ignite .ln{animation:cvIgnite .62s cubic-bezier(.5,0,.3,1) forwards;}
+.bk-cover.is-awake .cv-ignite .bead{opacity:.95;animation:cvBead 1.1s linear infinite;}
+.bk-cover.is-awake .cv-ignite .bead.rev{animation-direction:reverse;animation-duration:.85s;}
+.bk-cover.is-open .cv-ignite{opacity:0;transition:opacity .8s;}
+@keyframes cvIgnite{to{stroke-dashoffset:0}}
+@keyframes cvBead{from{stroke-dashoffset:0}to{stroke-dashoffset:-1}}
+.cv-stars .ch{transform-box:fill-box;transform-origin:center;}
+.bk-cover.is-awake .cv-stars .ch{animation:cvChase .5s cubic-bezier(.3,1.7,.5,1) both;animation-delay:calc(.5s + var(--i) * .1s);}
+@keyframes cvChase{0%{transform:scale(1);filter:brightness(1)}45%{transform:scale(1.55);filter:brightness(1.5)}100%{transform:scale(1);filter:brightness(1)}}
+.cv-brass{transition:translate .38s cubic-bezier(.3,1.8,.5,1), filter .38s;}
+.bk-cover.is-unlock .cv-brass{filter:drop-shadow(1px 2px 2px rgba(0,0,10,.65)) brightness(1.35);}
+.bk-cover.is-unlock .cv-brass.tl{translate:-4px -4px}.bk-cover.is-unlock .cv-brass.tr{translate:4px -4px}
+.bk-cover.is-unlock .cv-brass.bl{translate:-4px 4px}.bk-cover.is-unlock .cv-brass.br{translate:4px 4px}
+.bk-body.thunk{animation:bkThunk .36s ease-out;}
+@keyframes bkThunk{0%{translate:0 0}20%{translate:0 2px}45%{translate:-1.5px -1px}70%{translate:1px .5px}100%{translate:0 0}}
+.sb-scene[data-scene="book"].is-seam .bk-sr{box-shadow:3px 0 14px rgba(240,210,150,.55), 1px 0 0 #f3e2b4;transition:box-shadow .5s;}
+.sb-scene[data-scene="book"].is-seam .bk-sb{box-shadow:0 4px 14px rgba(240,210,150,.5), 0 1px 0 #f3e2b4;transition:box-shadow .5s;}
 @keyframes cvTwinkle{0%,100%{opacity:.62;transform:scale(.88)}45%{opacity:1;transform:scale(1.08)}60%{opacity:.8;transform:scale(.96)}}
 .cv-art-hot{opacity:0;transition:opacity 1s ease;}
 .bk-cover.is-lit .cv-art-hot{opacity:1;}
@@ -2057,7 +2080,7 @@ html:not([data-sb-perf="high"]) .bk-veins path{animation:none!important;}
 html:not([data-sb-perf="high"]) .bk-veins .v2,html:not([data-sb-perf="high"]) .bk-veins .v3,html:not([data-sb-perf="high"]) .bk-veins .v4{display:none;}
 html:not([data-sb-perf="high"]) .bk-aura{animation:none;will-change:auto;width:115vmax;height:115vmax;margin:-57.5vmax 0 0 -57.5vmax;}
 html:not([data-sb-perf="high"]) .cv-flow{display:none;}
-@media (prefers-reduced-motion:reduce){ .cv-stars g,.bk-aura,.bk-float,.bk-veins path,.bk-smoke i,.bk-gemglow,.bk-hint,.bk-rays,.bk-refract,.bk-glint,.bk-neb,.bk-sr::after,.bk-sb::after{animation:none!important;} }
+@media (prefers-reduced-motion:reduce){ .cv-ignite .bead,.cv-stars g,.bk-aura,.bk-float,.bk-veins path,.bk-smoke i,.bk-gemglow,.bk-hint,.bk-rays,.bk-refract,.bk-glint,.bk-neb,.bk-sr::after,.bk-sb::after{animation:none!important;} }
 </style>
 
 <section class="sb-scene" data-scene="book" aria-label="魔法书封面">
@@ -2103,6 +2126,7 @@ html:not([data-sb-perf="high"]) .cv-flow{display:none;}
               <svg class="cv-blind" id="cv-blind" viewBox="0 0 600 800" aria-hidden="true"></svg>
               <svg class="cv-art" id="cv-art" viewBox="0 0 600 800" aria-hidden="true"></svg>
               <svg class="cv-art-hot" id="cv-art-hot" viewBox="0 0 600 800" aria-hidden="true"></svg>
+              <svg class="cv-ignite" id="cv-ignite" viewBox="0 0 600 800" aria-hidden="true"></svg>
               <svg class="cv-stars" id="cv-stars" viewBox="0 0 600 800" aria-hidden="true"></svg>
               <div class="cv-sheen" id="cv-sheen"><i id="cv-sheen-band"></i></div>
               <div class="bk-rays"></div>
@@ -2285,7 +2309,14 @@ html:not([data-sb-perf="high"]) .cv-flow{display:none;}
   /* v1.8.1 镶嵌星辰蓝宝石（法阵八个顶点） */
   $('cv-stars').innerHTML = `<defs><radialGradient id="sapph" cx=".4" cy=".35" r=".75"><stop offset="0" stop-color="#ffffff"/><stop offset=".35" stop-color="#cfe0ff"/><stop offset=".75" stop-color="#6f8fe0"/><stop offset="1" stop-color="#2c3f8f"/></radialGradient></defs>` +
     Array.from({length:8}, (_, i) => { const a = (-90 + i*45)*Math.PI/180, x = +(300 + 200*Math.cos(a)).toFixed(1), y = +(450 + 200*Math.sin(a)).toFixed(1), q = 10, w = 2.4;
-      return `<g style="animation-delay:${(-i*.9).toFixed(1)}s;animation-duration:${(5 + (i*1.7) % 4).toFixed(1)}s"><path d="M${x} ${y-q} L${x+w} ${y-w} L${x+q} ${y} L${x+w} ${y+w} L${x} ${y+q} L${x-w} ${y+w} L${x-q} ${y} L${x-w} ${y-w}Z" fill="url(#sapph)"/><circle cx="${x}" cy="${y}" r="1.6" fill="#fff"/></g>`; }).join('');
+      return `<g style="animation-delay:${(-i*.9).toFixed(1)}s;animation-duration:${(5 + (i*1.7) % 4).toFixed(1)}s"><g class="ch" style="--i:${i}"><path d="M${x} ${y-q} L${x+w} ${y-w} L${x+q} ${y} L${x+w} ${y+w} L${x} ${y+q} L${x-w} ${y+w} L${x-q} ${y} L${x-w} ${y-w}Z" fill="url(#sapph)"/><circle cx="${x}" cy="${y}" r="1.6" fill="#fff"/></g></g>`; }).join('');
+  /* v1.8.3 机关启封：能量沿烫金线路描亮 + 两颗光珠沿圆环奔跑 */
+  (function(){
+    const C = (r) => `M ${300 - r} 450 A ${r} ${r} 0 1 1 ${300 + r} 450 A ${r} ${r} 0 1 1 ${300 - r} 450`;
+    const lines = CHEAP ? [C(236), star(200,8,3,300,450)] : [C(236), C(200), star(200,8,3,300,450), C(160)];
+    $('cv-ignite').innerHTML = lines.map((d, i) => `<path class="ln" pathLength="1" d="${d}" style="animation-delay:${(i*.22).toFixed(2)}s"/>`).join('') +
+      `<path class="bead" pathLength="1" d="${C(228)}"/><path class="bead rev" pathLength="1" d="${C(160)}"/>`;
+  })();
   // 流光遮罩（不含文字，避免遮罩里字体不一致）
   const maskSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800">${shapes('stroke="#fff" fill="#fff"', false)}</svg>`;
   const maskUrl = `url("data:image/svg+xml;utf8,${encodeURIComponent(maskSvg)}")`;
@@ -2377,7 +2408,7 @@ html:not([data-sb-perf="high"]) .cv-flow{display:none;}
   const rings = [{el:$('mk-r1'), speed:3}, {el:$('mk-r2'), speed:-6}, {el:$('mk-r3'), speed:4.5}, {el:$('mk-r4'), speed:9}, {el:$('cv-flow'), speed:45}];
   const sg = [0,1,2].map(k => document.getElementById('mk-sg'+k));
   const tilt = $('bk-tilt'), cover = $('bk-cover'), band = $('cv-sheen-band'), gloss = $('cv-gloss');
-  const state = { spin:1, spinTarget:1, angle:[0,0,0,0,0], sga:0, tx:0, ty:0, cx:0, cy:0, running:false, base:{x:10,y:-14}, sheen:-1 };
+  const state = { mech:null, gemA:0, gemV:0, gemEl:null, spin:1, spinTarget:1, angle:[0,0,0,0,0], sga:0, tx:0, ty:0, cx:0, cy:0, running:false, base:{x:10,y:-14}, sheen:-1 };
   const fine = matchMedia('(pointer:fine)').matches;
 
   function nearGem(x, y){
@@ -2411,7 +2442,7 @@ html:not([data-sb-perf="high"]) .cv-flow{display:none;}
   if(lvl() === 'high'){ runeBack.classList.add('glow'); runeFront.classList.add('glow'); }
   const TILT = 13*Math.PI/180, ROLL = -7*Math.PI/180, cR = Math.cos(ROLL), sR = Math.sin(ROLL);
   const fxc = $('bk-fxc'), fg = fxc.getContext('2d');
-  const FX = { W:0, H:0, dpr:1, rect:null, sr:null, smoke:[], sparks:[], motes:[], acc:0, acc2:0, acc3:0, open:0, ringA:0, ringK:1, ringR:200, shaftA:0, cx:0, cy:0 };
+  const FX = { W:0, H:0, dpr:1, rect:null, sr:null, smoke:[], sparks:[], motes:[], gsp:[], acc:0, acc2:0, acc3:0, acc4:0, awake:0, aw:0, open:0, ringA:0, ringK:1, ringR:200, shaftA:0, cx:0, cy:0 };
   function sprite(r, stops){ const c = document.createElement('canvas'); c.width = c.height = r*2; const g = c.getContext('2d'), gr = g.createRadialGradient(r,r,0,r,r,r); stops.forEach(([o,col]) => gr.addColorStop(o,col)); g.fillStyle = gr; g.fillRect(0,0,r*2,r*2); return c; }
   // 薄烟：低不透明度、正常混合（不叠加），永远不会堆成亮球
   const SMOKE = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
@@ -2432,9 +2463,10 @@ html:not([data-sb-perf="high"]) .cv-flow{display:none;}
     const L = lvl(); if(!FX.rect) fxResize();
     const r = FX.rect, k = r.width/600, t = now/1000;
     // 符文环：在 2D 中投影（倾斜椭圆 + 近大远小），正面的放到书前、背面的放到书后
-    FX.ringA += dt*.16*(L === 'reduced' ? 0 : 1)*(1 - .7*FX.open);
+    FX.aw = SB.lerp(FX.aw, FX.awake, Math.min(1, dt*2));
+    FX.ringA += dt*.16*(L === 'reduced' ? 0 : 1)*(1 - .7*FX.open)*(1 + 5*FX.aw);
     FX.ringK = SB.lerp(FX.ringK, FX.open ? 0 : 1, Math.min(1, dt*(FX.open ? 2.2 : 3)));
-    const R = FX.ringR;
+    const R = FX.ringR*(1 + .35*(1 - FX.ringK));   // 启封时向外扩散淡出（不向中心收拢）
     for(const g of runeGlyphs){
       const th = g.a + FX.ringA, X = Math.sin(th)*R, Z = Math.cos(th)*R, bob = L === 'reduced' ? 0 : Math.sin(t*1.1 + g.bob)*7;
       const y0 = Z*Math.sin(TILT) + bob - FX.open*30, sc = (1 + Z/(R*5))*(.95 + .1*FX.ringK);
@@ -2443,7 +2475,7 @@ html:not([data-sb-perf="high"]) .cv-flow{display:none;}
       if(front !== g.front){ (front ? runeFront : runeBack).appendChild(g.el); g.front = front; }
       g.el.style.transform = `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0) scale(${sc.toFixed(3)})`;
       const cov = front ? 1 - .58*Math.max(0, Math.min(1, (.8 - Math.abs(X)/(R || 1))/.25)) : 1;   // 正面经过封面中央时变暗
-      g.el.style.opacity = ((.32 + .68*(Z/(R || 1) + 1)/2)*(.75 + .25*Math.sin(t*2.3 + g.tw))*cov*FX.ringK).toFixed(3);
+      g.el.style.opacity = Math.min(1, (.32 + .68*(Z/(R || 1) + 1)/2)*(.75 + .25*Math.sin(t*2.3 + g.tw))*cov*FX.ringK*(1 + .45*FX.aw)).toFixed(3);
     }
     // 宝石光溢与体积光：跟随宝石呼吸（low 档不显示体积光）
     const breath = .5 + .5*Math.sin(now/4200*Math.PI*2 - Math.PI/2), boost = hovering ? .2 : 0;
@@ -2479,6 +2511,18 @@ html:not([data-sb-perf="high"]) .cv-flow{display:none;}
       const a = (1 - p.age/p.life)*(.5 + .35*Math.sin(p.age*10 + p.ph)), sz = p.s*4;
       fg.globalAlpha = Math.max(0, a); fg.drawImage(SPARK, p.x - sz/2, p.y - sz/2, sz, sz);
     }
+    // v1.8.3 机关火花：从宝石外圈沿切线迸出、向外飞散（正常混合，很快熄灭）
+    if(FX.awake){
+      const gb = gemBtn.getBoundingClientRect(), gx = gb.left + gb.width/2 + ox, gy = gb.top + gb.height/2 + oy, rg = r.width*.17;
+      FX.acc4 += dt*(L === 'high' ? 38 : 13); while(FX.acc4 > 1 && FX.gsp.length < 70){ FX.acc4--;
+        const a = Math.random()*Math.PI*2, sp = (60 + Math.random()*70)*Math.max(.7, k), out = (30 + Math.random()*50)*Math.max(.7, k), dir = Math.random() < .5 ? 1 : -1;
+        FX.gsp.push({x:gx + Math.cos(a)*rg, y:gy + Math.sin(a)*rg, vx:-Math.sin(a)*sp*dir + Math.cos(a)*out, vy:Math.cos(a)*sp*dir + Math.sin(a)*out, age:0, life:.5 + Math.random()*.5, s:1.6 + Math.random()*1.8}); }
+    }
+    for(let i = FX.gsp.length - 1; i >= 0; i--){
+      const p = FX.gsp[i]; p.age += dt; if(p.age > p.life){ FX.gsp.splice(i, 1); continue; }
+      p.x += p.vx*dt; p.y += p.vy*dt; p.vx *= 1 - dt*1.5; p.vy *= 1 - dt*1.5;
+      fg.globalAlpha = .6*(1 - p.age/p.life); const sz = p.s*4; fg.drawImage(SPARK, p.x - sz/2, p.y - sz/2, sz, sz);
+    }
     for(let i = FX.motes.length - 1; i >= 0; i--){
       const p = FX.motes[i]; p.age += dt; if(p.age > p.life){ FX.motes.splice(i, 1); continue; }
       p.x += (p.vx + Math.sin(p.age*2 + p.ph)*12)*dt; p.y += p.vy*dt; p.vy *= 1 - dt*.15;
@@ -2499,9 +2543,23 @@ html:not([data-sb-perf="high"]) .cv-flow{display:none;}
     const dt = Math.min(.05, (now - (last||now))/1000); last = now;
     const still = SB.perf.level === 'reduced' ? 0 : 1;
     state.spin = SB.lerp(state.spin, state.spinTarget, Math.min(1, dt*1.8));
-    rings.forEach((r,i) => { state.angle[i] = (state.angle[i] + r.speed*state.spin*dt*still) % 360; r.el.style.transform = `rotate(${state.angle[i].toFixed(2)}deg)`; });
-    state.sga = (state.sga - 22*state.spin*dt*still) % 360;
-    if(!CHEAP) sg.forEach(g => g.setAttribute('transform', `rotate(${state.sga.toFixed(1)})`));   // 小齿轮自转会触发 SVG 重绘，只在 high 档
+    // v1.8.3 机关启封：逐级啮合（每层间隔 .16s 启动）+ 棘轮步进（每秒 4 次「咔哒」）
+    const mt = state.mech ? (now - state.mech)/1000 : -1;
+    const ratchet = i => { if(mt < 0) return 1; const tt = mt - i*.16; if(tt < 0) return .12;
+      return .25 + 1.75*Math.pow(Math.max(0, Math.sin(Math.PI*2*4*tt)), 4); };
+    rings.forEach((r,i) => { state.angle[i] = (state.angle[i] + r.speed*state.spin*ratchet(i)*dt*still) % 360; r.el.style.transform = `rotate(${state.angle[i].toFixed(2)}deg)`; });
+    state.sga = (state.sga - 22*state.spin*ratchet(2)*dt*still) % 360;
+    // 小齿轮自转会触发 SVG 重绘：平时只在 high 档；机关启动的两秒内所有档位都转（廉价滤镜，开销很小）
+    if(!CHEAP || mt >= 0) sg.forEach(g => g.setAttribute('transform', `rotate(${state.sga.toFixed(1)})`));
+    // 宝石：作为动力核心旋转，1.4s 内加速到约 1 圈 / 秒，并做两次轻微呼吸缩放
+    state.gemV = SB.lerp(state.gemV, mt >= 0 ? 360 : 0, Math.min(1, dt*(mt >= 0 ? 1.6 : .9)));
+    if(state.gemV > .5 || state.gemA){
+      state.gemA = (state.gemA + state.gemV*dt*still) % 360;
+      const bump = (c, w) => mt < 0 ? 0 : Math.exp(-Math.pow((mt - c)/w, 2));
+      const sc = 1 + .12*bump(.9, .14) + .1*bump(1.35, .12);
+      (state.gemEl ||= $('mk-gem')).style.transform = `rotate(${state.gemA.toFixed(1)}deg) scale(${sc.toFixed(3)})`;
+      if(state.gemV <= .5 && mt < 0){ state.gemA = 0; state.gemEl.style.transform = ''; }
+    }
     if(!fine && still){ state.tx = Math.sin(now/5200)*.4; state.ty = Math.sin(now/7300)*.3; }
     state.cx = SB.lerp(state.cx, state.tx, Math.min(1, dt*2.2)); state.cy = SB.lerp(state.cy, state.ty, Math.min(1, dt*2.2));
     tilt.style.transform = `rotateX(${(state.base.x - state.cy*6).toFixed(2)}deg) rotateY(${(state.base.y + state.cx*7).toFixed(2)}deg)`;
@@ -2513,7 +2571,7 @@ html:not([data-sb-perf="high"]) .cv-flow{display:none;}
     requestAnimationFrame(loop);
   }
   function start(){ if(state.running) return; state.running = true; last = 0; requestAnimationFrame(loop); }
-  function stop(){ state.running = false; FX.smoke.length = FX.sparks.length = FX.motes.length = 0; fg.clearRect(0, 0, fxc.width, fxc.height); }
+  function stop(){ state.running = false; FX.smoke.length = FX.sparks.length = FX.motes.length = FX.gsp.length = 0; fg.clearRect(0, 0, fxc.width, fxc.height); }
   document.addEventListener('visibilitychange', () => { if(document.hidden) stop(); else if(SB.scenes.current === 'book') start(); });
   addEventListener('resize', () => { if(SB.scenes.current === 'book' && !SB.magicBook.busy) placeOrbit(); });
 
@@ -2525,11 +2583,22 @@ html:not([data-sb-perf="high"]) .cv-flow{display:none;}
     // v1.8.0：开书时把烟雾、火星、符文环吸向宝石（与门钥匙转场衔接）
     // v1.8.2：开书时星尘从书页向上飘散（替代 v1.8.0/1.8.1 的「汇聚」）
     fxOpen(on){ FX.open = on ? 1 : 0; if(!on) FX.motes.length = 0; },
+    // v1.8.3 机关启封：启动 / 停止机关（逐级啮合、棘轮、宝石旋转、描线、星辰依次点亮、火花、符文环加速）
+    awaken(on){
+      if(on){ state.mech = performance.now(); FX.awake = 1; cover.classList.add('is-awake'); }
+      else { state.mech = null; FX.awake = 0; }
+    },
+    // 解锁：包角弹开 + 书身轻震 + 书页切口透光
+    unlock(){
+      cover.classList.add('is-unlock'); scene.classList.add('is-seam');
+      const body = scene.querySelector('.bk-body'); body.classList.remove('thunk'); void body.offsetWidth; body.classList.add('thunk');
+    },
     gemCenter(){ const r = gemBtn.getBoundingClientRect(); return {x:r.left + r.width/2, y:r.top + r.height/2}; },
     reset(){
       this.busy = false; state.spinTarget = 1; state.spin = 1; FX.open = 0; FX.ringK = 1; FX.motes.length = 0;
       scene.classList.remove('is-opening'); this.page.classList.remove('lit');
-      cover.classList.remove('is-open','is-lit','is-charging','is-hover');
+      cover.classList.remove('is-open','is-lit','is-charging','is-hover','is-awake','is-unlock'); scene.classList.remove('is-seam');
+      state.mech = null; FX.awake = 0; FX.aw = 0; FX.gsp.length = 0; scene.querySelector('.bk-body').classList.remove('thunk');
       this.stage.style.transition = 'none'; this.stage.style.transform = ''; this.stage.style.opacity = '';
       this.leaves.forEach(l => { l.style.transition = 'none'; l.style.opacity = '0'; l.style.transform = ''; });
       void this.stage.offsetWidth; this.stage.style.transition = '';
@@ -2547,7 +2616,7 @@ html:not([data-sb-perf="high"]) .cv-flow{display:none;}
 
 <!-- ████ BLOCK 04-book-opening START ████ -->
 <script>
-/* ── 块 04 · 开书动画 v1.8.2「星尘启封」：唤醒 → 启封 → 入页 → 门钥匙（约 3.7 秒） ──
+/* ── 块 04 · 开书动画 v1.8.3「机关启封 · 星尘启封」：机关启动 → 启封 → 入页 → 门钥匙（约 4.7 秒） ──
    依据 prompts/04-book-opening.md：不再使用粒子汇聚、穿越光线与闪白（Owner 反馈过曝）；
    开书期间不创建 3D 地球（WebGL / 着色器编译会卡住动画），地球在门钥匙盖满画面后才准备。 */
 (function(SB){
@@ -2561,15 +2630,20 @@ html:not([data-sb-perf="high"]) .cv-flow{display:none;}
     if(SB.perf.level === 'reduced'){ await SB.scenes.go('globe', {}, {transition:'flash'}); return; }
     const low = SB.perf.level !== 'high';
 
-    // 1 唤醒（0–0.9s）：机匣加速、宝石柔和充能、烫金由内向外亮起；一圈细光环从宝石扩散
-    B.setSpin(low ? 3 : 4);
+    // 1 机关启封（0–1.9s，v1.8.3）：机匣逐级啮合（棘轮步进）、宝石旋转、能量沿烫金描亮与光珠奔跑、
+    //   星辰依次点亮、宝石外圈迸出火花、符文环加速；1.2s 双重共鸣；1.5s 解锁（包角弹开 + 书身轻震 + 书页透光）
+    B.awaken?.(true);
+    B.setSpin(low ? 6 : 8);
     B.cover.classList.add('is-charging', 'is-lit');
-    SB.fx.orbitBoost(2.2);
-    await SB.wait(520);
-    const s = B.shocks[0]; s.classList.remove('go'); void s.offsetWidth; s.classList.add('go');
-    await SB.wait(380);
+    SB.fx.orbitBoost(2.6);
+    await SB.wait(1200);
+    B.shocks.forEach((s, i) => setTimeout(() => { s.classList.remove('go'); void s.offsetWidth; s.classList.add('go'); }, i*180));
+    await SB.wait(300);
+    B.unlock?.();
+    await SB.wait(400);
+    B.awaken?.(false);
 
-    // 2 启封（0.9–3.0s）：封面打开，书页柔光亮起，纸页轻轻翻动；星尘从书页向上缓缓飘散（只向外，不汇聚）
+    // 2 启封（1.9–4.0s）：封面打开，书页柔光亮起，纸页轻轻翻动；星尘从书页向上缓缓飘散（只向外，不汇聚）
     B.fxOpen?.(true);
     B.cover.classList.add('is-open');
     B.setSpin(2); B.page.classList.add('lit');
@@ -2582,7 +2656,7 @@ html:not([data-sb-perf="high"]) .cv-flow{display:none;}
     SB.fx.orbit(null);
     await SB.wait(low ? 1750 : 2100);   // 等扉页星图描完
 
-    // 3 入页（3.0–3.7s）：镜头推进书页中心并淡出，随后门钥匙光门从书页中心打开
+    // 3 入页（4.0–4.7s）：镜头推进书页中心并淡出，随后门钥匙光门从书页中心打开
     const r = document.getElementById('bk-float').getBoundingClientRect();
     B.stage.style.transition = `transform ${low ? 1 : 1.2}s cubic-bezier(.6,0,.35,1), opacity ${low ? .9 : 1.1}s ease-in`;
     B.stage.style.transform = `scale(${low ? 1.5 : 1.9})`; B.stage.style.opacity = '0';

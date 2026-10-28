@@ -1,5 +1,5 @@
 <script>
-/* ── 块 04 · 开书动画 v1.8.2「星尘启封」：唤醒 → 启封 → 入页 → 门钥匙（约 3.7 秒） ──
+/* ── 块 04 · 开书动画 v1.8.3「机关启封 · 星尘启封」：机关启动 → 启封 → 入页 → 门钥匙（约 4.7 秒） ──
    依据 prompts/04-book-opening.md：不再使用粒子汇聚、穿越光线与闪白（Owner 反馈过曝）；
    开书期间不创建 3D 地球（WebGL / 着色器编译会卡住动画），地球在门钥匙盖满画面后才准备。 */
 (function(SB){
@@ -13,15 +13,20 @@
     if(SB.perf.level === 'reduced'){ await SB.scenes.go('globe', {}, {transition:'flash'}); return; }
     const low = SB.perf.level !== 'high';
 
-    // 1 唤醒（0–0.9s）：机匣加速、宝石柔和充能、烫金由内向外亮起；一圈细光环从宝石扩散
-    B.setSpin(low ? 3 : 4);
+    // 1 机关启封（0–1.9s，v1.8.3）：机匣逐级啮合（棘轮步进）、宝石旋转、能量沿烫金描亮与光珠奔跑、
+    //   星辰依次点亮、宝石外圈迸出火花、符文环加速；1.2s 双重共鸣；1.5s 解锁（包角弹开 + 书身轻震 + 书页透光）
+    B.awaken?.(true);
+    B.setSpin(low ? 6 : 8);
     B.cover.classList.add('is-charging', 'is-lit');
-    SB.fx.orbitBoost(2.2);
-    await SB.wait(520);
-    const s = B.shocks[0]; s.classList.remove('go'); void s.offsetWidth; s.classList.add('go');
-    await SB.wait(380);
+    SB.fx.orbitBoost(2.6);
+    await SB.wait(1200);
+    B.shocks.forEach((s, i) => setTimeout(() => { s.classList.remove('go'); void s.offsetWidth; s.classList.add('go'); }, i*180));
+    await SB.wait(300);
+    B.unlock?.();
+    await SB.wait(400);
+    B.awaken?.(false);
 
-    // 2 启封（0.9–3.0s）：封面打开，书页柔光亮起，纸页轻轻翻动；星尘从书页向上缓缓飘散（只向外，不汇聚）
+    // 2 启封（1.9–4.0s）：封面打开，书页柔光亮起，纸页轻轻翻动；星尘从书页向上缓缓飘散（只向外，不汇聚）
     B.fxOpen?.(true);
     B.cover.classList.add('is-open');
     B.setSpin(2); B.page.classList.add('lit');
@@ -34,7 +39,7 @@
     SB.fx.orbit(null);
     await SB.wait(low ? 1750 : 2100);   // 等扉页星图描完
 
-    // 3 入页（3.0–3.7s）：镜头推进书页中心并淡出，随后门钥匙光门从书页中心打开
+    // 3 入页（4.0–4.7s）：镜头推进书页中心并淡出，随后门钥匙光门从书页中心打开
     const r = document.getElementById('bk-float').getBoundingClientRect();
     B.stage.style.transition = `transform ${low ? 1 : 1.2}s cubic-bezier(.6,0,.35,1), opacity ${low ? .9 : 1.1}s ease-in`;
     B.stage.style.transform = `scale(${low ? 1.5 : 1.9})`; B.stage.style.opacity = '0';
