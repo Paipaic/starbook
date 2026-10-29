@@ -189,6 +189,31 @@ if 'wireGroupDrop' not in block_text.get('12-memory-editor.html', ''):
     print('ERROR: editor drag into / out of photo groups (wireGroupDrop) missing')
     sys.exit(1)
 
+# v1.10.0 guards: ring timeline + year reel; music auto-loop; UTF-8 safety of docs and release scripts.
+ov = block_text.get('13-overview.html', '')
+if 'function proj(' not in ov or 'stations(' not in ov or 'yearReel' not in ov:
+    print('ERROR: overview ring timeline (proj / stations / yearReel hook) missing')
+    sys.exit(1)
+if 'SB.yearReel = ' not in block_text.get('14-year-reel.html', ''):
+    print('ERROR: year reel block (14-year-reel.html, SB.yearReel) missing')
+    sys.exit(1)
+if "el.addEventListener('ended'" not in block_text.get('11-memory-player.html', ''):
+    print('ERROR: background music auto-loop recovery missing')
+    sys.exit(1)
+# GBK-misread UTF-8 (mojibake) markers that appeared when Windows PowerShell read BOM-less UTF-8 as ANSI.
+MOJIBAKE = ['銆', '锛', '鈥', '鈹', '鏄熷', '涔嬩功']
+for rel in ['AGENTS.md', 'README.md', 'PROJECT_STATE.md', 'CHANGELOG.md', 'ROADMAP.md', 'blocks/00-config.html']:
+    txt = (root/rel).read_text(encoding='utf-8-sig')
+    bad = [m for m in MOJIBAKE if m in txt]
+    if bad:
+        print(f'ERROR: {rel} looks garbled (mojibake {bad}); restore it from git and read files with -Encoding UTF8')
+        sys.exit(1)
+for rel in ['release-current.ps1', 'publish.ps1']:
+    for ln in (root/rel).read_text(encoding='utf-8-sig').splitlines():
+        if 'Get-Content' in ln and not ln.lstrip().startswith('#') and '-Encoding' not in ln:
+            print(f'ERROR: {rel} reads a file without -Encoding UTF8: {ln.strip()}')
+            sys.exit(1)
+
 # Governance / release-document consistency checks.
 version = (root/'VERSION').read_text(encoding='utf-8-sig').strip()
 required_files = [

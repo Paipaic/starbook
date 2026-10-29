@@ -90,7 +90,7 @@ if (-not (Test-Path $releaseRecord)) {
         throw "Release record '$releaseRecord' is missing and template '$template' was not found."
     }
     New-Item -ItemType Directory -Force -Path "docs/releases" | Out-Null
-    $recordText = Get-Content -LiteralPath $template -Raw
+    $recordText = Get-Content -LiteralPath $template -Raw -Encoding UTF8
     $recordText = $recordText.Replace("vX.X.X", $TagVersion)
     $recordText = $recordText.Replace("## 1. 版本目标", "## 1. 版本目标`r`n`r`n$Message")
     $encoding = New-Object System.Text.UTF8Encoding($false)
@@ -145,7 +145,7 @@ Get-ChildItem -Path "site" -File -Recurse -ErrorAction Stop | ForEach-Object {
 
     $path = $file.FullName
     try {
-        $text = Get-Content -LiteralPath $path -Raw -ErrorAction Stop
+        $text = Get-Content -LiteralPath $path -Raw -Encoding UTF8 -ErrorAction Stop
     } catch {
         return
     }

@@ -2,13 +2,18 @@
 
 ## Current Release
 
-- Version: `1.9.2` (闀滃ご璇█搴?路 鑷姩鏀炬槧鐢靛奖妯″紡 路 鎷栨斁缂栫粍)
+- Version: `1.10.0` (时光之环 · 时光剪影 · 背景音乐自动循环)
 - Deadline: `2026-10-29`
-- Delivery goal: 绉佸瘑銆佺ǔ瀹氥€佹墜鏈哄彲鐢ㄧ殑鍛ㄥ勾绾康绀肩墿銆?- Base: V1 `blocks + build.py + site/index.html`銆?- Runtime config version: `1.9.2`銆?
+- Delivery goal: 私密、稳定、手机可用的周年纪念礼物。
+- Base: V1 `blocks + build.py + site/index.html`。
+- Runtime config version: `1.10.0`。
+
 ## Current Architecture
 
-Frontend: GitHub Pages 闈欐€侀〉闈€?
-Backend: Supabase Lite / Anniversary Bridge锛?- Auth: Email + Password
+Frontend: GitHub Pages 静态页面。
+
+Backend: Supabase Lite / Anniversary Bridge：
+- Auth: Email + Password
 - Database: `books`, `book_members`, `book_data`
 - Storage: private bucket `starbook-media`
 - Realtime: **not enabled for anniversary release**
@@ -16,17 +21,24 @@ Backend: Supabase Lite / Anniversary Bridge锛?- Auth: Email + Password
 
 ## Runtime Context
 
-- `SB.user`: 褰撳墠鐧诲綍鐢ㄦ埛 / Session銆?- `SB.book`: 褰撳墠鏁版嵁 Book 涓庣敤鎴疯鑹诧紙Supabase Runtime Context锛夈€?- `SB.magicBook`: Magic Celestial 灏侀潰涓庡紑涔﹀姩鐢绘帶鍒跺櫒锛涗笉寰椾笌 `SB.book` 鍚堝苟銆?- `SB.theme.current`: 褰撳墠 `magic-celestial`銆?- `SB.experience.current`: 褰撳墠 `world-map`銆?- `SB.store`: V1 鍏煎鏁版嵁鎺ュ彛锛屽唴閮ㄨ鍙?`book_data.payload`銆?
+- `SB.user`: 当前登录用户 / Session。
+- `SB.book`: 当前数据 Book 与用户角色（Supabase Runtime Context）。
+- `SB.magicBook`: Magic Celestial 封面与开书动画控制器；不得与 `SB.book` 合并。
+- `SB.theme.current`: 当前 `magic-celestial`。
+- `SB.experience.current`: 当前 `world-map`。
+- `SB.store`: V1 兼容数据接口，内部读取 `book_data.payload`。
+
 Current Book:
 - id: `8a3cc6fe-b667-4ce7-b47b-79cebc0e1353`
-- name: `鏄熷笨涔嬩功`
+- name: `星屿之书`
 - relationship: `romantic`
 - theme: `magic-celestial`
 - experience: `world-map`
 
 ## Anniversary Bridge Data
 
-`book_data.payload` 褰撳墠缁х画淇濆瓨 V1锛?
+`book_data.payload` 当前继续保存 V1：
+
 ```json
 {
   "cities": {},
@@ -35,8 +47,10 @@ Current Book:
 }
 ```
 
-杩欐槸涓存椂鍏煎灞傦紝涓嶆槸鏈€缁?V2 鏁版嵁妯″瀷銆?
-`revision` 鐢ㄤ簬杞婚噺骞跺彂鍐茬獊妫€娴嬨€?
+这是临时兼容层，不是最终 V2 数据模型。
+
+`revision` 用于轻量并发冲突检测。
+
 ## Storage Convention
 
 Private bucket: `starbook-media`
@@ -46,68 +60,168 @@ Private bucket: `starbook-media`
 {book_id}/audio/{generated-id}.mp3|m4a|...
 ```
 
-濯掍綋灞炰簬 Book锛屼笉灞炰簬鍗曚釜 User銆?
+媒体属于 Book，不属于单个 User。
+
 ## Architecture Invariants
 
-1. Starbook 蹇呴』淇濈暀澶氱敤鎴锋墿灞曡兘鍔涖€?2. 涓€涓敤鎴锋湭鏉ュ彲浠ユ嫢鏈夋垨鍔犲叆澶氭湰 Book銆?3. 涓€鏈?Book 鍙互鏈夊涓垚鍛樸€?4. 涓嶅厑璁镐笟鍔′唬鐮佸亣璁剧郴缁熸案杩滃彧鏈変竴鏈?Book銆?5. 涓嶅厑璁?Starbook Core 鍋囪鎵€鏈?Book 閮芥槸鎯呬荆鍏崇郴銆?6. Relationship Type 涓?Theme 鐙珛銆?7. Theme 涓?Experience 鐙珛銆?8. `magic-celestial` 鍙槸绗竴濂?Theme銆?9. `world-map` 鍙槸绗竴濂?Experience銆?10. Memory 鏈潵涓嶅緱寮哄埗瑕佹眰 Location / City銆?11. Book 鍐呬笟鍔℃暟鎹繀椤绘湁鏄庣‘ Book 鎵€灞炲叧绯汇€?12. 褰撳墠鏈紑鏀剧殑鏈潵鑳藉姏浼樺厛閫氳繃閰嶇疆鍏抽棴锛岃€屼笉鏄牬鍧忔墿灞曟帴鍙ｃ€?13. 2026-10-29 鍓嶏紝鍛ㄥ勾鐗堢ǔ瀹氭€ч珮浜庢灦鏋勭函娲佸害鍜屽姛鑳芥暟閲忋€?14. 涓嶄负鍛ㄥ勾鐗堝紩鍏?React / Vue / Vite 澶ц縼绉汇€?15. 涓嶅湪娴忚鍣ㄦ垨浠撳簱涓斁 Supabase Secret / service_role / 鏁版嵁搴撳瘑鐮併€?
+1. Starbook 必须保留多用户扩展能力。
+2. 一个用户未来可以拥有或加入多本 Book。
+3. 一本 Book 可以有多个成员。
+4. 不允许业务代码假设系统永远只有一本 Book。
+5. 不允许 Starbook Core 假设所有 Book 都是情侣关系。
+6. Relationship Type 与 Theme 独立。
+7. Theme 与 Experience 独立。
+8. `magic-celestial` 只是第一套 Theme。
+9. `world-map` 只是第一套 Experience。
+10. Memory 未来不得强制要求 Location / City。
+11. Book 内业务数据必须有明确 Book 所属关系。
+12. 当前未开放的未来能力优先通过配置关闭，而不是破坏扩展接口。
+13. 2026-10-29 前，周年版稳定性高于架构纯洁度和功能数量。
+14. 不为周年版引入 React / Vue / Vite 大迁移。
+15. 不在浏览器或仓库中放 Supabase Secret / service_role / 数据库密码。
+
 ## Project Governance / Agent Handoff
 
-浠?v1.5.1 璧凤紝椤圭洰涓婁笅鏂囦笌绠＄悊閾捐矾姝ｅ紡鍥哄寲鍦ㄤ粨搴撳唴锛?
-- `AGENTS.md`: 鏂?Agent 蹇呰鍏ュ彛銆?- `docs/PROJECT_MANAGEMENT_FULL_CHAIN.md`: 寮€鍙?鈫?鏍￠獙 鈫?PR 鈫?main 鈫?Pages 鈫?鏁版嵁淇濈暀 鈫?鍥炴粴鍏ㄩ摼璺€?- `docs/ARCHITECTURE_EXTENSION_CONTRACT.md`: 澶氱敤鎴?/ 澶?Book / Relationship / Theme / Experience 闀挎湡鎵╁睍濂戠害銆?- `docs/DATA_LIFECYCLE.md`: Supabase 鏁版嵁鐢熷懡鍛ㄦ湡涓?migration 瑙勫垯銆?- `docs/RELEASE_WORKFLOW.md`: 鐗堟湰鍙戝竷鎿嶄綔璇存槑銆?- `docs/releases/vX.X.X.md`: 姣忕増鏈繀椤昏褰?Runtime銆佹暟鎹€丆I銆侀儴缃插拰娌荤悊閾捐矾鍙樺寲銆?
+从 v1.5.1 起，项目上下文与管理链路正式固化在仓库内：
+
+- `AGENTS.md`: 新 Agent 必读入口。
+- `docs/PROJECT_MANAGEMENT_FULL_CHAIN.md`: 开发 → 校验 → PR → main → Pages → 数据保留 → 回滚全链路。
+- `docs/ARCHITECTURE_EXTENSION_CONTRACT.md`: 多用户 / 多 Book / Relationship / Theme / Experience 长期扩展契约。
+- `docs/DATA_LIFECYCLE.md`: Supabase 数据生命周期与 migration 规则。
+- `docs/RELEASE_WORKFLOW.md`: 版本发布操作说明。
+- `docs/releases/vX.X.X.md`: 每版本必须记录 Runtime、数据、CI、部署和治理链路变化。
+
 Production governance:
 
 ```text
 release/vX.X.X or feature/*
-鈫?Pull Request
-鈫?validate-starbook
-鈫?merge main
-鈫?Deploy Starbook to GitHub Pages
+→ Pull Request
+→ validate-starbook
+→ merge main
+→ Deploy Starbook to GitHub Pages
 ```
 
-`main` 鏄敮涓€ Production branch銆傛櫘閫氫唬鐮佸彂甯冧笉閲嶇疆 Supabase 鏁版嵁銆?
+`main` 是唯一 Production branch。普通代码发布不重置 Supabase 数据。
+
+
+## Ring Timeline / Year Reel / Music (v1.10.0)
+
+- `13-overview`：站点 = 起点节点 + 回忆 + 周年节点（每满 12 个月）+ 「此刻」节点；自做透视投影（`proj()`），环线画在前 / 后两层 canvas，悬挂卡片按纵深设置层级与透明度；场景激活时持续运行动画循环（柔和档 30fps，静止档只在拖动时运行，页面隐藏时停止）。调试接口 `SB.overview.state / center(i)`。
+- `14-year-reel`（新块）：`SB.yearReel.open({year, from, to, list, now})` / `close()`；所有动画为 CSS 关键帧，JS 只在时间点切换状态；照片先预载（最多 8 秒）。
+- `SB.audio`：数据就绪即尝试自动播放；点击 / 轻触 / 按键解锁；ended / error / visibilitychange 自动恢复。
+- 发布脚本读取文件显式 UTF-8；`check_project.py` 检查文档乱码。
 
 ## Screening Language (v1.9.2)
 
-- 鏂囧瓧鍏冪礌鏂板 look锛歚title / poem / quote / whisper / note / stamp`锛坄GEN` 闆嗗悎锛岀敱 `animGen()` 椹卞姩杩涢€€鍦猴級锛宍cinema` 鏀寔 `in:'spark'`锛涘瓧娈?`kick`锛堝箷搴?/ 缂栧彿锛夈€乣drift`锛堣宸級銆乣outDur`銆乣right`銆乣deco`锛堣楗版枃瀛楋紝涓嶅弬涓庡仠闈犵偣锛夈€?- 鐓х墖鍏冪礌鏂板鐢绘 `arch / mat / soft(+side)`锛岃繘閫€鍦?`zoom / rise / develop / sink`锛屼簰鍔?`rack`锛堣櫄鐒?/ 鍘嬫殫锛夛紝鎵嬫湱瑁呴グ `deco: tape | tapeb | clip`銆?- 閾跺箷 `pickShot()` 闀滃ご閫夋嫨锛涚粍鍗曞厓 `board`锛堟晠浜嬫澘锛夈€傛槦鍥?`HERO` 椤碉紱鎵嬫湱渚跨 / 閭埑銆?- 鑷姩鏀炬槧锛歚start()` 棰勮浇锛沗data-mode` 鎺у埗杩涘害鏉★紱`zoneH()` 搴曢儴娴幇銆?
+- 文字元素新增 look：`title / poem / quote / whisper / note / stamp`（`GEN` 集合，由 `animGen()` 驱动进退场），`cinema` 支持 `in:'spark'`；字段 `kick`（幕序 / 编号）、`drift`（视差）、`outDur`、`right`、`deco`（装饰文字，不参与停靠点）。
+- 照片元素新增画框 `arch / mat / soft(+side)`，进退场 `zoom / rise / develop / sink`，互动 `rack`（虚焦 / 压暗），手札装饰 `deco: tape | tapeb | clip`。
+- 银幕 `pickShot()` 镜头选择；组单元 `board`（故事板）。星图 `HERO` 页；手札便笺 / 邮戳。
+- 自动放映：`start()` 预载；`data-mode` 控制进度条；`zoneH()` 底部浮现。
+
 ## Photo Groups (v1.9.1)
 
-- 鍥炲繂鏁版嵁鏂板鍙€?`groups: [{id, text}]` 涓庣収鐗?`g`锛堢粍 id锛夛紝瀛樹簬 `book_data.payload`锛屾棤 migration銆?- 缂栬緫鍣ㄧ淮鎸佺粍鎴愬憳鍦?`slides` 涓繛缁紙`normalizeGroups`锛夛紱鎵归噺鎿嶄綔 `group` / `ungroup` 娉ㄥ唽鍦?`SB.editor.photoActions`锛涙敞鍐岃〃 `label` 鍙负鍑芥暟銆?- 鏀炬槧鍣?`unitsOf()` 鎶婄収鐗囧垏鎴愬崟鍏冿紝涓夌瀵兼紨鍒嗗埆缂栨帓缁勫崟鍏冿紱缁勬弿杩颁负绌虹殑缁勬寜鏅€氱収鐗囨斁鏄犮€?- 鏀炬槧鏂瑰紡锛歚P.mode = auto | manual`锛坙ocalStorage `sb-play-mode`锛夛紱`buildTL()` 浜у嚭 `holds`锛堝仠闈犵偣锛夛紝鎵嬪姩妯″紡鏃堕挓鍦ㄥ仠闈犵偣鍋滀綇锛宍advance()` 缈婚〉锛? 鍊嶉€?rush 鍒颁笅涓€寮犳垨鐩存帴璺宠浆锛夈€?
+- 回忆数据新增可选 `groups: [{id, text}]` 与照片 `g`（组 id），存于 `book_data.payload`，无 migration。
+- 编辑器维持组成员在 `slides` 中连续（`normalizeGroups`）；批量操作 `group` / `ungroup` 注册在 `SB.editor.photoActions`；注册表 `label` 可为函数。
+- 放映器 `unitsOf()` 把照片切成单元，三种导演分别编排组单元；组描述为空的组按普通照片放映。
+- 放映方式：`P.mode = auto | manual`（localStorage `sb-play-mode`）；`buildTL()` 产出 `holds`（停靠点），手动模式时钟在停靠点停住，`advance()` 翻页（3 倍速 rush 到下一张或直接跳转）。
+
 ## Search / Editor / Gate (v1.9.0)
 
-- 鍦扮悆鎼滅储锛歚SB.ADMIN_DIVISIONS`锛坄blocks/06-admin-divisions.html`锛宍tools/make_admin.py` 浠?Vonng/adcode銆乥tskinner/spatial銆乲jhealy/fips-codes 鏈湴鍏嬮殕鐢熸垚锛夈€備腑鍥藉尯鍒掑熀绾?2016銆佺編鍥藉幙 2010銆?- 缂栬緫鍣細`SB.editor.photoActions` 鎵归噺鎿嶄綔娉ㄥ唽琛紱涓婁紶骞跺彂 2锛涘垹闄ゅ彲鎾ら攢锛堟枃浠朵粛鍦ㄤ繚瀛樻椂娓呯悊锛夈€?- 鐧诲綍闂細`html[data-gate-type="web|local"]` 涓€娆℃€у瓧浣撳喅绛栵紱鍔ㄧ敾鍙敤 transform / opacity锛沗SB.fx.start()` 绉诲埌 `store.ready` 涔嬪悗銆?
+- 地球搜索：`SB.ADMIN_DIVISIONS`（`blocks/06-admin-divisions.html`，`tools/make_admin.py` 从 Vonng/adcode、btskinner/spatial、kjhealy/fips-codes 本地克隆生成）。中国区划基线 2016、美国县 2010。
+- 编辑器：`SB.editor.photoActions` 批量操作注册表；上传并发 2；删除可撤销（文件仍在保存时清理）。
+- 登录门：`html[data-gate-type="web|local"]` 一次性字体决策；动画只用 transform / opacity；`SB.fx.start()` 移到 `store.ready` 之后。
+
 ## Book Opening (v1.8.3)
 
-- 寮€涔?= 鏈哄叧鍚皝锛坄SB.magicBook.awaken(on)` / `unlock()`锛?.9s锛夆啋 鍚皝锛坄fxOpen`锛屾墘椤甸噾澧ㄦ槦鍥?+ 鏄熷皹锛夆啋 鍏ラ〉 鈫?闂ㄩ挜鍖欍€傝瑙?`prompts/04-book-opening.md`銆?- 鍙敤 transform / opacity / 鐭椂鎻忕嚎锛涘皬榻胯疆 SVG 鑷浆鍙湪鏈哄叧鍚姩鐨?2 绉掑唴瀵规墍鏈夋。浣嶅紑鍚€?
+- 开书 = 机关启封（`SB.magicBook.awaken(on)` / `unlock()`，1.9s）→ 启封（`fxOpen`，扉页金墨星图 + 星尘）→ 入页 → 门钥匙。详见 `prompts/04-book-opening.md`。
+- 只用 transform / opacity / 短时描线；小齿轮 SVG 自转只在机关启动的 2 秒内对所有档位开启。
+
 ## Mobile Performance (v1.8.2)
 
-- 寮€涔︽湡闂寸姝㈠垱寤?WebGL锛堜笉璋冪敤 `SB.scenes.prefetch('globe')`锛夛紱鍦扮悆鍦ㄩ棬閽ュ寵鐩栨弧鍚庡噯澶囥€?- 榄旀硶涔︾鏂囩幆鏄?2D 鎶曞奖鐨勫墠 / 鍚庝袱灞傦紙`#bk-runes-front` / `#bk-runes-back`锛夛紝涓嶅緱鏀惧洖 3D `preserve-3d` 涓婁笅鏂囷紙鎵嬫満 WebKit 浼氬垏鍓茬浉浜ゅ钩闈㈠鑷撮棯鐑侊級銆?- 鏌斿拰妗ｏ紙鎵嬫満榛樿锛夊叧闂槀璐电殑娣峰悎妯″紡 / 閬僵灞傚苟浣跨敤寤変环鐑噾婊ら暅锛涜杽鐑熷彧鍦ㄥ崕涓芥。銆佹甯告贩鍚堛€?- 鐨潻 / 绾稿紶绾圭悊缂撳瓨鍦?localStorage锛涙斁鏄犲櫒绾圭悊寤惰繜鐢熸垚銆?- 鍙充笂瑙掓爣璇嗙粍鏂板銆屽洖鍒伴瓟娉曚功銆嶏紙`SB.dock` 鐨?action 绫绘爣璇嗭級銆?
+- 开书期间禁止创建 WebGL（不调用 `SB.scenes.prefetch('globe')`）；地球在门钥匙盖满后准备。
+- 魔法书符文环是 2D 投影的前 / 后两层（`#bk-runes-front` / `#bk-runes-back`），不得放回 3D `preserve-3d` 上下文（手机 WebKit 会切割相交平面导致闪烁）。
+- 柔和档（手机默认）关闭昂贵的混合模式 / 遮罩层并使用廉价烫金滤镜；薄烟只在华丽档、正常混合。
+- 皮革 / 纸张纹理缓存在 localStorage；放映器纹理延迟生成。
+- 右上角标识组新增「回到魔法书」（`SB.dock` 的 action 类标识）。
+
 ## Visual / Layout (v1.8.1)
 
-- 杞満鎸夎矾绾垮尯鍒嗭紙`SB.gate.kinds = portkey / nox / quill / pensieve` + `portal` 瑁呴グ锛夛細`flash`=闂ㄩ挜鍖欙紙涔?/ 鑿滃崟 鈫?鍦扮悆锛夈€乣portal`=骞诲奖鏄惧舰锛堝湴鐞?鈫?鍥藉锛夈€乣quill`=澧ㄩ噾涔﹂〉锛堚啋 鍩庡競銆佲啋 鏃跺厜闀垮嵎锛夈€乣pensieve`=鍐ユ兂鐩嗭紙鈫?鏀炬槧锛夈€乣veil`=鐔勭伅鍣紙杩斿洖锛夈€傛洕鍏夎鍒欒 `prompts/00-gate.md`銆?- 榄旀硶涔︽潗璐ㄣ€屾槦澶滄懇娲涘摜鐨€嶏細鍗堝闈涜摑鐨潻銆侀妲熷彜閲戙€佺洸鍘嬭姳杈广€侀暥宓屾槦杈般€佸彜閲戝寘瑙掞紙`blocks/03-magic-book.html`锛夈€?- 鑿滃崟鍙湁銆屼笘鐣屾槦鍥俱€嶃€屾椂鍏夐暱鍗枫€嶏紱闊充箰 / 鍔ㄦ晥 / 璐︽埛鍦ㄥ彸涓婅 `SB.dock`锛坄blocks/02y-dock.html`锛屽悇鍧楃敤 `SB.dock.add` 娉ㄥ唽闈㈡澘锛夈€傚叏绔欒儗鏅煶涔愮鐞嗗湪闊充箰闈㈡澘閲屻€?- 銆屾椂鍏夐暱鍗枫€嶏紙鍦烘櫙 id 浠嶄负 `overview`锛夛細妯悜鍙嫋鍔ㄦ椂闂磋酱锛涙斁鏄犲弬鏁?`from:'overview'` 鏃惰繑鍥炲埌鏃跺厜闀垮嵎銆?- 鍩庡競绌虹姸鎬侊細涓庣珷鑺傚崱鐗囧悓姣斾緥鐨勭┖鐧界珷鑺傚崱銆?
+- 转场按路线区分（`SB.gate.kinds = portkey / nox / quill / pensieve` + `portal` 装饰）：`flash`=门钥匙（书 / 菜单 → 地球）、`portal`=幻影显形（地球 → 国家）、`quill`=墨金书页（→ 城市、→ 时光长卷）、`pensieve`=冥想盆（→ 放映）、`veil`=熄灯器（返回）。曝光规则见 `prompts/00-gate.md`。
+- 魔法书材质「星夜摩洛哥皮」：午夜靛蓝皮革、香槟古金、盲压花边、镶嵌星辰、古金包角（`blocks/03-magic-book.html`）。
+- 菜单只有「世界星图」「时光长卷」；音乐 / 动效 / 账户在右上角 `SB.dock`（`blocks/02y-dock.html`，各块用 `SB.dock.add` 注册面板）。全站背景音乐管理在音乐面板里。
+- 「时光长卷」（场景 id 仍为 `overview`）：横向可拖动时间轴；放映参数 `from:'overview'` 时返回到时光长卷。
+- 城市空状态：与章节卡片同比例的空白章节卡。
+
 ## Visual / Navigation (v1.8.0)
 
-- 鍦烘櫙娴佺▼锛氶瓟娉曚功 鈫?涓栫晫鏄熷浘锛堝湴鐞?+ 鎼滅储鏍忥級鈫?鍥藉鍦板浘 鈫?鍩庡競鐩綍 鈫?鍥炲繂鏀炬槧銆?*澶ф床鍥藉鐩綍椤靛凡鍒犻櫎**锛涘浗瀹剁殑鐖剁骇鏄?`globe`锛岃繑鍥炴椂鍦扮悆鑷姩杞悜璇ュ浗瀹躲€?- 杞満 `SB.gate`锛坄blocks/01b-gate.html`锛夛細`flash` = 闂ㄩ挜鍖欍€乣portal` = 骞诲奖鏄惧舰瑁呴グ銆乣veil` = 鐔勭伅鍣?/ 鑽у厜闂儊锛涘彧鏇挎崲 cover / reveal 瑙嗚锛孲cene Runtime 浜嬪姟涓嶅彉锛涚己澶辨椂鍥為€€鏃ц瑙夛紝寮傚父 `abort()`銆?- 鎼滅储锛歚SB.WORLD_CITIES`锛?48 鍩庣绾垮簱锛宍tools/make_cities.py` 鐢熸垚锛? Open-Meteo Geocoding 鍦ㄧ嚎鎼滅储锛堝敮涓€鏂板澶栭儴鏈嶅姟锛屽け璐ラ檷绾э級锛沗SB.globe.focus(o)` / `SB.globe.search(q)` 渚涜皟璇曘€?- 榄旀硶涔︺€屾槦杈夊眰娆°€嶏細鏄熶簯銆佸疂鐭冲厜婧?/ 鍏夋潫銆?D 绗︽枃鐜€佺儫闆剧伀鏄熺敾甯冦€佷功椤佃竟缂樻祦鍏夛紱`SB.magicBook.fxSuck(on)` 鐢ㄤ簬寮€涔﹀惛鍏ャ€?- 鍦扮悆銆屾槦杈夊眰娆°€嶏細娴烽潰楂樺厜銆佷簯闆惧眰銆佸灞傚厜鏅曘€佹槦搴х嚎銆佹槦鐩樼幆銆佽冻杩瑰厜寮с€?- 鎻愮ず璇嶏細`prompts/00-gate.md`銆乣prompts/03-magic-book.md`銆乣prompts/07-globe.md`銆乣prompts/09-country-map.md`锛涜皟鐮旓細`docs/design/VISUAL_UPGRADE_PLAN.md` 绗?8 鑺傘€?
+- 场景流程：魔法书 → 世界星图（地球 + 搜索栏）→ 国家地图 → 城市目录 → 回忆放映。**大洲国家目录页已删除**；国家的父级是 `globe`，返回时地球自动转向该国家。
+- 转场 `SB.gate`（`blocks/01b-gate.html`）：`flash` = 门钥匙、`portal` = 幻影显形装饰、`veil` = 熄灯器 / 荧光闪烁；只替换 cover / reveal 视觉，Scene Runtime 事务不变；缺失时回退旧视觉，异常 `abort()`。
+- 搜索：`SB.WORLD_CITIES`（648 城离线库，`tools/make_cities.py` 生成）+ Open-Meteo Geocoding 在线搜索（唯一新增外部服务，失败降级）；`SB.globe.focus(o)` / `SB.globe.search(q)` 供调试。
+- 魔法书「星辉层次」：星云、宝石光溢 / 光束、3D 符文环、烟雾火星画布、书页边缘流光；`SB.magicBook.fxSuck(on)` 用于开书吸入。
+- 地球「星辉层次」：海面高光、云雾层、外层光晕、星座线、星盘环、足迹光弧。
+- 提示词：`prompts/00-gate.md`、`prompts/03-magic-book.md`、`prompts/07-globe.md`、`prompts/09-country-map.md`；调研：`docs/design/VISUAL_UPGRADE_PLAN.md` 第 8 节。
+
 ## Scene Runtime / Performance Baseline (v1.7.3)
 
-- Scene 鐢熷懡鍛ㄦ湡锛歚prepare 鈫?cover 鈫?await enter 鈫?nextPaint 鈫?reveal 鈫?cleanup`銆?- `SB.scenes.prefetch(id, params)` 鍙鐑紝涓嶆敼鍙樺綋鍓嶅満鏅€?- 鐧诲綍 Gate 蹇呴』绛?`SB.store.ready + scenes.boot(book) + first paint` 鍚庡啀鎻紑銆?- Store 鍚姩鍙鍙?JSONB锛屼笉鍏ㄩ噺绛炬暣鏈功濯掍綋 URL銆?- Globe / Country / City / Player 閮藉簲鍦ㄦ彮绀哄墠鍑嗗棣栧睆鍏抽敭璧勬簮銆?- 瀵瑰簲閫愰摼璺?Prompt 浣嶄簬 `prompts/performance/`銆?
+- Scene 生命周期：`prepare → cover → await enter → nextPaint → reveal → cleanup`。
+- `SB.scenes.prefetch(id, params)` 只预热，不改变当前场景。
+- 登录 Gate 必须等 `SB.store.ready + scenes.boot(book) + first paint` 后再揭开。
+- Store 启动只读取 JSONB，不全量签整本书媒体 URL。
+- Globe / Country / City / Player 都应在揭示前准备首屏关键资源。
+- 对应逐链路 Prompt 位于 `prompts/performance/`。
+
 ## Visual / Typography (v1.5.2)
 
-- 涓枃鍏ㄧ珯缁熶竴 Noto Serif SC锛堟€濇簮瀹嬩綋锛夛紱鎷変竵閾枃 Cinzel锛涙暟瀛?Cormorant Garamond锛涘潎鏉ヨ嚜 Google Fonts銆?- ZCOOL XiaoWei 涓?Cinzel Decorative 宸茬Щ闄わ紙瀛楀舰鎹熷潖 / 鏁板瓧闅捐鲸锛夛紝`tools/check_project.py` 闃插洖褰掋€?- 鍥炬爣缁熶竴鐢?`SB.icon(name)` 鍐呰仈 SVG锛屼笉渚濊禆绯荤粺绗﹀彿瀛椾綋銆?- 瑙嗚鍗囩骇鍚庣画鐗堟湰璁″垝锛歚docs/design/VISUAL_UPGRADE_PLAN.md`锛坴1.6.0 鐢靛奖寮忔斁鏄犮€乿1.6.1 杞満銆乿1.6.2 榄旀硶涔?鍦扮悆鐗规晥锛夈€?
+- 中文全站统一 Noto Serif SC（思源宋体）；拉丁铭文 Cinzel；数字 Cormorant Garamond；均来自 Google Fonts。
+- ZCOOL XiaoWei 与 Cinzel Decorative 已移除（字形损坏 / 数字难辨），`tools/check_project.py` 防回归。
+- 图标统一用 `SB.icon(name)` 内联 SVG，不依赖系统符号字体。
+- 视觉升级后续版本计划：`docs/design/VISUAL_UPGRADE_PLAN.md`（v1.6.0 电影式放映、v1.6.1 转场、v1.6.2 魔法书/地球特效）。
+
 ## Visual / Cinematic Player (v1.6.0)
 
-- 鍥炲繂鏀炬槧 = 鏀炬槧鍘咃紙娴锋姤 + 鏀炬槧鎸夐挳锛夆啋 寮€鍦猴紙鐔勭伅銆侀摱骞曢粦杈广€佸ⅷ婊存稛婕€佹墘椤碉級鈫?闀滃ご锛堟帹/鎷?妯憞/绾垫憞/鎮诞鐩哥墖锛屾憾瑙?/ 鍏夋紡 / 澧ㄦ淮鎻箷杞満锛岀數褰卞瓧骞曪級鈫?缁堢珷锛堥棯鐧姐€併€岀粓 路 FINIS銆嶃€佸啀鏀句竴閬嶏級銆?- 鐢卞崟涓€鏃堕挓椹卞姩锛屾殏鍋滃嵆鍐荤粨锛涘彧璇荤幇鏈?memory 瀛楁锛坱itle / date / note / cover / slides / bgm / bgmMode锛夛紝鏃犳暟鎹彉鍖栥€?- 鐩稿唽鍗＄墖鍙充笅瑙掋€屾斁鏄犮€嶆寜閽洿鎺ュ紑濮嬫斁鏄狅紱鐐瑰崱鐗囧叾浠栦綅缃繘鍏ユ斁鏄犲巺銆?- `SB.audio.duck(level, ms)`锛氱粓绔犻煶涔愭笎寮卞埌 30%锛沗SB.player`锛氳皟璇?娴嬭瘯鐢ㄧ殑 play / seek / jump / state銆?- 鎻愮ず璇嶏細`prompts/11-memory-player.md`锛涜皟鐮旓細`docs/design/VISUAL_UPGRADE_PLAN.md` 绗?6 鑺傘€?
-## Visual / Multi-photo Player 路 Styles 路 Seasons (v1.7.0)
+- 回忆放映 = 放映厅（海报 + 放映按钮）→ 开场（熄灯、银幕黑边、墨滴涟漪、扉页）→ 镜头（推/拉/横摇/纵摇/悬浮相片，溶解 / 光漏 / 墨滴揭幕转场，电影字幕）→ 终章（闪白、「终 · FINIS」、再放一遍）。
+- 由单一时钟驱动，暂停即冻结；只读现有 memory 字段（title / date / note / cover / slides / bgm / bgmMode），无数据变化。
+- 相册卡片右下角「放映」按钮直接开始放映；点卡片其他位置进入放映厅。
+- `SB.audio.duck(level, ms)`：终章音乐渐弱到 30%；`SB.player`：调试/测试用的 play / seek / jump / state。
+- 提示词：`prompts/11-memory-player.md`；调研：`docs/design/VISUAL_UPGRADE_PLAN.md` 第 6 节。
 
-- 鏀炬槧鐢便€屽婕斻€嶇紪鎺掓垚澹版槑寮忔椂闂寸嚎锛堢収鐗?/ 鏂囧瓧 / 杩炵嚎 / 鍏夋紡鍏冪礌 + 鍏抽敭甯э級锛屾覆鏌撳櫒鍙寜鏃堕挓 T 璁＄畻 鈫?鍙殏鍋溿€佸彲 seek锛涚敾闈㈤噷甯告湁 2鈥? 寮犵収鐗囨帴鍔涙洿鏇裤€?- 涓夌鏀炬槧椋庢牸锛歚cinema` 閾跺箷锛堥粯璁わ細鍏ㄥ箙 + 鍙岃仈 / 涓夎仈鍒嗗睆銆佸厜缂?/ 铏硅啘 / 鐧惧彾 / 鎿﹀叆 / 鎵╁睍 / 寮€闂ㄨ浆鍦恒€佺珫鎺掑ぇ瀛楀箷锛夈€乣constellation` 鏄熷浘锛堟槦绌轰腑鐑噾鐩告鎺ュ姏 + 鏄熷骇杩炵嚎 + 缂栬緫寮忕紪鍙峰瓧骞曪級銆乣journal` 鎵嬫湱锛堢儧鍏変功妗屻€佺浉鐗囪惤涓嬪爢鍙犮€侀暅澶磋窡闅忋€佸ⅷ杩规墜鍐欐梺鐧斤級銆?- 鍥涘涓婚锛氭槬妯?/ 澶忓厜钀?/ 绉嬫灚 / 鍐洩 + 璋冭壊锛涙斁鏄犲巺涓庢斁鏄犳帶鍒舵潯鍙复鏃跺垏鎹€?- 鍥炲繂鏂板**鍙€?*瀛楁 `style`銆乣season`锛圱heme 琛ㄧ幇鍋忓ソ锛岀己鐪?= `cinema` / `auto`锛夛紝鏃?migration銆佷笉鏀?schema_version銆?- 鍥炲繂缂栬緫鍣ㄥ崌绾т负銆屾槦灞挎墜绋裤€嶏細瀹炴椂娴锋姤棰勮 + 鏁呬簨 / 褰卞儚 / 鏀炬槧 / 涔愮珷鍥涚珷銆?- `SB.cinema`锛氶鏍?/ 瀛ｈ妭鍏叡瀹氫箟锛沗SB.player` 鏂板 `setStyle / setSeason / estimate`銆?- 鎻愮ず璇嶏細`prompts/11-memory-player.md`銆乣prompts/12-memory-editor.md`锛涜皟鐮旓細`docs/design/VISUAL_UPGRADE_PLAN.md` 绗?7 鑺傘€?
+## Visual / Multi-photo Player · Styles · Seasons (v1.7.0)
+
+- 放映由「导演」编排成声明式时间线（照片 / 文字 / 连线 / 光漏元素 + 关键帧），渲染器只按时钟 T 计算 → 可暂停、可 seek；画面里常有 2–3 张照片接力更替。
+- 三种放映风格：`cinema` 银幕（默认：全幅 + 双联 / 三联分屏、光缝 / 虹膜 / 百叶 / 擦入 / 扩展 / 开门转场、竖排大字幕）、`constellation` 星图（星空中烫金相框接力 + 星座连线 + 编辑式编号字幕）、`journal` 手札（烛光书桌、相片落下堆叠、镜头跟随、墨迹手写旁白）。
+- 四季主题：春樱 / 夏光萤 / 秋枫 / 冬雪 + 调色；放映厅与放映控制条可临时切换。
+- 回忆新增**可选**字段 `style`、`season`（Theme 表现偏好，缺省 = `cinema` / `auto`），无 migration、不改 schema_version。
+- 回忆编辑器升级为「星屿手稿」：实时海报预览 + 故事 / 影像 / 放映 / 乐章四章。
+- `SB.cinema`：风格 / 季节公共定义；`SB.player` 新增 `setStyle / setSeason / estimate`。
+- 提示词：`prompts/11-memory-player.md`、`prompts/12-memory-editor.md`；调研：`docs/design/VISUAL_UPGRADE_PLAN.md` 第 7 节。
+
 ## Visual / City Album (v1.7.1)
 
-- 鍩庡競鍥炲繂鐩綍锛堝潡 10锛夋敼涓哄崟鍒楅噾鑹叉椂闂寸嚎 + 绔犺妭鍗＄墖锛氱綏椹暟瀛楃珷鑺傚窘璁般€佺儷閲戞捣鎶ワ紙椋庢牸 / 瀛ｈ妭寰界珷涓庡鑺傝皟鑹诧級銆佹爣棰樸€佺収鐗囨暟涓庨璁℃斁鏄犳椂闀裤€佷竴娈佃瘽鎽樺綍銆佺収鐗囩缉褰辨潯锛屽崱鐗囦笂鐩存帴銆屾斁鏄?/ 鏀炬槧鍘?/ 缂栬緫銆嶃€?- 椤电湁锛氱紦鎱㈡棆杞殑娉曢樀銆佸煄甯傚悕銆佺粺璁¤兌鍥婏紙鍥炲繂鏁?/ 鐓х墖鏁?/ 鏃堕棿璺ㄥ害锛夈€併€屾柊鐨勫洖蹇嗐€嶆寜閽紱鏃堕棿绾挎湯灏俱€屽啓涓嬬 N 绔犮€嶏紱绌虹姸鎬佹敼涓烘繁鑹茬儷閲戙€岀┖鐧界珷鑺傘€嶃€?- 鍙鐜版湁瀛楁锛屾棤鏁版嵁鍙樺寲锛涙彁绀鸿瘝 `prompts/10-city-album.md`锛岃皟鐮?`docs/design/VISUAL_UPGRADE_PLAN.md` 7.6 鑺傘€?
+- 城市回忆目录（块 10）改为单列金色时间线 + 章节卡片：罗马数字章节徽记、烫金海报（风格 / 季节徽章与季节调色）、标题、照片数与预计放映时长、一段话摘录、照片缩影条，卡片上直接「放映 / 放映厅 / 编辑」。
+- 页眉：缓慢旋转的法阵、城市名、统计胶囊（回忆数 / 照片数 / 时间跨度）、「新的回忆」按钮；时间线末尾「写下第 N 章」；空状态改为深色烫金「空白章节」。
+- 只读现有字段，无数据变化；提示词 `prompts/10-city-album.md`，调研 `docs/design/VISUAL_UPGRADE_PLAN.md` 7.6 节。
+
 ## Performance / Responsive Baseline (v1.7.2)
 
-- 鍦烘櫙鍒囨崲锛歚portal` 涓嶅啀鎶婃棫鍦烘櫙淇濇寔 active 鍒板姩鐢荤粨鏉燂紱veil / flash / portal 鎸夎澶囨€ц兘缂╃煭鏃堕暱锛屽苟鍦?scene swap 鍚庣瓑寰呮祻瑙堝櫒瀹屾垚 paint锛屽噺灏戞畫褰变笌鍗″抚銆?- 鎬ц兘妗ｏ細缁煎悎 viewport銆乧oarse pointer銆丆PU core銆乨evice memory 鍒ゅ畾 `high / low / reduced`锛沴ow 妗ｉ檷浣庡叏灞€绮掑瓙鏁伴噺銆丆anvas DPR 涓庡姩鐢诲埛鏂扮巼銆?- 鏀炬槧锛氭挱鏀惧櫒 low / mobile 妗ｇ害 30 FPS锛涙挱鏀炬湡闂?Ambient FX 鑷姩闄嶅抚锛涜繘鍏ユ斁鏄犲巺鍓嶉鐑?Signed URL 涓庡墠鍑犲紶鐓х墖锛屾挱鏀句腑棰勫彇 12鈥?6 绉掔獥鍙ｃ€?- 鍩庡競鐩綍锛氶灞忓皝闈紭鍏堬紝鍏朵粬娴锋姤 / 缂╁奖 lazy锛涙墜鏈哄噺灏戠缉褰卞苟鍚敤 `content-visibility:auto`锛岄檷浣庨暱鍒楄〃甯冨眬銆佸浘鐗囦笅杞戒笌瑙ｇ爜鍘嬪姏銆?- 缂栬緫鍣細鐓х墖缃戞牸 lazy decode锛涙闈?/ 鎵嬫満閲嶆柊绾︽潫缂栬緫鍣ㄥ搴︺€佹捣鎶ヤ笌鐓х墖鍗＄墖姣斾緥锛涚獎灞忕収鐗囧崱鐗囨敼涓哄崟鍒楋紝閬垮厤鍙紪杈戝尯鍩熻繃灏忋€?- 鏂颁笂浼?Private Storage 濯掍綋浣跨敤鍞竴鏂囦欢鍚?+ 闀跨紦瀛樺厓鏁版嵁锛涗笉浼氫慨鏀规棫瀵硅薄鎴栫幇鏈夋暟鎹€?- 鎬ц兘绾︽潫鏂囨。锛歚docs/PERFORMANCE_GUIDE.md`銆?
+- 场景切换：`portal` 不再把旧场景保持 active 到动画结束；veil / flash / portal 按设备性能缩短时长，并在 scene swap 后等待浏览器完成 paint，减少残影与卡帧。
+- 性能档：综合 viewport、coarse pointer、CPU core、device memory 判定 `high / low / reduced`；low 档降低全局粒子数量、Canvas DPR 与动画刷新率。
+- 放映：播放器 low / mobile 档约 30 FPS；播放期间 Ambient FX 自动降帧；进入放映厅前预热 Signed URL 与前几张照片，播放中预取 12–16 秒窗口。
+- 城市目录：首屏封面优先，其他海报 / 缩影 lazy；手机减少缩影并启用 `content-visibility:auto`，降低长列表布局、图片下载与解码压力。
+- 编辑器：照片网格 lazy decode；桌面 / 手机重新约束编辑器宽度、海报与照片卡片比例；窄屏照片卡片改为单列，避免可编辑区域过小。
+- 新上传 Private Storage 媒体使用唯一文件名 + 长缓存元数据；不会修改旧对象或现有数据。
+- 性能约束文档：`docs/PERFORMANCE_GUIDE.md`。
+
 ## Known Technical Debt
 
-- `book_data.payload` 鏄暣浣?JSONB锛屽悗缁渶瑕佹瑙勫寲銆?- Memory 褰撳墠浠嶄笌 City 寮鸿€﹀悎銆?- Theme / Experience 鐩墠鍙湁 Context锛屾病鏈夋彃浠跺姞杞藉櫒銆?- Signed URL 浠呭仛鍐呭瓨缂撳瓨锛涘埛鏂板悗閲嶆柊绛惧悕銆?- 鏍稿績 Third-party CDN 灏氭湭鍏ㄩ儴鏈湴鍖栵紙Google Fonts 浠嶄负澶栭儴渚濊禆锛涘姞杞藉け璐ユ椂鍥為€€绯荤粺瀹嬩綋锛岀増寮忎笉鍙橈級銆?- 瀹屾暣娣卞眰 URL Router 灏氭湭瀹炵幇銆?- 鏆傛湭浣跨敤 Realtime銆?- 鍥剧墖浠嶆槸鍗曚竴鍘嬬缉灏哄銆?
+- `book_data.payload` 是整体 JSONB，后续需要正规化。
+- Memory 当前仍与 City 强耦合。
+- Theme / Experience 目前只有 Context，没有插件加载器。
+- Signed URL 仅做内存缓存；刷新后重新签名。
+- 核心 Third-party CDN 尚未全部本地化（Google Fonts 仍为外部依赖；加载失败时回退系统宋体，版式不变）。
+- 完整深层 URL Router 尚未实现。
+- 暂未使用 Realtime。
+- 图片仍是单一压缩尺寸。
+
 ## Live Supabase Status
 
 Confirmed by owner on 2026-10-26:
@@ -118,7 +232,7 @@ Confirmed by owner on 2026-10-26:
 
 v1.5.1 planned forward migration:
 - `002_v151_title_and_members.sql`: run after the v1.5.1 code release (or before final verification).
-- Updates Book display name to `鏄熷笨涔嬩功`.
+- Updates Book display name to `星屿之书`.
 - Adds active editor `11aa32fe-3875-4880-81fb-02a543dca853`.
 - Adds active editor `62adee54-c59a-4844-abb5-1b5629da3bf9`.
 - Does **not** modify `book_data.payload` or Storage.
@@ -134,23 +248,44 @@ Confirmed by owner on 2026-10-26:
 
 ## Phase 2 interaction hotfix
 
-- 宸蹭慨澶?`SB.book` 鍛藉悕鍐茬獊锛歏1 榄旀硶涔﹀姩鐢绘帶鍒跺櫒宸查噸鍛藉悕涓?`SB.magicBook`銆?- 鍘熷洜锛歊untime 澶?Book Context 涓?V1 瑙嗚鎺у埗鍣ㄦ浘瑕嗙洊鍚屼竴鍏ㄥ眬鍛藉悕绌洪棿锛屽彲鑳藉鑷?Store 鍙栦笉鍒板綋鍓?Book 骞堕€犳垚鐧诲綍鍚庝氦浜掑紓甯搞€?- 淇鍚庡繀椤婚噸鏂伴獙璇侊細鐧诲綍 鈫?榄旀硶涔?鈫?鍦扮悆鎷栨嫿 鈫?澶ф床 鈫?鍥藉銆?
+- 已修复 `SB.book` 命名冲突：V1 魔法书动画控制器已重命名为 `SB.magicBook`。
+- 原因：Runtime 多 Book Context 与 V1 视觉控制器曾覆盖同一全局命名空间，可能导致 Store 取不到当前 Book 并造成登录后交互异常。
+- 修复后必须重新验证：登录 → 魔法书 → 地球拖拽 → 大洲 → 国家。
+
 ## Auth / Access Recovery Hotfix
 
-- 瀵嗙爜鎴栧嚟鎹敊璇細淇濈暀鍦ㄧ櫥褰曡〃鍗曪紝鍏佽绔嬪嵆淇敼鍚庨噸璇曘€?- 宸茶璇佷絾娌℃湁褰撳墠 Book Membership锛氭彁渚涒€滈噸鏂版鏌ユ潈闄愨€濆拰鈥滆繑鍥炵櫥褰曗€濄€?- RLS / 鏉冮檺 / Database 寮傚父锛氭彁渚涒€滈噸鏂板皾璇曗€濆拰鈥滆繑鍥炵櫥褰曗€濓紝閬垮厤閿欒椤甸攣姝荤敤鎴枫€?- 鈥滆繑鍥炵櫥褰曗€濅細 sign out 褰撳墠 Supabase Session锛屽苟娓呯┖ `SB.book` Runtime Context銆?
+- 密码或凭据错误：保留在登录表单，允许立即修改后重试。
+- 已认证但没有当前 Book Membership：提供“重新检查权限”和“返回登录”。
+- RLS / 权限 / Database 异常：提供“重新尝试”和“返回登录”，避免错误页锁死用户。
+- “返回登录”会 sign out 当前 Supabase Session，并清空 `SB.book` Runtime Context。
+
 ## Phase 3 Stability Hardening
 
-- 鍏ㄥ眬瑙嗗彛浼樺厛浣跨敤 `100dvh`锛屼繚鐣?`100vh` fallback銆?- coarse pointer 涓嬮€氱敤鎸夐挳銆佸鑸拰鑿滃崟鎵╁ぇ瑙︽帶鐩爣銆?- `SB.loadScript()` 澧炲姞鍗曟簮瓒呮椂涓庤嚜鍔?fallback銆?- Three.js 褰撳墠淇濈暀涓?CDN fallback锛涙湰鍦?vendor 鍖栦粛鏄悗缁彲閫変紭鍖栵紝涓嶉樆濉炲懆骞翠氦浠樸€?- 鍦烘櫙鍘嗗彶鍔犲叆 `_pendingHistory`锛岃繛缁?Android / 娴忚鍣ㄨ繑鍥炴椂浠ユ渶鍚庝竴娆?history state 涓哄噯銆?- bfcache 鎭㈠浼氭竻鐞嗗彲鑳芥畫鐣欑殑 busy / veil / flash銆?- Globe / Country Map 鍦ㄨЕ鎺ц澶囦笂浣跨敤鏇村鏉剧殑鎷栧姩闃堝€硷紝鍑忓皯璇Е銆?
+- 全局视口优先使用 `100dvh`，保留 `100vh` fallback。
+- coarse pointer 下通用按钮、导航和菜单扩大触控目标。
+- `SB.loadScript()` 增加单源超时与自动 fallback。
+- Three.js 当前保留三 CDN fallback；本地 vendor 化仍是后续可选优化，不阻塞周年交付。
+- 场景历史加入 `_pendingHistory`，连续 Android / 浏览器返回时以最后一次 history state 为准。
+- bfcache 恢复会清理可能残留的 busy / veil / flash。
+- Globe / Country Map 在触控设备上使用更宽松的拖动阈值，减少误触。
+
 ## Highest Priority Next
 
-1. 鍙戝竷 v1.9.2锛坄.\release-current.ps1`锛夛紝瀹炴祴锛氫竴娈?10 寮犱互涓娿€佹弿杩伴暱鐭笉涓€鐨勫洖蹇嗙敤涓夌椋庢牸鍚勮嚜鍔ㄦ斁鏄犱竴閬嶏紙瑙傚療闀滃ご鍙樺寲涓庢祦鐣呭害銆佹寜閽槸鍚﹂€€涓嬶級锛涙墜鏈轰笂鐪嬩竴閬嶏紱缂栬緫鍣ㄦ嫋鍔ㄧ収鐗囪繘 / 鍑虹紪缁勩€?2. 鍛ㄥ勾涔嬪悗锛歷1.10.0 鍦扮悆鐪?/ 宸炵煝閲忚竟鐣屼笌灞€閮ㄩ珮娓咃紙GLB-001锛夛紝v1.10.1 鍥藉鍦板浘銆屾槦鍥炬墜绋裤€嶏紙MAP-001锛夈€?3. 瀹屾垚 Private Storage 姝ｅ紡鐓х墖涓?BGM 鐨勫疄闄呭唴瀹瑰～鍏咃紝骞朵紭鍏堜娇鐢?v1.7.2 涔嬪悗鐨勬柊涓婁紶缂撳瓨绛栫暐銆?4. 鏍稿績绋冲畾鍚庡疄鐜板懆骞存墘椤?/ 鐚瘝 / 缁撳熬锛圓NN-008锛夈€?5. 杩涜鏈€缁堟墜鏈虹 Production URL 楠屾敹锛涢噸鐐硅瀵熷急缃戠収鐗囩瓑寰呫€佸彂鐑€佹帀甯т笌椤甸潰娈嬪奖銆?6. 2026-10-28 鏅?Feature Freeze锛泇1.8.0 涔嬪悗鍙慨 bug銆傝嫢鐪熸満涓婃柊杞満鍗￠】锛屽彲鍦ㄨ彍鍗曘€屽姩鏁堝己搴︺€嶉€夋嫨鏌斿拰 / 鍏抽棴锛坮educed 妗ｄ笉鏄剧ず闂級銆?
+1. 发布 v1.10.0（`.\release-current.ps1`），实测：时光长卷转动三维环、点击悬挂卡片进入放映；周年节点「时光剪影」从头到尾放一遍；首次打开（登录后）背景音乐是否自动响起、切到后台再回来是否恢复。
+2. 后续：v1.11.0 地球省 / 州矢量边界与局部高清（GLB-001），v1.11.1 国家地图「星图手稿」（MAP-001）。
+3. 完成 Private Storage 正式照片与 BGM 的实际内容填充，并优先使用 v1.7.2 之后的新上传缓存策略。
+4. 核心稳定后实现周年扉页 / 献词 / 结尾（ANN-008）。
+5. 进行最终手机端 Production URL 验收；重点观察弱网照片等待、发热、掉帧与页面残影。
+6. 2026-10-28 晚 Feature Freeze；v1.8.0 之后只修 bug。若真机上新转场卡顿，可在菜单「动效强度」选择柔和 / 关闭（reduced 档不显示门）。
+
 ## Release Automation (v1.6.0+)
 
-鐗堟湰瀹屾垚鍚庣殑棣栭€夊叆鍙ｏ細
+版本完成后的首选入口：
 
 ```powershell
 .\release-current.ps1
 ```
 
-璇ヨ剼鏈互 `VERSION` 涓哄敮涓€鐩爣鐗堟湰鏉ユ簮锛岃嚜鍔ㄨ鑼?`release/vX.X.X`銆佽ˉ榻愮己澶?Release Record銆佺敓鎴?`scripts/releases/release-vX.X.X.ps1`銆佸悓姝ョ粨鏋勫寲鐗堟湰澹版槑锛屽苟璋冪敤 `publish.ps1` 杩涘叆 PR / validate / main / Pages銆?
-鍙戝竷鑷姩鍖栦笉浼氭墽琛?Supabase SQL锛屼笉浼?reset Database / Storage锛沵igration 浠嶆槸鏄庣‘鐨勪汉宸?Production 鎿嶄綔銆?
+该脚本以 `VERSION` 为唯一目标版本来源，自动规范 `release/vX.X.X`、补齐缺失 Release Record、生成 `scripts/releases/release-vX.X.X.ps1`、同步结构化版本声明，并调用 `publish.ps1` 进入 PR / validate / main / Pages。
+
+发布自动化不会执行 Supabase SQL，不会 reset Database / Storage；migration 仍是明确的人工 Production 操作。

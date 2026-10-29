@@ -57,7 +57,7 @@ if (-not (Test-Path "VERSION")) {
     throw "VERSION is missing. Set the target version first (example: 1.6.1)."
 }
 
-$PlainVersion = (Get-Content -LiteralPath "VERSION" -Raw).Trim()
+$PlainVersion = (Get-Content -LiteralPath "VERSION" -Raw -Encoding UTF8).Trim()
 if ($PlainVersion.StartsWith("v")) {
     $PlainVersion = $PlainVersion.Substring(1)
 }
@@ -108,23 +108,23 @@ New-Item -ItemType Directory -Force -Path $scriptDir | Out-Null
 
 # Keep obvious current-version declarations synchronized.
 if (Test-Path "blocks\00-config.html") {
-    $cfg = Get-Content -LiteralPath "blocks\00-config.html" -Raw
+    $cfg = Get-Content -LiteralPath "blocks\00-config.html" -Raw -Encoding UTF8
     $cfg = $cfg -replace "version:\s*'[^']+'", "version: '$PlainVersion'"
     Write-Utf8NoBom "blocks\00-config.html" $cfg
 }
 if (Test-Path "PROJECT_STATE.md") {
-    $state = Get-Content -LiteralPath "PROJECT_STATE.md" -Raw
+    $state = Get-Content -LiteralPath "PROJECT_STATE.md" -Raw -Encoding UTF8
     $state = $state -replace '(?m)^- Version: `[^`]+`', "- Version: ``$PlainVersion``"
     $state = $state -replace '(?m)^- Runtime config version: `[^`]+`\.', "- Runtime config version: ``$PlainVersion``."
     Write-Utf8NoBom "PROJECT_STATE.md" $state
 }
 if (Test-Path "AGENTS.md") {
-    $agents = Get-Content -LiteralPath "AGENTS.md" -Raw
+    $agents = Get-Content -LiteralPath "AGENTS.md" -Raw -Encoding UTF8
     $agents = $agents -replace '(?m)^- Current version: \*\*[^*]+\*\*', "- Current version: **$PlainVersion**"
     Write-Utf8NoBom "AGENTS.md" $agents
 }
 if (Test-Path "README.md") {
-    $readme = Get-Content -LiteralPath "README.md" -Raw
+    $readme = Get-Content -LiteralPath "README.md" -Raw -Encoding UTF8
     $readme = $readme -replace '当前正式项目版本：\*\*v[^*]+\*\*。', "当前正式项目版本：**$TagVersion**。"
     Write-Utf8NoBom "README.md" $readme
 }
@@ -259,7 +259,7 @@ $changedText
 
 # Ensure CHANGELOG has a current-version section. Existing content is never overwritten.
 if (Test-Path "CHANGELOG.md") {
-    $changelog = Get-Content -LiteralPath "CHANGELOG.md" -Raw
+    $changelog = Get-Content -LiteralPath "CHANGELOG.md" -Raw -Encoding UTF8
     $versionPattern = [regex]::Escape("[$PlainVersion]")
     if ($changelog -notmatch $versionPattern) {
         $date = Get-Date -Format "yyyy-MM-dd"

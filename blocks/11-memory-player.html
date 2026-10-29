@@ -374,7 +374,8 @@ html[data-sb-perf="reduced"] .pl-hold i::after{animation:none;opacity:.5;}
       if(!el.paused) await fade(0, 900);
       if(cur?.id !== id || !el.src){ el.src = SB.store.url(id); }
       cur = track; el.volume = 0;
-      try{ await el.play(); await fade(BASE*gain, 1400); }catch(e){}
+      try{ await el.play(); await fade(BASE*gain, 1400); }
+      catch(e){ if(e?.name === 'NotAllowedError') unlocked = false; }   // 浏览器不允许自动播放：等下一次用户操作再试
     }
     SB.dock?.sync();
   }
@@ -387,8 +388,25 @@ html[data-sb-perf="reduced"] .pl-hold i::after{animation:none;opacity:.5;}
     get on(){ return want; }, get playing(){ return !el.paused; }, get track(){ return cur; },
     preview(id){ const a = new Audio(SB.store.url(id)); a.volume = .8; return a; }
   };
-  document.addEventListener('pointerdown', () => SB.audio.unlock(), {once:true});
-  document.addEventListener('sb:data', () => { if(override === null) sync(); });
+  /* v1.10.0 背景音乐自动循环播放：
+     · 数据就绪后立即尝试自动播放（浏览器允许时直接响起）；不允许时，第一次点击 / 轻触 / 按键即开始；
+     · el.loop 循环；万一循环被系统打断（ended），从头再播；
+     · 播放出错（签名地址过期、网络中断）时重新获取地址再播，最多每 20 秒一次；
+     · 手机切到后台再回来、或被来电等打断后，回到页面时自动恢复。 */
+  const gesture = () => { if(!unlocked){ unlocked = true; sync(); } else if(want && el.paused && cur) sync(); };
+  ['pointerdown', 'keydown', 'touchend'].forEach(t => document.addEventListener(t, gesture, {capture:true, passive:true}));
+  let autoTried = false;
+  document.addEventListener('sb:data', () => {
+    if(!autoTried && want && SB.store.settings?.bgm){ autoTried = true; unlocked = true; }
+    if(override === null) sync();
+  });
+  el.addEventListener('ended', () => { if(want){ try{ el.currentTime = 0; }catch(e){} el.play().catch(() => {}); } });
+  let errAt = 0;
+  el.addEventListener('error', () => {
+    if(!want || !cur?.id || Date.now() - errAt < 20000) return; errAt = Date.now();
+    setTimeout(async () => { try{ await SB.store.prefetchUrls?.([cur.id]); }catch(e){} const u = SB.store.url(cur.id); if(u){ el.src = u; el.play().then(() => fade(BASE*gain, 1200)).catch(() => {}); } }, 1500);
+  });
+  document.addEventListener('visibilitychange', () => { if(!document.hidden && want && unlocked && el.paused && (override === null ? SB.store.settings?.bgm : override)) sync(); });
 
   /* v1.8.1：背景音乐从菜单移到右上角「音乐」标识（SB.dock）；全站音乐的试听 / 上传 / 更换 / 移除也从总览页迁移到这里 */
   let previewA = null;
