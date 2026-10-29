@@ -54,7 +54,8 @@
 | 10-city-album | 城市的回忆目录 |
 | 11-memory-player | 放映（照片 + 文字 + BGM） |
 | 12-memory-editor | 新建/编辑回忆、上传照片和音乐 |
-| 13-overview | 「时光长卷」横向时间轴（场景 id 仍为 `overview`；全站音乐设置已移到 `SB.dock` 音乐面板） |
+| 13-overview | 「时光长卷」v1.10.0 三维环形时光轴「时光之环」+ 周年节点（场景 id 仍为 `overview`；全站音乐设置已移到 `SB.dock` 音乐面板） |
+| 14-year-reel | 「时光剪影」周年回放 `SB.yearReel`（v1.10.0，由时光长卷的周年节点调用） |
 | 99-boot | 启动 |
 
 ## 数据模型（云端数据库）

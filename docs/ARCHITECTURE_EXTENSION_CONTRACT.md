@@ -244,3 +244,11 @@ book_data.payload
 - 如果当前用户只是 viewer，还成立吗？
 
 如果答案是否定的，需要明确说明“这是当前 Theme/Experience 特有能力”，而不是把限制写进 Core。
+
+### `SB.yearReel`（v1.10.0）
+
+「时光剪影」周年回放：`open({year, from:'YYYY-MM', to:'YYYY-MM'|null, list:[memory…], now})` / `close()`。只读回忆数据，不写入 Store；由时光长卷的周年节点调用。新的回顾类放映（例如「每月剪影」）可以复用同一接口传入不同的 `list` 与区间。
+
+### `SB.overview`（v1.10.0，调试）
+
+`state`（站点数、焦点、节点列表）与 `center(i)`；只用于测试与外部跳转，不要在其中加入业务逻辑。

@@ -25,7 +25,8 @@
 - `../prompts/04-book-opening.md` — 开书特效「星尘启封」（v1.8.2 重写；v1.8.3 机关启封）。
 - `../prompts/00-login-gate.md` — 登录 / 启动门「星盘启封」（v1.9.0）。
 - `../tools/make_admin.py` — 生成中国 / 美国行政区划搜索库 `blocks/06-admin-divisions.html`（v1.9.0）。
-- `../prompts/13-overview.md` — 「时光长卷」横向时间轴（v1.8.1，取代回忆总览）。
+- `../prompts/13-overview.md` — 「时光长卷」横向时间轴（v1.8.1，取代回忆总览；v1.10.0「时光之环」三维环形时光轴 + 周年节点）。
+- `../prompts/14-year-reel.md` — 「时光剪影」周年回放（v1.10.0）。
 - `../prompts/03-magic-book.md`、`../prompts/07-globe.md` — 「星辉层次」魔法书与地球特效、地球搜索栏（v1.8.0）。
 - `../prompts/09-country-map.md` — 国家地图；v1.8.0 起返回直接回到地球（大洲目录页已删除）。
 - `../tools/make_cities.py` — 生成离线城市库 `blocks/06-world-cities.html`（v1.8.0）。

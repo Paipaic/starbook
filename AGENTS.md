@@ -1,125 +1,228 @@
-# Starbook Agent Handoff / 蹇呰鍏ュ彛
+# Starbook Agent Handoff / 必读入口
 
-> **杩欐槸鎵€鏈夋柊 Agent銆丄I 缂栫▼绐楀彛鍜屾柊寮€鍙戜細璇濈殑绗竴鍏ュ彛銆?*
+> **这是所有新 Agent、AI 编程窗口和新开发会话的第一入口。**
 >
-> 鍦ㄤ慨鏀逛换浣曚唬鐮併€佹暟鎹簱銆侀儴缃查厤缃垨浜у搧浣撻獙涔嬪墠锛屽繀椤诲厛瀹屾垚鏈枃瑙勫畾鐨勯槄璇婚『搴忋€備笉瑕佷粎鍑棫瀵硅瘽銆佹枃浠跺悕鎴栧眬閮ㄤ唬鐮佺寽娴嬪綋鍓嶆灦鏋勩€?
-## 1. 褰撳墠椤圭洰韬唤
+> 在修改任何代码、数据库、部署配置或产品体验之前，必须先完成本文规定的阅读顺序。不要仅凭旧对话、文件名或局部代码猜测当前架构。
 
-- Project: **Starbook / 鏄熷笨涔嬩功**
-- Current version: **1.9.2**
+## 1. 当前项目身份
+
+- Project: **Starbook / 星屿之书**
+- Current version: **1.10.0**
 - Production branch: **`main`**
 - Production deploy: **GitHub Pages via GitHub Actions**
 - Runtime backend: **Supabase Anniversary Bridge**
-- Current Book: **鏄熷笨涔嬩功** (`8a3cc6fe-b667-4ce7-b47b-79cebc0e1353`)
+- Current Book: **星屿之书** (`8a3cc6fe-b667-4ce7-b47b-79cebc0e1353`)
 - Current product preset:
   - relationship: `romantic`
   - theme: `magic-celestial`
   - experience: `world-map`
-- Current delivery priority: **2026-10-29 鍛ㄥ勾绾康鐗堢ǔ瀹氫氦浠?*
+- Current delivery priority: **2026-10-29 周年纪念版稳定交付**
 
-## 2. Agent 蹇呰椤哄簭
+## 2. Agent 必读顺序
 
-浠讳綍鏂?Agent 鍦ㄥ紑濮嬪伐浣滃墠锛屾寜椤哄簭闃呰锛?
-1. `AGENTS.md` 鈥斺€?褰撳墠鏂囦欢锛岀‘璁ゅ崗浣滆鍒欍€?2. `PROJECT_STATE.md` 鈥斺€?褰撳墠鐪熷疄鐘舵€併€佹妧鏈€恒€佸凡楠岃瘉鑳藉姏銆佷笅涓€浼樺厛绾с€?3. `docs/PROJECT_MANAGEMENT_FULL_CHAIN.md` 鈥斺€?椤圭洰绠＄悊銆佸紑鍙戙€佸彂甯冦€侀儴缃层€佹暟鎹€佸洖婊氬叏閾捐矾銆?4. `docs/ARCHITECTURE_EXTENSION_CONTRACT.md` 鈥斺€?褰撳墠鏋舵瀯杈圭晫涓庢湭鏉ユ墿灞曚笉鍙牬鍧忕害鏉熴€?5. `docs/DATA_LIFECYCLE.md` 鈥斺€?Supabase 鏁版嵁鐢熷懡鍛ㄦ湡銆佺増鏈崌绾т笌杩佺Щ瑙勫垯銆?6. `CHANGELOG.md` 鈥斺€?宸插畬鎴愮殑鐗堟湰鍙樺寲銆?7. `ROADMAP.md` 鈥斺€?鏈畬鎴愪簨椤瑰拰鍚庣画鏂瑰悜銆?8. 褰撳墠鐩爣鐗堟湰瀵瑰簲 `docs/releases/vX.X.X.md`銆?9. 濡傛灉浠诲姟娑夊強鍦烘櫙鍒囨崲銆佸浘鐗囥€佹挱鏀惧櫒銆佺紪杈戝櫒銆丆anvas 鎴栫Щ鍔ㄧ鎬ц兘锛岄槄璇?`docs/PERFORMANCE_GUIDE.md`銆?10. 鏈€鍚庢墠璇诲彇涓庝换鍔＄洿鎺ョ浉鍏崇殑婧愪唬鐮併€?
-濡傛灉涓婅堪鏂囦欢涓庢棫鑱婂ぉ璁板綍鍐茬獊锛?*浠ヤ粨搴撳綋鍓嶆枃浠朵负鍑?*銆?
-## 3. 淇敼鍓嶅繀椤诲洖绛旂殑 7 涓棶棰?
-Agent 鍦ㄥ姩鎵嬪墠搴旇嚜琛岀‘璁わ細
+任何新 Agent 在开始工作前，按顺序阅读：
 
-1. 褰撳墠瑕佷慨鏀圭殑鏄摢涓€涓増鏈紵
-2. 杩欐鏀瑰姩灞炰簬浜у搧鍔熻兘銆佺ǔ瀹氭€с€佹灦鏋勩€佹暟鎹€侀儴缃茶繕鏄枃妗ｆ不鐞嗭紵
-3. 鏄惁褰卞搷 `SB.user / SB.book / SB.magicBook / SB.theme / SB.experience / SB.store` 鐨勮亴璐ｈ竟鐣岋紵
-4. 鏄惁褰卞搷 Supabase schema銆丷LS銆丼torage 鎴栫幇鏈夌湡瀹炴暟鎹紵
-5. 鏄惁褰卞搷 GitHub Actions銆佸垎鏀€丳R銆乵ain 鎴?Pages锛?6. 鏄惁鐮村潖澶氱敤鎴枫€佸 Book銆佸鍏崇郴銆佸 Theme銆佸 Experience 鐨勬湭鏉ュ吋瀹规€э紵
-7. 鏈鏀瑰姩闇€瑕佸悓姝ユ洿鏂板摢浜涚増鏈褰曪紵
+1. `AGENTS.md` —— 当前文件，确认协作规则。
+2. `PROJECT_STATE.md` —— 当前真实状态、技术债、已验证能力、下一优先级。
+3. `docs/PROJECT_MANAGEMENT_FULL_CHAIN.md` —— 项目管理、开发、发布、部署、数据、回滚全链路。
+4. `docs/ARCHITECTURE_EXTENSION_CONTRACT.md` —— 当前架构边界与未来扩展不可破坏约束。
+5. `docs/DATA_LIFECYCLE.md` —— Supabase 数据生命周期、版本升级与迁移规则。
+6. `CHANGELOG.md` —— 已完成的版本变化。
+7. `ROADMAP.md` —— 未完成事项和后续方向。
+8. 当前目标版本对应 `docs/releases/vX.X.X.md`。
+9. 如果任务涉及场景切换、图片、播放器、编辑器、Canvas 或移动端性能，阅读 `docs/PERFORMANCE_GUIDE.md`。
+10. 最后才读取与任务直接相关的源代码。
 
-濡傛灉涓嶈兘鍥炵瓟锛屼笉搴旂洿鎺ュぇ瑙勬ā閲嶆瀯銆?
-## 4. 褰撳墠鏈€閲嶈鐨勬灦鏋勮竟鐣?
-- `SB.book` = **褰撳墠鏁版嵁 Book / Book Context**锛屼笉寰楀啀鐢ㄤ簬榄旀硶涔﹁瑙夋帶鍒躲€?- `SB.magicBook` = **Magic Celestial 榄旀硶涔﹁瑙変笌寮€涔﹀姩鐢绘帶鍒跺櫒**銆?- `SB.store` = **涓氬姟鏁版嵁鍏煎灞?*锛屽綋鍓嶅唴閮ㄨ鍐?Supabase `book_data.payload`銆?- `magic-celestial` 鍙槸绗竴濂?Theme锛屼笉绛変簬 Starbook Core銆?- `world-map` 鍙槸绗竴濂?Experience锛屼笉绛変簬 Starbook Core銆?- 褰撳墠鏄儏渚ｄ功锛屼絾 Starbook Core 涓嶅緱鍐欐鈥滄儏渚ｆ槸鍞竴鍏崇郴鈥濄€?- 褰撳墠 UI 鍙湁涓€鏈?Book锛屼絾涓氬姟浠ｇ爜涓嶅緱鍋囪鐢ㄦ埛姘歌繙鍙湁涓€鏈?Book銆?- 褰撳墠 Memory 涓?City 浠嶆湁 V1 鑰﹀悎锛岃繖鏄妧鏈€猴紝涓嶅簲杩涗竴姝ュ己鍖栥€?
-## 5. 褰撳墠鏁版嵁涓庡彂甯冨師鍒?
-### 浠ｇ爜鐢熷懡鍛ㄦ湡
+如果上述文件与旧聊天记录冲突，**以仓库当前文件为准**。
 
-`release/*` 鎴?`feature/*` 鈫?PR 鈫?`validate-starbook` 鈫?merge `main` 鈫?GitHub Pages 鑷姩閮ㄧ讲銆?
-### 鏁版嵁鐢熷懡鍛ㄦ湡
+## 3. 修改前必须回答的 7 个问题
 
-Supabase Database / Private Storage **鐙珛浜?Git 鍒嗘敮鍜?Pages 閮ㄧ讲**銆?
-姝ｅ父鍓嶇鐗堟湰鍗囩骇锛?
-- 涓嶆竻绌?Supabase锛?- 涓嶉噸鏂?seed Book锛?- 涓嶉噸鏂板鍏ョ収鐗囷紱
-- 涓嶉噸鏂板鍏ュ洖蹇嗭紱
-- 涓嶆墽琛岀牬鍧忔€?reset SQL銆?
-鏁版嵁搴撶粨鏋勫崌绾ф垨 Production 鏁版嵁鍏冧俊鎭?鎴愬憳鍙樻洿蹇呴』浣跨敤**鍚戝墠 migration**銆?
-褰撳墠 v1.5.1 鐨勬爣棰樹笌鎴愬憳鍙樻洿鐢?`supabase/migrations/002_v151_title_and_members.sql` 绠＄悊锛岀姝㈤€氳繃閲嶈窇 seed 娓呯┖鎴栬鐩栦笟鍔℃暟鎹€?
-## 6. 姣忎釜鐗堟湰寮哄埗缁存姢鐨勬枃浠?
-姣忎釜姝ｅ紡鐗堟湰蹇呴』鍚屾鏇存柊锛?
+Agent 在动手前应自行确认：
+
+1. 当前要修改的是哪一个版本？
+2. 这次改动属于产品功能、稳定性、架构、数据、部署还是文档治理？
+3. 是否影响 `SB.user / SB.book / SB.magicBook / SB.theme / SB.experience / SB.store` 的职责边界？
+4. 是否影响 Supabase schema、RLS、Storage 或现有真实数据？
+5. 是否影响 GitHub Actions、分支、PR、main 或 Pages？
+6. 是否破坏多用户、多 Book、多关系、多 Theme、多 Experience 的未来兼容性？
+7. 本次改动需要同步更新哪些版本记录？
+
+如果不能回答，不应直接大规模重构。
+
+## 4. 当前最重要的架构边界
+
+- `SB.book` = **当前数据 Book / Book Context**，不得再用于魔法书视觉控制。
+- `SB.magicBook` = **Magic Celestial 魔法书视觉与开书动画控制器**。
+- `SB.store` = **业务数据兼容层**，当前内部读写 Supabase `book_data.payload`。
+- `magic-celestial` 只是第一套 Theme，不等于 Starbook Core。
+- `world-map` 只是第一套 Experience，不等于 Starbook Core。
+- 当前是情侣书，但 Starbook Core 不得写死“情侣是唯一关系”。
+- 当前 UI 只有一本 Book，但业务代码不得假设用户永远只有一本 Book。
+- 当前 Memory 与 City 仍有 V1 耦合，这是技术债，不应进一步强化。
+
+## 5. 当前数据与发布原则
+
+### 代码生命周期
+
+`release/*` 或 `feature/*` → PR → `validate-starbook` → merge `main` → GitHub Pages 自动部署。
+
+### 数据生命周期
+
+Supabase Database / Private Storage **独立于 Git 分支和 Pages 部署**。
+
+正常前端版本升级：
+
+- 不清空 Supabase；
+- 不重新 seed Book；
+- 不重新导入照片；
+- 不重新导入回忆；
+- 不执行破坏性 reset SQL。
+
+数据库结构升级或 Production 数据元信息/成员变更必须使用**向前 migration**。
+
+当前 v1.5.1 的标题与成员变更由 `supabase/migrations/002_v151_title_and_members.sql` 管理，禁止通过重跑 seed 清空或覆盖业务数据。
+
+## 6. 每个版本强制维护的文件
+
+每个正式版本必须同步更新：
+
 - `VERSION`
 - `CHANGELOG.md`
 - `ROADMAP.md`
 - `PROJECT_STATE.md`
 - `docs/releases/vX.X.X.md`
 
-濡傛灉椤圭洰绠＄悊閾捐矾銆佹灦鏋勮竟鐣屻€佹暟鎹瓥鐣ユ垨鍙戝竷绛栫暐鍙樺寲锛岃繕蹇呴』鍚屾鏇存柊锛?
+如果项目管理链路、架构边界、数据策略或发布策略变化，还必须同步更新：
+
 - `AGENTS.md`
 - `docs/PROJECT_MANAGEMENT_FULL_CHAIN.md`
 - `docs/ARCHITECTURE_EXTENSION_CONTRACT.md`
 - `docs/DATA_LIFECYCLE.md`
 - `docs/RELEASE_WORKFLOW.md`
 
-`tools/check_project.py` 涓?`validate-starbook` 浼氭鏌ュ叾涓竴閮ㄥ垎瑕佹眰銆?
-## 7. 姣忎釜 Release Record 蹇呴』鏄庣‘鍐欏嚭鐨勯摼璺彉鍖?
-姣忎釜 `docs/releases/vX.X.X.md` 鑷冲皯鍖呭惈锛?
-- 鏈増鐩爣锛?- 浜у搧浣撻獙鍙樺寲锛?- Runtime / 鏋舵瀯閾捐矾鍙樺寲锛?- 鏁版嵁閾捐矾鍙樺寲锛?- Auth / 鏉冮檺 / RLS 鍙樺寲锛?- Storage 鍙樺寲锛?- Git / PR / CI / Pages 鍙戝竷閾捐矾鍙樺寲锛?- Agent / 鏂囨。娌荤悊閾捐矾鍙樺寲锛?- 鏂囦欢鍙樺寲锛?- Migration / 鎵嬪姩鎿嶄綔锛?- 娴嬭瘯涓庨獙璇侊紱
-- 宸茬煡闂锛?- 鍥炴粴鏂瑰紡锛?- 涓嬩竴鐗堟湰寤鸿銆?
-濡傛灉鏌愪竴椤规病鏈夊彉鍖栵紝涔熷繀椤绘槑纭啓鈥滄棤鍙樺寲鈥濓紝涓嶈兘鐪佺暐銆?
-## 8. 鍙戝竷鍓嶆渶浣庢鏌?
-鑷冲皯鎵ц锛?
+`tools/check_project.py` 与 `validate-starbook` 会检查其中一部分要求。
+
+## 7. 每个 Release Record 必须明确写出的链路变化
+
+每个 `docs/releases/vX.X.X.md` 至少包含：
+
+- 本版目标；
+- 产品体验变化；
+- Runtime / 架构链路变化；
+- 数据链路变化；
+- Auth / 权限 / RLS 变化；
+- Storage 变化；
+- Git / PR / CI / Pages 发布链路变化；
+- Agent / 文档治理链路变化；
+- 文件变化；
+- Migration / 手动操作；
+- 测试与验证；
+- 已知问题；
+- 回滚方式；
+- 下一版本建议。
+
+如果某一项没有变化，也必须明确写“无变化”，不能省略。
+
+## 8. 发布前最低检查
+
+至少执行：
+
 ```powershell
 python build.py
 python tools/check_project.py
 ```
 
-鐒跺悗閫氳繃 PR 鐨?`validate-starbook`銆?
-姝ｅ紡 Pages 鍙厑璁?`main` 閮ㄧ讲銆?
-## 9. 绂佹浜嬮」
+然后通过 PR 的 `validate-starbook`。
 
-闄ら潪鐢ㄦ埛鏄庣‘鎵瑰噯骞跺凡鏈夎縼绉?鍥炴粴鏂规锛屽惁鍒欑姝細
+正式 Pages 只允许 `main` 部署。
 
-- 閲嶇疆 Supabase production 鏁版嵁锛?- 鍒犻櫎鐪熷疄 `book_data` / Storage 鏂囦欢锛?- 閲嶆柊杩愯浼氳鐩栫湡瀹炴暟鎹殑 seed锛?- 鍦ㄥ墠绔垨浠撳簱鍔犲叆 `sb_secret_`銆乣service_role`銆佹暟鎹簱瀵嗙爜銆丟itHub PAT锛?- 鍏抽棴 RLS 鏉モ€滆В鍐斥€濇潈闄愰敊璇紱
-- 缁曡繃 `main` 鐩存帴璁?release/feature 鍒嗘敮瑕嗙洊 Production锛?- 鏃犵増鏈褰曞湴淇敼 schema锛?- 涓轰簡閲嶆瀯婕備寒鑰岀牬鍧?2026-10-29 鍛ㄥ勾浜や粯绋冲畾鎬э紱
-- 鎶?`SB.book` 涓?`SB.magicBook` 鍐嶆鍚堝苟锛?- 灏嗗綋鍓嶅敮涓€ Theme / Experience / Relationship 鍐欐涓哄钩鍙板敮涓€鑳藉姏銆?
-## 10. Agent 浜ゆ帴杈撳嚭鏍煎紡
+## 9. 禁止事项
 
-涓€涓?Agent 瀹屾垚宸ヤ綔鍚庯紝搴斿湪鍥炲鎴?release record 涓鏄庯細
+除非用户明确批准并已有迁移/回滚方案，否则禁止：
 
-1. 褰撳墠鐗堟湰锛?2. 瀹屾垚浜嗕粈涔堬紱
-3. 淇敼/鏂板/鍒犻櫎浜嗗摢浜涙枃浠讹紱
-4. 鏄惁鏀规暟鎹簱锛?5. 鏄惁闇€瑕佺敤鎴锋墜鍔ㄦ搷浣滐紱
-6. 濡備綍娴嬭瘯锛?7. 鏄惁褰卞搷 Production / Supabase 鏁版嵁锛?8. 宸茬煡闂锛?9. 涓嬩竴姝ュ缓璁紱
-10. 鏄惁宸茬粡鏇存柊鐗堟湰娌荤悊鏂囨。銆?
+- 重置 Supabase production 数据；
+- 删除真实 `book_data` / Storage 文件；
+- 重新运行会覆盖真实数据的 seed；
+- 在前端或仓库加入 `sb_secret_`、`service_role`、数据库密码、GitHub PAT；
+- 关闭 RLS 来“解决”权限错误；
+- 绕过 `main` 直接让 release/feature 分支覆盖 Production；
+- 无版本记录地修改 schema；
+- 为了重构漂亮而破坏 2026-10-29 周年交付稳定性；
+- 把 `SB.book` 与 `SB.magicBook` 再次合并；
+- 将当前唯一 Theme / Experience / Relationship 写死为平台唯一能力。
+
+## 10. Agent 交接输出格式
+
+一个 Agent 完成工作后，应在回复或 release record 中说明：
+
+1. 当前版本；
+2. 完成了什么；
+3. 修改/新增/删除了哪些文件；
+4. 是否改数据库；
+5. 是否需要用户手动操作；
+6. 如何测试；
+7. 是否影响 Production / Supabase 数据；
+8. 已知问题；
+9. 下一步建议；
+10. 是否已经更新版本治理文档。
+
 ---
 
-**鏍稿績鍘熷垯锛歋tarbook 鐨勪唬鐮佸彲浠ヨ凯浠ｏ紝鐢ㄦ埛鐪熷疄鍥炲繂鏁版嵁蹇呴』鎸佺画瀛樺湪锛涘綋鍓嶅懆骞寸増鏈彲浠ョ畝鍗曪紝浣嗘湭鏉ユ墿灞曟帴鍙ｄ笉鑳借鍐欐銆?*
+**核心原则：Starbook 的代码可以迭代，用户真实回忆数据必须持续存在；当前周年版本可以简单，但未来扩展接口不能被写死。**
 
-## 11. 涓€閿彂甯冨叆鍙?
-鐗堟湰寮€鍙戝畬鎴愬悗锛屼笉鍐嶈姹?Owner/Agent 姣忔閲嶆柊鎷兼帴 Git 鍙戝竷鍛戒护銆傞閫夊叆鍙ｏ細
+## 11. 一键发布入口
+
+版本开发完成后，不再要求 Owner/Agent 每次重新拼接 Git 发布命令。首选入口：
 
 ```powershell
 .\release-current.ps1
 ```
 
-瑙勫垯锛?
-- 鐗堟湰鍙峰敮涓€鏉ユ簮鏄牴鐩綍 `VERSION`锛?- 鑴氭湰鑷姩鐢熸垚缂哄け鐨?`docs/releases/vX.X.X.md` 鍩虹璁板綍锛屼絾 Agent 浠嶈礋璐ｈˉ鍏ㄧ湡瀹為摼璺彉鍖栵紱
-- 鑴氭湰鑷姩鐢熸垚 `scripts/releases/release-vX.X.X.ps1` 浣滀负鐗堟湰瀹¤璁板綍锛?- `publish.ps1` 浠嶆槸搴曞眰鍙戝竷鎵ц鍣紝涓嶅缓璁柊 Agent鍙﹂€犲彂甯冩祦绋嬶紱
-- 鏁版嵁搴?migration 缁濅笉鐢卞彂甯冭剼鏈嚜鍔ㄦ墽琛屻€?
-瀹屾暣璇存槑锛歚docs/RELEASE_AUTOMATION.md`銆?
-### v1.7.3 鍦烘櫙鎬ц兘 Prompt
-淇敼鐧诲綍銆侀瓟娉曚功銆丟lobe銆丆ountry銆丆ity銆丳layer 鎴?Scene Runtime 鍓嶏紝蹇呴』鍏堥槄璇?`prompts/performance/` 涓搴旈摼璺枃浠讹紱涓嶅緱缁曡繃 `prepare 鈫?await enter 鈫?nextPaint 鈫?reveal` 鐢熷懡鍛ㄦ湡銆?
-### v1.8.0 杞満 / 瀵艰埅 / 鎼滅储
-- 杞満瑙嗚鍙兘閫氳繃 `SB.gate`锛坄blocks/01b-gate.html`锛屾彁绀鸿瘝 `prompts/00-gate.md`锛夋墿灞曪紱涓嶅緱涓轰簡鐗规晥鏀瑰彉 Scene Runtime 浜嬪姟椤哄簭锛屽け璐ヨ矾寰勫繀椤昏皟鐢?`SB.gate.abort()`銆?- 澶ф床鍥藉鐩綍椤靛凡鍦?v1.8.0 鍒犻櫎锛屼笉瑕佹仮澶?`continent` 鍦烘櫙锛涘浗瀹跺湴鍥剧殑鐖剁骇鏄?`globe`銆?- 绂荤嚎鍩庡競搴?`blocks/06-world-cities.html` 鐢?`tools/make_cities.py` 鐢熸垚锛屼笉瑕佹墜鏀癸紱鍦ㄧ嚎鍩庡競鎼滅储鍙彂閫佹悳绱㈣瘝锛屼笉寰楀彂閫佷换浣曞洖蹇嗐€佺収鐗囨垨璐︽埛鏁版嵁銆?
-### v1.8.1 杞満鏇濆厜 / 鑿滃崟 / 宸ュ叿鏍囪瘑 / 鏃跺厜闀垮嵎
-- 鏂拌浆鍦鸿瑙夊繀椤婚伒瀹?`prompts/00-gate.md` 鐨勬洕鍏夎鍒欙紙鍏ㄥ睆閬僵鍙敤娣辫壊銆佷寒鑹插彧鏄眬閮ㄥ厜婧愩€佸彔鍔犲眰 alpha 鈮?0.55銆佹眹鑱氱矑瀛愰殢璺濈娣″嚭锛夛紱鏂拌矾绾夸紭鍏堝鐢ㄥ凡鏈変簲绉嶉棬锛屾寜銆岃矾绾胯〃銆嶉€夋嫨 `transition`銆?- 鑿滃崟鍙斁鍦烘櫙瀵艰埅锛堢洰鍓嶃€屼笘鐣屾槦鍥俱€嶃€屾椂鍏夐暱鍗枫€嶏級锛涜缃被鍔熻兘锛堥煶涔愩€佸姩鏁堛€佽处鎴风瓑锛夋敞鍐屽埌鍙充笂瑙?`SB.dock`锛屼笉瑕佸啀鍔犲洖鑿滃崟銆?- 銆屾椂鍏夐暱鍗枫€嶅満鏅?id 浠嶄负 `overview`锛屼笉瑕佹敼 id锛堟繁閾句笌鍘嗗彶鍏煎锛夈€?
-### v1.8.2 鎵嬫満鎬ц兘绾㈢嚎
-- 寮€涔﹀姩鐢绘湡闂翠笉寰楀垱寤?WebGL / 缂栬瘧鐫€鑹插櫒锛堜笉瑕佸湪 `04-book-opening` 閲?`prefetch('globe')`锛夈€?- 涓嶈鎶婁細绉诲姩鐨勫厓绱犳斁杩涢瓟娉曚功鐨?3D `preserve-3d` 涓婁笅鏂囧苟涓庝功鏈钩闈㈢浉浜わ紙鎵嬫満 WebKit 骞抽潰鍒囧壊 鈫?闂儊锛夛紱闇€瑕佺幆缁曟晥鏋滄椂鐢?2D 鎶曞奖鍥惧眰銆?- 鍙犲姞娣峰悎锛坄lighter`锛夌殑绮掑瓙涓嶈兘鍦ㄥ悓涓€浣嶇疆鎸佺画鍫嗙Н锛涙墜鏈烘。浼樺厛鍏抽棴娣峰悎妯″紡銆佸ぇ闈㈢Н閬僵鍜?SVG 鍏夌収婊ら暅銆?
-### v1.9.0 鎼滅储鏁版嵁 / 缂栬緫鍣ㄦ墿灞曠偣 / 鍚姩闂?- `blocks/06-admin-divisions.html` 鏄敓鎴愭枃浠讹紝淇敼璇锋敼 `tools/make_admin.py` 骞堕噸鏂扮敓鎴愶紱鏂板鍥藉鐨勫尯鍒掓部鐢ㄥ悓涓€绱у噾鏍煎紡銆?- 鐓х墖鎵归噺鎿嶄綔閫氳繃 `SB.editor.photoActions` 鎵╁睍锛屼笉瑕佸湪缂栬緫鍣ㄩ噷纭紪鐮佹柊鐨勬壒閲忔寜閽€?- 鍚姩闂ㄥ姩鐢诲彧鑳界敤 transform / opacity锛涙枃瀛楀瓧浣撶敱 `data-gate-type` 涓€娆℃€у喅瀹氾紝涓嶈鍦?Gate 涓婄洿鎺ヤ緷璧栫綉缁滃瓧浣撱€?
-### v1.9.1 鐓х墖鍒嗙粍
-- 鍥炲繂鐨勫垎缁勬暟鎹槸鍙€夊瓧娈?`groups: [{id, text}]` + 鐓х墖 `g`锛涚粍鎴愬憳鍦?`slides` 涓繀椤昏繛缁紝缂栬緫鍣ㄧ殑浠讳綍鎺掑簭鎿嶄綔涔嬪悗閮借 `normalizeGroups(st)`銆?- 鏀炬槧鍣ㄦ寜 `unitsOf()` 鐨勫崟鍏冪紪鎺掞紱鏂板鏀炬槧椋庢牸鏃朵篃蹇呴』澶勭悊缁勫崟鍏冿紙缁勬弿杩伴摵婊℃暣缁勬椂闀裤€佺粍鍐呬笉鏄剧ず鍗曞紶鎻忚堪銆佺粍鎻忚堪涓虹┖鎸夋櫘閫氱収鐗囷級銆?- 鏀炬槧鏂瑰紡锛堣嚜鍔?/ 鎵嬪姩锛夋槸鏈満瑙傜湅鍋忓ソ锛屼笉鍐欏叆鍥炲繂鏁版嵁锛涙柊澧炴斁鏄犻鏍兼椂 `holdsOf()` 鑷姩浠庢椂闂寸嚎绠楀仠闈犵偣锛屾弿杩扮被鏂囧瓧鍏冪礌蹇呴』鏈?`t1`锛屽惁鍒欐墜鍔ㄦā寮忔棤娉曞湪鎻忚堪鏄剧ず鏃跺仠浣忋€?- 鍦扮悆鎼滅储闈㈡澘涓嶆樉绀烘暟鎹潵婧愯锛涙暟鎹讲鍚嶆斁鍦?`README.md`銆屾暟鎹潵婧愩€嶃€?
-### v1.9.2 闀滃ご璇█搴?/ 鐢靛奖妯″紡
-- 鏂板鏂囧瓧鏍峰紡璇峰姞鍏?`GEN` 骞跺湪 `animGen()` 閲屽疄鐜拌繘閫€鍦猴紙鍙敤 transform / opacity锛屽崕涓芥。鎵嶅厑璁告ā绯婏級锛屽悓鏃跺湪 `inEndOf()` 缁欏嚭杩涘満鏃堕暱锛堜緵瀹氭牸浼樺寲涓庢墜鍔ㄦ斁鏄犲仠闈犵偣浣跨敤锛夈€?- 鏂板閾跺箷闀滃ご璇峰湪 `pickShot()` 閲岀粰鍑洪€傜敤鏉′欢涓庢潈閲嶏紝闀滃ご鍐呴儴鍙敓鎴愮収鐗?/ 鏂囧瓧鍏冪礌锛屼笉瑕佺洿鎺ユ搷浣?DOM銆?- 鑷姩鏀炬槧涓嶆樉绀鸿繘搴︽潯锛涙斁鏄犱腑鐨勬寜閽彧鑳藉湪榧犳爣杩涘叆搴曢儴鍖哄煙鎴栬交瑙︽椂娴幇锛屼笉瑕佸湪寮€鍦?`wake()`銆?
+规则：
+
+- 版本号唯一来源是根目录 `VERSION`；
+- 脚本自动生成缺失的 `docs/releases/vX.X.X.md` 基础记录，但 Agent 仍负责补全真实链路变化；
+- 脚本自动生成 `scripts/releases/release-vX.X.X.ps1` 作为版本审计记录；
+- `publish.ps1` 仍是底层发布执行器，不建议新 Agent另造发布流程；
+- 数据库 migration 绝不由发布脚本自动执行。
+
+完整说明：`docs/RELEASE_AUTOMATION.md`。
+
+### v1.7.3 场景性能 Prompt
+修改登录、魔法书、Globe、Country、City、Player 或 Scene Runtime 前，必须先阅读 `prompts/performance/` 中对应链路文件；不得绕过 `prepare → await enter → nextPaint → reveal` 生命周期。
+
+### v1.8.0 转场 / 导航 / 搜索
+- 转场视觉只能通过 `SB.gate`（`blocks/01b-gate.html`，提示词 `prompts/00-gate.md`）扩展；不得为了特效改变 Scene Runtime 事务顺序，失败路径必须调用 `SB.gate.abort()`。
+- 大洲国家目录页已在 v1.8.0 删除，不要恢复 `continent` 场景；国家地图的父级是 `globe`。
+- 离线城市库 `blocks/06-world-cities.html` 由 `tools/make_cities.py` 生成，不要手改；在线城市搜索只发送搜索词，不得发送任何回忆、照片或账户数据。
+
+### v1.8.1 转场曝光 / 菜单 / 工具标识 / 时光长卷
+- 新转场视觉必须遵守 `prompts/00-gate.md` 的曝光规则（全屏遮罩只用深色、亮色只是局部光源、叠加层 alpha ≤ 0.55、汇聚粒子随距离淡出）；新路线优先复用已有五种门，按「路线表」选择 `transition`。
+- 菜单只放场景导航（目前「世界星图」「时光长卷」）；设置类功能（音乐、动效、账户等）注册到右上角 `SB.dock`，不要再加回菜单。
+- 「时光长卷」场景 id 仍为 `overview`，不要改 id（深链与历史兼容）。
+
+### v1.8.2 手机性能红线
+- 开书动画期间不得创建 WebGL / 编译着色器（不要在 `04-book-opening` 里 `prefetch('globe')`）。
+- 不要把会移动的元素放进魔法书的 3D `preserve-3d` 上下文并与书本平面相交（手机 WebKit 平面切割 → 闪烁）；需要环绕效果时用 2D 投影图层。
+- 叠加混合（`lighter`）的粒子不能在同一位置持续堆积；手机档优先关闭混合模式、大面积遮罩和 SVG 光照滤镜。
+
+### v1.9.0 搜索数据 / 编辑器扩展点 / 启动门
+- `blocks/06-admin-divisions.html` 是生成文件，修改请改 `tools/make_admin.py` 并重新生成；新增国家的区划沿用同一紧凑格式。
+- 照片批量操作通过 `SB.editor.photoActions` 扩展，不要在编辑器里硬编码新的批量按钮。
+- 启动门动画只能用 transform / opacity；文字字体由 `data-gate-type` 一次性决定，不要在 Gate 上直接依赖网络字体。
+
+### v1.9.1 照片分组
+- 回忆的分组数据是可选字段 `groups: [{id, text}]` + 照片 `g`；组成员在 `slides` 中必须连续，编辑器的任何排序操作之后都要 `normalizeGroups(st)`。
+- 放映器按 `unitsOf()` 的单元编排；新增放映风格时也必须处理组单元（组描述铺满整组时长、组内不显示单张描述、组描述为空按普通照片）。
+- 放映方式（自动 / 手动）是本机观看偏好，不写入回忆数据；新增放映风格时 `holdsOf()` 自动从时间线算停靠点，描述类文字元素必须有 `t1`，否则手动模式无法在描述显示时停住。
+- 地球搜索面板不显示数据来源行；数据署名放在 `README.md`「数据来源」。
+
+### v1.9.2 镜头语言库 / 电影模式
+- 新增文字样式请加入 `GEN` 并在 `animGen()` 里实现进退场（只用 transform / opacity，华丽档才允许模糊），同时在 `inEndOf()` 给出进场时长（供定格优化与手动放映停靠点使用）。
+- 新增银幕镜头请在 `pickShot()` 里给出适用条件与权重，镜头内部只生成照片 / 文字元素，不要直接操作 DOM。
+- 自动放映不显示进度条；放映中的按钮只能在鼠标进入底部区域或轻触时浮现，不要在开场 `wake()`。
+
+### v1.10.0 时光之环 / 时光剪影 / 音乐 / 发布脚本编码
+- 时光长卷的三维效果使用自做透视投影 + 每张卡片独立透视，**不要**改成共享的 `preserve-3d` 场景（手机 WebKit 平面切割红线）；环线必须分前 / 后两层 canvas 以保证遮挡关系。
+- 周年节点由回忆日期计算（每满 12 个月），不写入数据；「时光剪影」只读回忆，所有动画用 CSS 关键帧以便暂停。
+- PowerShell 脚本读取文本文件必须写 `-Encoding UTF8`（Windows PowerShell 5.1 默认按 GBK 读取无 BOM 的 UTF-8 会把中文写成乱码）；`tools/check_project.py` 会检查。
