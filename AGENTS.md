@@ -7,7 +7,7 @@
 ## 1. 当前项目身份
 
 - Project: **Starbook / 星屿之书**
-- Current version: **1.10.0**
+- Current version: **1.10.1**
 - Production branch: **`main`**
 - Production deploy: **GitHub Pages via GitHub Actions**
 - Runtime backend: **Supabase Anniversary Bridge**
@@ -226,3 +226,10 @@ python tools/check_project.py
 - 时光长卷的三维效果使用自做透视投影 + 每张卡片独立透视，**不要**改成共享的 `preserve-3d` 场景（手机 WebKit 平面切割红线）；环线必须分前 / 后两层 canvas 以保证遮挡关系。
 - 周年节点由回忆日期计算（每满 12 个月），不写入数据；「时光剪影」只读回忆，所有动画用 CSS 关键帧以便暂停。
 - PowerShell 脚本读取文本文件必须写 `-Encoding UTF8`（Windows PowerShell 5.1 默认按 GBK 读取无 BOM 的 UTF-8 会把中文写成乱码）；`tools/check_project.py` 会检查。
+
+### v1.10.1 时光之环优化 / 日期精确到日 / 纪念日
+- 时光长卷的卡片数量必须有上限：焦点附近（电脑左 2 右 1、手机左右各 1）才是 DOM 卡片，其余是 canvas「光珠」；不要恢复「每段回忆一张常驻卡片」或 `loading=lazy`（3D 变换下懒加载常常不触发）。
+- `sb:data` 只有回忆 / 城市 / 纪念日真的变化时才允许重建时光之环（签名地址回调会频繁触发 `sb:data`，整环重建会造成闪烁）。
+- 回忆 `date` 可为 `YYYY` / `YYYY-MM` / `YYYY-MM-DD`；排序、周年、分段一律用 `SB.date.day()`，不要再用字符串比较或月序号。旧数据只有年月时按当月 1 日计算。
+- 周年起点是可选的 `settings.anniversary`（YYYY-MM-DD，在 `book_data.payload.settings` 内，无 schema 变化）；未设置时用最早一段回忆的日期。
+- 魔法书页的场景 world 为 `night`（与其他页面同一星空深蓝背景）；金色只属于书本自身的光，不要再把整页背景做成暖金色。

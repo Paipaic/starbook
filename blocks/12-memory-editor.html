@@ -46,13 +46,17 @@
 .ed-h .tt span{font-family:var(--f-rune);font-size:9.5px;letter-spacing:.42em;color:var(--gold-dim);}
 .ed-h::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(244,184,96,.45),transparent);}
 
-.ed-tale{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:16px 18px;}
+.ed-tale{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px 18px;}   /* v1.10.1：时间多了「日」，加宽 */
 .ed-tale .full{grid-column:1/-1;}
 .ed-title-in{font-family:var(--f-display);font-weight:600;font-size:20px;letter-spacing:.06em;}
 .ed-date{display:flex;gap:8px;}
-.ed-date select{flex:1;min-height:42px;padding:8px 10px;border-radius:10px;border:1px solid rgba(244,184,96,.32);background:rgba(10,8,20,.55);color:var(--text);font-family:var(--f-num);font-weight:600;font-size:16px;letter-spacing:.06em;
+.ed-date select{flex:1 1 0;min-width:0;min-height:42px;padding:8px 24px 8px 10px;border-radius:10px;border:1px solid rgba(244,184,96,.32);background:rgba(10,8,20,.55);color:var(--text);font-family:var(--f-num);font-weight:600;font-size:16px;letter-spacing:.06em;
   -webkit-appearance:none;appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--gold) 50%),linear-gradient(135deg,var(--gold) 50%,transparent 50%);
   background-position:calc(100% - 16px) 50%,calc(100% - 11px) 50%;background-size:5px 5px;background-repeat:no-repeat;}
+.ed-date select.vague{color:var(--text-dim);font-family:inherit;font-size:13px;font-weight:400;letter-spacing:0;}
+.ed-date select:nth-child(1),.ed-date select:nth-child(3){flex-grow:1.3;}
+.ed-date-hint{display:block;margin-top:6px;font-size:11.5px;letter-spacing:.06em;color:var(--text-dim);}
+.ed-date-hint[hidden]{display:none;}
 .ed-date select:focus{outline:none;border-color:var(--gold-hi);box-shadow:0 0 12px rgba(244,184,96,.3);}
 .ed-count{align-self:flex-end;font-family:var(--f-num);font-size:12px;letter-spacing:.1em;color:var(--gold-dim);margin-top:-2px;}
 
@@ -415,6 +419,8 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
         title: orig?.title || '', note: orig?.note || '',
         year: (orig?.date || '').split('-')[0] || String(now.getFullYear()),
         month: (orig?.date || '').split('-')[1] || String(now.getMonth() + 1).padStart(2, '0'),
+        // v1.10.1：日期精确到日（可选）。旧回忆只有年月时 day = ''（「不记得哪天」），保存后仍是 YYYY-MM，数据完全兼容
+        day: orig ? ((orig.date || '').split('-')[2] || '') : String(now.getDate()).padStart(2, '0'),
         slides: (orig?.slides || []).map(s => ({...s})),
         groups: new Map((Array.isArray(orig?.groups) ? orig.groups : []).filter(g => g?.id).map(g => [g.id, {id:g.id, text:String(g.text || '')}])), focusGroup:null,
         cover: orig?.cover?.id || orig?.slides?.[0]?.id || null,
@@ -456,11 +462,19 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
           for(let y = now.getFullYear() + 1; y >= 2000; y--){ const o = SB.el('option'); o.value = String(y); o.textContent = y + ' 年'; yr.appendChild(o); }
           const mo = SB.el('select'); mo.setAttribute('aria-label','月份');
           for(let m = 1; m <= 12; m++){ const o = SB.el('option'); o.value = String(m).padStart(2,'0'); o.textContent = m + ' 月'; mo.appendChild(o); }
-          yr.value = st.year; mo.value = st.month;
-          yr.addEventListener('change', () => { st.year = yr.value; refreshPoster(); renderSeasons(); });
-          mo.addEventListener('change', () => { st.month = mo.value; refreshPoster(); renderSeasons(); });
-          const date = SB.el('div','ed-date'); date.append(yr, mo);
-          tale.append(SB.ui.field('标题', title), SB.ui.field('时间', date));
+          const dy = SB.el('select'); dy.setAttribute('aria-label','日期');
+          const fillDays = () => { const n = SB.date.daysIn(+st.year, +st.month), keep = st.day && +st.day > n ? String(n).padStart(2,'0') : st.day;
+            dy.innerHTML = '<option value="">不记得哪天</option>';
+            for(let d = 1; d <= n; d++){ const o = SB.el('option'); o.value = String(d).padStart(2,'0'); o.textContent = d + ' 日'; dy.appendChild(o); }
+            st.day = keep; dy.value = st.day; dy.classList.toggle('vague', !st.day); };
+          yr.value = st.year; mo.value = st.month; fillDays();
+          yr.addEventListener('change', () => { st.year = yr.value; fillDays(); refreshPoster(); renderSeasons(); });
+          mo.addEventListener('change', () => { st.month = mo.value; fillDays(); refreshPoster(); renderSeasons(); });
+          dy.addEventListener('change', () => { st.day = dy.value; dy.classList.toggle('vague', !st.day); refreshPoster(); dHint.hidden = !!st.day; });
+          const date = SB.el('div','ed-date'); date.append(yr, mo, dy);
+          const dHint = SB.el('small', 'ed-date-hint'); dHint.textContent = '补上具体哪一天，时光长卷与周年剪影会按日排列'; dHint.hidden = !!st.day;
+          const dWrap = SB.el('div'); dWrap.append(date, dHint);
+          tale.append(SB.ui.field('标题', title), SB.ui.field('时间', dWrap));
           const note = SB.ui.input({multiline:true, maxlength:'300', placeholder:'写一段话，会出现在放映的扉页（可不填）'}); note.value = st.note;
           const cnt = SB.el('span', 'ed-count'); const upCnt = () => cnt.textContent = `${[...note.value].length} / 300`; upCnt();
           note.addEventListener('input', () => { st.note = note.value; upCnt(); refreshSum(); });
@@ -502,7 +516,7 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
           const hint = SB.el('p', 'ed-hint'); sl.appendChild(hint); s3.appendChild(sl);
           const renderSeasons = () => {
             seasons.innerHTML = '';
-            const auto = SB.cinema.resolveSeason('auto', `${st.year}-${st.month}`);
+            const auto = SB.cinema.resolveSeason('auto', DATE());
             SB.cinema.seasons.forEach(s => {
               const label = s.id === 'auto' ? `按月份 · ${SB.cinema.seasons.find(x => x.id === auto)?.name || '无'}` : s.name;
               const b = SB.el('button', 'ed-season' + (st.season === s.id ? ' on' : ''), `${SB.cinema.icon(s.id)}<span>${label}</span>`);
@@ -510,7 +524,7 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
               b.addEventListener('click', () => { st.season = s.id; renderSeasons(); refreshPoster(); });
               seasons.appendChild(b);
             });
-            const eff = SB.cinema.resolveSeason(st.season, `${st.year}-${st.month}`), info = SB.cinema.seasons.find(x => x.id === eff);
+            const eff = SB.cinema.resolveSeason(st.season, DATE()), info = SB.cinema.seasons.find(x => x.id === eff);
             hint.textContent = eff === 'none' ? '放映时不加季节效果。观看时也可以在放映控制条里临时切换。' : `${info.name} · ${info.desc}。观看时也可以在放映控制条里临时切换。`;
           };
           ui.renderSeasons = renderSeasons;
@@ -563,7 +577,7 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
             normalizeGroups(st);
             const live = new Set(st.slides.map(s => s.g).filter(Boolean));
             const groups = [...st.groups.values()].filter(g => live.has(g.id)).map(g => ({id:g.id, text:String(g.text || '').trim()}));
-            const data = { id: memory?.id, cityId, title: st.title.trim(), date: `${st.year}-${st.month}`, note: st.note.trim(),
+            const data = { id: memory?.id, cityId, title: st.title.trim(), date: DATE(), note: st.note.trim(),
               slides: st.slides.map(s => ({id:s.id, w:s.w, h:s.h, caption:(s.caption || '').trim(), ...(s.g ? {g:s.g} : {})})),
               ...(groups.length ? {groups} : {}),
               cover: {id: st.slides.some(s => s.id === st.cover) ? st.cover : st.slides[0].id},
@@ -583,23 +597,24 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
       function refreshSum(){
         const n = st.slides.filter(s => s.id).length;
         let dur = '';
-        try{ if(n && SB.player?.estimate){ const s = Math.round(SB.player.estimate({title:st.title, note:st.note, date:`${st.year}-${st.month}`, slides:st.slides.filter(s => s.id), groups:[...st.groups.values()]}, st.style)/1000);
+        try{ if(n && SB.player?.estimate){ const s = Math.round(SB.player.estimate({title:st.title, note:st.note, date:DATE(), slides:st.slides.filter(s => s.id), groups:[...st.groups.values()]}, st.style)/1000);
           dur = s < 60 ? `约 ${s} 秒` : `约 ${Math.floor(s/60)} 分${s % 60 ? ' ' + s % 60 + ' 秒' : ''}`; } }catch(e){}
         const ng = runsOf(st.slides).filter(r => r.g).length;
         const html = `<span>${n} 张照片</span>${ng ? `<i></i><span>${ng} 组</span>` : ''}${dur ? `<i></i><span>${dur}</span>` : ''}`;
         ui.sums?.forEach(x => x.innerHTML = html);
       }
+      function DATE(){ return `${st.year}-${st.month}${st.day ? '-' + st.day : ''}`; }   // v1.10.1：YYYY-MM 或 YYYY-MM-DD
       function refreshPoster(){
         if(!ui.pimg) return;
         const cov = st.slides.find(s => s.id && s.id === st.cover) || st.slides.find(s => s.id);
         const u = cov ? SB.store.url(cov.id) : '';
         if(u){ if(ui.pimg.getAttribute('src') !== u){ ui.pimg.classList.remove('ok'); ui.pimg.src = u; } ui.pempty.style.display = 'none'; }
         else { ui.pimg.removeAttribute('src'); ui.pimg.classList.remove('ok'); ui.pempty.style.display = ''; }
-        const d = SB.fmtDate(`${st.year}-${st.month}`) || '';
+        const d = SB.fmtDate(DATE()) || '';
         ui.pdate.textContent = d; ui.ptitle.textContent = SB.fmtTitle(st.title.trim()); ui.mtitle.textContent = st.title.trim();
         const sty = SB.cinema.styles.find(x => x.id === st.style);
         ui.bStyle.innerHTML = `${SB.cinema.icon(st.style)}<span>${sty.en}</span>`;
-        const eff = SB.cinema.resolveSeason(st.season, `${st.year}-${st.month}`), sea = SB.cinema.seasons.find(x => x.id === eff);
+        const eff = SB.cinema.resolveSeason(st.season, DATE()), sea = SB.cinema.seasons.find(x => x.id === eff);
         ui.bSeason.innerHTML = eff === 'none' ? '' : `${SB.cinema.icon(eff)}<span>${sea.en}</span>`; ui.bSeason.style.visibility = eff === 'none' ? 'hidden' : '';
         ui.grade.style.backgroundColor = GRADE[eff] || 'transparent';
         if(fallKey !== eff){

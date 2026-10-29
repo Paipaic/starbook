@@ -1049,7 +1049,7 @@ html[data-sb-perf="reduced"] .pl-hold i::after{animation:none;opacity:.5;}
     const dim = measure(style);
     const S = (m.slides || []).filter(s => s.id).map((s, i) => ({s, i, a:aspect(s)}));
     const C0 = Math.min(9000, Math.max(4200, 3600 + (len(m.title) + len(m.note))/CPS*1000));
-    const ctx = {...dim, C0, B:BASE[style], lite:lite(), U:unitsOf(S, m), date:/^\d{4}-\d{2}/.test(m.date || '') ? m.date.slice(0, 7).replace('-', ' · ') : ''};
+    const ctx = {...dim, C0, B:BASE[style], lite:lite(), U:unitsOf(S, m), date:/^\d{4}-\d{2}/.test(m.date || '') ? SB.date.dot(m.date) : ''};
     const r = S.length ? DIRECT[style](S, ctx) : {items:[], marks:[], end:C0};
     r.items.forEach((it, k) => { it.id = 'e' + k; });
     r.items.sort((a, b) => a.t0 - b.t0);

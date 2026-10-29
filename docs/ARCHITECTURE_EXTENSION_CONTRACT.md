@@ -247,8 +247,16 @@ book_data.payload
 
 ### `SB.yearReel`（v1.10.0）
 
-「时光剪影」周年回放：`open({year, from:'YYYY-MM', to:'YYYY-MM'|null, list:[memory…], now})` / `close()`。只读回忆数据，不写入 Store；由时光长卷的周年节点调用。新的回顾类放映（例如「每月剪影」）可以复用同一接口传入不同的 `list` 与区间。
+「时光剪影」周年回放：`open({year, from:'YYYY-MM-DD', to:'YYYY-MM-DD'|null（不含当天）, list:[memory…], now})`（v1.10.1 起精确到日，仍兼容 `YYYY-MM`） / `close()`。只读回忆数据，不写入 Store；由时光长卷的周年节点调用。新的回顾类放映（例如「每月剪影」）可以复用同一接口传入不同的 `list` 与区间。
 
 ### `SB.overview`（v1.10.0，调试）
 
-`state`（站点数、焦点、节点列表）与 `center(i)`；只用于测试与外部跳转，不要在其中加入业务逻辑。
+`state`（站点数、焦点、纪念日起点、节点列表）、`center(i)`（v1.10.1 起为定时缓动直达）与 `hitPoint(i)`；只用于测试与外部跳转，不要在其中加入业务逻辑。
+
+### `SB.date`（v1.10.1）
+
+Core 级日期工具（`blocks/00-core.html`）：`parse / day / str / dot / addYears / daysIn / valid / hasDay / today`。回忆日期允许 `YYYY` / `YYYY-MM` / `YYYY-MM-DD`；排序、周年、分段必须使用 `SB.date.day()`。它不含任何关系 / 主题语义，未来其他 Experience 可直接复用。
+
+### `settings.anniversary`（v1.10.1）
+
+Book 级可选设置（`book_data.payload.settings.anniversary`，`YYYY-MM-DD`），表示这本书的「周年起点」。当前只有时光长卷使用；名称不绑定「情侣」语义——其他关系的书也可以把它理解为「这本书的纪念日」。未设置时由 Experience 自行决定默认值（当前：最早一段回忆的日期）。

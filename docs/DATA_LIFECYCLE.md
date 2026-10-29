@@ -188,3 +188,9 @@ tags
 ## 非破坏性成员 / 元信息 Migration 示例
 
 `v1.5.1` 使用 `supabase/migrations/002_v151_title_and_members.sql` 更新 Book 标题并 upsert Book Members。该 migration 不修改 `book_data.payload`、不删除 Storage，是“代码版本升级不重置真实数据”的标准示例。
+
+## v1.10.1 可选字段扩展（无 migration）
+
+- 回忆 `date`：在原有 `YYYY-MM` 之外允许 `YYYY-MM-DD`（编辑器新增「日」）。旧数据保持原样，前端按当月 1 日排序；不需要、也不允许批量改写旧数据。
+- `settings.anniversary`：可选 `YYYY-MM-DD`；在时光长卷「纪念日」徽记里设置 / 恢复默认（写 `null`）。
+- 两者都在 `book_data.payload` 内，通过现有 `SB.store.saveMemory / saveSettings` 写入（乐观锁 revision 不变），无 SQL、无 schema 变化；回滚到 v1.10.0 时旧前端会把 `YYYY-MM-DD` 当作年月读取（显示到月），不会丢数据。

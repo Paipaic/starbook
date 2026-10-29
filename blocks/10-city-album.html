@@ -168,7 +168,7 @@ html[data-sb-perf="low"] .ca-badge{backdrop-filter:none;-webkit-backdrop-filter:
   const PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15L19.5 12Z" fill="currentColor"/></svg>';
   const GRADE = {spring:'rgba(255,170,195,.6)', summer:'rgba(255,205,120,.6)', autumn:'rgba(235,120,40,.65)', winter:'rgba(150,190,255,.65)'};
   let cityId = null, revealT = 0;
-  SB.fmtDate = d => { if(!d) return '未标注时间'; const [y,m] = d.split('-'); return m ? `${y} 年 ${+m} 月` : `${y} 年`; };
+  SB.fmtDate = d => { if(!d) return '未标注时间'; const [y,m,dd] = d.split('-'); return m ? `${y} 年 ${+m} 月${dd ? ` ${+dd} 日` : ''}` : `${y} 年`; };   // v1.10.1：有日则显示到日
   const roman = n => { const R = [[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']]; let s = ''; for(const [v,r] of R) while(n >= v){ s += r; n -= v; } return s; };
   const ROMAN = n => n <= 39 ? roman(n) : String(n);
   const fmtDur = ms => { const s = Math.round(ms/1000); return s < 60 ? `约 ${s} 秒` : `约 ${Math.floor(s/60)} 分${s % 60 ? ' ' + s % 60 + ' 秒' : ''}`; };
@@ -184,7 +184,7 @@ html[data-sb-perf="low"] .ca-badge{backdrop-filter:none;-webkit-backdrop-filter:
 
   function chapter(m, k){
     const ch = SB.el('article', 'ca-ch'); ch.setAttribute('role', 'article');
-    ch.innerHTML = `<div class="ca-node" aria-hidden="true"><span class="num">${ROMAN(k + 1)}</span><span class="ym">${SB.esc((m.date || '').replace('-', ' · '))}</span></div>`;
+    ch.innerHTML = `<div class="ca-node" aria-hidden="true"><span class="num">${ROMAN(k + 1)}</span><span class="ym">${SB.esc(SB.date.dot(m.date))}</span></div>`;
     const card = SB.el('div', 'ca-card'); card.tabIndex = 0; card.style.animationDelay = (k*90) + 'ms';
     card.setAttribute('aria-label', '打开放映厅：' + m.title);
     const C = SB.cinema, style = C?.styleOf(m) || 'cinema', sty = C?.styles.find(s => s.id === style);

@@ -1,5 +1,5 @@
 ﻿param(
-    [string]$Message = "v1.10.0版本更新"
+    [string]$Message = "v1.10.0时光之环、时光剪影与背景音乐自动循环"
 )
 
 $ErrorActionPreference = "Stop"

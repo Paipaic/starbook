@@ -111,19 +111,22 @@ body.sb-reel-open:not(.sb-reel-awake) #sb-nav,body.sb-reel-open:not(.sb-reel-awa
 .yr-ui .sb-ico{width:18px;height:18px;}
 .yr-wait{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.2em;color:var(--gold);text-align:center;}
 .yr-wait:empty{display:none;}
+.yr-wait{transition:opacity .5s var(--ease-soft);} .yr-wait.gone{opacity:0;}
 html[data-sb-perf="reduced"] .yr-strip,html[data-sb-perf="reduced"] .yr-Lfan .yr-ph,html[data-sb-perf="reduced"] .yr-Lhero .yr-ph{animation:yrFadeIn 1s ease forwards!important;transform:translate(var(--x,0),var(--y,0)) rotate(var(--r,0deg))!important;}
 html[data-sb-perf="reduced"] .yr-strip{transform:translateX(var(--x0))!important;}
 @media (max-width:760px){ .yr-k{font-size:10.5px;} .yr-ui button span{display:none;} }
 </style>
 
 <script>
-/* 「时光剪影」：SB.yearReel.open({year, from:'YYYY-MM', to:'YYYY-MM'|null, list:[memory…], now}) —— 由时光长卷的周年节点调用。只读回忆数据，不写入任何内容。 */
+/* 「时光剪影」：SB.yearReel.open({year, from:'YYYY-MM-DD', to:'YYYY-MM-DD'|null（不含当天）, list:[memory…], now})（v1.10.1 起精确到日；仍兼容 'YYYY-MM'） —— 由时光长卷的周年节点调用。只读回忆数据，不写入任何内容。 */
 (function(SB){
   const CN = n => ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'][n] || String(n);
   const ROMAN = n => { const R = [[10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']]; let o = ''; for(const [v, r] of R) while(n >= v){ o += r; n -= v; } return o || String(n); };
   const len = s => [...String(s || '')].length;
   const mIdx = d => { const [y, m] = String(d || '').split('-'); return +y ? +y*12 + ((+m || 1) - 1) : null; };
   const dot = k => `${Math.floor(k/12)} · ${String(k % 12 + 1).padStart(2, '0')}`;
+  // v1.10.1：一段回忆在这一年中的位置（0…1，按日计算）；「至今」一段按 365 天计
+  const yearFrac = d => { const a = SB.date.day(R.opt.from), b = R.opt.to ? SB.date.day(R.opt.to) : a + 365, v = SB.date.day(d); return v == null ? 0 : SB.clamp((v - a)/Math.max(1, b - a), 0, .9999); };
   const ICON = {
     pause:'<svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" fill="currentColor"/></svg>',
     play:'<svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7Z" fill="currentColor"/></svg>',
@@ -151,7 +154,7 @@ html[data-sb-perf="reduced"] .yr-strip{transform:translateX(var(--x0))!important
 
   /* ── 编排：序幕 → 篇章（间奏插在中间）→ 尾声 ── */
   function plan(o){
-    const list = [...o.list].filter(m => m.date).sort((a, b) => a.date.localeCompare(b.date));
+    const list = [...o.list].filter(m => m.date).sort((a, b) => (SB.date.day(a.date) - SB.date.day(b.date)) || (a.createdAt || '').localeCompare(b.createdAt || ''));
     const chs = list.map((m, i) => { const ph = pickPhotos(m); return {m, i, ph, ex:excerpt(m, ph), city:SB.store.city(m.cityId)?.name || '', layout:['strip', 'fan', 'hero'][i % 3]}; });
     // 照片很少时不用胶片带
     chs.forEach(c => { if(c.layout === 'strip' && c.ph.length < 2) c.layout = 'hero'; if(c.layout === 'fan' && c.ph.length < 2) c.layout = 'hero'; });
@@ -226,16 +229,15 @@ html[data-sb-perf="reduced"] .yr-strip{transform:translateX(var(--x0))!important
   const chars = (s, d0 = 0, step = 55) => [...String(s || '')].map((ch, j) => `<span style="--d:${d0 + j*step}ms">${SB.esc(ch)}</span>`).join('');
   function prologue(){
     const o = R.opt, p = R.p, cities = new Set(p.list.map(m => m.cityId)).size;
-    const endK = o.to ? mIdx(o.to) - 1 : null;
     R.pro = txt('yr-pro', `<span class="yr-k yr-in" style="--d:600ms">${o.now ? 'ANNUS ' + ROMAN(o.year) + ' · NUNC' : 'ANNIVERSARIUM · ' + ROMAN(o.year)}</span>
       <span class="yr-big yr-in" style="--d:1100ms">第${CN(o.year)}年</span>
-      <span class="yr-rng yr-in" style="--d:1700ms">${dot(mIdx(o.from))} — ${endK != null ? dot(endK) : '此刻'}</span>
+      <span class="yr-rng yr-in" style="--d:1700ms">${SB.date.dot(o.from)} — ${o.to ? SB.date.dot(SB.date.str(SB.date.day(o.to) - 1)) : '此刻'}</span>
       <span class="yr-line yr-in" style="--d:2300ms">这一年，我们去了 ${cities} 座城市，写下 ${p.list.length} 段回忆</span>`);
   }
   function chapter(c){
     const W = R.W, H = R.H, land = R.land, root = SB.el('div', 'yr-ch yr-L' + c.layout); stage().appendChild(root); c.root = root;
-    const k0 = mIdx(R.opt.from), mk = mIdx(c.m.date), tick = SB.clamp(mk - k0, 0, 11);
-    dialTo((tick + .5)/12, tick);
+    const fr = yearFrac(c.m.date), tick = Math.floor(fr*12);
+    dialTo(fr, tick);
     const url = id => SB.store.url(id);
     const phEl = (s, w, h, dv, extra = '') => { const e = SB.el('div', 'yr-ph', `<div class="im"><img class="c" alt="" src="${SB.esc(url(s.id))}"><img class="s" alt="" src="${SB.esc(url(s.id))}"></div>`);
       e.style.cssText = `--w:${w.toFixed(0)}px;--h:${h.toFixed(0)}px;--dv:${dv}ms;${extra}`; return e; };
@@ -267,7 +269,7 @@ html[data-sb-perf="reduced"] .yr-strip{transform:translateX(var(--x0))!important
                                                              : `right:${(W - x + W*.05).toFixed(0)}px;left:6vw;top:50%;transform:translateY(-50%);--hw:${(x - W*.11).toFixed(0)}px`}
                   : {cls:'c', css:`left:7vw;right:7vw;top:${(y + h + H*.05).toFixed(0)}px;--hw:86vw`};
     }
-    const no = `No. ${String(c.i + 1).padStart(2, '0')} · ${dot(mk)}${c.city ? ' · ' + SB.esc(c.city) : ''}`;
+    const no = `No. ${String(c.i + 1).padStart(2, '0')} · ${SB.date.dot(c.m.date)}${c.city ? ' · ' + SB.esc(c.city) : ''}`;
     const h = SB.el('div', 'yr-txt yr-h ' + head.cls, `<span class="no">${no}</span><span class="tt">${chars(c.m.title || '未命名的回忆', 250, 60)}</span><i class="rule"></i>${c.ex ? `<span class="ex" style="--d:${900 + len(c.m.title)*60}ms">${SB.esc(c.ex)}</span>` : ''}`);
     h.style.cssText += head.css; root.appendChild(h); c.head = h;
     $q('.pl-live').textContent = `${c.m.title || ''} ${c.ex || ''}`;
@@ -318,12 +320,14 @@ html[data-sb-perf="reduced"] .yr-strip{transform:translateX(var(--x0))!important
     R.p = plan(o);
     // 先准备照片（最多 8 秒）
     const ids = [...new Set(R.p.chs.flatMap(c => c.ph.map(s => s.id)))], wait = $q('.yr-wait');
-    $q('.yr-dial').innerHTML = ''; R.playing = false; cancelAnimationFrame(R.raf); R.raf = 0;
+    wait.textContent = ''; $q('.yr-dial').innerHTML = ''; R.playing = false; cancelAnimationFrame(R.raf); R.raf = 0;
     if(ids.length){
-      let done = 0; const show = () => { wait.textContent = `正在准备这一年的胶片 ${done} / ${ids.length}`; }; show();
+      // v1.10.1：超时后迟到的照片不再改写提示（之前会把「正在准备…」写回放映画面）；提示随准备层淡出
+      let done = 0, live = true; const show = () => { if(live && R.opt === o && R.open) wait.textContent = `正在准备这一年的胶片 ${done} / ${ids.length}`; };
+      wait.classList.remove('gone'); show();
       await SB.store.prefetchUrls?.(ids);
       await Promise.race([Promise.all(ids.map(id => loadImg(SB.store.url(id)).then(() => { done++; show(); }))), SB.wait(8000)]);
-      wait.textContent = '';
+      live = false; wait.classList.add('gone'); setTimeout(() => { if(!live && wait.classList.contains('gone')) wait.textContent = ''; }, 600);
     }
     if(!R.open || R.opt !== o) return;
     const p = R.p, cues = [];
@@ -345,7 +349,7 @@ html[data-sb-perf="reduced"] .yr-strip{transform:translateX(var(--x0))!important
     document.body.classList.remove('sb-reel-open', 'sb-reel-awake');
     SB.audio?.duck?.(1, 1000);
     const el = R.el; el.classList.remove('on');
-    setTimeout(() => { if(!R.open){ el.hidden = true; stage().innerHTML = ''; } }, silent ? 0 : 900);
+    setTimeout(() => { if(!R.open){ el.hidden = true; stage().innerHTML = ''; $q('.yr-wait').textContent = ''; } }, silent ? 0 : 900);
   }
   SB.yearReel = { open:start, close, get state(){ return {open:!!R.open, T:R.T, playing:R.playing, total:R.p?.total || 0, chapters:R.p?.chs.map(c => ({t0:c.t0, dur:c.dur, layout:c.layout, n:c.ph.length, title:c.m.title})) || [], stats:R.p?.seq.filter(x => x.stats).map(x => x.t0) || []}; },
     seek(T){ /* 测试用：跳到某个时间（重放之前的状态切换） */ if(!R.open) return; R.T = 0; R.ci = 0; stage().innerHTML = ''; R.counting = null; while(R.ci < R.cues.length && R.cues[R.ci].t <= T){ try{ R.cues[R.ci].fn(); }catch(e){} R.ci++; } R.T = T; } };

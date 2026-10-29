@@ -253,6 +253,21 @@ window.SB = window.SB || {};
 
   /* 标题排版：分隔点「·」与前文不断开，换行时只会出现在行尾，不会落在行首 */
   SB.fmtTitle = t => String(t ?? '').replace(/\s*·\s*/g, '\u00a0· ');
+  /* v1.10.1 日期工具：回忆日期可为 YYYY / YYYY-MM / YYYY-MM-DD（旧数据只有年月，继续有效）。
+     day()  → 自 1970-01-01 起的日序号（缺日按 1 号、缺月按 1 月），用于排序、周年与分段；
+     addYears(d, n) → 同月同日（2 月 29 日在平年落到 2 月 28 日）；dot(d) → 2025 · 10 · 05。 */
+  SB.date = (() => {
+    const parse = d => { const m = /^(\d{4})(?:-(\d{1,2}))?(?:-(\d{1,2}))?/.exec(String(d || '')); return m ? {y:+m[1], m:m[2] ? +m[2] : null, d:m[3] ? +m[3] : null} : null; };
+    const daysIn = (y, m) => new Date(Date.UTC(y, m, 0)).getUTCDate() || 31;
+    const pad = n => String(n).padStart(2, '0');
+    const day = d => { const p = parse(d); return p ? Math.round(Date.UTC(p.y, (p.m || 1) - 1, Math.min(p.d || 1, daysIn(p.y, p.m || 1)))/864e5) : null; };
+    const str = k => { const t = new Date(k*864e5); return `${t.getUTCFullYear()}-${pad(t.getUTCMonth() + 1)}-${pad(t.getUTCDate())}`; };
+    const today = () => { const n = new Date(); return Math.round(Date.UTC(n.getFullYear(), n.getMonth(), n.getDate())/864e5); };
+    const addYears = (d, n) => { const p = parse(d); if(!p) return null; const y = p.y + n, m = p.m || 1; return Math.round(Date.UTC(y, m - 1, Math.min(p.d || 1, daysIn(y, m)))/864e5); };
+    const dot = d => { const p = parse(d); return p ? [p.y, p.m && pad(p.m), p.m && p.d && pad(p.d)].filter(Boolean).join(' · ') : ''; };
+    const valid = d => { const p = parse(d); return !!p && (!p.m || (p.m >= 1 && p.m <= 12)) && (!p.d || (p.m && p.d >= 1 && p.d <= daysIn(p.y, p.m))); };
+    return {parse, daysIn, day, str, today, addYears, dot, valid, hasDay:d => !!parse(d)?.d};
+  })();
 
   SB.el = (tag, cls, html) => { const e = document.createElement(tag); if(cls) e.className = cls; if(html != null) e.innerHTML = html; return e; };
   SB.uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
