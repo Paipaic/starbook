@@ -2,11 +2,11 @@
 
 ## Current Release
 
-- Version: `1.10.0` (时光之环 · 时光剪影 · 背景音乐自动循环)
+- Version: `1.10.1` (时光之环优化 · 日期精确到日 · 纪念日 · 魔法书星空背景)
 - Deadline: `2026-10-29`
 - Delivery goal: 私密、稳定、手机可用的周年纪念礼物。
 - Base: V1 `blocks + build.py + site/index.html`。
-- Runtime config version: `1.10.0`。
+- Runtime config version: `1.10.1`。
 
 ## Current Architecture
 
@@ -103,6 +103,14 @@ release/vX.X.X or feature/*
 
 `main` 是唯一 Production branch。普通代码发布不重置 Supabase 数据。
 
+
+## Ring Timeline Tuning / Day Dates / Anniversary (v1.10.1)
+
+- `SB.date`（`00-core`）：`parse / day / str / dot / addYears / daysIn / valid / hasDay / today`。回忆 `date` 可为 `YYYY-MM-DD`（编辑器新增「日」，可选「不记得哪天」）；旧 `YYYY-MM` 照常有效，按当月 1 日排序。`SB.fmtDate` 有日则显示到日。
+- `settings.anniversary`（可选，`YYYY-MM-DD`，`book_data.payload.settings`）：时光长卷标题下的「纪念日」徽记（编辑者可设置 / 恢复默认）。周年节点 = 纪念日每年同一天（2/29 平年落 2/28），≤ 今天；第一年包含纪念日之前的回忆；同一天的回忆属于新的一年。
+- `13-overview`：窗口化卡片（电脑左 2 右 1、手机左右各 1）+ canvas 光珠；鱼眼弧长 `arcs()`；点击光珠 / 卡片 / 节点 / 刻度 → `center(i)` 定时缓动直达（≤ 1.25 s，远距离途中卡片收起）；图片窗口预取 + 解码淡入；`sb:data` 签名比对后才重建；静态环线缓存到离屏画布，光晕用贴图；延伸线顺环外旋、渐虚，笔尖光点 + 沿线文字。调试接口 `SB.overview.state / center / hitPoint`。
+- `14-year-reel`：`from / to` 为 `YYYY-MM-DD`；表盘位置按日计算；超时后迟到的照片不再改写「正在准备」提示。
+- `03-magic-book`：场景 world `night`、粒子 `night`、星云改为蓝紫色。
 
 ## Ring Timeline / Year Reel / Music (v1.10.0)
 
@@ -271,7 +279,7 @@ Confirmed by owner on 2026-10-26:
 
 ## Highest Priority Next
 
-1. 发布 v1.10.0（`.\release-current.ps1`），实测：时光长卷转动三维环、点击悬挂卡片进入放映；周年节点「时光剪影」从头到尾放一遍；首次打开（登录后）背景音乐是否自动响起、切到后台再回来是否恢复。
+1. 发布 v1.10.1（`.\release-current.ps1`），实测：时光长卷不再闪烁、卡片图片都能出来；点击远处光珠直接转到；在「纪念日」徽记设置纪念日后周年节点按日重算；给旧回忆补上具体日期后按日排序；魔法书页背景为星空深蓝；时光剪影放映中不再出现「正在准备」文字。
 2. 后续：v1.11.0 地球省 / 州矢量边界与局部高清（GLB-001），v1.11.1 国家地图「星图手稿」（MAP-001）。
 3. 完成 Private Storage 正式照片与 BGM 的实际内容填充，并优先使用 v1.7.2 之后的新上传缓存策略。
 4. 核心稳定后实现周年扉页 / 献词 / 结尾（ANN-008）。

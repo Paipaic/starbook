@@ -189,12 +189,12 @@ html[data-sb-perf="high"] .cv-ignite{filter:drop-shadow(0 0 3px rgba(240,200,120
 /* ── v1.8.0 星辉层次 ── */
 /* 1 星云底层（真知晶球式多层云雾） */
 .bk-neb{position:absolute;left:50%;top:50%;width:150vmax;height:150vmax;margin:-75vmax 0 0 -75vmax;pointer-events:none;mix-blend-mode:screen;will-change:transform;}
-.bk-neb.n1{opacity:.55;animation:bkNeb 320s linear infinite;
-  background:radial-gradient(18% 12% at 34% 40%,rgba(255,168,80,.20),transparent 70%),radial-gradient(22% 14% at 66% 58%,rgba(255,120,60,.14),transparent 70%),
-    radial-gradient(14% 20% at 58% 30%,rgba(255,214,150,.12),transparent 70%),radial-gradient(26% 18% at 40% 70%,rgba(160,80,40,.16),transparent 70%);}
+.bk-neb.n1{opacity:.55;animation:bkNeb 320s linear infinite;      /* v1.10.1：星云改为与其他页面一致的蓝紫色调 */
+  background:radial-gradient(18% 12% at 34% 40%,rgba(90,110,230,.20),transparent 70%),radial-gradient(22% 14% at 66% 58%,rgba(120,80,210,.14),transparent 70%),
+    radial-gradient(14% 20% at 58% 30%,rgba(150,180,255,.10),transparent 70%),radial-gradient(26% 18% at 40% 70%,rgba(50,60,160,.18),transparent 70%);}
 .bk-neb.n2{opacity:.45;animation:bkNeb 460s linear infinite reverse;
-  background:radial-gradient(16% 10% at 62% 36%,rgba(255,200,120,.16),transparent 70%),radial-gradient(24% 12% at 30% 60%,rgba(255,150,70,.12),transparent 70%),
-    radial-gradient(12% 16% at 48% 74%,rgba(255,226,170,.10),transparent 70%);}
+  background:radial-gradient(16% 10% at 62% 36%,rgba(130,150,255,.14),transparent 70%),radial-gradient(24% 12% at 30% 60%,rgba(80,90,200,.14),transparent 70%),
+    radial-gradient(12% 16% at 48% 74%,rgba(244,200,140,.06),transparent 70%);}
 @keyframes bkNeb{from{transform:rotate(0) scale(1)}50%{transform:rotate(180deg) scale(1.08)}to{transform:rotate(360deg) scale(1)}}
 /* 2 宝石光溢 + 体积光（光有来源：从宝石发出） */
 .bk-spill{position:absolute;left:50%;top:calc(50% + var(--bh) * .08);width:calc(var(--bw) * 2.4);aspect-ratio:1;transform:translate(-50%,-50%);pointer-events:none;
@@ -756,9 +756,10 @@ html:not([data-sb-perf="high"]) .cv-flow{display:none;}
     }
   };
   SB.scenes.register('book', {
-    world:'book', deepLink:true,
+    // v1.10.1：魔法书页背景与其他页面统一为「星空 + 深蓝」（world night / 粒子 night），金色只保留在书本自身的光
+    world:'night', deepLink:true,
     title:()=>'魔法书',
-    enter(){ SB.magicBook.reset(); SB.fx.palette('warm'); SB.fx.calm(); SB.fx.orbitBoost(1); start(); requestAnimationFrame(placeOrbit); },
+    enter(){ SB.magicBook.reset(); SB.fx.palette('night'); SB.fx.calm(); SB.fx.orbitBoost(1); start(); requestAnimationFrame(placeOrbit); },
     leave(){ stop(); SB.fx.orbit(null); }
   });
 })(window.SB);

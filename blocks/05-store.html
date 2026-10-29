@@ -281,7 +281,8 @@
   st.citiesInRegion = region => st.cities.filter(c => c.region === region).sort((a,b)=>(a.createdAt||'').localeCompare(b.createdAt||''));
   st.city = id => st.cities.find(c => c.id === id);
   st.memory = id => st.memories.find(m => m.id === id);
-  st.memoriesOf = cityId => st.memories.filter(m => m.cityId === cityId).sort((a,b)=>(a.date||'').localeCompare(b.date||'') || (a.createdAt||'').localeCompare(b.createdAt||''));
+  // v1.10.1：按日序号排序（YYYY-MM 视为当月 1 日），同一天按创建先后
+  st.memoriesOf = cityId => st.memories.filter(m => m.cityId === cityId).sort((a,b)=>((SB.date?.day(a.date) ?? 1e9) - (SB.date?.day(b.date) ?? 1e9)) || (a.createdAt||'').localeCompare(b.createdAt||''));
   st.visitedCountries = () => new Set(st.cities.map(c => c.country));
   st.visitedRegions = country => new Set(st.cities.filter(c => c.country === country).map(c => c.region));
   st.stats = () => ({

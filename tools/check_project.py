@@ -200,6 +200,16 @@ if 'SB.yearReel = ' not in block_text.get('14-year-reel.html', ''):
 if "el.addEventListener('ended'" not in block_text.get('11-memory-player.html', ''):
     print('ERROR: background music auto-loop recovery missing')
     sys.exit(1)
+# v1.10.1 guards: windowed ring (cards + beads), no lazy images, no rebuild on unchanged data; day-precision dates; book page night world.
+if 'function arcs(' not in ov or 'sigOf()' not in ov or 'loading="lazy"' in ov or 'settings?.anniversary' not in ov:
+    print('ERROR: overview v1.10.1 (arcs fisheye window / sigOf rebuild guard / no lazy images / settings.anniversary) broken')
+    sys.exit(1)
+if 'SB.date = ' not in block_text.get('00-core.html', '') or 'SB.date.daysIn' not in block_text.get('12-memory-editor.html', ''):
+    print('ERROR: day-precision dates (SB.date in core, day select in editor) missing')
+    sys.exit(1)
+if "world:'night', deepLink:true,\n    title:()=>'魔法书'" not in block_text.get('03-magic-book.html', ''):
+    print("ERROR: magic book scene must use world 'night' (starry blue background, v1.10.1)")
+    sys.exit(1)
 # GBK-misread UTF-8 (mojibake) markers that appeared when Windows PowerShell read BOM-less UTF-8 as ANSI.
 MOJIBAKE = ['銆', '锛', '鈥', '鈹', '鏄熷', '涔嬩功']
 for rel in ['AGENTS.md', 'README.md', 'PROJECT_STATE.md', 'CHANGELOG.md', 'ROADMAP.md', 'blocks/00-config.html']:
