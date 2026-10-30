@@ -59,3 +59,9 @@
 
 ## v1.9.1 · 搜索面板去掉数据来源行
 Owner 不希望搜索结果下方出现「数据：国家统计局 / 高德 …」一行字：从搜索面板移除 `.src` 行。数据来源与许可说明保留在 `README.md`「数据来源」一节与 `tools/make_admin.py` / `tools/make_cities.py` 的文件头中（Open-Meteo 地理编码为 CC BY 4.0，GeoNames 为 CC BY 4.0，在项目文档中署名）。
+
+## v1.10.2 · 拖动稳定（Owner：地球转动久了会转不动，拖动出现禁止符号）
+- 七大洲徽章是可点击的按钮，会随地球转动；在徽章上按下拖动时事件不到画布，地球不转。修复：徽章 `pointerdown` 也交给地球的拖动逻辑（由画布捕获指针），没有移动（< 6px / 触屏 14px）时才算点击徽章。
+- 指针表自愈：鼠标 / 主指针 `pointerdown`（`isPrimary`）时清空残留的指针记录（之前漏掉一次 `pointerup` 就会被当成「双指缩放」，拖动只缩放不旋转）；处理 `lostpointercapture`、`blur`。
+- 全局阻止原生拖放与文字选区（见 `prompts/00-core.md`），地球场景 `user-select:none`（搜索框除外）。
+- 性能：徽章位置每帧更新时不再读取 `offsetWidth`（写 transform 后立刻读布局会强制同步布局），尺寸在创建 / 缩放时测一次缓存。

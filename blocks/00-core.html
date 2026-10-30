@@ -212,10 +212,19 @@ window.SB = window.SB || {};
   const cores = Number(navigator.hardwareConcurrency) || 8;
   const memory = Number(navigator.deviceMemory) || 0;
   const lowHardware = cores <= 4 || (memory > 0 && memory <= 4) || small || touch;
-  SB.perf = { level: reduced ? 'reduced' : (lowHardware ? 'low' : 'high'), small, reduced, touch, cores, memory:memory || null };
+  const android = /Android/i.test(navigator.userAgent || '');       // v1.10.2：安卓专属降级（prompts/performance/06-android.md）
+  SB.perf = { level: reduced ? 'reduced' : (lowHardware ? 'low' : 'high'), small, reduced, touch, cores, memory:memory || null, android };
   try{ const saved = localStorage.getItem('sb-motion'); if(saved && !reduced) SB.perf.level = saved; }catch(e){}
   document.documentElement.dataset.sbPerf = SB.perf.level;
 
+  /* v1.10.2 全局拖放保护：页面里没有需要原生拖拽的图片 / 文字 / 链接；原生拖放一旦接管指针会触发 pointercancel，
+     地球 / 时光之环就「转不动」并显示禁止光标。只有显式 draggable="true" 的元素（编辑器照片卡）允许拖拽。 */
+  document.addEventListener('dragstart', e => { const t = e.target; if(!(t?.closest?.('[draggable="true"]'))) e.preventDefault(); }, true);
+  // 拖动面：按下时清掉页面上的文字选区（避免下一次按在选区上触发原生拖放）
+  SB.dragSurface = el => el.addEventListener('pointerdown', e => {
+    if(e.pointerType !== 'mouse') return;
+    const sel = getSelection?.(); if(sel && sel.rangeCount && !sel.isCollapsed && !document.activeElement?.matches?.('input,textarea,[contenteditable]')) sel.removeAllRanges();
+  }, true);
   SB.wait = ms => new Promise(r => setTimeout(r, ms));
   SB.nextPaint = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
   SB.lerp = (a,b,t) => a + (b-a)*t;

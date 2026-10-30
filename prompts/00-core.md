@@ -34,3 +34,8 @@
 - `SB.perf`：`high / low / reduced` 三档。
 - `SB.loadScript(urls[])`：按顺序尝试多个地址加载脚本，第一个成功即返回（用于地图数据和 3D 引擎）。
 - `SB.esc(text)`：转义 HTML。
+
+## v1.10.2 · 全局拖放保护与安卓识别
+- `dragstart`（捕获阶段）：目标不在 `[draggable="true"]` 内时 `preventDefault()`——页面里没有需要原生拖拽的图片 / 文字；编辑器照片卡自己设置了 `draggable="true"`，不受影响；从桌面把文件拖进编辑器是 `drop` 事件，也不受影响。
+- `SB.dragSurface(el)`：给拖动面用的小工具——按下时清除文字选区。
+- `SB.perf.android`：UA 含 Android（安卓 Chrome / WebView）。用于少数安卓专属降级（见 `prompts/performance/06-android.md`）；不改变三档 `high / low / reduced` 的含义。

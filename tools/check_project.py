@@ -210,6 +210,17 @@ if 'SB.date = ' not in block_text.get('00-core.html', '') or 'SB.date.daysIn' no
 if "world:'night', deepLink:true,\n    title:()=>'魔法书'" not in block_text.get('03-magic-book.html', ''):
     print("ERROR: magic book scene must use world 'night' (starry blue background, v1.10.1)")
     sys.exit(1)
+# v1.10.2 guards: reel seek + progress bar and no flying tail line; return position via history; global drag guard; Android proxies.
+yr = block_text.get('14-year-reel.html', '')
+if 'function seekTo(' not in yr or 'yr-bar' not in yr or 'class="tail"' in yr:
+    print('ERROR: year reel v1.10.2 (seekTo / progress bar, no flying tail line) broken')
+    sys.exit(1)
+if 'opts?.fromHistory' not in ov:
+    print('ERROR: overview must restore position when returning via history (fromHistory)')
+    sys.exit(1)
+if "addEventListener('dragstart'" not in block_text.get('00-core.html', '') or 'st.displayUrl' not in block_text.get('05-store.html', ''):
+    print('ERROR: global dragstart guard (00-core) or Android display proxies (05-store) missing')
+    sys.exit(1)
 # GBK-misread UTF-8 (mojibake) markers that appeared when Windows PowerShell read BOM-less UTF-8 as ANSI.
 MOJIBAKE = ['銆', '锛', '鈥', '鈹', '鏄熷', '涔嬩功']
 for rel in ['AGENTS.md', 'README.md', 'PROJECT_STATE.md', 'CHANGELOG.md', 'ROADMAP.md', 'blocks/00-config.html']:

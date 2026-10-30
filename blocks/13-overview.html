@@ -234,7 +234,7 @@
   }
   function build(intro, keepId){
     S.sig = sigOf();
-    S.list = sorted(); S.st = stations(S.list); S.arc = null; S._fw = null; S.hb = -1; S.hover = -1; tip.classList.remove('on');
+    S.list = sorted(); S.st = stations(S.list); S.arc = null; S._fw = null; S.hb = -1; S.hover = -1; S.near = -1; tip.classList.remove('on');   // v1.10.2：重建后焦点样式要重新挂上
     track.innerHTML = ''; scene.querySelector('.tl-empty')?.remove();
     layout();
     const N = S.st.length;
@@ -278,7 +278,7 @@
       ce.addEventListener('click', e => { e.stopPropagation(); if(S.moved > 6) return; SB.scenes.go('city', {id:c.id}, {transition:'quill', x:e.clientX, y:e.clientY}); }); }
     card.addEventListener('click', e => { e.stopPropagation(); if(S.moved > 6) return;
       if(o.i !== S.near){ center(o.i); return; }      // 不在焦点：先转过来（已是焦点则直接打开）
-      SB.scenes.go('player', {id:m.id, from:'overview'}, {transition:'pensieve', x:e.clientX, y:e.clientY}); });
+      S.lastKey = keyOf(o); SB.scenes.go('player', {id:m.id, from:'overview'}, {transition:'pensieve', x:e.clientX, y:e.clientY}); });
     card.addEventListener('pointerenter', e => { if(e.pointerType === 'mouse') S.hover = o.i; });
     card.addEventListener('pointerleave', () => { if(S.hover === o.i) S.hover = -1; });
     card.addEventListener('focus', () => { if(!S.drag) center(o.i); });
@@ -361,7 +361,8 @@
     try{ await SB.store.prefetchUrls?.(ids); }catch(_){}
     for(const o of list){
       if(!o.el?.isConnected) continue;
-      const url = SB.store.url(coverOf(o.m)), img = o.el.querySelector('.rc-f.front img');
+      // v1.10.2：安卓用 520px 缩略代理图（卡片最宽约 230px）
+      const url = SB.store.proxyOn?.() ? await SB.store.displayUrl(coverOf(o.m), 520) : SB.store.url(coverOf(o.m)), img = o.el.querySelector('.rc-f.front img');
       if(!url || !img){ o.img = null; clearTimeout(S.imgT); S.imgT = setTimeout(() => S.active && wantImgs(uNow()), 2500); continue; }   // 弱网：稍后重试
       o.img = 'ld';
       const pre = new Image(); pre.decoding = 'async'; pre.src = url;
@@ -515,9 +516,16 @@
   }
 
   /* ── 运动：拖动 / 惯性 / 点击直达（定时缓动）；场景激活时持续运行（偏转、摆动、光点） ── */
+  // v1.10.2：任何一帧出错都不让循环停下（之前会表现为「转不动、也不报错」）
+  let loopErr = 0;
   function loop(now){
     S.raf = 0;
     if(!S.active) return;
+    // v1.10.2：时光剪影盖在时光长卷上放映时，下面的环不再逐帧渲染（之前白白占着主线程与 GPU）
+    if(document.body.classList.contains('sb-reel-open')){ clearTimeout(S.pollT); S.pollT = setTimeout(kick, 300); S.last = 0; return; }
+    try{ step(now); }catch(e){ if(loopErr++ < 3) console.warn('[overview loop]', e); S.tw = null; S.drag = null; view.classList.remove('drag'); S.raf = requestAnimationFrame(loop); }
+  }
+  function step(now){
     if(lite() && S.last && now - S.last < 1000/30 - 4 && !S.tw){ S.raf = requestAnimationFrame(loop); return; }
     const dt = Math.min(.05, (now - (S.last || now))/1000) || 1/60; S.last = now; S.dtLast = dt; S.clock += dt*1000;
     if(S.tw){
@@ -581,7 +589,7 @@
     S.target = rubber(d.x0 - dx);
   });
   const up = e => {
-    const d = S.drag; if(!d || d.id !== e.pointerId) return;
+    const d = S.drag; if(!d || (e && d.id !== e.pointerId)) return;
     S.drag = null; view.classList.remove('drag');
     if(S.moved <= 6){ S.target = d.x0; setTimeout(() => { S.moved = 0; }, 0); kick(); return; }   // 轻点：交给 click
     if(performance.now() - d.lastT < 90) S.v = SB.clamp(d.v, -60, 60);
@@ -589,7 +597,11 @@
     S.v = 0; S.target = land*S.step;
     kick(); setTimeout(() => { S.moved = 0; }, 0);
   };
-  view.addEventListener('pointerup', up); view.addEventListener('pointercancel', up);
+  // v1.10.2：抬起可能落在标题 / 刻度条等兄弟层上（view 收不到）→ 在 window 上监听；失去捕获 / 失焦也结束拖动
+  addEventListener('pointerup', up, true); addEventListener('pointercancel', up, true);
+  view.addEventListener('lostpointercapture', e => { if(S.drag && S.drag.id === e.pointerId && view.classList.contains('drag')) up(e); });
+  addEventListener('blur', () => { if(S.drag) up({pointerId:S.drag.id}); });
+  SB.dragSurface?.(view);
   view.addEventListener('click', e => {
     if(S.moved > 6 || e.target.closest('.rc,.rn-plq')) return;
     const i = hit(e.clientX, e.clientY); if(i >= 0) center(i);
@@ -647,7 +659,8 @@
       if(ids.length) await SB.store.prefetchUrls?.(ids);
     },
     // 从放映返回时回到离开前的那一段（而不是总跳回最新）
-    enter(p, opts){ SB.fx.palette('night'); S.active = true; S.clock = 0; build(!opts?.back, opts?.back ? S.lastKey : null); kick(); },
+    // v1.10.2：从放映返回多数走浏览器历史（popstate → fromHistory），之前只认 back 标记 → 总是回到最新
+    enter(p, opts){ SB.fx.palette('night'); S.active = true; S.clock = 0; const ret = !!(opts?.back || opts?.fromHistory) && S.lastKey != null; build(!ret, ret ? S.lastKey : null); kick(); },
     leave(){ S.lastKey = keyOf(S.st[S.near]); S.active = false; cancelAnimationFrame(S.raf); S.raf = 0; S.drag = null; S.tw = null; setHb(-1); SB.yearReel?.close?.(true); }
   });
   SB.overview = { get state(){ return {n:S.st.length, near:S.near, u:uNow(), anchor:S.anchor, cards:S.st.filter(o => !o.off).length,

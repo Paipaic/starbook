@@ -7,7 +7,7 @@
 ## 1. 当前项目身份
 
 - Project: **Starbook / 星屿之书**
-- Current version: **1.10.1**
+- Current version: **1.10.2**
 - Production branch: **`main`**
 - Production deploy: **GitHub Pages via GitHub Actions**
 - Runtime backend: **Supabase Anniversary Bridge**
@@ -233,3 +233,9 @@ python tools/check_project.py
 - 回忆 `date` 可为 `YYYY` / `YYYY-MM` / `YYYY-MM-DD`；排序、周年、分段一律用 `SB.date.day()`，不要再用字符串比较或月序号。旧数据只有年月时按当月 1 日计算。
 - 周年起点是可选的 `settings.anniversary`（YYYY-MM-DD，在 `book_data.payload.settings` 内，无 schema 变化）；未设置时用最早一段回忆的日期。
 - 魔法书页的场景 world 为 `night`（与其他页面同一星空深蓝背景）；金色只属于书本自身的光，不要再把整页背景做成暖金色。
+
+### v1.10.2 时光剪影进度条 / 返回原位 / 拖动稳定 / 安卓性能
+- 「时光剪影」跳转只能通过 `seekTo(T)`：重放 cue + 用 `getAnimations()` 前移新动画的 `currentTime`；新增片段时，退场类 cue 必须根据 `R.lag` 立即移除已经退场很久的元素（参考 `chapterOut`）。尾声不要再画飞出表盘的线——「未完待续」用表盘自身的语言表达（外圈新光）。
+- 场景 `enter` 判断「返回」时必须同时认 `opts.back` 与 `opts.fromHistory`（从子页返回多数走浏览器历史）。
+- 全局已阻止原生 `dragstart`（除 `[draggable="true"]`）；新的拖动面请调用 `SB.dragSurface(el)`、设 `user-select:none`，并在 window 上兜底 `pointerup / pointercancel`、处理 `lostpointercapture` 与 `blur`；主指针按下时清空残留指针表。
+- 安卓专属降级集中在 `SB.perf.android`（见 `prompts/performance/06-android.md`）：显示尺寸代理图 `SB.store.displayUrl()`、放映 low 档只用 transform 的画内运动与等比缩放、遮罩转场换淡入淡出、全屏 canvas 像素比上限。桌面 / iOS 行为不因此改变（low 档的 transform 化对所有 low 档设备生效，视觉等价）。

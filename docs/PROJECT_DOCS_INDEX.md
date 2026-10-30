@@ -76,6 +76,7 @@ v1.6.0+ 一键版本发布机制。说明 `release-current.ps1`、自动 Release
 - `prompts/performance/03-globe-to-country.md`
 - `prompts/performance/04-country-city-deep-scenes.md`
 - `prompts/performance/05-scene-runtime-transaction.md`
+- `prompts/performance/06-android.md`（v1.10.2 安卓：显示尺寸代理图、放映 transform 化、canvas 像素比）
 
 ## v1.7.3 转场专项验收
 

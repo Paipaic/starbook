@@ -1,4 +1,7 @@
 <style>
+/* v1.10.2：拖动面不允许选中文字（避免原生拖放接管指针） */
+.sb-scene[data-scene="country"]{user-select:none;-webkit-user-select:none;}
+.sb-scene[data-scene="country"] input{user-select:text;-webkit-user-select:text;}
 /* ── 块 09 · 国家地图与省份星星 ── */
 .cm-head{position:absolute;left:50%;top:calc(16px + var(--safe-t));transform:translateX(-50%);text-align:center;pointer-events:none;z-index:3;
   display:flex;flex-direction:column;align-items:center;gap:4px;width:max-content;max-width:calc(100vw - 32px);}
@@ -255,7 +258,8 @@
   });
   svg.addEventListener('pointerout', e => { if(e.pointerType === 'mouse' && e.target.dataset?.key && !pop.contains(e.relatedTarget)) hidePop(); });
   svg.addEventListener('pointerdown', e => {
-    svg.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY, key:e.target.dataset?.key}); moved = 0;
+    if(e.isPrimary){ ptrs.clear(); pinch = 0; }          // v1.10.2：清掉残留指针（见 prompts/07-globe.md v1.10.2）
+    try{ svg.setPointerCapture(e.pointerId); }catch(_){} ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY, key:e.target.dataset?.key}); moved = 0;
     if(ptrs.size === 2){ const [a,b] = [...ptrs.values()]; pinch = Math.hypot(a.x-b.x, a.y-b.y); }
   });
   svg.addEventListener('pointermove', e => {
@@ -274,6 +278,9 @@
     }
   };
   svg.addEventListener('pointerup', up); svg.addEventListener('pointercancel', up);
+  svg.addEventListener('lostpointercapture', e => { if(ptrs.has(e.pointerId)) up(e); });
+  addEventListener('blur', () => { ptrs.clear(); pinch = 0; svg.classList.remove('dragging'); });
+  SB.dragSurface?.(svg);
   svg.addEventListener('wheel', e => { e.preventDefault(); zoomAt(e.deltaY < 0 ? 1.18 : 1/1.18, e.clientX, e.clientY); }, {passive:false});
   svg.addEventListener('dblclick', () => { S.vb = {x:0, y:0, k:1}; applyView(); });
   $('cm-zin').addEventListener('click', () => zoomAt(1.4, innerWidth/2, innerHeight/2));

@@ -260,3 +260,10 @@ Core 级日期工具（`blocks/00-core.html`）：`parse / day / str / dot / add
 ### `settings.anniversary`（v1.10.1）
 
 Book 级可选设置（`book_data.payload.settings.anniversary`，`YYYY-MM-DD`），表示这本书的「周年起点」。当前只有时光长卷使用；名称不绑定「情侣」语义——其他关系的书也可以把它理解为「这本书的纪念日」。未设置时由 Experience 自行决定默认值（当前：最早一段回忆的日期）。
+
+### v1.10.2 新增接口
+
+- `SB.yearReel.seek(T)`：精确跳转（测试 / 外部控制可用）。
+- `SB.store.displayUrl(id, side?)` / `proxyOn()` / `displaySide()`：显示尺寸代理图（当前只在安卓启用），返回 `blob:` 或原签名地址；属于媒体读取层，不改变 Storage 内容。
+- `SB.dragSurface(el)`、`SB.perf.android`（Core）。
+- `SB.globe.rot`（调试）。

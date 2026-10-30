@@ -134,7 +134,7 @@
     paths = [...new Set(paths.filter(Boolean))]; if(!paths.length || !st.canUpload) return;
     try{
       const {error} = await bucket().remove(paths); if(error) throw error;
-      for(const id of paths){ if(preview[id]){ URL.revokeObjectURL(preview[id]); delete preview[id]; } delete signed[id]; }
+      for(const id of paths){ if(preview[id]){ URL.revokeObjectURL(preview[id]); delete preview[id]; } delete signed[id]; dropProxies(id); }
     }catch(e){ console.error('[Starbook storage cleanup]',e); }
   }
 
@@ -195,6 +195,58 @@
     // 初次签名若曾因弱网失败，组件再次询问 URL 时自动补签；成功后 sb:data 会触发重绘。
     signPaths([id],{notify:true});
     return '';
+  };
+
+  /* ── v1.10.2 显示尺寸代理图（prompts/performance/06-android.md）：只在安卓启用。
+     签名地址 → fetch Blob → createImageBitmap 后台解码并缩放 → JPEG → blob: 地址；任何一步失败都回退原签名地址。
+     原图（上传上限 2400px）在手机上只需要约 1280–1800px：解码内存约为原来的 1/2–1/3，安卓光栅不再因大图解码卡顿 / 棋盘格闪烁。 */
+  const proxies = new Map(), PROXY_MAX = 160;
+  st.proxyOn = () => !!SB.perf?.android && typeof createImageBitmap === 'function' && typeof fetch === 'function';
+  st.displaySide = () => SB.clamp(Math.round(Math.max(screen.width || innerWidth, screen.height || innerHeight)*Math.min(devicePixelRatio || 1, 2)), 1280, 1800);
+  function dropProxies(id){ for(const [k, r] of proxies) if(k.startsWith(id + '@')){ if(r.url) URL.revokeObjectURL(r.url); proxies.delete(k); } }
+  function trimProxies(){
+    if(proxies.size <= PROXY_MAX) return;
+    const old = [...proxies.entries()].sort((a, b) => a[1].at - b[1].at);
+    for(const [k, r] of old){
+      if(proxies.size <= PROXY_MAX*.8) break;
+      if(r.url && document.querySelector(`img[src="${r.url}"]`)) continue;           // 页面上还在用的不回收
+      if(r.url) URL.revokeObjectURL(r.url); proxies.delete(k);
+    }
+  }
+  // 同时最多生成 3 张（按请求顺序），避免一次性解码十几张大图把手机 CPU 打满
+  let proxyBusy = 0; const proxyQ = [];
+  const proxySlot = () => new Promise(r => { if(proxyBusy < 3){ proxyBusy++; r(); } else proxyQ.push(r); });
+  const proxyFree = () => { const n = proxyQ.shift(); if(n) n(); else proxyBusy--; };
+  async function makeProxy(src, side){
+    await proxySlot();
+    try{ return await makeProxyNow(src, side); } finally { proxyFree(); }
+  }
+  async function makeProxyNow(src, side){
+    const res = await fetch(src, {mode:'cors', credentials:'omit'}); if(!res.ok) throw new Error('http ' + res.status);
+    const blob = await res.blob(), bm = await createImageBitmap(blob);
+    const k = Math.min(1, side/Math.max(bm.width, bm.height));
+    if(k > 1/1.15){ bm.close?.(); return URL.createObjectURL(blob); }                   // 原图已经够小：直接用下载好的 Blob
+    const w = Math.max(1, Math.round(bm.width*k)), h = Math.max(1, Math.round(bm.height*k));
+    let small; try{ small = await createImageBitmap(bm, {resizeWidth:w, resizeHeight:h, resizeQuality:'high'}); } finally { bm.close?.(); }
+    // 用 CPU 画布编码（willReadFrequently）：避免 GPU 画布 convertToBlob 的回读等待；toBlob 由浏览器在后台线程编码
+    const cv = Object.assign(document.createElement('canvas'), {width:w, height:h});
+    cv.getContext('2d', {alpha:false, willReadFrequently:true}).drawImage(small, 0, 0, w, h); small.close?.();
+    const out = await new Promise(r => cv.toBlob(r, 'image/jpeg', .86)); cv.width = cv.height = 0;
+    if(!out) throw new Error('encode');
+    return URL.createObjectURL(out);
+  }
+  st.displayUrl = async (id, side) => {
+    if(!id) return '';
+    if(!st.url(id)) await signPaths([id]);
+    const src = st.url(id);
+    if(!src || preview[id] || !st.proxyOn()) return src;
+    side = Math.round(side || st.displaySide());
+    const key = id + '@' + side, hit = proxies.get(key);
+    if(hit){ hit.at = Date.now(); const u = await hit.p; return u || st.url(id); }
+    const rec = {at:Date.now(), url:''};
+    rec.p = makeProxy(src, side).then(u => (rec.url = u), e => { console.warn('[Starbook proxy]', e?.message || e); return ''; });
+    proxies.set(key, rec); trimProxies();
+    return (await rec.p) || st.url(id);
   };
 
   st.health = async () => {

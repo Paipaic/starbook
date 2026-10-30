@@ -65,9 +65,10 @@
   }
   function resize(){
     DPR = Math.min(devicePixelRatio || 1, SB.perf.level === 'high' ? (SB.perf.touch ? 1.5 : 1.75) : SB.perf.level === 'low' ? 1.25 : 1);
+    if(SB.perf.android) DPR = Math.min(DPR, 1);          // v1.10.2：安卓两层全屏叠加 canvas 像素比上限 1（prompts/performance/06-android.md）
     W = innerWidth; H = innerHeight;
     for(const [c,x] of [[back,bctx],[front,fctx]]){ c.width = W*DPR; c.height = H*DPR; x.setTransform(DPR,0,0,DPR,0,0); }
-    const n = count();
+    const n = Math.round(count()*(SB.perf.android ? .7 : 1));
     while(parts.length < n) parts.push(spawn({}, true));
     parts.length = n;
     buildOrbit();
