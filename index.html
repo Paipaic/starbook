@@ -1,9 +1,9 @@
 <!-- ████ BLOCK 00-config START ████ -->
 <script>
-/* ── Starbook v1.10.1 · 公开客户端配置 ──
+/* ── Starbook v1.10.2 · 公开客户端配置 ──
    Publishable Key 设计上允许出现在浏览器；不要在此文件放 Secret / service_role / 数据库密码。 */
 window.STARBOOK_CONFIG = Object.freeze({
-  version: '1.10.1',
+  version: '1.10.2',
   supabaseUrl: 'https://xowbbcumcxtsrrnulunb.supabase.co',
   supabasePublishableKey: 'sb_publishable_SYGBrk2PiwwzRXZm03Patg_oDlYSIGd',
   storageBucket: 'starbook-media',
@@ -233,10 +233,19 @@ window.SB = window.SB || {};
   const cores = Number(navigator.hardwareConcurrency) || 8;
   const memory = Number(navigator.deviceMemory) || 0;
   const lowHardware = cores <= 4 || (memory > 0 && memory <= 4) || small || touch;
-  SB.perf = { level: reduced ? 'reduced' : (lowHardware ? 'low' : 'high'), small, reduced, touch, cores, memory:memory || null };
+  const android = /Android/i.test(navigator.userAgent || '');       // v1.10.2：安卓专属降级（prompts/performance/06-android.md）
+  SB.perf = { level: reduced ? 'reduced' : (lowHardware ? 'low' : 'high'), small, reduced, touch, cores, memory:memory || null, android };
   try{ const saved = localStorage.getItem('sb-motion'); if(saved && !reduced) SB.perf.level = saved; }catch(e){}
   document.documentElement.dataset.sbPerf = SB.perf.level;
 
+  /* v1.10.2 全局拖放保护：页面里没有需要原生拖拽的图片 / 文字 / 链接；原生拖放一旦接管指针会触发 pointercancel，
+     地球 / 时光之环就「转不动」并显示禁止光标。只有显式 draggable="true" 的元素（编辑器照片卡）允许拖拽。 */
+  document.addEventListener('dragstart', e => { const t = e.target; if(!(t?.closest?.('[draggable="true"]'))) e.preventDefault(); }, true);
+  // 拖动面：按下时清掉页面上的文字选区（避免下一次按在选区上触发原生拖放）
+  SB.dragSurface = el => el.addEventListener('pointerdown', e => {
+    if(e.pointerType !== 'mouse') return;
+    const sel = getSelection?.(); if(sel && sel.rangeCount && !sel.isCollapsed && !document.activeElement?.matches?.('input,textarea,[contenteditable]')) sel.removeAllRanges();
+  }, true);
   SB.wait = ms => new Promise(r => setTimeout(r, ms));
   SB.nextPaint = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
   SB.lerp = (a,b,t) => a + (b-a)*t;
@@ -981,9 +990,10 @@ html:not([data-sb-perf="high"]) .sb-gate-tw,html:not([data-sb-perf="high"]) .sb-
   }
   function resize(){
     DPR = Math.min(devicePixelRatio || 1, SB.perf.level === 'high' ? (SB.perf.touch ? 1.5 : 1.75) : SB.perf.level === 'low' ? 1.25 : 1);
+    if(SB.perf.android) DPR = Math.min(DPR, 1);          // v1.10.2：安卓两层全屏叠加 canvas 像素比上限 1（prompts/performance/06-android.md）
     W = innerWidth; H = innerHeight;
     for(const [c,x] of [[back,bctx],[front,fctx]]){ c.width = W*DPR; c.height = H*DPR; x.setTransform(DPR,0,0,DPR,0,0); }
-    const n = count();
+    const n = Math.round(count()*(SB.perf.android ? .7 : 1));
     while(parts.length < n) parts.push(spawn({}, true));
     parts.length = n;
     buildOrbit();
@@ -1159,6 +1169,7 @@ html:not([data-sb-perf="high"]) .sb-gate-tw,html:not([data-sb-perf="high"]) .sb-
 
   function size(){
     G.dpr = Math.min(devicePixelRatio || 1, lowTier() ? 1 : 1.5);
+    if(SB.perf.android) G.dpr = Math.min(G.dpr, .8);      // v1.10.2：转场门是柔光，安卓上以 0.8 像素比绘制（肉眼无差别，填充量约减 1/3）
     G.W = innerWidth; G.H = innerHeight; G.m = Math.min(G.W, G.H);
     cv.width = Math.round(G.W*G.dpr); cv.height = Math.round(G.H*G.dpr);
   }
@@ -2887,7 +2898,7 @@ html:not([data-sb-perf="high"]) .cv-flow{display:none;}
     paths = [...new Set(paths.filter(Boolean))]; if(!paths.length || !st.canUpload) return;
     try{
       const {error} = await bucket().remove(paths); if(error) throw error;
-      for(const id of paths){ if(preview[id]){ URL.revokeObjectURL(preview[id]); delete preview[id]; } delete signed[id]; }
+      for(const id of paths){ if(preview[id]){ URL.revokeObjectURL(preview[id]); delete preview[id]; } delete signed[id]; dropProxies(id); }
     }catch(e){ console.error('[Starbook storage cleanup]',e); }
   }
 
@@ -2948,6 +2959,58 @@ html:not([data-sb-perf="high"]) .cv-flow{display:none;}
     // 初次签名若曾因弱网失败，组件再次询问 URL 时自动补签；成功后 sb:data 会触发重绘。
     signPaths([id],{notify:true});
     return '';
+  };
+
+  /* ── v1.10.2 显示尺寸代理图（prompts/performance/06-android.md）：只在安卓启用。
+     签名地址 → fetch Blob → createImageBitmap 后台解码并缩放 → JPEG → blob: 地址；任何一步失败都回退原签名地址。
+     原图（上传上限 2400px）在手机上只需要约 1280–1800px：解码内存约为原来的 1/2–1/3，安卓光栅不再因大图解码卡顿 / 棋盘格闪烁。 */
+  const proxies = new Map(), PROXY_MAX = 160;
+  st.proxyOn = () => !!SB.perf?.android && typeof createImageBitmap === 'function' && typeof fetch === 'function';
+  st.displaySide = () => SB.clamp(Math.round(Math.max(screen.width || innerWidth, screen.height || innerHeight)*Math.min(devicePixelRatio || 1, 2)), 1280, 1800);
+  function dropProxies(id){ for(const [k, r] of proxies) if(k.startsWith(id + '@')){ if(r.url) URL.revokeObjectURL(r.url); proxies.delete(k); } }
+  function trimProxies(){
+    if(proxies.size <= PROXY_MAX) return;
+    const old = [...proxies.entries()].sort((a, b) => a[1].at - b[1].at);
+    for(const [k, r] of old){
+      if(proxies.size <= PROXY_MAX*.8) break;
+      if(r.url && document.querySelector(`img[src="${r.url}"]`)) continue;           // 页面上还在用的不回收
+      if(r.url) URL.revokeObjectURL(r.url); proxies.delete(k);
+    }
+  }
+  // 同时最多生成 3 张（按请求顺序），避免一次性解码十几张大图把手机 CPU 打满
+  let proxyBusy = 0; const proxyQ = [];
+  const proxySlot = () => new Promise(r => { if(proxyBusy < 3){ proxyBusy++; r(); } else proxyQ.push(r); });
+  const proxyFree = () => { const n = proxyQ.shift(); if(n) n(); else proxyBusy--; };
+  async function makeProxy(src, side){
+    await proxySlot();
+    try{ return await makeProxyNow(src, side); } finally { proxyFree(); }
+  }
+  async function makeProxyNow(src, side){
+    const res = await fetch(src, {mode:'cors', credentials:'omit'}); if(!res.ok) throw new Error('http ' + res.status);
+    const blob = await res.blob(), bm = await createImageBitmap(blob);
+    const k = Math.min(1, side/Math.max(bm.width, bm.height));
+    if(k > 1/1.15){ bm.close?.(); return URL.createObjectURL(blob); }                   // 原图已经够小：直接用下载好的 Blob
+    const w = Math.max(1, Math.round(bm.width*k)), h = Math.max(1, Math.round(bm.height*k));
+    let small; try{ small = await createImageBitmap(bm, {resizeWidth:w, resizeHeight:h, resizeQuality:'high'}); } finally { bm.close?.(); }
+    // 用 CPU 画布编码（willReadFrequently）：避免 GPU 画布 convertToBlob 的回读等待；toBlob 由浏览器在后台线程编码
+    const cv = Object.assign(document.createElement('canvas'), {width:w, height:h});
+    cv.getContext('2d', {alpha:false, willReadFrequently:true}).drawImage(small, 0, 0, w, h); small.close?.();
+    const out = await new Promise(r => cv.toBlob(r, 'image/jpeg', .86)); cv.width = cv.height = 0;
+    if(!out) throw new Error('encode');
+    return URL.createObjectURL(out);
+  }
+  st.displayUrl = async (id, side) => {
+    if(!id) return '';
+    if(!st.url(id)) await signPaths([id]);
+    const src = st.url(id);
+    if(!src || preview[id] || !st.proxyOn()) return src;
+    side = Math.round(side || st.displaySide());
+    const key = id + '@' + side, hit = proxies.get(key);
+    if(hit){ hit.at = Date.now(); const u = await hit.p; return u || st.url(id); }
+    const rec = {at:Date.now(), url:''};
+    rec.p = makeProxy(src, side).then(u => (rec.url = u), e => { console.warn('[Starbook proxy]', e?.message || e); return ''; });
+    proxies.set(key, rec); trimProxies();
+    return (await rec.p) || st.url(id);
   };
 
   st.health = async () => {
@@ -3205,6 +3268,10 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 <style>
 /* ── 块 07 · 3D 世界星图地球仪（v1.8.0：星辉层次 + 搜索栏飞转定位 + 大洲徽章转向） ── */
 #gl-canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab;display:block;}
+/* v1.10.2：地球场景不允许选中文字（避免按在选区上触发原生拖放 → 禁止光标、地球转不动）；输入框除外 */
+.sb-scene[data-scene="globe"]{user-select:none;-webkit-user-select:none;}
+.sb-scene[data-scene="globe"] input,.sb-scene[data-scene="globe"] textarea{user-select:text;-webkit-user-select:text;}
+.gl-cont{touch-action:none;-webkit-user-drag:none;}
 #gl-canvas.dragging{cursor:grabbing;}
 .gl-head{position:absolute;left:50%;top:calc(14px + var(--safe-t));transform:translateX(-50%);text-align:center;pointer-events:none;z-index:3;
   display:flex;flex-direction:column;align-items:center;gap:4px;width:min(560px, calc(100vw - 32px));}
@@ -3640,7 +3707,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
     const s = SB.store.stats();
     $('gl-stat').textContent = s.cities ? `已点亮 ${s.countries} 个国家 · ${s.cities} 座城市 · ${s.memories} 段回忆` : '还没有点亮任何地方 · 搜索一座城市开始吧';
     const vis = SB.store.visitedCountries();
-    contBtns.forEach(({c, badge}) => { const n = SB.geo.inContinent(c.code).filter(x => vis.has(x.key)).length; badge.innerHTML = n ? SB.icon('star') + n : ''; });
+    contBtns.forEach(({c, b, badge}) => { const n = SB.geo.inContinent(c.code).filter(x => vis.has(x.key)).length; badge.innerHTML = n ? SB.icon('star') + n : ''; b._sz = null; });
   }
   document.addEventListener('sb:data', () => {
     refreshStats(); index.mine = null;
@@ -3652,7 +3719,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   function resize(){
     if(!renderer) return;
     const W = innerWidth, H = innerHeight;
-    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, hi() ? 1.75 : 1.25));
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, hi() ? 1.75 : SB.perf.android ? 1 : 1.25));   // v1.10.2：安卓上限 1
     renderer.setSize(W, H, false);
     camera.aspect = W/H; camera.updateProjectionMatrix();
     const narrow = W <= 700;
@@ -3661,7 +3728,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
     view.shift = narrow ? .12 : .085;           // 地球整体下移（视口高度比例 / 2），给顶部搜索栏留空间
     [starMat, ...dustMats].forEach(m => m.uniforms.px.value = renderer.getPixelRatio()*(H/900));
   }
-  addEventListener('resize', () => { if(SB.scenes.current === 'globe') resize(); });
+  addEventListener('resize', () => { contBtns.forEach(o => { o.b._sz = null; }); if(SB.scenes.current === 'globe') resize(); });
 
   /* ── 交互：拖拽旋转、惯性、缩放、悬停、点击 ── */
   const ray = { rc:null, v:null };
@@ -3678,9 +3745,18 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   function bindControls(){
     const pts = new Map(); let pinch = 0, moved = 0, lastHover = 0;
     const tapMoveLimit = SB.perf.touch ? 14 : 6;
-    cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); pts.set(e.pointerId, {x:e.clientX, y:e.clientY}); moved = 0; view.idle = 0; cv.classList.add('dragging');
+    // v1.10.2：主指针按下时清掉残留的指针记录（之前漏掉一次 pointerup 会被当成双指缩放 → 只缩放不旋转）；
+    // 大洲徽章上按下也交给地球拖动（徽章随地球转动，之前在徽章上按下拖动地球不动），没有移动才算点击徽章
+    let downOn = null;
+    const down = (e, from) => { if(e.button && e.pointerType === 'mouse') return;
+      if(e.isPrimary){ pts.clear(); pinch = 0; }
+      try{ cv.setPointerCapture(e.pointerId); }catch(_){}
+      pts.set(e.pointerId, {x:e.clientX, y:e.clientY}); moved = 0; view.idle = 0; cv.classList.add('dragging'); downOn = from || null;
       closeResults();
-      if(pts.size === 2){ const [a,b] = [...pts.values()]; pinch = Math.hypot(a.x-b.x, a.y-b.y); } });
+      if(pts.size === 2){ const [a,b] = [...pts.values()]; pinch = Math.hypot(a.x-b.x, a.y-b.y); } };
+    cv.addEventListener('pointerdown', e => down(e));
+    contBtns.forEach(({c, b}) => b.addEventListener('pointerdown', e => { e.preventDefault(); down(e, c); }));
+    SB.dragSurface?.(cv);
     cv.addEventListener('pointermove', e => {
       const p = pts.get(e.pointerId);
       if(!p){
@@ -3696,13 +3772,17 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
       setHover(null);
     });
     const up = e => {
+      if(!pts.has(e.pointerId)) return;
       pts.delete(e.pointerId); if(pts.size < 2) pinch = 0; if(!pts.size) cv.classList.remove('dragging');
+      const from = downOn; if(!pts.size) downOn = null;
+      if(moved < tapMoveLimit && e.type === 'pointerup' && from){ toCont(from); return; }      // 轻点大洲徽章
       if(moved < tapMoveLimit && e.type === 'pointerup'){
         const h = pick(e.clientX, e.clientY);
         if(h?.country) SB.scenes.go('country', {k:h.country.key}, {transition:'portal', x:e.clientX, y:e.clientY});
       }
     };
-    cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+    cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up); cv.addEventListener('lostpointercapture', up);
+    addEventListener('blur', () => { pts.clear(); pinch = 0; downOn = null; cv.classList.remove('dragging'); });
     cv.addEventListener('pointerleave', () => setHover(null));
     cv.addEventListener('wheel', e => { e.preventDefault(); view.zoomT = SB.clamp(view.zoomT*(1 + Math.sign(e.deltaY)*.12), .58, 1.9); view.idle = 0; }, {passive:false});
   }
@@ -3987,7 +4067,9 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
       const x = (p.x*.5 + .5)*W, y = (-p.y*.5 + .5)*H;
       const a = SB.clamp((facing - .1)*3, 0, 1)*ease*(focus.on && focus.kind !== 'cont' ? .35 : 1);
       b.style.opacity = a.toFixed(2); b.style.pointerEvents = a > .3 ? 'auto' : 'none';
-      b.style.transform = `translate(${(x - b.offsetWidth/2).toFixed(1)}px, ${(y - b.offsetHeight + 3).toFixed(1)}px)`;
+      // v1.10.2：尺寸缓存（写 transform 后立刻读 offsetWidth 会强制同步布局，7 个徽章每帧 7 次）
+      const sz = b._sz || (b._sz = [b.offsetWidth, b.offsetHeight]); if(!sz[0]) b._sz = null;
+      b.style.transform = `translate(${(x - sz[0]/2).toFixed(1)}px, ${(y - sz[1] + 3).toFixed(1)}px)`;
     });
     renderer.render(scene, camera);
     requestAnimationFrame(loop);
@@ -4000,7 +4082,8 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   let lastCountry = null;
   document.addEventListener('sb:scene', e => { if(e.detail.id === 'country') lastCountry = e.detail.params?.k || null; else if(e.detail.id !== 'globe') lastCountry = null; });
 
-  SB.globe = { warmEngine:()=>SB.loadScript(THREE_URLS), prepare:init, focus:o => focusTo(o), search:q => { qIn.value = q; search(); return S; } };
+  SB.globe = { get rot(){ return [view.rotX, view.rotY]; },      // 调试 / 测试用（v1.10.2）
+    warmEngine:()=>SB.loadScript(THREE_URLS), prepare:init, focus:o => focusTo(o), search:q => { qIn.value = q; search(); return S; } };
 
   SB.scenes.register('globe', {
     world:'night', deepLink:true,
@@ -4034,6 +4117,9 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 
 <!-- ████ BLOCK 09-country-map START ████ -->
 <style>
+/* v1.10.2：拖动面不允许选中文字（避免原生拖放接管指针） */
+.sb-scene[data-scene="country"]{user-select:none;-webkit-user-select:none;}
+.sb-scene[data-scene="country"] input{user-select:text;-webkit-user-select:text;}
 /* ── 块 09 · 国家地图与省份星星 ── */
 .cm-head{position:absolute;left:50%;top:calc(16px + var(--safe-t));transform:translateX(-50%);text-align:center;pointer-events:none;z-index:3;
   display:flex;flex-direction:column;align-items:center;gap:4px;width:max-content;max-width:calc(100vw - 32px);}
@@ -4290,7 +4376,8 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   });
   svg.addEventListener('pointerout', e => { if(e.pointerType === 'mouse' && e.target.dataset?.key && !pop.contains(e.relatedTarget)) hidePop(); });
   svg.addEventListener('pointerdown', e => {
-    svg.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY, key:e.target.dataset?.key}); moved = 0;
+    if(e.isPrimary){ ptrs.clear(); pinch = 0; }          // v1.10.2：清掉残留指针（见 prompts/07-globe.md v1.10.2）
+    try{ svg.setPointerCapture(e.pointerId); }catch(_){} ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY, key:e.target.dataset?.key}); moved = 0;
     if(ptrs.size === 2){ const [a,b] = [...ptrs.values()]; pinch = Math.hypot(a.x-b.x, a.y-b.y); }
   });
   svg.addEventListener('pointermove', e => {
@@ -4309,6 +4396,9 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
     }
   };
   svg.addEventListener('pointerup', up); svg.addEventListener('pointercancel', up);
+  svg.addEventListener('lostpointercapture', e => { if(ptrs.has(e.pointerId)) up(e); });
+  addEventListener('blur', () => { ptrs.clear(); pinch = 0; svg.classList.remove('dragging'); });
+  SB.dragSurface?.(svg);
   svg.addEventListener('wheel', e => { e.preventDefault(); zoomAt(e.deltaY < 0 ? 1.18 : 1/1.18, e.clientX, e.clientY); }, {passive:false});
   svg.addEventListener('dblclick', () => { S.vb = {x:0, y:0, k:1}; applyView(); });
   $('cm-zin').addEventListener('click', () => zoomAt(1.4, innerWidth/2, innerHeight/2));
@@ -5745,6 +5835,8 @@ html[data-sb-perf="reduced"] .pl-hold i::after{animation:none;opacity:.5;}
   /* ── 照片：等待签名地址、预加载并解码 ── */
   const cache = new Map();
   async function urlOf(id){
+    // v1.10.2：安卓用显示尺寸代理图（prompts/performance/06-android.md），失败自动回退原图
+    if(SB.store.proxyOn?.()){ try{ const p = await SB.store.displayUrl(id); if(p) return p; }catch(_){} }
     let u = SB.store.url(id); if(u) return u;
     await SB.store.prefetchUrls?.([id]);
     u = SB.store.url(id); if(u) return u;
@@ -5758,6 +5850,7 @@ html[data-sb-perf="reduced"] .pl-hold i::after{animation:none;opacity:.5;}
       rec.url = url; if(!url){ rec.ready = true; return res(rec); }
       const img = new Image(); img.decoding = 'async';
       if('fetchPriority' in img) img.fetchPriority = priority;
+      rec.img = img;      // v1.10.2：保留预载对象引用，减少解码结果被逐出后重新解码（闪烁）
       img.onload = () => { (img.decode ? img.decode().catch(() => {}) : Promise.resolve()).then(() => { rec.ready = rec.ok = true; res(rec); }); };
       img.onerror = () => { rec.ready = true; res(rec); };
       img.src = url;
@@ -5881,6 +5974,8 @@ html[data-sb-perf="reduced"] .pl-hold i::after{animation:none;opacity:.5;}
 
   /* ── 转场库：返回 {o, tx, ty, sc, rot, blur, bri, clip, mask, maskSize} 的修改 ── */
   function fx(st, type, p, enter, dir, it, w, h){
+    // v1.10.2：安卓上遮罩 / 裁切类转场由 JS 逐帧改写会每帧重绘整张照片 → 换成同节奏的淡入淡出
+    if(SB.perf.android && (type === 'blinds' || type === 'ink' || type === 'iris')) type = 'fade';
     if(type === 'hold' || type === 'none' || p <= 0 && enter === false) return;
     if(reduced() && type !== 'hold') type = 'fade';
     const v = enter ? EO(p) : 1 - EIC(p);            // 可见度：1 完全可见，0 消失
@@ -5920,7 +6015,12 @@ html[data-sb-perf="reduced"] .pl-hold i::after{animation:none;opacity:.5;}
     let w = k.w*fw, h = k.h*fh, x = k.x*fw - w/2, y = k.y*fh - h/2;
     if(it.depth && !reduced()){ const d = drift(T); x += d.x*fw*it.depth; y += d.y*fh*it.depth; }
     it._c = [x + w/2, y + h/2];
-    setS(n, 'width', w.toFixed(1) + 'px'); setS(n, 'height', h.toFixed(1) + 'px');
+    // v1.10.2（low 档）：框的尺寸等比变化时用 scale() 代替逐帧改 width/height（逐帧改尺寸 = 每帧重新布局 + 重绘大图与大阴影）
+    let ks = 1;
+    if(lite()){
+      if(!n.bw || Math.abs((w/h)/(n.bw/n.bh) - 1) > .01 || w/n.bw > 1.6 || w/n.bw < .6){ n.bw = w; n.bh = h; setS(n, 'width', w.toFixed(1) + 'px'); setS(n, 'height', h.toFixed(1) + 'px'); }
+      ks = w/n.bw;
+    } else { n.bw = w; n.bh = h; setS(n, 'width', w.toFixed(1) + 'px'); setS(n, 'height', h.toFixed(1) + 'px'); }
     const st = {o:1, tx:0, ty:0, sc:1, rot:k.r || 0, blur:0, bri:1, clip:'', mask:'', maskSize:'', maskRepeat:'no-repeat', maskPos:'50% 50%', lift:0};
     const pin = clamp((T - it.t0)/it.enter.dur, 0, 1);
     if(pin < 1) fx(st, it.enter.type, pin, true, it.enter.dir, it, w, h);
@@ -5937,10 +6037,11 @@ html[data-sb-perf="reduced"] .pl-hold i::after{animation:none;opacity:.5;}
       if(anyFocus){ const dim = 1 - clamp(f, 0, 1); if(lite()) st.o *= 1 - .3*dim; else st.bri *= 1 - .42*dim; }
     }
     it._o = st.o;
-    let tf = `translate3d(${(x + st.tx).toFixed(1)}px,${(y + st.ty).toFixed(1)}px,0)`;
+    const ox = ks === 1 ? 0 : (w - n.bw)/2, oy = ks === 1 ? 0 : (h - n.bh)/2;      // 以框中心缩放：平移补偿
+    let tf = `translate3d(${(x + ox + st.tx).toFixed(1)}px,${(y + oy + st.ty).toFixed(1)}px,0)`;
     if(it.tilt && !reduced()){ const s = hash(it.i, 2)*6; tf += ` perspective(1400px) rotateY(${(Math.sin(T/5200 + s)*2.6).toFixed(2)}deg) rotateX(${(Math.cos(T/6100 + s)*1.6).toFixed(2)}deg)`; }
     if(st.rot) tf += ` rotate(${st.rot.toFixed(2)}deg)`;
-    if(st.sc !== 1) tf += ` scale(${st.sc.toFixed(4)})`;
+    if(st.sc*ks !== 1) tf += ` scale(${(st.sc*ks).toFixed(4)})`;
     setS(n, 'transform', tf);
     setS(n, 'opacity', st.o.toFixed(3));
     setS(n, 'filter', !lite() && (st.blur > .05 || Math.abs(st.bri - 1) > .01) ? `blur(${st.blur.toFixed(2)}px) brightness(${st.bri.toFixed(3)})` : (lite() && Math.abs(st.bri - 1) > .01 ? `brightness(${st.bri.toFixed(3)})` : ''));
@@ -5950,9 +6051,27 @@ html[data-sb-perf="reduced"] .pl-hold i::after{animation:none;opacity:.5;}
     if(it.frame === 'print'){ const L = st.lift; setS(n, 'boxShadow', `0 ${(4 + 30*L).toFixed(1)}px ${(10 + 46*L).toFixed(1)}px rgba(0,0,0,${(.55 - .25*L).toFixed(2)}), 0 1px 2px rgba(0,0,0,.4)`); }
     // 画内运动（Ken Burns）
     const kb = it.kb, u = reduced() ? 0 : ease((T - it.t0)/Math.max(1, t1 - it.t0 > 1e11 ? 8000 : t1 - it.t0));
-    const ts = `scale(${lerp(kb.s0, kb.s1, u).toFixed(4)})`, op = `${lerp(kb.x0, kb.x1, u).toFixed(2)}% ${lerp(kb.y0, kb.y1, u).toFixed(2)}%`;
-    if(n.cache.kbT !== ts){ n.cache.kbT = ts; n.img.style.transform = ts; }
-    if(n.cache.kbO !== op){ n.cache.kbO = op; n.img.style.objectPosition = op; }
+    if(lite()){
+      // v1.10.2（low 档）：画内运动只用 transform（object-position 逐帧变化 = 每帧重绘整张照片）。
+      // 做法：img 按原图比例铺成「cover 后的完整尺寸」放在框里（位置 = 中点 object-position），框负责裁切；
+      // 逐帧只改 img 的 translate / scale —— 视觉与逐帧改 object-position 一致，但只走合成器。
+      const bw = n.bw, bh = n.bh, nw = n.img.naturalWidth || it.slide.w, nh = n.img.naturalHeight || it.slide.h, ar = (nw && nh) ? nw/nh : bw/bh;
+      const xm = (kb.x0 + kb.x1)/2, ym = (kb.y0 + kb.y1)/2;
+      const cw = ar > bw/bh ? bh*ar : bw, ch = ar > bw/bh ? bh : bw/ar, ovx = cw - bw, ovy = ch - bh;
+      const box = `${bw.toFixed(1)}|${bh.toFixed(1)}|${ar.toFixed(3)}|${xm}|${ym}`;
+      const L = -ovx*xm/100, Tp = -ovy*ym/100;
+      if(n.cache.kbBox !== box){ n.cache.kbBox = box; const st2 = n.img.style;
+        st2.inset = 'auto'; st2.left = L.toFixed(1) + 'px'; st2.top = Tp.toFixed(1) + 'px'; st2.width = cw.toFixed(1) + 'px'; st2.height = ch.toFixed(1) + 'px';
+        st2.objectPosition = '50% 50%'; st2.transformOrigin = `${(bw*.5 - L).toFixed(1)}px ${(bh*.45 - Tp).toFixed(1)}px`; n.cache.kbO = null; n.cache.kbT = null; }
+      const px = SB.clamp(-ovx*(lerp(kb.x0, kb.x1, u) - xm)/100, -ovx*(100 - xm)/100, ovx*xm/100);
+      const py = SB.clamp(-ovy*(lerp(kb.y0, kb.y1, u) - ym)/100, -ovy*(100 - ym)/100, ovy*ym/100);
+      const ts = `translate3d(${px.toFixed(1)}px,${py.toFixed(1)}px,0) scale(${lerp(kb.s0, kb.s1, u).toFixed(4)})`;
+      if(n.cache.kbT !== ts){ n.cache.kbT = ts; n.img.style.transform = ts; }
+    } else {
+      const ts = `scale(${lerp(kb.s0, kb.s1, u).toFixed(4)})`, op = `${lerp(kb.x0, kb.x1, u).toFixed(2)}% ${lerp(kb.y0, kb.y1, u).toFixed(2)}%`;
+      if(n.cache.kbT !== ts){ n.cache.kbT = ts; n.img.style.transform = ts; }
+      if(n.cache.kbO !== op){ n.cache.kbO = op; n.img.style.objectPosition = op; }
+    }
   }
   /* v1.9.2 文字样式库的进场 / 退场（只用 transform / opacity；华丽档额外模糊） */
   const GEN = new Set(['title', 'poem', 'quote', 'whisper', 'note', 'stamp']);
@@ -6506,7 +6625,7 @@ html[data-sb-perf="reduced"] .pl-hold i::after{animation:none;opacity:.5;}
       await lobby(m);
       if(p.autoplay && SB.scenes.current === 'player' && P.m === m) play(false);
     },
-    leave(){ stopShow(); clearTimeout(P.idleT); SB.audio.clear(); P.m = null; P.TL = null; }
+    leave(){ stopShow(); clearTimeout(P.idleT); SB.audio.clear(); P.m = null; P.TL = null; cache.forEach(r => { r.img = null; }); }   // v1.10.2：离开放映释放预载对象
   });
 
   /* 调试 / 自动化验收：在暂停状态下定位到时间线上的某一刻 */
@@ -7670,7 +7789,7 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
   }
   function build(intro, keepId){
     S.sig = sigOf();
-    S.list = sorted(); S.st = stations(S.list); S.arc = null; S._fw = null; S.hb = -1; S.hover = -1; tip.classList.remove('on');
+    S.list = sorted(); S.st = stations(S.list); S.arc = null; S._fw = null; S.hb = -1; S.hover = -1; S.near = -1; tip.classList.remove('on');   // v1.10.2：重建后焦点样式要重新挂上
     track.innerHTML = ''; scene.querySelector('.tl-empty')?.remove();
     layout();
     const N = S.st.length;
@@ -7714,7 +7833,7 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
       ce.addEventListener('click', e => { e.stopPropagation(); if(S.moved > 6) return; SB.scenes.go('city', {id:c.id}, {transition:'quill', x:e.clientX, y:e.clientY}); }); }
     card.addEventListener('click', e => { e.stopPropagation(); if(S.moved > 6) return;
       if(o.i !== S.near){ center(o.i); return; }      // 不在焦点：先转过来（已是焦点则直接打开）
-      SB.scenes.go('player', {id:m.id, from:'overview'}, {transition:'pensieve', x:e.clientX, y:e.clientY}); });
+      S.lastKey = keyOf(o); SB.scenes.go('player', {id:m.id, from:'overview'}, {transition:'pensieve', x:e.clientX, y:e.clientY}); });
     card.addEventListener('pointerenter', e => { if(e.pointerType === 'mouse') S.hover = o.i; });
     card.addEventListener('pointerleave', () => { if(S.hover === o.i) S.hover = -1; });
     card.addEventListener('focus', () => { if(!S.drag) center(o.i); });
@@ -7797,7 +7916,8 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
     try{ await SB.store.prefetchUrls?.(ids); }catch(_){}
     for(const o of list){
       if(!o.el?.isConnected) continue;
-      const url = SB.store.url(coverOf(o.m)), img = o.el.querySelector('.rc-f.front img');
+      // v1.10.2：安卓用 520px 缩略代理图（卡片最宽约 230px）
+      const url = SB.store.proxyOn?.() ? await SB.store.displayUrl(coverOf(o.m), 520) : SB.store.url(coverOf(o.m)), img = o.el.querySelector('.rc-f.front img');
       if(!url || !img){ o.img = null; clearTimeout(S.imgT); S.imgT = setTimeout(() => S.active && wantImgs(uNow()), 2500); continue; }   // 弱网：稍后重试
       o.img = 'ld';
       const pre = new Image(); pre.decoding = 'async'; pre.src = url;
@@ -7951,9 +8071,16 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
   }
 
   /* ── 运动：拖动 / 惯性 / 点击直达（定时缓动）；场景激活时持续运行（偏转、摆动、光点） ── */
+  // v1.10.2：任何一帧出错都不让循环停下（之前会表现为「转不动、也不报错」）
+  let loopErr = 0;
   function loop(now){
     S.raf = 0;
     if(!S.active) return;
+    // v1.10.2：时光剪影盖在时光长卷上放映时，下面的环不再逐帧渲染（之前白白占着主线程与 GPU）
+    if(document.body.classList.contains('sb-reel-open')){ clearTimeout(S.pollT); S.pollT = setTimeout(kick, 300); S.last = 0; return; }
+    try{ step(now); }catch(e){ if(loopErr++ < 3) console.warn('[overview loop]', e); S.tw = null; S.drag = null; view.classList.remove('drag'); S.raf = requestAnimationFrame(loop); }
+  }
+  function step(now){
     if(lite() && S.last && now - S.last < 1000/30 - 4 && !S.tw){ S.raf = requestAnimationFrame(loop); return; }
     const dt = Math.min(.05, (now - (S.last || now))/1000) || 1/60; S.last = now; S.dtLast = dt; S.clock += dt*1000;
     if(S.tw){
@@ -8017,7 +8144,7 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
     S.target = rubber(d.x0 - dx);
   });
   const up = e => {
-    const d = S.drag; if(!d || d.id !== e.pointerId) return;
+    const d = S.drag; if(!d || (e && d.id !== e.pointerId)) return;
     S.drag = null; view.classList.remove('drag');
     if(S.moved <= 6){ S.target = d.x0; setTimeout(() => { S.moved = 0; }, 0); kick(); return; }   // 轻点：交给 click
     if(performance.now() - d.lastT < 90) S.v = SB.clamp(d.v, -60, 60);
@@ -8025,7 +8152,11 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
     S.v = 0; S.target = land*S.step;
     kick(); setTimeout(() => { S.moved = 0; }, 0);
   };
-  view.addEventListener('pointerup', up); view.addEventListener('pointercancel', up);
+  // v1.10.2：抬起可能落在标题 / 刻度条等兄弟层上（view 收不到）→ 在 window 上监听；失去捕获 / 失焦也结束拖动
+  addEventListener('pointerup', up, true); addEventListener('pointercancel', up, true);
+  view.addEventListener('lostpointercapture', e => { if(S.drag && S.drag.id === e.pointerId && view.classList.contains('drag')) up(e); });
+  addEventListener('blur', () => { if(S.drag) up({pointerId:S.drag.id}); });
+  SB.dragSurface?.(view);
   view.addEventListener('click', e => {
     if(S.moved > 6 || e.target.closest('.rc,.rn-plq')) return;
     const i = hit(e.clientX, e.clientY); if(i >= 0) center(i);
@@ -8083,7 +8214,8 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
       if(ids.length) await SB.store.prefetchUrls?.(ids);
     },
     // 从放映返回时回到离开前的那一段（而不是总跳回最新）
-    enter(p, opts){ SB.fx.palette('night'); S.active = true; S.clock = 0; build(!opts?.back, opts?.back ? S.lastKey : null); kick(); },
+    // v1.10.2：从放映返回多数走浏览器历史（popstate → fromHistory），之前只认 back 标记 → 总是回到最新
+    enter(p, opts){ SB.fx.palette('night'); S.active = true; S.clock = 0; const ret = !!(opts?.back || opts?.fromHistory) && S.lastKey != null; build(!ret, ret ? S.lastKey : null); kick(); },
     leave(){ S.lastKey = keyOf(S.st[S.near]); S.active = false; cancelAnimationFrame(S.raf); S.raf = 0; S.drag = null; S.tw = null; setHb(-1); SB.yearReel?.close?.(true); }
   });
   SB.overview = { get state(){ return {n:S.st.length, near:S.near, u:uNow(), anchor:S.anchor, cards:S.st.filter(o => !o.off).length,
@@ -8099,7 +8231,7 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
 
 <!-- ████ BLOCK 14-year-reel START ████ -->
 <style>
-/* ── 块 14 ·「时光剪影」周年回放（v1.10.0）──
+/* ── 块 14 ·「时光剪影」周年回放（v1.10.0；v1.10.2 进度条拖动 + 尾声「年轮合拢」，见 prompts/14-year-reel.md 第 5 节）──
    依据 prompts/14-year-reel.md：年轮表盘为主线；照片先以高反差剪影出现，再显影成彩色；胶片带 / 折扇 / 主镜三种版式轮换；
    所有动画都是 CSS 关键帧（transform / opacity），JS 只在时间点切换状态 → 暂停时全部动画一起暂停。 */
 .yr{position:absolute;inset:0;z-index:3000;overflow:hidden;background:radial-gradient(90% 70% at 50% 40%,#151233,#06050f 70%);color:var(--text);opacity:0;transition:opacity .9s var(--ease-soft);
@@ -8132,8 +8264,33 @@ body.sb-reel-open:not(.sb-reel-awake) #sb-nav,body.sb-reel-open:not(.sb-reel-awa
 .yr-dial.draw .hand{animation:yrFade 1s var(--ease-soft) 1.6s forwards;}
 .yr-dial .hand line{stroke:url(#yr-gold);stroke-width:3;stroke-linecap:round;}
 .yr-dial .hand circle{fill:#fff3d6;filter:drop-shadow(0 0 10px rgba(255,214,150,.95));}
-.yr-dial .tail{fill:none;stroke:rgba(255,226,170,.85);stroke-width:2.4;stroke-linecap:round;stroke-dasharray:1400;stroke-dashoffset:1400;filter:drop-shadow(0 0 6px rgba(244,184,96,.8));}
-.yr-dial.end .tail{animation:yrDraw 3.2s var(--ease-soft) 1.4s forwards;}
+.yr-dial.end:not(.now) .hand{animation:yrHandOut 1s var(--ease-soft) 1.7s forwards;}
+@keyframes yrHandOut{from{opacity:1}to{opacity:0}}
+.yr-dial.end.now .hand circle{animation:yrBreath 2.4s ease-in-out infinite;}
+@keyframes yrBreath{50%{opacity:.45}}
+/* v1.10.2 尾声「年轮合拢」：彗星绕表盘一圈 → 这一年的回忆在各自日期处点亮成星环 → 外圈一粒新光向前书写（未完待续） */
+.yr-dial .comet{fill:none;stroke:#fff3d6;stroke-width:6;stroke-linecap:round;stroke-dasharray:90 2423;stroke-dashoffset:90;opacity:0;transform:rotate(-90deg);filter:drop-shadow(0 0 10px rgba(255,214,150,.95));}
+.yr-dial.end:not(.now) .comet{animation:yrComet 2.2s var(--ease-soft) .2s forwards;}
+@keyframes yrComet{0%{opacity:0;stroke-dashoffset:90}12%{opacity:1}88%{opacity:1}100%{opacity:0;stroke-dashoffset:-2423}}
+.yr-dial .stars circle{fill:#fff3d6;opacity:0;transform-box:fill-box;transform-origin:center;filter:drop-shadow(0 0 7px rgba(255,214,150,.95));}
+.yr-dial.end .stars circle{animation:yrStar .9s var(--ease-soft) forwards;animation-delay:var(--d);}
+@keyframes yrStar{from{opacity:0;transform:scale(.2)}60%{opacity:1;transform:scale(1.35)}to{opacity:.95;transform:scale(1)}}
+.yr-dial.end .tk line{animation:yrTickLit .8s var(--ease-soft) forwards;animation-delay:var(--dl,800ms);}
+@keyframes yrTickLit{to{stroke:#fff3d6;stroke-width:3.4}}
+.yr-dial .nx{opacity:0;}
+.yr-dial.end .nx{animation:yrFade 1.2s var(--ease-soft) 3s forwards;}
+.yr-dial .nxb{fill:#fff3d6;filter:drop-shadow(0 0 9px rgba(255,214,150,.95));opacity:0;}
+.yr-dial.end .nxb{animation:yrNext 7s ease-in-out 3s infinite;}
+@keyframes yrNext{0%{transform:rotate(0deg);opacity:0}14%{opacity:1}82%{opacity:1}100%{transform:rotate(30deg);opacity:0}}
+.yr-dial .nxarc{fill:none;stroke:rgba(255,226,170,.75);stroke-width:2.2;stroke-linecap:round;stroke-dasharray:var(--al) var(--al);stroke-dashoffset:var(--al);opacity:0;}
+.yr-dial.end .nxarc{animation:yrNextArc 7s ease-in-out 3s infinite;}
+@keyframes yrNextArc{0%{stroke-dashoffset:var(--al);opacity:0}14%{opacity:.85}82%{stroke-dashoffset:0;opacity:.55}100%{stroke-dashoffset:0;opacity:0}}
+/* 竖屏尾声：表盘上移缩小，文字放在表盘下方（避免文字压在年轮上） */
+.yr.port .yr-dial.end{transform:translateY(calc(var(--dial) * var(--ey,-.3))) scale(var(--es,.8));}
+.yr.port .yr-end{top:auto;bottom:calc(96px + var(--safe-b));transform:translateX(-50%);gap:10px;}
+.yr.port .yr-end .yr-big{font-size:clamp(28px,8.4vw,40px)!important;}
+.yr.port .yr-end .yr-acts{margin-top:8px;}
+.yr-end .yr-sum{display:block;font-family:var(--f-display);font-weight:600;font-size:clamp(14px,1.5vw,17px);letter-spacing:.2em;color:var(--text-dim);}
 @keyframes yrFade{to{opacity:1}}
 /* 文字 */
 .yr-txt{position:absolute;pointer-events:none;text-align:center;}
@@ -8202,19 +8359,34 @@ body.sb-reel-open:not(.sb-reel-awake) #sb-nav,body.sb-reel-open:not(.sb-reel-awa
 .yr-end{left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:14px;width:90%;}
 .yr-acts{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:14px;pointer-events:auto;opacity:0;animation:yrUp 1s var(--ease-soft) forwards;animation-delay:var(--d);}
 /* 控制：电影模式（鼠标进入下方 20% 或轻触时浮现） */
-.yr-ui{position:absolute;left:0;right:0;bottom:0;z-index:5;display:flex;justify-content:center;gap:12px;padding:40px 16px calc(18px + var(--safe-b));
+.yr-ui{position:absolute;left:0;right:0;bottom:0;z-index:5;display:flex;flex-direction:column;align-items:center;gap:12px;padding:46px 16px calc(18px + var(--safe-b));
   background:linear-gradient(transparent,rgba(0,0,0,.7));opacity:0;transform:translateY(16px);pointer-events:none;transition:opacity .5s var(--ease-soft), transform .5s var(--ease-soft);}
 .yr.awake .yr-ui{opacity:1;transform:none;pointer-events:auto;}
 .yr-ui button{min-width:46px;height:46px;border-radius:999px;border:1px solid var(--line);background:rgba(10,10,28,.65);color:var(--gold-hi);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 16px;
   font-family:var(--f-display);font-weight:600;font-size:14px;letter-spacing:.1em;}
 .yr-ui button:hover{box-shadow:0 0 16px rgba(244,184,96,.45);}
 .yr-ui .sb-ico{width:18px;height:18px;}
+.yr-row{display:flex;justify-content:center;align-items:center;gap:12px;}
+/* v1.10.2 进度条：细金线轨道 + 章节刻痕 + 发光拇指；只在控制区浮现时出现 */
+.yr-bar{position:relative;width:min(720px,80vw);height:30px;cursor:pointer;touch-action:none;outline:none;}
+.yr-bar .trk{position:absolute;left:0;right:0;top:50%;height:3px;margin-top:-1.5px;border-radius:3px;background:rgba(240,214,160,.22);}
+.yr-bar .fill{position:absolute;left:0;top:0;bottom:0;width:100%;border-radius:3px;transform-origin:0 50%;transform:scaleX(0);background:linear-gradient(90deg,#c88a3c,#f4b860 70%,#fff1cc);}
+.yr-bar .mk{position:absolute;top:50%;width:1px;height:11px;margin:-5.5px 0 0 0;background:rgba(255,226,168,.75);}
+.yr-bar .mk.st{width:7px;height:7px;margin:-3.5px 0 0 -3.5px;transform:rotate(45deg);background:none;border:1px solid var(--gold-hi);}
+.yr-bar .mk.ep{width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;background:var(--gold-hi);}
+.yr-bar .thumb{position:absolute;left:0;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:#fff3d6;box-shadow:0 0 12px rgba(255,214,150,.9),0 0 0 3px rgba(244,184,96,.25);will-change:transform;}
+.yr-bar:focus-visible .thumb{box-shadow:0 0 12px rgba(255,214,150,.9),0 0 0 3px var(--gold-hi);}
+.yr-bar .tip{position:absolute;bottom:calc(100% + 6px);left:0;transform:translateX(-50%);white-space:nowrap;padding:5px 10px;border-radius:8px;border:1px solid rgba(240,214,160,.4);background:rgba(10,10,30,.9);
+  font-size:12px;letter-spacing:.06em;color:var(--text);opacity:0;transition:opacity .2s;pointer-events:none;}
+.yr-bar .tip b{font-family:var(--f-num);font-weight:600;color:var(--gold);margin-right:6px;}
+.yr-bar.hot .tip{opacity:1;}
+.yr-time{font-family:var(--f-num);font-weight:600;font-size:12.5px;letter-spacing:.12em;color:var(--gold-dim);min-width:7em;text-align:center;}
 .yr-wait{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.2em;color:var(--gold);text-align:center;}
 .yr-wait:empty{display:none;}
 .yr-wait{transition:opacity .5s var(--ease-soft);} .yr-wait.gone{opacity:0;}
 html[data-sb-perf="reduced"] .yr-strip,html[data-sb-perf="reduced"] .yr-Lfan .yr-ph,html[data-sb-perf="reduced"] .yr-Lhero .yr-ph{animation:yrFadeIn 1s ease forwards!important;transform:translate(var(--x,0),var(--y,0)) rotate(var(--r,0deg))!important;}
 html[data-sb-perf="reduced"] .yr-strip{transform:translateX(var(--x0))!important;}
-@media (max-width:760px){ .yr-k{font-size:10.5px;} .yr-ui button span{display:none;} }
+@media (max-width:760px){ .yr-k{font-size:10.5px;} .yr-ui button span{display:none;} .yr-bar{width:calc(100vw - 32px);} .yr-bar .tip{font-size:11.5px;} }
 </style>
 
 <script>
@@ -8274,14 +8446,15 @@ html[data-sb-perf="reduced"] .yr-strip{transform:translateX(var(--x0))!important
     R.el = SB.el('section', 'yr'); R.el.hidden = true; R.el.setAttribute('aria-label', '时光剪影'); R.el.setAttribute('role', 'dialog');
     R.el.innerHTML = `<div class="yr-grain"></div><svg class="yr-dial" viewBox="-500 -500 1000 1000" aria-hidden="true"></svg><div class="yr-stage"></div>
       <div class="yr-wait" aria-live="polite"></div>
-      <div class="yr-ui"><button type="button" class="yr-pp" aria-label="暂停">${ICON.pause}<span>暂停</span></button><button type="button" class="yr-x" aria-label="退出时光剪影">${ICON.close}<span>退出</span></button></div>
+      <div class="yr-ui"><div class="yr-bar" role="slider" tabindex="0" aria-label="放映进度" aria-valuemin="0"><div class="trk"><i class="fill"></i><span class="mks"></span></div><i class="thumb"></i><span class="tip"></span></div>
+        <div class="yr-row"><button type="button" class="yr-pp" aria-label="暂停">${ICON.pause}<span>暂停</span></button><span class="yr-time">0:00 / 0:00</span><button type="button" class="yr-x" aria-label="退出时光剪影">${ICON.close}<span>退出</span></button></div></div>
       <div class="pl-live" aria-live="polite"></div>`;
     host.appendChild(R.el);
     $q('.yr-pp').addEventListener('click', e => { e.stopPropagation(); setPlaying(!R.playing); wake(); });
     $q('.yr-x').addEventListener('click', e => { e.stopPropagation(); close(); });
     R.el.addEventListener('pointerdown', e => { R.px = e.clientX; R.py = e.clientY; R.pt = performance.now(); });
     R.el.addEventListener('pointerup', e => {
-      if(e.target.closest('button') || performance.now() - (R.pt || 0) > 400 || Math.hypot(e.clientX - R.px, e.clientY - R.py) > 12) return;
+      if(e.target.closest('button,.yr-bar') || R.scrub || performance.now() - (R.pt || 0) > 400 || Math.hypot(e.clientX - R.px, e.clientY - R.py) > 12) return;
       if(e.pointerType === 'mouse'){ if(R.T < R.p.total) setPlaying(!R.playing); wake(); }
       else R.el.classList.contains('awake') ? sleep() : wake(4000);
     });
@@ -8290,15 +8463,20 @@ html[data-sb-perf="reduced"] .yr-strip{transform:translateX(var(--x0))!important
     document.addEventListener('keydown', e => { if(!R.open) return;
       if(e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); close(); } else if(e.key === ' '){ e.preventDefault(); setPlaying(!R.playing); wake(); } }, true);
     document.addEventListener('visibilitychange', () => { if(document.hidden && R.open) setPlaying(false); });
-    addEventListener('resize', () => { if(R.open) measure(); });
+    addEventListener('resize', () => { if(R.open){ measure(); updBar(true); } });
+    bindBar();
   }
   function wake(ms = 2600){ R.el.classList.add('awake'); document.body.classList.add('sb-reel-awake'); clearTimeout(R.idleT); R.idleT = setTimeout(sleep, ms); }
   function sleep(){ if(R.inZone || !R.playing){ clearTimeout(R.idleT); R.idleT = setTimeout(sleep, 1200); return; } R.el.classList.remove('awake'); document.body.classList.remove('sb-reel-awake'); }
   function measure(){
     const W = R.W = R.el.clientWidth || innerWidth, H = R.H = R.el.clientHeight || innerHeight, land = R.land = W >= H*1.05;
     R.el.style.setProperty('--dial', Math.round(Math.min(W*.92, H*.86)) + 'px');
+    R.el.classList.toggle('port', !land);
+    { const r = H/W; R.el.style.setProperty('--es', SB.clamp(.62 + (r - 1.75)*.44, .62, .8).toFixed(3)); R.el.style.setProperty('--ey', SB.clamp(-.38 + (r - 1.75)*.2, -.38, -.3).toFixed(3)); }   // 矮屏手机表盘更小更靠上
   }
-  function setPlaying(v){ R.playing = v; R.el.classList.toggle('paused', !v); R.el.classList.toggle('playing', v);
+  function setPlaying(v){
+    if(v && R.p && R.T >= R.p.total) seekTo(0);       // v1.10.2：放完之后再按「继续」= 从头放
+    R.playing = v; R.el.classList.toggle('paused', !v); R.el.classList.toggle('playing', v);
     const b = $q('.yr-pp'); b.innerHTML = (v ? ICON.pause : ICON.play) + `<span>${v ? '暂停' : '继续'}</span>`; b.setAttribute('aria-label', v ? '暂停' : '继续'); R.last = 0;
     if(v && !R.raf) R.raf = requestAnimationFrame(loop); }
 
@@ -8309,11 +8487,13 @@ html[data-sb-perf="reduced"] .yr-strip{transform:translateX(var(--x0))!important
       <circle class="ring2" r="${r + 26}"/><circle class="ring" r="${r}"/><circle class="prog" r="${r}"/>`;
     for(let i = 0; i < 12; i++){
       const a = -Math.PI/2 + i*Math.PI/6, c = Math.cos(a), s = Math.sin(a), k = k0 + i, mo = k % 12 + 1, jan = mo === 1 || i === 0;
-      h += `<g class="tk" data-i="${i}" style="--d:${(300 + i*110)}ms"><line x1="${(c*(r - 14)).toFixed(1)}" y1="${(s*(r - 14)).toFixed(1)}" x2="${(c*(r + 14)).toFixed(1)}" y2="${(s*(r + 14)).toFixed(1)}"/>
+      h += `<g class="tk" data-i="${i}" style="--d:${(300 + i*110)}ms;--dl:${(800 + i*120)}ms"><line x1="${(c*(r - 14)).toFixed(1)}" y1="${(s*(r - 14)).toFixed(1)}" x2="${(c*(r + 14)).toFixed(1)}" y2="${(s*(r + 14)).toFixed(1)}"/>
         <text x="${(c*(r + 58)).toFixed(1)}" y="${(s*(r + 58)).toFixed(1)}">${mo}</text>${jan ? `<text class="y" x="${(c*(r + 58)).toFixed(1)}" y="${(s*(r + 58) + (i === 0 ? -34 : 32)).toFixed(1)}">${Math.floor(k/12)}</text>` : ''}</g>`;
     }
-    h += `<g class="hand" style="transform:rotate(0deg)"><line x1="0" y1="0" x2="0" y2="${-(r - 40)}"/><circle cx="0" cy="${-(r - 40)}" r="9"/><circle r="7"/></g>
-      <path class="tail" d="M ${(r*Math.cos(-Math.PI/2 - .2)).toFixed(1)} ${(r*Math.sin(-Math.PI/2 - .2)).toFixed(1)} C 160 -560 520 -520 980 -380"/>`;
+    const r2 = r + 26, al = (r2*Math.PI/6).toFixed(1);
+    h += `<circle class="comet" r="${r}"/><g class="stars"></g>
+      <g class="hand" style="transform:rotate(0deg)"><line x1="0" y1="0" x2="0" y2="${-(r - 40)}"/><circle cx="0" cy="${-(r - 40)}" r="9"/><circle r="7"/></g>
+      <g class="nx"><path class="nxarc" style="--al:${al}" d="M 0 ${-r2} A ${r2} ${r2} 0 0 1 ${(r2*Math.sin(Math.PI/6)).toFixed(1)} ${(-r2*Math.cos(Math.PI/6)).toFixed(1)}"/><circle class="nxb" cx="0" cy="${-r2}" r="7"/></g>`;
     svg.innerHTML = h; svg.classList.remove('draw', 'bg', 'end'); void svg.getBoundingClientRect(); svg.classList.add('draw');
   }
   function dialTo(frac, tick){
@@ -8338,8 +8518,9 @@ html[data-sb-perf="reduced"] .yr-strip{transform:translateX(var(--x0))!important
     const W = R.W, H = R.H, land = R.land, root = SB.el('div', 'yr-ch yr-L' + c.layout); stage().appendChild(root); c.root = root;
     const fr = yearFrac(c.m.date), tick = Math.floor(fr*12);
     dialTo(fr, tick);
-    const url = id => SB.store.url(id);
-    const phEl = (s, w, h, dv, extra = '') => { const e = SB.el('div', 'yr-ph', `<div class="im"><img class="c" alt="" src="${SB.esc(url(s.id))}"><img class="s" alt="" src="${SB.esc(url(s.id))}"></div>`);
+    // v1.10.2：安卓用显示尺寸代理图；剪影层用 640px 小图（CSS 滤镜作用在小图上，代价小得多）
+    const url = id => R.urls?.get(id) || SB.store.url(id), sil = id => R.sils?.get(id) || url(id);
+    const phEl = (s, w, h, dv, extra = '') => { const e = SB.el('div', 'yr-ph', `<div class="im"><img class="c" alt="" src="${SB.esc(url(s.id))}"><img class="s" alt="" src="${SB.esc(sil(s.id))}"></div>`);
       e.style.cssText = `--w:${w.toFixed(0)}px;--h:${h.toFixed(0)}px;--dv:${dv}ms;${extra}`; return e; };
     const ar = s => SB.clamp((s.w && s.h) ? s.w/s.h : 1.5, .62, 1.8);
     const n = c.ph.length, dur = c.dur;
@@ -8378,7 +8559,7 @@ html[data-sb-perf="reduced"] .yr-strip{transform:translateX(var(--x0))!important
     if(!c.root) return;
     c.root.querySelectorAll('.yr-ph, .yr-strip').forEach(x => x.classList.add('out'));
     c.head?.classList.add('yr-out');
-    const r = c.root; setTimeout(() => r.remove(), 1400);
+    const r = c.root, left = 1400 - (R.lag || 0); if(left <= 0) r.remove(); else setTimeout(() => r.remove(), left);
   }
   function stats(seg){
     const p = R.p, photos = p.list.reduce((a, m) => a + (m.slides || []).filter(s => s.id).length, 0);
@@ -8389,17 +8570,105 @@ html[data-sb-perf="reduced"] .yr-strip{transform:translateX(var(--x0))!important
       ${trail ? `<div class="yr-trail">${trail}</div>` : ''}`);
     seg.t = R.T; R.counting = seg;
   }
+  /* v1.10.2 尾声「年轮合拢」：进度弧补满、彗星绕一圈、回忆在各自日期处点亮成星环、外圈一粒新光向前书写（取代飞出画面的引申线） */
   function epilogue(){
-    const o = R.opt, svg = $q('.yr-dial');
-    svg.classList.remove('bg'); svg.classList.add('end'); dialTo(11.6/12, null);
-    svg.querySelectorAll('.tk').forEach(x => x.classList.add('lit'));
+    const o = R.opt, svg = $q('.yr-dial'), p = R.p, r = 400;
+    const today = SB.date.today(), a = SB.date.day(o.from), fin = o.now ? SB.clamp((today - a)/365, .02, .98) : 1;
+    svg.classList.remove('bg'); svg.classList.toggle('now', !!o.now); svg.classList.add('end'); dialTo(fin, null);
+    svg.querySelectorAll('.tk.lit').forEach(x => x.classList.remove('lit'));
+    const n = p.list.length, step = Math.min(160, 2400/Math.max(1, n));
+    svg.querySelector('.stars').innerHTML = p.list.map((m, k) => { const t = -Math.PI/2 + yearFrac(m.date)*Math.PI*2;
+      return `<circle cx="${(r*Math.cos(t)).toFixed(1)}" cy="${(r*Math.sin(t)).toFixed(1)}" r="6.5" style="--d:${Math.round(800 + k*step)}ms"/>`; }).join('');
+    const nx = svg.querySelector('.nx'); nx.style.transform = `rotate(${(fin*360).toFixed(1)}deg)`;     // 新光从 12 点（或「至今」的指针处）出发
     SB.audio?.duck?.(.45, 3000);
-    R.endEl = txt('yr-end', `<span class="yr-k yr-in" style="--d:600ms">FINIS ANNI · ${ROMAN(o.year)}</span>
-      <span class="yr-big yr-in" style="--d:1000ms;font-size:clamp(34px,5.4vw,64px)">第${CN(o.year)}年 · 完</span>
-      <span class="yr-line yr-in" style="--d:2600ms">故事未完待续</span><span class="yr-k yr-in" style="--d:3200ms">TO BE CONTINUED</span>`);
-    const acts = SB.el('div', 'yr-acts'); acts.style.setProperty('--d', '4200ms');
+    const cities = new Set(p.list.map(m => m.cityId)).size;
+    const rng = `${SB.date.dot(o.from)} — ${o.to ? SB.date.dot(SB.date.str(SB.date.day(o.to) - 1)) : '此刻'}`;
+    R.endEl = txt('yr-end', `<span class="yr-k yr-in" style="--d:1200ms">${o.now ? 'ANNUS ' + ROMAN(o.year) + ' · NUNC' : 'FINIS ANNI · ' + ROMAN(o.year)}</span>
+      <span class="yr-big yr-in" style="--d:1500ms;font-size:clamp(34px,5.4vw,64px)">第${CN(o.year)}年 · ${o.now ? '进行中' : '完'}</span>
+      <span class="yr-rng yr-in" style="--d:2100ms">${rng}</span>
+      <span class="yr-sum yr-in" style="--d:2600ms">${n} 段回忆 · ${cities} 座城市</span>
+      <span class="yr-line yr-in" style="--d:3400ms">未完待续</span><span class="yr-k yr-in" style="--d:3800ms">TO BE CONTINUED</span>`);
+    const acts = SB.el('div', 'yr-acts'); acts.style.setProperty('--d', '4400ms');
     acts.append(SB.ui.button('再看一遍', 'primary', () => start(R.opt), 'reset'), SB.ui.button('回到时光长卷', '', () => close()));
     R.endEl.appendChild(acts);
+  }
+
+  /* ── v1.10.2 跳转：清空舞台，按顺序重放 ≤ T 的状态切换；每个切换新产生的 CSS 动画 / 过渡前移 (T − 切换时间)，
+     得到「正常播放到 T」时的画面（prompts/14-year-reel.md 5.1）。不支持 getAnimations 时退化为从该片段开头播放。 */
+  function seekTo(T){
+    if(!R.open || !R.cues || !R.p) return;
+    T = SB.clamp(T, 0, R.p.total);
+    stage().innerHTML = ''; R.counting = null; R.pro = null; R.endEl = null; $q('.yr-dial').innerHTML = '';
+    const canAdv = typeof R.el.getAnimations === 'function';
+    let ci = 0;
+    while(ci < R.cues.length && R.cues[ci].t <= T){
+      const c = R.cues[ci++]; R.T = c.t; R.lag = T - c.t;
+      const before = canAdv ? new Set(R.el.getAnimations({subtree:true})) : null;
+      try{ c.fn(); }catch(e){ console.warn('[yearReel seek]', e); }
+      if(canAdv && R.lag > 0) for(const an of R.el.getAnimations({subtree:true})){ if(before.has(an)) continue; try{ an.currentTime = (an.currentTime || 0) + R.lag; }catch(_){} }
+    }
+    R.lag = 0; R.ci = ci; R.T = T; R.last = 0;
+    if(R.counting){ const s = R.counting; s.el.querySelectorAll('b[data-v]').forEach(b => { const p = SB.clamp((T - s.t - +b.dataset.t)/1400, 0, 1); b.textContent = Math.round(+b.dataset.v*(1 - Math.pow(1 - p, 3))); }); }
+    updBar(true);
+  }
+  /* ── v1.10.2 进度条（WAI-ARIA Media Seek Slider 模式） ── */
+  const mmss = ms => { const s = Math.max(0, Math.round(ms/1000)); return `${Math.floor(s/60)}:${String(s % 60).padStart(2, '0')}`; };
+  function segAt(T){
+    const p = R.p; if(!p) return null;
+    if(T < 5600) return {label:'序幕', t0:0};
+    if(T >= p.end) return {label:'尾声', t0:p.end + 300};
+    for(const c of p.seq){ if(T >= c.t0 && T < c.t0 + c.dur) return c.stats ? {label:'这一年', t0:c.t0} : {label:`No.${String(c.i + 1).padStart(2, '0')} · ${SB.date.dot(c.m.date)} · ${c.m.title || '未命名的回忆'}`, t0:c.t0, c}; }
+    return null;
+  }
+  function buildBar(){
+    const bar = $q('.yr-bar'), p = R.p, mks = bar.querySelector('.mks'), f = t => (t/p.total*100).toFixed(3) + '%';
+    mks.innerHTML = p.seq.map(c => `<i class="mk${c.stats ? ' st' : ''}" style="left:${f(c.t0)}"></i>`).join('') + `<i class="mk ep" style="left:${f(p.end + 300)}"></i>`;
+    bar.setAttribute('aria-valuemax', String(Math.round(p.total/1000)));
+    R.barT = -1; updBar(true);
+  }
+  function updBar(force, T = R.T){
+    const bar = R.el && $q('.yr-bar'); if(!bar || !R.p) return;
+    const p = SB.clamp(T/R.p.total, 0, 1);
+    if(!force && Math.abs(p - (R.barP ?? -1)) < .0008) return;
+    R.barP = p;
+    const w = bar.clientWidth;
+    bar.querySelector('.fill').style.transform = `scaleX(${p.toFixed(4)})`;
+    bar.querySelector('.thumb').style.transform = `translateX(${(p*w).toFixed(1)}px)`;
+    const sec = Math.floor(T/1000);
+    if(force || sec !== R.barT){ R.barT = sec; $q('.yr-time').textContent = `${mmss(T)} / ${mmss(R.p.total)}`;
+      const sg = segAt(T), tot = Math.round(R.p.total/1000); bar.setAttribute('aria-valuenow', String(sec));
+      bar.setAttribute('aria-valuetext', `${sg ? sg.label + '，' : ''}${Math.floor(sec/60)} 分 ${sec % 60} 秒，共 ${Math.floor(tot/60)} 分 ${tot % 60} 秒`); }
+  }
+  function showTip(T, x){
+    const bar = $q('.yr-bar'), tip = bar.querySelector('.tip'), sg = segAt(T);
+    tip.innerHTML = `<b>${mmss(T)}</b>${SB.esc(sg?.label || '')}`;
+    const w = bar.clientWidth, half = Math.min(tip.offsetWidth/2, w/2);
+    tip.style.left = SB.clamp(x, half - 16, w - half + 16).toFixed(0) + 'px'; bar.classList.add('hot');
+  }
+  function bindBar(){
+    const bar = $q('.yr-bar'), lite = () => SB.perf.level !== 'high';
+    const tAt = cx => { const r = bar.getBoundingClientRect(); return {T:SB.clamp((cx - r.left)/r.width, 0, 1)*R.p.total, x:SB.clamp(cx - r.left, 0, r.width)}; };
+    let lastSeek = 0;
+    // 电脑（华丽档）拖动中每 180ms 实时定位；柔和档 / 手机拖动中只移动拇指与提示，松手再定位（避免频繁重建）
+    const move = (cx, live) => { const {T, x} = tAt(cx); showTip(T, x); updBar(true, T); R.scrub.T = T;
+      if(live && !lite()){ const now = performance.now(); if(now - lastSeek > 180){ lastSeek = now; seekTo(T); } } };
+    bar.addEventListener('pointerdown', e => { if(!R.p) return; e.stopPropagation(); e.preventDefault();
+      try{ bar.setPointerCapture(e.pointerId); }catch(_){}
+      R.scrub = {id:e.pointerId, was:R.playing && R.T < R.p.total, T:R.T}; if(R.playing) setPlaying(false); R.inZone = true; wake(); move(e.clientX, true); });
+    bar.addEventListener('pointermove', e => {
+      if(R.scrub && R.scrub.id === e.pointerId){ move(e.clientX, true); return; }
+      if(e.pointerType === 'mouse' && R.p){ const {T, x} = tAt(e.clientX); showTip(T, x); } });
+    const end = e => { const sc = R.scrub; if(!sc || sc.id !== e.pointerId) return; R.scrub = null; bar.classList.remove('hot'); if(e.pointerType !== 'mouse') R.inZone = false;
+      seekTo(sc.T); if(sc.was) setPlaying(true); wake(); };
+    bar.addEventListener('pointerup', end); bar.addEventListener('pointercancel', end); bar.addEventListener('lostpointercapture', end);
+    bar.addEventListener('pointerleave', () => { if(!R.scrub) bar.classList.remove('hot'); });
+    bar.addEventListener('keydown', e => {
+      if(!R.p) return; let T = null; const segs = [0, ...R.p.seq.map(c => c.t0), R.p.end + 300];
+      if(e.key === 'ArrowRight' || e.key === 'ArrowUp') T = R.T + 5000; else if(e.key === 'ArrowLeft' || e.key === 'ArrowDown') T = R.T - 5000;
+      else if(e.key === 'PageDown') T = segs.find(t => t > R.T + 50) ?? R.p.total; else if(e.key === 'PageUp') T = [...segs].reverse().find(t => t < R.T - 1500) ?? 0;
+      else if(e.key === 'Home') T = 0; else if(e.key === 'End') T = R.p.total - 1;
+      if(T == null) return; e.preventDefault(); e.stopPropagation(); seekTo(T); wake();
+    });
   }
 
   /* ── 时钟 ── */
@@ -8407,6 +8676,7 @@ html[data-sb-perf="reduced"] .yr-strip{transform:translateX(var(--x0))!important
     R.raf = 0; if(!R.open || !R.playing) return;
     const dt = Math.min(80, now - (R.last || now)); R.last = now; R.T += dt;
     while(R.ci < R.cues.length && R.cues[R.ci].t <= R.T){ const c = R.cues[R.ci++]; try{ c.fn(); }catch(e){ console.warn('[yearReel]', e); } }
+    updBar();
     if(R.counting){ const s = R.counting; s.el.querySelectorAll('b[data-v]').forEach(b => { const p = SB.clamp((R.T - s.t - +b.dataset.t)/1400, 0, 1); b.textContent = Math.round(+b.dataset.v*(1 - Math.pow(1 - p, 3))); }); }
     if(R.T >= R.p.total){ R.playing = false; R.el.classList.add('awake'); R.el.classList.remove('playing'); return; }
     R.raf = requestAnimationFrame(loop);
@@ -8426,20 +8696,23 @@ html[data-sb-perf="reduced"] .yr-strip{transform:translateX(var(--x0))!important
       let done = 0, live = true; const show = () => { if(live && R.opt === o && R.open) wait.textContent = `正在准备这一年的胶片 ${done} / ${ids.length}`; };
       wait.classList.remove('gone'); show();
       await SB.store.prefetchUrls?.(ids);
-      await Promise.race([Promise.all(ids.map(id => loadImg(SB.store.url(id)).then(() => { done++; show(); }))), SB.wait(8000)]);
+      R.urls = new Map(); R.sils = new Map();
+      const one = async id => { if(SB.store.proxyOn?.()){ const [u, v] = await Promise.all([SB.store.displayUrl(id), SB.store.displayUrl(id, 640)]); if(u) R.urls.set(id, u); if(v) R.sils.set(id, v); }
+        await loadImg(R.urls.get(id) || SB.store.url(id)); if(R.sils.get(id)) await loadImg(R.sils.get(id)); };
+      await Promise.race([Promise.all(ids.map(id => one(id).then(() => { done++; show(); }))), SB.wait(8000)]);
       live = false; wait.classList.add('gone'); setTimeout(() => { if(!live && wait.classList.contains('gone')) wait.textContent = ''; }, 600);
     }
     if(!R.open || R.opt !== o) return;
     const p = R.p, cues = [];
     cues.push({t:0, fn:() => buildDial(mIdx(o.from))});
     cues.push({t:200, fn:prologue});
-    cues.push({t:4600, fn:() => { R.pro?.classList.add('yr-out'); $q('.yr-dial').classList.add('bg'); }});
+    cues.push({t:4600, fn:() => { R.pro?.classList.add('yr-out'); if((R.lag || 0) > 1200){ R.pro?.remove(); R.pro = null; } $q('.yr-dial').classList.add('bg'); }});
     p.seq.forEach(c => {
-      if(c.stats){ cues.push({t:c.t0, fn:() => stats(c)}, {t:c.t0 + c.dur - 900, fn:() => { c.el?.classList.add('yr-out'); R.counting = null; }}); return; }
+      if(c.stats){ cues.push({t:c.t0, fn:() => stats(c)}, {t:c.t0 + c.dur - 900, fn:() => { c.el?.classList.add('yr-out'); if((R.lag || 0) > 1100) c.el?.remove(); R.counting = null; }}); return; }
       cues.push({t:c.t0, fn:() => chapter(c)}, {t:c.t0 + c.dur - 1000, fn:() => chapterOut(c)});
     });
     cues.push({t:p.end + 300, fn:epilogue});
-    R.cues = cues.sort((a, b) => a.t - b.t); R.ci = 0; R.T = 0;
+    R.cues = cues.sort((a, b) => a.t - b.t); R.ci = 0; R.T = 0; buildBar();
     R.el.classList.remove('awake'); document.body.classList.remove('sb-reel-awake'); R.inZone = false;
     setPlaying(true);
   }
@@ -8452,7 +8725,7 @@ html[data-sb-perf="reduced"] .yr-strip{transform:translateX(var(--x0))!important
     setTimeout(() => { if(!R.open){ el.hidden = true; stage().innerHTML = ''; $q('.yr-wait').textContent = ''; } }, silent ? 0 : 900);
   }
   SB.yearReel = { open:start, close, get state(){ return {open:!!R.open, T:R.T, playing:R.playing, total:R.p?.total || 0, chapters:R.p?.chs.map(c => ({t0:c.t0, dur:c.dur, layout:c.layout, n:c.ph.length, title:c.m.title})) || [], stats:R.p?.seq.filter(x => x.stats).map(x => x.t0) || []}; },
-    seek(T){ /* 测试用：跳到某个时间（重放之前的状态切换） */ if(!R.open) return; R.T = 0; R.ci = 0; stage().innerHTML = ''; R.counting = null; while(R.ci < R.cues.length && R.cues[R.ci].t <= T){ try{ R.cues[R.ci].fn(); }catch(e){} R.ci++; } R.T = T; } };
+    seek:T => seekTo(T) };
 })(window.SB);
 </script>
 <!-- ████ BLOCK 14-year-reel END ████ -->

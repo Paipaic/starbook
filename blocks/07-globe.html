@@ -1,6 +1,10 @@
 <style>
 /* ── 块 07 · 3D 世界星图地球仪（v1.8.0：星辉层次 + 搜索栏飞转定位 + 大洲徽章转向） ── */
 #gl-canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab;display:block;}
+/* v1.10.2：地球场景不允许选中文字（避免按在选区上触发原生拖放 → 禁止光标、地球转不动）；输入框除外 */
+.sb-scene[data-scene="globe"]{user-select:none;-webkit-user-select:none;}
+.sb-scene[data-scene="globe"] input,.sb-scene[data-scene="globe"] textarea{user-select:text;-webkit-user-select:text;}
+.gl-cont{touch-action:none;-webkit-user-drag:none;}
 #gl-canvas.dragging{cursor:grabbing;}
 .gl-head{position:absolute;left:50%;top:calc(14px + var(--safe-t));transform:translateX(-50%);text-align:center;pointer-events:none;z-index:3;
   display:flex;flex-direction:column;align-items:center;gap:4px;width:min(560px, calc(100vw - 32px));}
@@ -436,7 +440,7 @@
     const s = SB.store.stats();
     $('gl-stat').textContent = s.cities ? `已点亮 ${s.countries} 个国家 · ${s.cities} 座城市 · ${s.memories} 段回忆` : '还没有点亮任何地方 · 搜索一座城市开始吧';
     const vis = SB.store.visitedCountries();
-    contBtns.forEach(({c, badge}) => { const n = SB.geo.inContinent(c.code).filter(x => vis.has(x.key)).length; badge.innerHTML = n ? SB.icon('star') + n : ''; });
+    contBtns.forEach(({c, b, badge}) => { const n = SB.geo.inContinent(c.code).filter(x => vis.has(x.key)).length; badge.innerHTML = n ? SB.icon('star') + n : ''; b._sz = null; });
   }
   document.addEventListener('sb:data', () => {
     refreshStats(); index.mine = null;
@@ -448,7 +452,7 @@
   function resize(){
     if(!renderer) return;
     const W = innerWidth, H = innerHeight;
-    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, hi() ? 1.75 : 1.25));
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, hi() ? 1.75 : SB.perf.android ? 1 : 1.25));   // v1.10.2：安卓上限 1
     renderer.setSize(W, H, false);
     camera.aspect = W/H; camera.updateProjectionMatrix();
     const narrow = W <= 700;
@@ -457,7 +461,7 @@
     view.shift = narrow ? .12 : .085;           // 地球整体下移（视口高度比例 / 2），给顶部搜索栏留空间
     [starMat, ...dustMats].forEach(m => m.uniforms.px.value = renderer.getPixelRatio()*(H/900));
   }
-  addEventListener('resize', () => { if(SB.scenes.current === 'globe') resize(); });
+  addEventListener('resize', () => { contBtns.forEach(o => { o.b._sz = null; }); if(SB.scenes.current === 'globe') resize(); });
 
   /* ── 交互：拖拽旋转、惯性、缩放、悬停、点击 ── */
   const ray = { rc:null, v:null };
@@ -474,9 +478,18 @@
   function bindControls(){
     const pts = new Map(); let pinch = 0, moved = 0, lastHover = 0;
     const tapMoveLimit = SB.perf.touch ? 14 : 6;
-    cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); pts.set(e.pointerId, {x:e.clientX, y:e.clientY}); moved = 0; view.idle = 0; cv.classList.add('dragging');
+    // v1.10.2：主指针按下时清掉残留的指针记录（之前漏掉一次 pointerup 会被当成双指缩放 → 只缩放不旋转）；
+    // 大洲徽章上按下也交给地球拖动（徽章随地球转动，之前在徽章上按下拖动地球不动），没有移动才算点击徽章
+    let downOn = null;
+    const down = (e, from) => { if(e.button && e.pointerType === 'mouse') return;
+      if(e.isPrimary){ pts.clear(); pinch = 0; }
+      try{ cv.setPointerCapture(e.pointerId); }catch(_){}
+      pts.set(e.pointerId, {x:e.clientX, y:e.clientY}); moved = 0; view.idle = 0; cv.classList.add('dragging'); downOn = from || null;
       closeResults();
-      if(pts.size === 2){ const [a,b] = [...pts.values()]; pinch = Math.hypot(a.x-b.x, a.y-b.y); } });
+      if(pts.size === 2){ const [a,b] = [...pts.values()]; pinch = Math.hypot(a.x-b.x, a.y-b.y); } };
+    cv.addEventListener('pointerdown', e => down(e));
+    contBtns.forEach(({c, b}) => b.addEventListener('pointerdown', e => { e.preventDefault(); down(e, c); }));
+    SB.dragSurface?.(cv);
     cv.addEventListener('pointermove', e => {
       const p = pts.get(e.pointerId);
       if(!p){
@@ -492,13 +505,17 @@
       setHover(null);
     });
     const up = e => {
+      if(!pts.has(e.pointerId)) return;
       pts.delete(e.pointerId); if(pts.size < 2) pinch = 0; if(!pts.size) cv.classList.remove('dragging');
+      const from = downOn; if(!pts.size) downOn = null;
+      if(moved < tapMoveLimit && e.type === 'pointerup' && from){ toCont(from); return; }      // 轻点大洲徽章
       if(moved < tapMoveLimit && e.type === 'pointerup'){
         const h = pick(e.clientX, e.clientY);
         if(h?.country) SB.scenes.go('country', {k:h.country.key}, {transition:'portal', x:e.clientX, y:e.clientY});
       }
     };
-    cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+    cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up); cv.addEventListener('lostpointercapture', up);
+    addEventListener('blur', () => { pts.clear(); pinch = 0; downOn = null; cv.classList.remove('dragging'); });
     cv.addEventListener('pointerleave', () => setHover(null));
     cv.addEventListener('wheel', e => { e.preventDefault(); view.zoomT = SB.clamp(view.zoomT*(1 + Math.sign(e.deltaY)*.12), .58, 1.9); view.idle = 0; }, {passive:false});
   }
@@ -783,7 +800,9 @@
       const x = (p.x*.5 + .5)*W, y = (-p.y*.5 + .5)*H;
       const a = SB.clamp((facing - .1)*3, 0, 1)*ease*(focus.on && focus.kind !== 'cont' ? .35 : 1);
       b.style.opacity = a.toFixed(2); b.style.pointerEvents = a > .3 ? 'auto' : 'none';
-      b.style.transform = `translate(${(x - b.offsetWidth/2).toFixed(1)}px, ${(y - b.offsetHeight + 3).toFixed(1)}px)`;
+      // v1.10.2：尺寸缓存（写 transform 后立刻读 offsetWidth 会强制同步布局，7 个徽章每帧 7 次）
+      const sz = b._sz || (b._sz = [b.offsetWidth, b.offsetHeight]); if(!sz[0]) b._sz = null;
+      b.style.transform = `translate(${(x - sz[0]/2).toFixed(1)}px, ${(y - sz[1] + 3).toFixed(1)}px)`;
     });
     renderer.render(scene, camera);
     requestAnimationFrame(loop);
@@ -796,7 +815,8 @@
   let lastCountry = null;
   document.addEventListener('sb:scene', e => { if(e.detail.id === 'country') lastCountry = e.detail.params?.k || null; else if(e.detail.id !== 'globe') lastCountry = null; });
 
-  SB.globe = { warmEngine:()=>SB.loadScript(THREE_URLS), prepare:init, focus:o => focusTo(o), search:q => { qIn.value = q; search(); return S; } };
+  SB.globe = { get rot(){ return [view.rotX, view.rotY]; },      // 调试 / 测试用（v1.10.2）
+    warmEngine:()=>SB.loadScript(THREE_URLS), prepare:init, focus:o => focusTo(o), search:q => { qIn.value = q; search(); return S; } };
 
   SB.scenes.register('globe', {
     world:'night', deepLink:true,

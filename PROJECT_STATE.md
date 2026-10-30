@@ -2,11 +2,11 @@
 
 ## Current Release
 
-- Version: `1.10.1` (时光之环优化 · 日期精确到日 · 纪念日 · 魔法书星空背景)
+- Version: `1.10.2` (时光剪影进度条与尾声 · 返回原位 · 拖动稳定 · 安卓性能)
 - Deadline: `2026-10-29`
 - Delivery goal: 私密、稳定、手机可用的周年纪念礼物。
 - Base: V1 `blocks + build.py + site/index.html`。
-- Runtime config version: `1.10.1`。
+- Runtime config version: `1.10.2`。
 
 ## Current Architecture
 
@@ -103,6 +103,13 @@ release/vX.X.X or feature/*
 
 `main` 是唯一 Production branch。普通代码发布不重置 Supabase 数据。
 
+
+## Reel Seek / Return Position / Drag Robustness / Android (v1.10.2)
+
+- `14-year-reel`：`seekTo(T)`（重放 cue + Web Animations 前移）、进度条 `.yr-bar`（WAI-ARIA slider：章节刻痕、拖动、键盘）、放完后「继续」从头；尾声「年轮合拢」（彗星、回忆星环、外圈新光），删除了旧的 `.tail` 引申线。
+- `13-overview`：`enter` 认 `back || fromHistory` 恢复离开时的站点；重建时重置 `S.near`；window 级 `pointerup/cancel` 兜底、`lostpointercapture`、`blur`；动画循环 try/catch。
+- `00-core`：全局 `dragstart` 拦截、`SB.dragSurface()`、`SB.perf.android`。`07-globe`：大洲徽章按下也能拖动地球、主指针清空残留指针、徽章尺寸缓存、安卓像素比 1；`09-country-map` 同样的指针自愈。
+- `05-store`：`displayUrl(id, side)` / `proxyOn()` / `displaySide()`（安卓显示尺寸代理图，并发 3，最多 160 张，回收未使用的）。`11-memory-player`：安卓用代理图、low 档画内运动与等比尺寸只用 transform、安卓遮罩转场换淡入淡出、预载引用到离开放映。`01-ambient-fx` / `01b-gate`：安卓像素比上限。
 
 ## Ring Timeline Tuning / Day Dates / Anniversary (v1.10.1)
 
@@ -279,7 +286,7 @@ Confirmed by owner on 2026-10-26:
 
 ## Highest Priority Next
 
-1. 发布 v1.10.1（`.\release-current.ps1`），实测：时光长卷不再闪烁、卡片图片都能出来；点击远处光珠直接转到；在「纪念日」徽记设置纪念日后周年节点按日重算；给旧回忆补上具体日期后按日排序；魔法书页背景为星空深蓝；时光剪影放映中不再出现「正在准备」文字。
+1. 发布 v1.10.2（`.\release-current.ps1`），实测：时光剪影拖动进度条、看完尾声；从时光长卷点进回忆再返回停在原位；地球 / 时光之环长时间转动不再卡住；安卓手机转场与放映是否顺滑（尤其 30 张以上照片的回忆）。v1.10.1 项：时光长卷不再闪烁、卡片图片都能出来；点击远处光珠直接转到；在「纪念日」徽记设置纪念日后周年节点按日重算；给旧回忆补上具体日期后按日排序；魔法书页背景为星空深蓝；时光剪影放映中不再出现「正在准备」文字。
 2. 后续：v1.11.0 地球省 / 州矢量边界与局部高清（GLB-001），v1.11.1 国家地图「星图手稿」（MAP-001）。
 3. 完成 Private Storage 正式照片与 BGM 的实际内容填充，并优先使用 v1.7.2 之后的新上传缓存策略。
 4. 核心稳定后实现周年扉页 / 献词 / 结尾（ANN-008）。

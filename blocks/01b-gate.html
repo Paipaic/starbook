@@ -33,6 +33,7 @@
 
   function size(){
     G.dpr = Math.min(devicePixelRatio || 1, lowTier() ? 1 : 1.5);
+    if(SB.perf.android) G.dpr = Math.min(G.dpr, .8);      // v1.10.2：转场门是柔光，安卓上以 0.8 像素比绘制（肉眼无差别，填充量约减 1/3）
     G.W = innerWidth; G.H = innerHeight; G.m = Math.min(G.W, G.H);
     cv.width = Math.round(G.W*G.dpr); cv.height = Math.round(G.H*G.dpr);
   }
