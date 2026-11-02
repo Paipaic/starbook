@@ -221,6 +221,15 @@ if 'opts?.fromHistory' not in ov:
 if "addEventListener('dragstart'" not in block_text.get('00-core.html', '') or 'st.displayUrl' not in block_text.get('05-store.html', ''):
     print('ERROR: global dragstart guard (00-core) or Android display proxies (05-store) missing')
     sys.exit(1)
+# v1.11.0 guards: country page is a portal panel inside the globe scene (no separate 'country' scene); scene update hook; rift via WAAPI.
+cm = block_text.get('09-country-map.html', '')
+gl = block_text.get('07-globe.html', '')
+if 'data-scene="country"' in cm or "register('country'" in cm or "go('country'" in gl or "id:'country'" in block_text.get('10-city-album.html', ''):
+    print("ERROR: the separate 'country' scene was removed in v1.11.0; use SB.scenes.go('globe', {k}) and SB.countryPortal")
+    sys.exit(1)
+if 'SB.countryPortal = ' not in cm or 'panel.animate(' not in cm or 'update(p, opts)' not in gl or "typeof cur.update === 'function'" not in block_text.get('00-core.html', ''):
+    print('ERROR: country portal v1.11.0 (SB.countryPortal, WAAPI rift, globe update hook, core update path) broken')
+    sys.exit(1)
 # GBK-misread UTF-8 (mojibake) markers that appeared when Windows PowerShell read BOM-less UTF-8 as ANSI.
 MOJIBAKE = ['銆', '锛', '鈥', '鈹', '鏄熷', '涔嬩功']
 for rel in ['AGENTS.md', 'README.md', 'PROJECT_STATE.md', 'CHANGELOG.md', 'ROADMAP.md', 'blocks/00-config.html']:

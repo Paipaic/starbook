@@ -39,3 +39,13 @@
 - `dragstart`（捕获阶段）：目标不在 `[draggable="true"]` 内时 `preventDefault()`——页面里没有需要原生拖拽的图片 / 文字；编辑器照片卡自己设置了 `draggable="true"`，不受影响；从桌面把文件拖进编辑器是 `drop` 事件，也不受影响。
 - `SB.dragSurface(el)`：给拖动面用的小工具——按下时清除文字选区。
 - `SB.perf.android`：UA 含 Android（安卓 Chrome / WebView）。用于少数安卓专属降级（见 `prompts/performance/06-android.md`）；不改变三档 `high / low / reduced` 的含义。
+
+## v1.11.0 · 同场景状态钩子 `update(params, opts)`（国家星门面板）
+- 背景：国家地图页改为世界星图上的悬浮面板（`prompts/09-country-map.md`）。面板需要进入浏览器历史（手机系统返回键先关面板），但不应触发全屏转场或重建地球。
+- 规则：`SB.scenes.go(id, params, opts)` 的目标就是**当前场景**、且该场景注册了 `update(params, opts)` 时，先调用 `update`：
+  - 返回 `false` → 按原流程走（转场 → prepare → swap）；
+  - 否则视为已就地处理：更新 `scenes.params`，按原规则写历史（`fromHistory` 不写、`replaceHistory` 替换、其余 push），派发 `sb:scene`，不进入 `is-busy`、不走遮罩。
+- 只用于「同一场景里的子状态」（例如面板开 / 关、切换国家）；需要准备数据或换场景时必须仍走 `prepare → await enter → nextPaint → reveal`。
+- `update` 必须是同步的轻量操作（可以启动动画，但不能 await 网络）；动画中重复调用要能安全合并。
+- `popstate` 仍调用 `go(..., {fromHistory:true, force:true})`；同场景时同样先走 `update`。
+- `is-busy` 期间到达的同场景请求与以前一样排队到 `_pendingHistory`。

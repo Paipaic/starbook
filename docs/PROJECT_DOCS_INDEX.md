@@ -28,7 +28,7 @@
 - `../prompts/13-overview.md` — 「时光长卷」横向时间轴（v1.8.1，取代回忆总览；v1.10.0「时光之环」三维环形时光轴 + 周年节点；v1.10.1 光珠 / 点击直达 / 纪念日按日）。
 - `../prompts/14-year-reel.md` — 「时光剪影」周年回放（v1.10.0）。
 - `../prompts/03-magic-book.md`、`../prompts/07-globe.md` — 「星辉层次」魔法书与地球特效、地球搜索栏（v1.8.0）。
-- `../prompts/09-country-map.md` — 国家地图；v1.8.0 起返回直接回到地球（大洲目录页已删除）。
+- `../prompts/09-country-map.md` — v1.11.0 国家星门面板（时空裂隙；国家页已删除，面板是地球场景的子状态）；附录保留旧国家地图场景说明。
 - `../tools/make_cities.py` — 生成离线城市库 `blocks/06-world-cities.html`（v1.8.0）。
 
 ## 发布与 CI
@@ -73,7 +73,7 @@ v1.6.0+ 一键版本发布机制。说明 `release-current.ps1`、自动 Release
 
 - `prompts/performance/01-login-to-book.md`
 - `prompts/performance/02-book-to-globe.md`
-- `prompts/performance/03-globe-to-country.md`
+- `prompts/performance/03-globe-to-country.md`（v1.11.0 重写：地球 → 国家星门面板）
 - `prompts/performance/04-country-city-deep-scenes.md`
 - `prompts/performance/05-scene-runtime-transaction.md`
 - `prompts/performance/06-android.md`（v1.10.2 安卓：显示尺寸代理图、放映 transform 化、canvas 像素比）
@@ -81,3 +81,4 @@ v1.6.0+ 一键版本发布机制。说明 `release-current.ps1`、自动 Release
 ## v1.7.3 转场专项验收
 
 - `docs/TRANSITION_STABILITY_TEST.md`：登录→Book→Globe→Country→City→Player 全链路真机验收（v1.8.0 增加秘境之门与搜索验收项）。
+- `releases/v1.11.0.md` — 国家星门面板（时空裂隙）。

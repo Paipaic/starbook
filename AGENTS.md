@@ -7,7 +7,7 @@
 ## 1. 当前项目身份
 
 - Project: **Starbook / 星屿之书**
-- Current version: **1.10.2**
+- Current version: **1.11.0**
 - Production branch: **`main`**
 - Production deploy: **GitHub Pages via GitHub Actions**
 - Runtime backend: **Supabase Anniversary Bridge**
@@ -239,3 +239,9 @@ python tools/check_project.py
 - 场景 `enter` 判断「返回」时必须同时认 `opts.back` 与 `opts.fromHistory`（从子页返回多数走浏览器历史）。
 - 全局已阻止原生 `dragstart`（除 `[draggable="true"]`）；新的拖动面请调用 `SB.dragSurface(el)`、设 `user-select:none`，并在 window 上兜底 `pointerup / pointercancel`、处理 `lostpointercapture` 与 `blur`；主指针按下时清空残留指针表。
 - 安卓专属降级集中在 `SB.perf.android`（见 `prompts/performance/06-android.md`）：显示尺寸代理图 `SB.store.displayUrl()`、放映 low 档只用 transform 的画内运动与等比缩放、遮罩转场换淡入淡出、全屏 canvas 像素比上限。桌面 / iOS 行为不因此改变（low 档的 transform 化对所有 low 档设备生效，视觉等价）。
+
+### v1.11.0 国家星门面板（时空裂隙）
+- 国家页（`country` 场景）已删除，不要恢复。国家 = 世界星图上的悬浮面板：`SB.scenes.go('globe', {k})` 打开、`SB.scenes.go('globe', {})` / `SB.scenes.back()` 关闭；城市的父级是 `{id:'globe', params:{k}}`。
+- 同场景子状态使用 Scene Runtime 的 `update(params, opts)` 钩子（`prompts/00-core.md` v1.11.0）：不走遮罩、仍写历史。只用于同一场景内的状态切换；换场景必须照旧 `prepare → await enter → nextPaint → reveal`。
+- 面板组件 `SB.countryPortal`（`blocks/09-country-map.html`）只由 `globe` 场景调用。裂隙动画用 WAAPI `clip-path: inset()` 关键帧 + 两个只动 transform / opacity 的光边元素；不要改成逐帧 JS 写 clip-path，也不要给地球 WebGL 画布加 CSS filter。
+- 面板是模态对话框（WAI-ARIA APG）：`role="dialog"` + `aria-modal`、打开时其余地球界面 `inert`、Tab 循环、Esc 关闭、关闭后焦点归还。

@@ -115,3 +115,7 @@
 ## 14. v1.10.2 安卓
 
 见 `prompts/performance/06-android.md`。要点：大图在手机上先缩到显示尺寸（`SB.store.displayUrl`）；放映 low 档只用 transform（画内运动 = 放大的 img 在裁切框内平移，不改 `object-position`；框等比变化用 `scale()`）；安卓上不用 JS 逐帧改写遮罩 / 裁切；全屏 canvas 像素比 ≤ 1；不要在动画循环里写样式后立刻读布局（`offsetWidth` 等）。
+
+## 15. v1.11.0 国家星门面板
+
+见 `prompts/performance/03-globe-to-country.md`。要点：裂隙形状用 WAAPI `clip-path: inset()` 关键帧（不要每帧 JS 写 clip-path）；裂缝光边是独立元素，只动 transform / opacity；不对地球 WebGL 画布用 CSS filter（变暗用幕布）；面板背景 canvas 只在华丽档、约 30fps、面板打开时运行，柔和档 / 安卓用 CSS 光带；柔和档 / 安卓面板展开后地球跳过渲染；省份描边绘入只在华丽档。

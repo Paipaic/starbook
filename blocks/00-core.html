@@ -456,6 +456,20 @@ window.SB = window.SB || {};
       return;
     }
     if(id === scenes.current && JSON.stringify(params) === JSON.stringify(scenes.params) && !opts.force) return;
+    // v1.11.0 同场景状态（prompts/00-core.md）：目标就是当前场景且场景声明了 update → 就地切换子状态（如国家星门面板），
+    // 不走遮罩、不重建场景；返回 false 时按原流程转场。
+    const cur = scenes.map[id];
+    if(id === scenes.current && typeof cur.update === 'function'){
+      let handled = false;
+      try{ handled = cur.update(params || {}, opts) !== false; }catch(e){ console.error('[Starbook scene update]', id, e); }
+      if(handled){
+        const prev = {id, params:scenes.params};
+        scenes.params = params || {};
+        syncHistory(id, scenes.params, opts, prev);
+        document.dispatchEvent(new CustomEvent('sb:scene', {detail:{id, params:scenes.params}}));
+        return;
+      }
+    }
     const tr = opts.transition || 'veil';
     const low = SB.perf.level !== 'high';
     document.body.classList.add('is-busy');
