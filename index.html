@@ -3,7 +3,7 @@
 /* ── Starbook v1.10.2 · 公开客户端配置 ──
    Publishable Key 设计上允许出现在浏览器；不要在此文件放 Secret / service_role / 数据库密码。 */
 window.STARBOOK_CONFIG = Object.freeze({
-  version: '1.10.2',
+  version: '1.11.0',
   supabaseUrl: 'https://xowbbcumcxtsrrnulunb.supabase.co',
   supabasePublishableKey: 'sb_publishable_SYGBrk2PiwwzRXZm03Patg_oDlYSIGd',
   storageBucket: 'starbook-media',
@@ -477,6 +477,20 @@ window.SB = window.SB || {};
       return;
     }
     if(id === scenes.current && JSON.stringify(params) === JSON.stringify(scenes.params) && !opts.force) return;
+    // v1.11.0 同场景状态（prompts/00-core.md）：目标就是当前场景且场景声明了 update → 就地切换子状态（如国家星门面板），
+    // 不走遮罩、不重建场景；返回 false 时按原流程转场。
+    const cur = scenes.map[id];
+    if(id === scenes.current && typeof cur.update === 'function'){
+      let handled = false;
+      try{ handled = cur.update(params || {}, opts) !== false; }catch(e){ console.error('[Starbook scene update]', id, e); }
+      if(handled){
+        const prev = {id, params:scenes.params};
+        scenes.params = params || {};
+        syncHistory(id, scenes.params, opts, prev);
+        document.dispatchEvent(new CustomEvent('sb:scene', {detail:{id, params:scenes.params}}));
+        return;
+      }
+    }
     const tr = opts.transition || 'veil';
     const low = SB.perf.level !== 'high';
     document.body.classList.add('is-busy');
@@ -3778,7 +3792,8 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
       if(moved < tapMoveLimit && e.type === 'pointerup' && from){ toCont(from); return; }      // 轻点大洲徽章
       if(moved < tapMoveLimit && e.type === 'pointerup'){
         const h = pick(e.clientX, e.clientY);
-        if(h?.country) SB.scenes.go('country', {k:h.country.key}, {transition:'portal', x:e.clientX, y:e.clientY});
+        // v1.11.0：国家不再是独立页面，而是地球上的星门面板（globe 场景子状态，见 prompts/09-country-map.md）
+        if(h?.country) SB.scenes.go('globe', {k:h.country.key}, {x:e.clientX, y:e.clientY});
       }
     };
     cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up); cv.addEventListener('lostpointercapture', up);
@@ -3787,12 +3802,13 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
     cv.addEventListener('wheel', e => { e.preventDefault(); view.zoomT = SB.clamp(view.zoomT*(1 + Math.sign(e.deltaY)*.12), .58, 1.9); view.idle = 0; }, {passive:false});
   }
   let warmCountryT = 0, warmCountryKey = '';
+  const warmMap = k => { if(SB.geo.hasMap(k)) SB.geo.loadCountryMap(k).catch(() => {}); };
   function setHover(h, x, y){
     const c = h?.country;
     const idx = c ? SB.geo.countries.indexOf(c) + 1 : -1;
     earthMat.uniforms.hk.value = idx; earthMat.uniforms.hc.value = c ? (contIndex[c.cont] || -1) : -1;
     if(!c){ clearTimeout(warmCountryT); warmCountryKey = ''; tip.classList.remove('show'); return; }
-    if(c.key !== warmCountryKey){ clearTimeout(warmCountryT); warmCountryKey = c.key; warmCountryT = setTimeout(() => SB.scenes.prefetch?.('country',{k:c.key}),180); }
+    if(c.key !== warmCountryKey){ clearTimeout(warmCountryT); warmCountryKey = c.key; warmCountryT = setTimeout(() => warmMap(c.key), 180); }
     const n = SB.store.citiesIn(c.key).length;
     tip.innerHTML = `<b>${SB.esc(c.zh)}</b>${SB.esc(SB.geo.continent(c.cont)?.name || '')}${n ? ` · ${SB.icon('star')}${n} 座城市` : ''}`;
     tip.style.transform = `translate(${Math.min(x + 16, innerWidth - tip.offsetWidth - 12)}px, ${y + 18}px)`;
@@ -3855,13 +3871,13 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
     card.querySelector('h2').textContent = o.zh; card.querySelector('p').textContent = sub;
     card.querySelector('.x').addEventListener('click', () => endFocus());
     const acts = card.querySelector('.acts');
-    // v1.8.1 分路转场：进入国家 = 幻影显形；直接打开城市 = 墨金书页
-    const go = (id, params, btn) => { const r = btn.getBoundingClientRect(); SB.scenes.go(id, params, {transition:id === 'city' ? 'quill' : 'portal', x:r.left + r.width/2, y:r.top + r.height/2}); };
+    // v1.8.1 分路转场：直接打开城市 = 墨金书页；v1.11.0 进入国家 = 在地球上撕开星门面板
+    const go = (id, params, btn) => { const r = btn.getBoundingClientRect(); SB.scenes.go(id, params, {transition:id === 'city' ? 'quill' : undefined, x:r.left + r.width/2, y:r.top + r.height/2}); };
     if(mine){ const b = SB.ui.button('打开我们的回忆', 'primary', () => go('city', {id:mine.id}, b), 'star'); acts.appendChild(b); }
-    if(ctry){ const b = SB.ui.button(`进入${ctry.zh}地图`, mine ? '' : 'primary', () => go('country', {k:ctry.key}, b)); acts.appendChild(b); }
+    if(ctry){ const b = SB.ui.button(`进入${ctry.zh}地图`, mine ? '' : 'primary', () => go('globe', {k:ctry.key}, b)); acts.appendChild(b); }
     if(!acts.children.length){ const p = SB.el('p'); p.textContent = '这里暂时没有可以进入的地图'; acts.appendChild(p); }
     card.classList.add('show');
-    if(ctry) SB.scenes.prefetch?.('country', {k:ctry.key});
+    if(ctry) warmMap(ctry.key);
   }
 
   /* ── 搜索 ── */
@@ -4032,6 +4048,8 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
       view.rotY += view.vy*dt*8 + (view.idle > 4 && still ? dt*.06*Math.min(1, (view.idle-4)/2) : 0);
       view.rotX = SB.clamp(view.rotX + view.vx*dt*8, -1.25, 1.25);
     }
+    // v1.11.0：柔和档 / 安卓在国家面板完全展开且飞转结束后不再重绘地球（画布保留最后一帧，prompts/performance/03-globe-to-country.md）
+    if(!hi() && SB.countryPortal?.settled && !fly.on && view.intro >= 1){ requestAnimationFrame(loop); return; }
     globe.rotation.set(view.rotX, view.rotY, 0);
     view.intro = Math.min(1, view.intro + dt/2.4);
     const ease = 1 - Math.pow(1 - view.intro, 3);
@@ -4078,34 +4096,48 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   function stop(){ running = false; if(fly.on){ view.rotX = fly.x1; view.rotY = fly.y1; fly.on = false; fly.done?.(); fly.done = null; } }
   document.addEventListener('visibilitychange', () => { if(document.hidden) stop(); else if(SB.scenes.current === 'globe') start(); });
 
-  /* 记住刚离开的国家：从国家地图返回时地球转向它 */
-  let lastCountry = null;
-  document.addEventListener('sb:scene', e => { if(e.detail.id === 'country') lastCountry = e.detail.params?.k || null; else if(e.detail.id !== 'globe') lastCountry = null; });
-
   SB.globe = { get rot(){ return [view.rotX, view.rotY]; },      // 调试 / 测试用（v1.10.2）
+    pickAt:(x, y) => ready ? pick(x, y)?.country?.key || null : null,   // 调试 / 测试用（v1.11.0）
     warmEngine:()=>SB.loadScript(THREE_URLS), prepare:init, focus:o => focusTo(o), search:q => { qIn.value = q; search(); return S; } };
+
+  /* v1.11.0 国家星门面板：面板是 globe 场景的子状态（params.k），由块 09 SB.countryPortal 呈现 */
+  const portalKey = p => p?.k && SB.geo.country(p.k) ? p.k : null;
+  let unfocusT = 0;
+  function faceCountry(k, instant){
+    const c = SB.geo.country(k); if(!c?.mid) return;
+    clearTimeout(unfocusT);
+    if(instant){ const to = targetRotation(c.mid[0], c.mid[1]); view.rotX = to.x; view.rotY = to.y; view.vx = view.vy = 0; }
+    focusTo({kind:'country', key:c.key, zh:c.zh, lon:c.mid[0], lat:c.mid[1], silent:true});
+  }
+  function portalClosed(){ clearTimeout(unfocusT); unfocusT = setTimeout(() => { if(focus.o?.silent) endFocus(); }, 4000); }
 
   SB.scenes.register('globe', {
     world:'night', deepLink:true,
-    title:()=>'世界星图',
-    parent:()=>null,
-    prepare(){ return init(); },
+    title:p => portalKey(p) ? SB.geo.country(p.k).zh : '世界星图',
+    parent:p => portalKey(p) ? {id:'globe', params:{}} : null,
+    prepare(p){ const k = portalKey(p); return Promise.all([init(), k && SB.geo.hasMap(k) ? SB.geo.loadCountryMap(k).catch(() => null) : null]); },
+    // 同场景子状态：打开 / 切换 / 关闭国家面板，不走全屏转场（prompts/00-core.md v1.11.0）
+    update(p, opts){
+      if(!ready) return false;
+      const k = portalKey(p);
+      if(k){ hideCard(); closeResults(); setHover(null); faceCountry(k, false);
+        SB.countryPortal.open(k, {x:opts?.x, y:opts?.y}); }
+      else if(SB.countryPortal.isOpen || SB.countryPortal.phase === 'opening'){ SB.countryPortal.close(); portalClosed(); }
+      return true;
+    },
     async enter(p, opts){
       SB.fx.palette('night'); SB.fx.orbit(null);
       setTimeout(() => SB.fx.warp(false), p?.fromBook ? 900 : 0);
       setTimeout(() => SB.fx.calm(), 1400);
       refreshStats(); closeResults();
-      const back = lastCountry && SB.geo.country(lastCountry); lastCountry = null;
-      view.intro = p?.fromBook ? 0 : back ? .8 : .55;
+      const k = portalKey(p);
+      view.intro = p?.fromBook ? 0 : k ? 1 : .55;
       try{ await init(); }catch(e){ return; }
       resize(); view.zoomT = 1; start();
-      if(back && back.mid){
-        // 从国家地图返回：转向这个国家并短暂高亮（不弹信息卡）
-        const v = back.mid; focusTo({kind:'country', key:back.key, zh:back.zh, lon:v[0], lat:v[1], silent:true});
-        setTimeout(() => { if(focus.o?.silent) endFocus(); }, 4200);
-      }
+      // 从城市返回 / 深链：地球直接朝向该国，面板在遮罩后静态呈现
+      if(k){ faceCountry(k, true); SB.countryPortal.open(k, {instant:true}); }
     },
-    leave(){ stop(); setHover(null); closeResults(); hideCard(); }
+    leave(){ stop(); setHover(null); closeResults(); hideCard(); SB.countryPortal?.close({instant:true}); }
   });
 
   SB.menu.add({id:'globe', order:20, icon:'globe', label:'世界星图', desc:'旋转地球，搜索任意城市，寻找我们的足迹',
@@ -4117,123 +4149,215 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
 
 <!-- ████ BLOCK 09-country-map START ████ -->
 <style>
-/* v1.10.2：拖动面不允许选中文字（避免原生拖放接管指针） */
-.sb-scene[data-scene="country"]{user-select:none;-webkit-user-select:none;}
-.sb-scene[data-scene="country"] input{user-select:text;-webkit-user-select:text;}
-/* ── 块 09 · 国家地图与省份星星 ── */
-.cm-head{position:absolute;left:50%;top:calc(16px + var(--safe-t));transform:translateX(-50%);text-align:center;pointer-events:none;z-index:3;
-  display:flex;flex-direction:column;align-items:center;gap:4px;width:max-content;max-width:calc(100vw - 32px);}
-.cm-head small{font-family:var(--f-rune);font-weight:500;font-size:10.5px;letter-spacing:.4em;padding-left:.4em;color:var(--gold-dim);}
-.cm-head h1{margin:0;padding-left:.28em;font-family:var(--f-display);font-weight:var(--fw-display);font-size:clamp(28px,4vw,46px);letter-spacing:.28em;color:var(--gold-hi);text-shadow:0 0 24px rgba(244,184,96,.65);}
-.cm-head p{margin:0;font-size:13px;letter-spacing:.1em;color:#c9c6ea;}
-.cm-stage{position:absolute;inset:0;touch-action:none;}
-.cm-halo{position:absolute;left:50%;top:54%;width:80vmin;height:60vmin;transform:translate(-50%,-50%);pointer-events:none;
-  background:radial-gradient(closest-side, rgba(244,184,96,.16), rgba(80,90,200,.08) 60%, transparent);filter:blur(10px);}
-#cm-svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;cursor:grab;}
-#cm-svg.dragging{cursor:grabbing;}
-.cm-region{fill:url(#cmLand);stroke:rgba(255,214,150,.55);stroke-width:var(--cm-sw,1);vector-effect:non-scaling-stroke;cursor:pointer;
-  transition:fill .35s, stroke .35s;}
-.cm-region.lit{fill:url(#cmLit);stroke:#ffe2a8;}
-.cm-region.hot{stroke:#fff4d8;stroke-width:2;fill:url(#cmHot);}
-.cm-region.lit.hot{fill:url(#cmLitHot);}
-.cm-line{fill:none;stroke:rgba(244,184,96,.35);stroke-dasharray:4 4;vector-effect:non-scaling-stroke;}
-.cm-star{pointer-events:none;}
-.cm-star .halo{fill:url(#cmStarHalo);opacity:0;}
-.cm-star.lit .halo{opacity:1;animation:cmPulse 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:center;}
-.cm-star .core{fill:#7d7466;opacity:.55;}
-.cm-star.lit .core{fill:#fff6dc;opacity:1;}
-.cm-star.pop .halo{animation:cmPop 1.2s var(--ease-soft);}
-@keyframes cmPulse{0%,100%{transform:scale(.8);opacity:.75}50%{transform:scale(1.15);opacity:1}}
-@keyframes cmPop{0%{transform:scale(.2);opacity:0}40%{transform:scale(2.6);opacity:1}100%{transform:scale(1);opacity:1}}
-.cm-tools{position:absolute;right:max(16px,var(--safe-r));bottom:calc(16px + var(--safe-b));display:flex;flex-direction:column;gap:8px;z-index:3;}
-.cm-tools button{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:rgba(14,14,40,.8);color:var(--gold-hi);font-size:19px;cursor:pointer;display:grid;place-items:center;}
-.cm-tools button:hover{box-shadow:0 0 16px rgba(244,184,96,.4);}
-.cm-load{position:absolute;inset:0;display:grid;place-items:center;z-index:4;}
-.cm-load[hidden]{display:none!important;}
-.cm-legend{position:absolute;left:max(16px,var(--safe-l));bottom:calc(18px + var(--safe-b));z-index:3;display:flex;gap:14px;font-size:12px;color:var(--text-dim);letter-spacing:.08em;}
-.cm-legend span{display:flex;align-items:center;gap:6px;}
-.cm-legend i{width:10px;height:10px;border-radius:50%;}
-/* 悬浮窗 */
-.cm-pop{position:absolute;left:0;top:0;z-index:20;width:min(280px, calc(100vw - 32px));padding:16px 16px 14px;border-radius:14px;
-  background:radial-gradient(120% 60% at 50% 0%, rgba(244,184,96,.14), transparent 70%), var(--glass-night);
-  border:1px solid var(--line);box-shadow:0 0 0 3px rgba(10,10,28,.6),0 0 0 4px rgba(244,184,96,.2),0 16px 40px rgba(0,0,0,.6),0 0 30px rgba(244,184,96,.15);
-  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  opacity:0;transform:translateY(6px) scale(.96);pointer-events:none;transition:opacity .25s var(--ease-soft), transform .25s var(--ease-soft);}
-.cm-pop.show{opacity:1;transform:none;pointer-events:auto;}
-.cm-pop h4{margin:0;font-family:var(--f-display);font-weight:var(--fw-display);font-size:21px;letter-spacing:.14em;color:var(--gold-hi);}
-.cm-pop .en{font-size:11px;color:var(--text-dim);letter-spacing:.08em;margin-top:2px;}
-.cm-pop ul{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:2px;max-height:240px;overflow:auto;}
-.cm-pop li{display:flex;align-items:center;gap:6px;}
-.cm-pop .city{flex:1;display:flex;align-items:center;gap:8px;padding:7px 8px;border:0;border-radius:8px;background:none;cursor:pointer;text-align:left;
-  font-family:var(--f-display);font-weight:var(--fw-display);font-size:16.5px;letter-spacing:.08em;color:var(--text);min-width:0;}
-.cm-pop .city:hover{background:rgba(244,184,96,.1);color:var(--gold-hi);}
-.cm-pop .city svg{width:16px;height:16px;flex:none;filter:drop-shadow(0 0 4px rgba(255,200,110,.9));}
-.cm-pop .city span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.cm-pop .city em{font-style:normal;font-size:11.5px;color:var(--text-dim);margin-left:auto;font-family:var(--f-body);font-weight:400;letter-spacing:.02em;}
-.cm-pop .edit{width:30px;height:30px;border-radius:50%;border:0;background:none;color:var(--text-dim);cursor:pointer;flex:none;display:grid;place-items:center;font-size:16px;}
-.cm-pop .edit:hover{color:var(--gold-hi);background:rgba(244,184,96,.1);}
-.cm-pop .none{margin:10px 0 0;font-size:13px;color:var(--text-dim);letter-spacing:.06em;}
-.cm-pop .add{margin-top:12px;display:flex;gap:8px;align-items:center;}
-.cm-pop .add .sb-input{font-size:15px;}
-.cm-pop .x{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;border:0;background:none;color:var(--text-dim);font-size:16px;cursor:pointer;display:none;place-items:center;}
-@media (pointer:coarse){ .cm-pop .x{display:grid;} }
-@media (max-width:700px){ .cm-head{top:calc(70px + var(--safe-t));} .cm-legend{display:none;} }
+/* ── 块 09 · 国家星门面板（v1.11.0「时空裂隙」，prompts/09-country-map.md）──
+   v1.10.2 及以前是独立的「国家地图」场景；v1.11.0 改为世界星图上的悬浮面板，面板是 globe 场景的子状态（SB.scenes update 钩子）。 */
+.cp-root{position:absolute;inset:0;z-index:6;pointer-events:none;user-select:none;-webkit-user-select:none;}
+.cp-root[hidden]{display:none!important;}
+.cp-root input,.cp-root select{user-select:text;-webkit-user-select:text;}
+.cp-scrim{position:absolute;inset:0;pointer-events:auto;opacity:0;
+  background:radial-gradient(75% 70% at 50% 52%, rgba(8,9,32,.42), rgba(3,4,14,.74));}
+.cp-root.on .cp-scrim{opacity:1;}
+/* 面板 */
+.cp-panel{position:absolute;left:50%;top:calc(50% + 30px);width:min(1120px,92vw);height:min(780px, calc(100% - 104px - var(--safe-t)));transform:translate(-50%,-50%);
+  display:grid;grid-template-rows:auto minmax(0,1fr) auto;border-radius:22px;overflow:hidden;pointer-events:auto;visibility:hidden;
+  background:linear-gradient(180deg,#0b0e2c,#06071a);color:var(--text);
+  box-shadow:0 0 0 1px rgba(255,226,170,.45),0 0 0 6px rgba(9,10,30,.6),0 0 0 7px rgba(242,182,94,.22),0 40px 120px rgba(0,0,0,.7),0 0 80px rgba(242,182,94,.12);}
+.cp-root.live .cp-panel{visibility:visible;}
+.cp-panel:focus{outline:none;}
+/* 背景：华丽档 canvas 极光；柔和档三条 CSS 光带（只动 transform） */
+.cp-bg{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+.cp-bg canvas{position:absolute;inset:0;width:100%;height:100%;display:block;}
+.cp-bg i{position:absolute;top:-10%;bottom:-10%;width:16%;border-radius:50%;filter:none;opacity:.55;will-change:transform;
+  background:linear-gradient(90deg,rgba(120,140,255,0),rgba(150,170,255,.22),rgba(120,140,255,0));animation:cpBand 22s ease-in-out infinite alternate;}
+.cp-bg i:nth-child(1){left:12%;}
+.cp-bg i:nth-child(2){left:46%;width:12%;background:linear-gradient(90deg,rgba(255,214,150,0),rgba(255,214,150,.14),rgba(255,214,150,0));animation-duration:27s;animation-delay:-9s;}
+.cp-bg i:nth-child(3){left:72%;width:18%;animation-duration:31s;animation-delay:-4s;}
+.cp-root.hi .cp-bg i{display:none;}
+@keyframes cpBand{from{transform:translateX(-30%)}to{transform:translateX(30%)}}
+.cp-veil{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:0;transition:opacity .9s var(--ease-soft);
+  background:radial-gradient(70% 70% at 45% 55%, rgba(7,9,32,.9) 30%, rgba(7,9,32,.55) 70%, rgba(7,9,32,.12) 100%);}
+.cp-panel.s1 .cp-veil{opacity:1;}
+.cp-head,.cp-body,.cp-foot{position:relative;z-index:1;}
+/* 头部 */
+.cp-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:22px 26px 6px;opacity:0;transform:translateY(-8px);
+  transition:opacity .6s var(--ease-soft), transform .6s var(--ease-soft);}
+.cp-panel.s1 .cp-head{opacity:1;transform:none;}
+.cp-head small{display:block;font-family:var(--f-rune);font-weight:500;font-size:11px;letter-spacing:.42em;color:var(--gold-dim);}
+.cp-head h2{margin:4px 0;font-family:var(--f-display);font-weight:var(--fw-display);font-size:clamp(26px,3.4vw,38px);letter-spacing:.2em;color:var(--gold-hi);text-shadow:0 0 24px rgba(242,182,94,.4);}
+.cp-head p{margin:0;font-size:13px;letter-spacing:.1em;color:#c9c6ea;font-variant-numeric:tabular-nums;}
+.cp-x{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:rgba(10,12,34,.7);color:var(--gold-hi);cursor:pointer;display:grid;place-items:center;}
+.cp-x:hover{box-shadow:0 0 16px rgba(242,182,94,.45);}
+.cp-x .sb-ico{width:16px;height:16px;}
+.cp-root button:focus-visible{outline:2px solid var(--gold-hi);outline-offset:2px;}
+/* 主体 */
+.cp-body{display:grid;grid-template-columns:minmax(0,1fr) 280px;grid-template-rows:minmax(0,1fr);gap:18px;padding:6px 26px 10px;min-height:0;}
+.cp-map{position:relative;min-height:0;min-width:0;overflow:hidden;border-radius:14px;touch-action:none;}
+#cp-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;cursor:grab;}
+#cp-svg.dragging{cursor:grabbing;}
+.cp-region{fill:rgba(40,48,120,.0);stroke:rgba(255,214,150,.55);stroke-width:1;vector-effect:non-scaling-stroke;stroke-linejoin:round;cursor:pointer;opacity:0;
+  transition:fill .5s, stroke .35s, opacity .6s var(--ease-soft);}
+.cp-panel.s2 .cp-region{opacity:1;fill:rgba(42,52,140,.42);}
+.cp-panel.s2 .cp-region.lit{fill:rgba(242,182,94,.26);stroke:rgba(255,227,171,.85);}
+.cp-panel.s2 .cp-region.hot{fill:rgba(90,100,200,.5);stroke:#fff4d8;}
+.cp-panel.s2 .cp-region.lit.hot{fill:rgba(242,182,94,.4);}
+.cp-panel.s2 .cp-region.sel{fill:rgba(242,182,94,.46);stroke:#fff4d8;}
+/* 华丽档：省份轮廓描边绘入 */
+.cp-root.hi .cp-region{opacity:1;stroke-dasharray:1;stroke-dashoffset:1;
+  transition:stroke-dashoffset 1.3s var(--ease-soft) var(--d,0ms), fill .8s var(--ease-soft) calc(var(--d,0ms) + 700ms), stroke .35s;}
+.cp-root.hi .cp-panel.s2 .cp-region{stroke-dashoffset:0;}
+.cp-root.hi .cp-panel.drawn .cp-region{stroke-dasharray:none;transition:fill .5s, stroke .35s;}
+.cp-line{fill:none;stroke:rgba(244,184,96,.3);stroke-dasharray:4 4;vector-effect:non-scaling-stroke;pointer-events:none;}
+.cp-star{pointer-events:none;opacity:0;transition:opacity .6s var(--ease-soft) var(--d,0ms);}
+.cp-panel.s3 .cp-star{opacity:1;}
+.cp-star .halo{fill:url(#cpStarHalo);opacity:0;}
+.cp-star.lit .halo{opacity:1;}
+.cp-star .core{fill:#7d7466;opacity:.5;}
+.cp-star.lit .core{fill:#fff6dc;opacity:1;}
+.cp-star text{fill:var(--gold-hi);font-family:var(--f-display);font-weight:600;font-size:13px;letter-spacing:1.5px;paint-order:stroke;stroke:#070920;stroke-width:4px;stroke-linejoin:round;}
+.cp-star.hot .halo{animation:cpPop 1.1s var(--ease-soft);}
+.cp-star.pop .halo{animation:cpPop 1.2s var(--ease-soft);}
+@keyframes cpPop{0%{transform:scale(.3);opacity:0}40%{transform:scale(2.4);opacity:1}100%{transform:scale(1);opacity:1}}
+.cp-star .halo{transform-box:fill-box;transform-origin:center;}
+.cp-tools{position:absolute;right:8px;bottom:8px;display:flex;flex-direction:column;gap:6px;z-index:2;}
+.cp-tools button{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:rgba(10,12,34,.82);color:var(--gold-hi);cursor:pointer;display:grid;place-items:center;}
+.cp-tools .sb-ico{width:15px;height:15px;}
+.cp-tip{position:absolute;left:0;top:0;z-index:2;pointer-events:none;padding:5px 12px;border-radius:999px;border:1px solid var(--line);background:rgba(12,12,34,.88);
+  font-size:13px;letter-spacing:.08em;color:var(--text);white-space:nowrap;opacity:0;transition:opacity .2s;}
+.cp-tip b{font-family:var(--f-display);color:var(--gold-hi);margin-right:6px;}
+.cp-tip.show{opacity:1;}
+.cp-load{position:absolute;inset:0;display:grid;place-items:center;z-index:2;}
+.cp-load[hidden]{display:none!important;}
+/* 城市栏 */
+.cp-side{display:flex;flex-direction:column;gap:10px;min-height:0;opacity:0;transform:translateX(12px);transition:opacity .6s var(--ease-soft), transform .6s var(--ease-soft);}
+.cp-panel.s3 .cp-side{opacity:1;transform:none;}
+.cp-side h3{margin:4px 0 0;font-family:var(--f-rune);font-weight:600;font-size:11.5px;letter-spacing:.36em;color:var(--gold-dim);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.cp-chip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 6px 0 12px;border-radius:999px;border:1px solid rgba(255,227,171,.6);background:rgba(242,182,94,.14);
+  color:var(--gold-hi);font-family:var(--f-display);font-size:13px;letter-spacing:.08em;cursor:pointer;}
+.cp-chip .sb-ico{width:12px;height:12px;}
+.cp-list{display:flex;flex-direction:column;gap:8px;overflow:auto;min-height:0;padding:2px 2px 2px 0;overscroll-behavior:contain;}
+.cp-card{position:relative;flex:none;display:flex;align-items:stretch;border-radius:12px;border:1px solid var(--line);background:rgba(14,16,46,.78);transition:border-color .3s, box-shadow .3s;}
+.cp-card:hover,.cp-card.hot{border-color:rgba(255,227,171,.75);box-shadow:0 0 18px rgba(242,182,94,.22);}
+.cp-card .go{flex:1;min-width:0;display:flex;align-items:center;gap:12px;min-height:58px;padding:10px 14px;border:0;background:none;color:var(--text);cursor:pointer;text-align:left;font:inherit;border-radius:12px;}
+.cp-card .go i{flex:none;width:10px;height:10px;border-radius:50%;background:#fff3d6;box-shadow:0 0 10px 3px rgba(255,214,150,.6);}
+.cp-card .go span{min-width:0;display:flex;flex-direction:column;gap:2px;}
+.cp-card .go b{font-family:var(--f-display);font-weight:var(--fw-display);font-size:16.5px;letter-spacing:.1em;color:var(--gold-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cp-card .go em{font-style:normal;font-size:12px;letter-spacing:.06em;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cp-card .ed{flex:none;width:44px;border:0;border-left:1px solid rgba(240,214,160,.14);background:none;color:var(--text-dim);cursor:pointer;display:grid;place-items:center;border-radius:0 12px 12px 0;}
+.cp-card .ed:hover{color:var(--gold-hi);background:rgba(244,184,96,.08);}
+.cp-card .ed .sb-ico{width:16px;height:16px;}
+.cp-empty{padding:16px;border-radius:12px;border:1px dashed var(--line);font-size:13px;line-height:1.8;letter-spacing:.06em;color:var(--text-dim);}
+/* 底部 */
+.cp-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 26px 20px;opacity:0;transition:opacity .6s var(--ease-soft);}
+.cp-panel.s3 .cp-foot{opacity:1;}
+.cp-note{font-size:12px;letter-spacing:.06em;color:var(--text-dim);}
+.cp-add{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:50px;padding:0 28px;border:0;border-radius:999px;cursor:pointer;color:#2a1608;
+  font-family:var(--f-display);font-weight:700;font-size:16px;letter-spacing:.14em;flex:none;
+  background:linear-gradient(180deg,#ffe7b5,#f2b65e 60%,#cf903c);box-shadow:0 0 22px rgba(242,182,94,.45),inset 0 1px 0 rgba(255,255,255,.6);}
+.cp-add[hidden]{display:none;}
+.cp-add .sb-ico{width:16px;height:16px;}
+/* 裂隙边缘（不被面板裁切；只动 transform / opacity） */
+.cp-edge{position:absolute;left:0;top:0;width:60px;margin-left:-30px;pointer-events:none;opacity:0;will-change:transform,opacity;
+  background:linear-gradient(90deg,rgba(150,170,255,0),rgba(150,170,255,.22) 35%,rgba(255,240,210,.55) 48%,rgba(255,252,240,.95) 50%,rgba(255,240,210,.55) 52%,rgba(150,170,255,.22) 65%,rgba(150,170,255,0));}
+.cp-edge::after{content:"";position:absolute;left:18px;right:18px;top:0;bottom:0;opacity:.85;
+  background-image:radial-gradient(circle,rgba(255,236,200,.95) 0 1px,transparent 1.6px),radial-gradient(circle,rgba(200,214,255,.8) 0 1px,transparent 1.6px);
+  background-size:13px 37px,17px 53px;background-position:2px 0,8px 11px;animation:cpSpark .9s linear infinite;}
+@keyframes cpSpark{to{background-position:2px -37px,8px -53px;}}
+html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
+/* 手机：底部抽屉 */
+@media (max-width:720px){
+  .cp-panel{left:0;right:0;top:auto;bottom:0;width:auto;height:calc(100% - 66px - var(--safe-t));transform:none;border-radius:22px 22px 0 0;
+    box-shadow:0 0 0 1px rgba(255,226,170,.45),0 -20px 60px rgba(0,0,0,.6),0 0 60px rgba(242,182,94,.1);}
+  .cp-head{padding:16px 16px 4px;}
+  .cp-head h2{font-size:26px;}
+  .cp-head p{font-size:12px;letter-spacing:.06em;}
+  .cp-body{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;padding:4px 12px 6px;gap:8px;}
+  .cp-side h3{font-size:10.5px;}
+  .cp-side h3 .lbl{display:none;}
+  .cp-list{flex-direction:row;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scroll-snap-type:x mandatory;}
+  .cp-card{min-width:148px;max-width:220px;scroll-snap-align:start;}
+  .cp-card .go{min-height:56px;padding:8px 12px;}
+  .cp-empty{padding:12px;}
+  .cp-foot{padding:8px 12px calc(12px + var(--safe-b));}
+  .cp-note{display:none;}
+  .cp-add{flex:1;}
+  .cp-tools button{width:34px;height:34px;}
+}
+@media (max-width:720px) and (max-height:620px){ .cp-head p{display:none;} }
+/* 地球场景：面板打开时隐藏自己的界面 */
+.sb-scene[data-scene="globe"].cp-on .gl-head,.sb-scene[data-scene="globe"].cp-on .gl-labels,.sb-scene[data-scene="globe"].cp-on .gl-card,
+.sb-scene[data-scene="globe"].cp-on .gl-dock,.sb-scene[data-scene="globe"].cp-on .gl-hint,.sb-scene[data-scene="globe"].cp-on .gl-tip{opacity:0!important;pointer-events:none!important;transition:opacity .4s;}
 </style>
 
-<section class="sb-scene" data-scene="country" aria-label="国家地图">
-  <div class="cm-halo"></div>
-  <div class="cm-stage" id="cm-stage">
-    <svg id="cm-svg" xmlns="http://www.w3.org/2000/svg" aria-label="省份地图">
-      <defs>
-        <linearGradient id="cmLand" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1d2158"/><stop offset="1" stop-color="#121640"/></linearGradient>
-        <linearGradient id="cmHot" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34347a"/><stop offset="1" stop-color="#22245a"/></linearGradient>
-        <linearGradient id="cmLit" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a5528"/><stop offset="1" stop-color="#4a3322"/></linearGradient>
-        <linearGradient id="cmLitHot" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a87634"/><stop offset="1" stop-color="#6a4826"/></linearGradient>
-        <radialGradient id="cmStarHalo"><stop offset="0" stop-color="#fff4d8" stop-opacity=".95"/><stop offset=".25" stop-color="#ffcf80" stop-opacity=".55"/><stop offset="1" stop-color="#f4b860" stop-opacity="0"/></radialGradient>
-        <symbol id="cmStarShape" viewBox="-10 -10 20 20"><path d="M0 -10 L1.6 -1.6 L10 0 L1.6 1.6 L0 10 L-1.6 1.6 L-10 0 L-1.6 -1.6Z"/></symbol>
-      </defs>
-      <g id="cm-view"><g id="cm-regions"></g><g id="cm-lines"></g><g id="cm-stars"></g></g>
-    </svg>
-  </div>
-  <header class="cm-head"><small id="cm-en"></small><h1 id="cm-title"></h1><p id="cm-stat"></p></header>
-  <div class="cm-legend"><span><i style="background:#ffe2a8;box-shadow:0 0 8px #f4b860"></i>去过</span><span><i style="background:#7d7466"></i>还没去</span></div>
-  <div class="cm-tools"><button type="button" id="cm-zin" aria-label="放大"></button><button type="button" id="cm-zout" aria-label="缩小"></button><button type="button" id="cm-zreset" aria-label="复位"></button></div>
-  <div class="cm-pop" id="cm-pop" role="dialog" aria-label="省份城市"></div>
-  <div class="cm-load" id="cm-load" hidden></div>
-</section>
+<div class="cp-root" id="cp-root" hidden>
+  <div class="cp-scrim" id="cp-scrim"></div>
+  <section class="cp-panel" id="cp-panel" role="dialog" aria-modal="true" aria-labelledby="cp-title" tabindex="-1">
+    <div class="cp-bg" id="cp-bg" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="cp-veil" aria-hidden="true"></div>
+    <header class="cp-head">
+      <div><small id="cp-en">TERRA</small><h2 id="cp-title"></h2><p id="cp-stat"></p></div>
+      <button type="button" class="cp-x" id="cp-x" aria-label="关闭国家面板（Esc）"></button>
+    </header>
+    <div class="cp-body">
+      <div class="cp-map" id="cp-map">
+        <svg id="cp-svg" xmlns="http://www.w3.org/2000/svg" aria-label="省级地图">
+          <defs>
+            <radialGradient id="cpStarHalo"><stop offset="0" stop-color="#fff4d8" stop-opacity=".95"/><stop offset=".25" stop-color="#ffcf80" stop-opacity=".55"/><stop offset="1" stop-color="#f4b860" stop-opacity="0"/></radialGradient>
+            <symbol id="cpStarShape" viewBox="-10 -10 20 20"><path d="M0 -10 L1.6 -1.6 L10 0 L1.6 1.6 L0 10 L-1.6 1.6 L-10 0 L-1.6 -1.6Z"/></symbol>
+          </defs>
+          <g id="cp-view"><g id="cp-regions"></g><g id="cp-lines"></g><g id="cp-stars"></g></g>
+        </svg>
+        <div class="cp-tip" id="cp-tip"></div>
+        <div class="cp-tools"><button type="button" id="cp-zin" aria-label="放大"></button><button type="button" id="cp-zout" aria-label="缩小"></button><button type="button" id="cp-zreset" aria-label="复位"></button></div>
+        <div class="cp-load" id="cp-load" hidden></div>
+      </div>
+      <aside class="cp-side" aria-label="城市">
+        <h3><span class="lbl">CIVITATES · 城市</span><span id="cp-filter"></span></h3>
+        <div class="cp-list" id="cp-list"></div>
+      </aside>
+    </div>
+    <footer class="cp-foot">
+      <span class="cp-note">点省份筛选城市 · 拖动平移 · 滚轮缩放 · 点城市进入回忆</span>
+      <button type="button" class="cp-add" id="cp-add"></button>
+    </footer>
+  </section>
+</div>
 
 <script>
 (function(SB){
   const $ = id => document.getElementById(id);
   const NS = 'http://www.w3.org/2000/svg';
-  const svg = $('cm-svg'), view = $('cm-view'), pop = $('cm-pop');
-  const STAR = '<svg viewBox="-10 -10 20 20" aria-hidden="true"><path d="M0 -10 L1.8 -1.8 L10 0 L1.8 1.8 L0 10 L-1.8 1.8 L-10 0 L-1.8 -1.8Z" fill="#ffe2a8"/></svg>';
-  $('cm-zin').innerHTML = SB.icon('plus'); $('cm-zout').innerHTML = SB.icon('minus'); $('cm-zreset').innerHTML = SB.icon('reset');
-  const S = { k:null, country:null, map:null, regions:[], fit:null, vb:null, pathEls:{}, starEls:{}, hot:null, hideT:0, token:0 };
+  const root = $('cp-root'), panel = $('cp-panel'), scrim = $('cp-scrim'), svg = $('cp-svg'), view = $('cp-view'), mapEl = $('cp-map'), tip = $('cp-tip');
+  const globeEl = SB.scenes.el('globe');
+  if(globeEl) globeEl.appendChild(root);          // 面板是地球场景的一部分（位于地球画布之上）
+  $('cp-x').innerHTML = SB.icon('close'); $('cp-zin').innerHTML = SB.icon('plus'); $('cp-zout').innerHTML = SB.icon('minus'); $('cp-zreset').innerHTML = SB.icon('reset');
+  $('cp-add').innerHTML = `${SB.icon('plus')}<span>添加城市</span>`;
 
-  /* ── 坐标拟合与缩放 ── */
+  const S = { open:false, k:null, country:null, map:null, regions:[], fit:null, vb:{x:0, y:0, k:1}, pathEls:{}, starEls:{}, sel:null, hot:null,
+    token:0, anims:[], timers:[], phase:'', at:null, inerted:[], ret:null, edges:[], bgRun:false, closeP:null, closeRes:null };
+  const fancy = () => SB.perf.level === 'high' && !SB.perf.android;
+  const reduced = () => SB.perf.level === 'reduced';
+  const UNIT = {cn:'个省份', us:'个州', jp:'个都道府县', au:'个州', ca:'个省', in:'个邦', de:'个州', ru:'个联邦主体'};
+
+  /* ── 地图：拟合到容器、绘制、上色 ── */
   function fitBox(){
     let b = [Infinity, Infinity, -Infinity, -Infinity];
     S.regions.forEach(r => { b[0] = Math.min(b[0], r.bbox[0]); b[1] = Math.min(b[1], r.bbox[1]); b[2] = Math.max(b[2], r.bbox[2]); b[3] = Math.max(b[3], r.bbox[3]); });
-    const W = innerWidth, H = innerHeight, top = W < 700 ? 150 : 110, bottom = 40;
-    // 视图坐标 = 屏幕像素：把地图塞进 (0, top) - (W, H - bottom)
-    const aw = W - 40, ah = H - top - bottom;
+    const W = mapEl.clientWidth || 600, H = mapEl.clientHeight || 400, pad = W < 420 ? 12 : 20;
+    const aw = Math.max(40, W - pad*2), ah = Math.max(40, H - pad*2);
     const s = Math.min(aw/(b[2]-b[0] || 1), ah/(b[3]-b[1] || 1));
-    S.fit = { s, ox: (W - (b[2]-b[0])*s)/2 - b[0]*s, oy: top + (ah - (b[3]-b[1])*s)/2 - b[1]*s };
+    S.fit = { s, ox:(W - (b[2]-b[0])*s)/2 - b[0]*s, oy:(H - (b[3]-b[1])*s)/2 - b[1]*s, W, H };
     S.vb = { x:0, y:0, k:1 };
   }
   const X = x => x*S.fit.s + S.fit.ox, Y = y => y*S.fit.s + S.fit.oy;
   function applyView(){
     view.setAttribute('transform', `translate(${S.vb.x.toFixed(1)} ${S.vb.y.toFixed(1)}) scale(${S.vb.k.toFixed(4)})`);
-    const ks = 1/S.vb.k;
-    for(const id in S.starEls) S.starEls[id].setAttribute('transform', `translate(${S.starEls[id]._x} ${S.starEls[id]._y}) scale(${ks.toFixed(4)})`);
+    const ks = (1/S.vb.k).toFixed(4);
+    for(const id in S.starEls){ const s = S.starEls[id]; s.setAttribute('transform', `translate(${s._x} ${s._y}) scale(${ks})`); }
   }
   function zoomAt(f, cx, cy){
     const k = SB.clamp(S.vb.k*f, 1, 14); f = k/S.vb.k;
-    S.vb.x = cx - (cx - S.vb.x)*f; S.vb.y = cy - (cy - S.vb.y)*f; S.vb.k = k; applyView(); hidePop(true);
+    S.vb.x = cx - (cx - S.vb.x)*f; S.vb.y = cy - (cy - S.vb.y)*f; S.vb.k = k; applyView(); hideTip();
   }
-
-  /* ── 绘制 ── */
   function pathD(polys){
     let d = '';
     for(const poly of polys) for(const r of poly){ d += 'M' + X(r[0]).toFixed(1) + ' ' + Y(r[1]).toFixed(1);
@@ -4241,178 +4365,197 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
     return d;
   }
   function draw(){
+    if(!S.regions.length) return;
     fitBox();
-    const gR = $('cm-regions'), gL = $('cm-lines'), gS = $('cm-stars');
+    const gR = $('cp-regions'), gL = $('cp-lines'), gS = $('cp-stars'), n = S.regions.length;
     gR.innerHTML = gL.innerHTML = gS.innerHTML = ''; S.pathEls = {}; S.starEls = {};
-    for(const r of S.regions){
-      const p = document.createElementNS(NS, 'path'); p.setAttribute('d', pathD(r.polys)); p.setAttribute('class', 'cm-region');
+    S.regions.forEach((r, i) => {
+      const p = document.createElementNS(NS, 'path'); p.setAttribute('d', pathD(r.polys)); p.setAttribute('class', 'cp-region');
+      p.setAttribute('pathLength', '1'); p.style.setProperty('--d', Math.round(i/n*650) + 'ms');
       p.dataset.key = r.key; p.setAttribute('aria-label', r.name);
       gR.appendChild(p); S.pathEls[r.key] = p;
-      const s = document.createElementNS(NS, 'g'); s.setAttribute('class', 'cm-star');
-      s.innerHTML = '<circle class="halo" r="22"/><use class="core" href="#cmStarShape" x="-7" y="-7" width="14" height="14"/>';
+      const s = document.createElementNS(NS, 'g'); s.setAttribute('class', 'cp-star'); s.style.setProperty('--d', Math.round(i/n*400) + 'ms');
+      s.innerHTML = '<circle class="halo" r="20"/><use class="core" href="#cpStarShape" x="-6" y="-6" width="12" height="12"/><text x="11" y="5"></text>';
       s._x = X(r.mid[0]).toFixed(1); s._y = Y(r.mid[1]).toFixed(1);
       gS.appendChild(s); S.starEls[r.key] = s;
-    }
+    });
     for(const l of (S.map?.lines || [])){
       const p = document.createElementNS(NS, 'path'); let d = 'M' + X(l[0]).toFixed(1) + ' ' + Y(l[1]).toFixed(1);
       for(let i = 2; i < l.length; i += 2) d += 'L' + X(l[i]).toFixed(1) + ' ' + Y(l[i+1]).toFixed(1);
-      p.setAttribute('d', d); p.setAttribute('class', 'cm-line'); gL.appendChild(p);
+      p.setAttribute('d', d); p.setAttribute('class', 'cp-line'); gL.appendChild(p);
     }
     applyView(); paint();
   }
   function paint(popKey){
-    const lit = SB.store.visitedRegions(S.k);
-    let n = 0;
+    if(!S.k) return;
+    const cities = SB.store.citiesIn(S.k), by = {};
+    cities.forEach(c => (by[c.region] = by[c.region] || []).push(c));
+    let lit = 0;
     for(const r of S.regions){
-      const on = lit.has(r.key); if(on) n++;
+      const cs = by[r.key] || [], on = cs.length > 0; if(on) lit++;
       S.pathEls[r.key]?.classList.toggle('lit', on);
+      S.pathEls[r.key]?.classList.toggle('sel', S.sel === r.key);
       const s = S.starEls[r.key]; if(!s) continue;
       s.classList.toggle('lit', on);
-      if(popKey === r.key){ s.classList.remove('pop'); void s.getBBox; requestAnimationFrame(() => s.classList.add('pop')); setTimeout(() => s.classList.remove('pop'), 1300); }
+      s.querySelector('text').textContent = on ? (cs.length > 1 ? `${cs[0].name} 等 ${cs.length} 城` : cs[0].name) : '';
+      if(popKey === r.key){ s.classList.remove('pop'); requestAnimationFrame(() => s.classList.add('pop')); setTimeout(() => s.classList.remove('pop'), 1300); }
     }
-    const cityN = SB.store.citiesIn(S.k).length;
-    const unit = {cn:'个省份', us:'个州', jp:'个都道府县', au:'个州', ca:'个省', in:'个邦', de:'个州', ru:'个联邦主体'}[S.k] || '个地区';
-    $('cm-stat').textContent = S.regions.length > 1 ? `点亮 ${n} / ${S.regions.length} ${unit} · ${cityN} 座城市` : (cityN ? `已点亮 · ${cityN} 个足迹` : '还没有点亮');
+    const mem = cities.reduce((a, c) => a + SB.store.memoriesOf(c.id).length, 0);
+    const parts = [];
+    if(S.regions.length > 1) parts.push(`点亮 ${lit} / ${S.regions.length} ${UNIT[S.k] || '个地区'}`);
+    parts.push(cities.length ? `${cities.length} 座城市` : '还没有点亮的城市');
+    if(mem) parts.push(`${mem} 段回忆`);
+    $('cp-stat').textContent = parts.join(' · ');
   }
+  const regionByKey = key => S.regions.find(r => r.key === key);
 
-  /* ── 悬浮窗 ── */
-  function regionByKey(key){ return S.regions.find(r => r.key === key); }
-  function showPop(key, anchor){
-    const r = regionByKey(key); if(!r) return;
-    clearTimeout(S.hideT);
-    if(S.hot && S.hot !== key) S.pathEls[S.hot]?.classList.remove('hot');
-    S.hot = key; S.pathEls[key]?.classList.add('hot');
-    buildPop(r);
-    // 定位：星星旁边
-    const sr = (S.starEls[key] || S.pathEls[key]).getBoundingClientRect();
-    const px = anchor?.x ?? (sr.left + sr.width/2), py = anchor?.y ?? (sr.top + sr.height/2);
-    pop.classList.add('show');
-    const w = pop.offsetWidth, h = pop.offsetHeight;
-    let x = px + 18, y = py - h/2;
-    if(x + w > innerWidth - 12) x = px - w - 18;
-    x = SB.clamp(x, 12, innerWidth - w - 12); y = SB.clamp(y, 70, innerHeight - h - 12);
-    pop.style.transform = ''; pop.style.left = x + 'px'; pop.style.top = y + 'px';
-  }
-  function hidePop(now){
-    clearTimeout(S.hideT);
-    const go = () => { pop.classList.remove('show'); if(S.hot) S.pathEls[S.hot]?.classList.remove('hot'); S.hot = null; };
-    if(now === true) go(); else S.hideT = setTimeout(go, 400);
-  }
-  pop.addEventListener('pointerenter', () => clearTimeout(S.hideT));
-  pop.addEventListener('pointerleave', e => { if(e.pointerType === 'mouse' && !pop.contains(document.activeElement)) hidePop(); });
-
-  function buildPop(r){
-    const cities = SB.store.citiesInRegion(r.key);
-    pop.innerHTML = '';
-    const x = SB.el('button','x'); x.type = 'button'; x.setAttribute('aria-label','关闭'); x.innerHTML = SB.icon('close'); x.addEventListener('click', () => hidePop(true));
-    const h = SB.el('h4'); h.textContent = r.name;
-    pop.append(x, h);
-    if(r.en && r.en !== r.name){ const en = SB.el('div','en'); en.textContent = r.en; pop.appendChild(en); }
-    if(cities.length){
-      const ul = SB.el('ul');
-      for(const c of cities){
-        const li = SB.el('li');
-        const b = SB.el('button','city'); b.type = 'button';
-        const mN = SB.store.memoriesOf(c.id).length;
-        b.innerHTML = `${STAR}<span></span>${mN ? `<em>${mN} 段回忆</em>` : ''}`; b.querySelector('span').textContent = c.name;
-        b.addEventListener('click', e => { hidePop(true); SB.scenes.go('city', {id:c.id}, {transition:'quill', x:e.clientX, y:e.clientY}); });
-        li.appendChild(b);
-        if(SB.store.canEdit){
-          const ed = SB.el('button','edit'); ed.type = 'button'; ed.setAttribute('aria-label', '编辑 ' + c.name); ed.innerHTML = SB.icon('quill');
-          ed.addEventListener('click', () => editCity(c)); li.appendChild(ed);
-        }
-        ul.appendChild(li);
+  /* ── 城市栏 ── */
+  function buildList(){
+    const list = $('cp-list'), filter = $('cp-filter'); list.innerHTML = ''; filter.innerHTML = '';
+    if(!S.k) return;
+    const sel = S.sel && regionByKey(S.sel);
+    if(sel && S.regions.length > 1){
+      const chip = SB.el('button', 'cp-chip'); chip.type = 'button'; chip.setAttribute('aria-label', `取消筛选 ${sel.name}`);
+      chip.innerHTML = `<span></span>${SB.icon('close')}`; chip.querySelector('span').textContent = sel.name;
+      chip.addEventListener('click', () => select(null)); filter.appendChild(chip);
+    }
+    const all = SB.store.citiesIn(S.k).filter(c => !sel || c.region === sel.key)
+      .map(c => ({c, n:SB.store.memoriesOf(c.id).length}))
+      .sort((a, b) => b.n - a.n || (a.c.createdAt || '').localeCompare(b.c.createdAt || ''));
+    if(!all.length){
+      const p = SB.el('div', 'cp-empty');
+      p.textContent = sel ? `${sel.name}还没有点亮的城市。` + (SB.store.canEdit ? '点下方「添加城市」写下这里的第一段回忆。' : '')
+                          : `这里还没有我们的足迹。` + (SB.store.canEdit ? `点下方「添加城市」，写下在${S.country.zh}的第一段回忆。` : '');
+      list.appendChild(p); return;
+    }
+    for(const {c, n} of all){
+      const card = SB.el('div', 'cp-card'); card.dataset.region = c.region || '';
+      const go = SB.el('button', 'go'); go.type = 'button';
+      const rg = regionByKey(c.region)?.name || c.regionName || '';
+      go.innerHTML = '<i></i><span><b></b><em></em></span>';
+      go.querySelector('b').textContent = c.name;
+      go.querySelector('em').textContent = [S.regions.length > 1 ? rg : '', n ? `${n} 段回忆` : '还没有回忆'].filter(Boolean).join(' · ');
+      go.addEventListener('click', e => { const r = go.getBoundingClientRect();
+        SB.scenes.go('city', {id:c.id}, {transition:'quill', x:e.clientX || r.left + r.width/2, y:e.clientY || r.top + r.height/2}); });
+      card.addEventListener('pointerenter', () => hotStar(c.region, true));
+      card.addEventListener('pointerleave', () => hotStar(c.region, false));
+      card.appendChild(go);
+      if(SB.store.canEdit){
+        const ed = SB.el('button', 'ed'); ed.type = 'button'; ed.setAttribute('aria-label', '编辑 ' + c.name); ed.innerHTML = SB.icon('quill');
+        ed.addEventListener('click', () => editCity(c)); card.appendChild(ed);
       }
-      pop.appendChild(ul);
-    }else{ const p = SB.el('p','none'); p.textContent = '这里还没有我们的足迹'; pop.appendChild(p); }
-    if(SB.store.canEdit){
-      const add = SB.el('div','add');
-      const btn = SB.ui.button('添加城市', 'small', null, 'plus');
-      btn.addEventListener('click', () => {
-        add.innerHTML = '';
-        const inp = SB.ui.input({type:'text', placeholder:'城市名，例如：成都', maxlength:'30', 'aria-label':'城市名'});
-        const ok = SB.ui.button('点亮', 'primary small');
-        const save = async () => {
-          ok.disabled = true;
-          try{
-            const lon = r.lonlat?.[0] ?? S.country.mid?.[0], lat = r.lonlat?.[1] ?? S.country.mid?.[1];
-            await SB.store.addCity({country:S.k, countryName:S.country.zh, region:r.key, regionName:r.name, name:inp.value, lon, lat});
-            SB.toast(`${inp.value.trim()} 已点亮`);
-            SB.fx.burst(500);
-            paint(r.key); buildPop(r);
-          }catch(e){ SB.toast(e.msg || SB.store.errText(e)); ok.disabled = false; }
-        };
-        ok.addEventListener('click', save);
-        inp.addEventListener('keydown', e => { if(e.key === 'Enter') save(); });
-        add.append(inp, ok); inp.focus();
-      });
-      add.appendChild(btn); pop.appendChild(add);
+      list.appendChild(card);
     }
+  }
+  function hotStar(key, on){ S.pathEls[key]?.classList.toggle('hot', on); }
+  function select(key){
+    S.sel = key && S.sel !== key ? key : null;
+    paint(); buildList(); $('cp-list').scrollTo?.({left:0, top:0});
+  }
+
+  /* ── 添加 / 编辑城市 ── */
+  function addCity(){
+    if(!SB.store.canEdit || !S.k) return;
+    let sel, inp;
+    const multi = S.regions.length > 1;
+    SB.ui.dialog({ title:'添加城市', sub:S.country.zh,
+      build(b){
+        if(multi){
+          sel = SB.el('select', 'sb-input');
+          sel.innerHTML = '<option value="">选择所在地区…</option>' + [...S.regions].sort((a, c) => a.name.localeCompare(c.name, 'zh'))
+            .map(r => `<option value="${SB.esc(r.key)}">${SB.esc(r.name)}</option>`).join('');
+          if(S.sel) sel.value = S.sel;
+          b.appendChild(SB.ui.field('所在地区', sel));
+        }
+        inp = SB.ui.input({type:'text', placeholder:'城市名，例如：京都', maxlength:'30', 'aria-label':'城市名'});
+        inp.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); b.closest('.sb-modal')?.querySelector('.sb-btn.primary')?.click(); } });
+        b.appendChild(SB.ui.field('城市名', inp));
+      },
+      actions:[ {text:'取消'}, {text:'点亮', kind:'primary', async onClick(){
+        const r = multi ? regionByKey(sel.value) : S.regions[0];
+        if(!r){ SB.toast('请选择城市所在的地区'); return false; }
+        const name = inp.value.trim(); if(!name){ SB.toast('请输入城市名'); return false; }
+        try{
+          const lon = r.lonlat?.[0] ?? S.country.mid?.[0], lat = r.lonlat?.[1] ?? S.country.mid?.[1];
+          await SB.store.addCity({country:S.k, countryName:S.country.zh, region:r.key, regionName:r.name, name, lon, lat});
+          SB.toast(`${name} 已点亮`); SB.fx?.burst?.(500);
+          if(multi) S.sel = r.key;
+          paint(r.key); buildList();
+        }catch(e){ SB.toast(e.msg || SB.store.errText(e)); return false; }
+      }} ]});
   }
   function editCity(c){
-    hidePop(true);
     let inp;
-    SB.ui.dialog({ title:'编辑城市', sub:c.regionName + ' · ' + c.countryName,
+    SB.ui.dialog({ title:'编辑城市', sub:(c.regionName ? c.regionName + ' · ' : '') + (c.countryName || S.country?.zh || ''),
       build(b){ inp = SB.ui.input({type:'text', value:c.name, maxlength:'30'}); b.appendChild(SB.ui.field('城市名', inp)); },
       actions:[
         {text:'删除这座城市', kind:'danger', async onClick(){
           const n = SB.store.memoriesOf(c.id).length;
           if(!await SB.ui.confirm(n ? `删除「${c.name}」会同时删除它的 ${n} 段回忆和照片，无法恢复。确定吗？` : `确定删除「${c.name}」吗？`, '删除')) return false;
-          try{ await SB.store.removeCity(c.id); SB.toast('已删除'); paint(); }catch(e){ SB.toast(SB.store.errText(e)); return false; } }},
+          try{ await SB.store.removeCity(c.id); SB.toast('已删除'); paint(); buildList(); }catch(e){ SB.toast(SB.store.errText(e)); return false; } }},
         'spacer',
         {text:'取消'},
         {text:'保存', kind:'primary', async onClick(){
           const name = inp.value.trim(); if(!name){ SB.toast('城市名不能为空'); return false; }
-          try{ await SB.store.updateCity(c.id, {name}); SB.toast('已保存'); }catch(e){ SB.toast(SB.store.errText(e)); return false; } }}
+          try{ await SB.store.updateCity(c.id, {name}); SB.toast('已保存'); paint(); buildList(); }catch(e){ SB.toast(SB.store.errText(e)); return false; } }}
       ]});
   }
+  $('cp-add').addEventListener('click', addCity);
 
-  /* ── 指针：悬停、点按、拖拽、缩放 ── */
+  /* ── 地图指针：悬停、点选、拖拽、缩放（v1.10.2 拖动稳定规则） ── */
   const ptrs = new Map(); let pinch = 0, moved = 0;
   const tapMoveLimit = SB.perf.touch ? 14 : 6;
-  svg.addEventListener('pointerover', e => {
-    if(e.pointerType !== 'mouse' || ptrs.size) return;
-    const key = e.target.dataset?.key; if(key) showPop(key);
-  });
-  svg.addEventListener('pointerout', e => { if(e.pointerType === 'mouse' && e.target.dataset?.key && !pop.contains(e.relatedTarget)) hidePop(); });
-  svg.addEventListener('pointerdown', e => {
-    if(e.isPrimary){ ptrs.clear(); pinch = 0; }          // v1.10.2：清掉残留指针（见 prompts/07-globe.md v1.10.2）
-    try{ svg.setPointerCapture(e.pointerId); }catch(_){} ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY, key:e.target.dataset?.key}); moved = 0;
-    if(ptrs.size === 2){ const [a,b] = [...ptrs.values()]; pinch = Math.hypot(a.x-b.x, a.y-b.y); }
-  });
+  const local = e => { const r = svg.getBoundingClientRect(); return {x:e.clientX - r.left, y:e.clientY - r.top}; };
+  function showTip(key, e){
+    const r = regionByKey(key); if(!r) return hideTip();
+    const n = SB.store.citiesInRegion(key).length;
+    tip.innerHTML = `<b>${SB.esc(r.name)}</b>${n ? `${n} 座城市` : '还没有足迹'}`;
+    const p = local(e), w = tip.offsetWidth, W = mapEl.clientWidth;
+    tip.style.transform = `translate(${SB.clamp(p.x + 14, 4, W - w - 4).toFixed(0)}px, ${Math.max(4, p.y - 40).toFixed(0)}px)`; tip.classList.add('show');
+    if(S.hot !== key){ if(S.hot) S.pathEls[S.hot]?.classList.remove('hot'); S.hot = key; S.pathEls[key]?.classList.add('hot'); }
+  }
+  function hideTip(){ tip.classList.remove('show'); if(S.hot){ S.pathEls[S.hot]?.classList.remove('hot'); S.hot = null; } }
   svg.addEventListener('pointermove', e => {
-    const p = ptrs.get(e.pointerId); if(!p) return;
+    const p = ptrs.get(e.pointerId);
+    if(!p){ if(e.pointerType === 'mouse'){ const key = e.target.dataset?.key; key ? showTip(key, e) : hideTip(); } return; }
     const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY; moved += Math.abs(dx) + Math.abs(dy);
-    if(ptrs.size === 2){ const [a,b] = [...ptrs.values()]; const d = Math.hypot(a.x-b.x, a.y-b.y);
-      if(pinch) zoomAt(d/pinch, (a.x+b.x)/2, (a.y+b.y)/2); pinch = d; return; }
-    if(moved > 4){ svg.classList.add('dragging'); S.vb.x += dx; S.vb.y += dy; applyView(); if(moved > 8) hidePop(true); }
+    if(ptrs.size === 2){ const [a, b] = [...ptrs.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y), r = svg.getBoundingClientRect();
+      if(pinch) zoomAt(d/pinch, (a.x + b.x)/2 - r.left, (a.y + b.y)/2 - r.top); pinch = d; return; }
+    if(moved > 4){ svg.classList.add('dragging'); S.vb.x += dx; S.vb.y += dy; applyView(); hideTip(); }
+  });
+  svg.addEventListener('pointerleave', () => { if(!ptrs.size) hideTip(); });
+  svg.addEventListener('pointerdown', e => {
+    if(e.button && e.pointerType === 'mouse') return;
+    if(e.isPrimary){ ptrs.clear(); pinch = 0; }
+    try{ svg.setPointerCapture(e.pointerId); }catch(_){}
+    ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY}); moved = 0;
+    if(ptrs.size === 2){ const [a, b] = [...ptrs.values()]; pinch = Math.hypot(a.x - b.x, a.y - b.y); }
   });
   const up = e => {
-    const p = ptrs.get(e.pointerId); ptrs.delete(e.pointerId); if(ptrs.size < 2) pinch = 0; svg.classList.remove('dragging');
-    if(p && moved < tapMoveLimit && e.type === 'pointerup'){
-      // 手机点按 / 鼠标点击：打开悬浮窗
+    const p = ptrs.get(e.pointerId); if(!p) return;
+    ptrs.delete(e.pointerId); if(ptrs.size < 2) pinch = 0; if(!ptrs.size) svg.classList.remove('dragging');
+    if(moved < tapMoveLimit && e.type === 'pointerup' && !ptrs.size){
       const el = document.elementFromPoint(e.clientX, e.clientY), key = el?.dataset?.key;
-      if(key) showPop(key, e.pointerType === 'mouse' ? null : null); else hidePop(true);
+      if(key && S.regions.length > 1) select(key); else if(!key && S.sel) select(null);
     }
   };
   svg.addEventListener('pointerup', up); svg.addEventListener('pointercancel', up);
   svg.addEventListener('lostpointercapture', e => { if(ptrs.has(e.pointerId)) up(e); });
+  addEventListener('pointerup', e => { if(ptrs.has(e.pointerId)) up(e); });
   addEventListener('blur', () => { ptrs.clear(); pinch = 0; svg.classList.remove('dragging'); });
   SB.dragSurface?.(svg);
-  svg.addEventListener('wheel', e => { e.preventDefault(); zoomAt(e.deltaY < 0 ? 1.18 : 1/1.18, e.clientX, e.clientY); }, {passive:false});
+  svg.addEventListener('wheel', e => { e.preventDefault(); const p = local(e); zoomAt(e.deltaY < 0 ? 1.18 : 1/1.18, p.x, p.y); }, {passive:false});
   svg.addEventListener('dblclick', () => { S.vb = {x:0, y:0, k:1}; applyView(); });
-  $('cm-zin').addEventListener('click', () => zoomAt(1.4, innerWidth/2, innerHeight/2));
-  $('cm-zout').addEventListener('click', () => zoomAt(1/1.4, innerWidth/2, innerHeight/2));
-  $('cm-zreset').addEventListener('click', () => { S.vb = {x:0, y:0, k:1}; applyView(); hidePop(true); });
-  document.addEventListener('pointerdown', e => { if(SB.scenes.current === 'country' && pop.classList.contains('show') && !pop.contains(e.target) && !svg.contains(e.target)) hidePop(true); });
-  addEventListener('resize', () => { if(SB.scenes.current === 'country' && S.regions.length) draw(); });
-  document.addEventListener('sb:data', () => { if(SB.scenes.current === 'country' && S.regions.length){ paint(); if(S.hot && pop.classList.contains('show')) buildPop(regionByKey(S.hot)); } });
+  const mid = () => [mapEl.clientWidth/2, mapEl.clientHeight/2];
+  $('cp-zin').addEventListener('click', () => zoomAt(1.4, ...mid()));
+  $('cp-zout').addEventListener('click', () => zoomAt(1/1.4, ...mid()));
+  $('cp-zreset').addEventListener('click', () => { S.vb = {x:0, y:0, k:1}; applyView(); });
 
-  /* ── 载入国家 ── */
+  /* ── 载入国家地图（不阻塞面板展开） ── */
   function fallbackRegions(c){
     const polar = c.key === 'aq', R = Math.PI/180;
     const proj = polar ? (lon, lat) => { const r = 90 + lat, a = lon*R; return [Math.sin(a)*r, Math.cos(a)*r]; }
-                       : (lon, lat) => [lon, -Math.log(Math.tan(Math.PI/4 + SB.clamp(lat,-85,85)*R/2))/R];
+                       : (lon, lat) => [lon, -Math.log(Math.tan(Math.PI/4 + SB.clamp(lat, -85, 85)*R/2))/R];
     const polys = c.rings.map(r => { const o = []; let off = 0;
       for(let i = 0; i < r.length; i += 2){ if(polar && r[i+1] < -89.5) continue; if(i){ const d = r[i] - r[i-2]; if(d > 180) off -= 360; else if(d < -180) off += 360; } o.push(...proj(r[i] + off, r[i+1])); }
       return [o]; });
@@ -4421,33 +4564,201 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
     const mid = c.mid?.[0] != null && !polar ? proj(c.mid[0], c.mid[1]) : [(b[0]+b[2])/2, (b[1]+b[3])/2];
     return [{ key:c.key + '-all', en:c.en, name:c.zh, polys, bbox:b, mid, lonlat:c.mid }];
   }
-  async function load(k){
-    const token = ++S.token;
-    S.k = k; S.country = SB.geo.country(k);
-    $('cm-title').textContent = S.country?.zh || k; $('cm-en').textContent = (S.country?.en || '').toUpperCase();
-    $('cm-regions').innerHTML = $('cm-lines').innerHTML = $('cm-stars').innerHTML = ''; S.regions = []; hidePop(true);
-    $('cm-stat').textContent = '';
-    const loadEl = $('cm-load'); loadEl.hidden = false; loadEl.innerHTML = ''; loadEl.appendChild(SB.ui.spinner('正在描绘星图…'));
-    let regions = null; S.map = null;
+  async function loadMap(k){
+    const token = ++S.token, loadEl = $('cp-load');
+    $('cp-regions').innerHTML = $('cp-lines').innerHTML = $('cp-stars').innerHTML = ''; S.regions = []; S.map = null;
+    let regions = null;
     if(S.country?.hasMap){
+      loadEl.hidden = false; loadEl.innerHTML = ''; loadEl.appendChild(SB.ui.spinner('正在描绘星图…'));
       try{ S.map = await SB.geo.loadCountryMap(k); regions = S.map.regions; }
-      catch(e){ SB.toast('省级地图暂时加载不了，先用整国地图'); }
+      catch(e){ if(token === S.token) SB.toast('省级地图暂时加载不了，先用整国地图'); }
     }
     if(token !== S.token) return;
-    if(!regions || !regions.length) regions = fallbackRegions(S.country);
-    S.regions = regions; loadEl.hidden = true;
-    draw();
+    loadEl.hidden = true;
+    S.regions = regions && regions.length ? regions : fallbackRegions(S.country);
+    draw(); buildList();
   }
 
-  SB.scenes.register('country', {
-    world:'night',
-    title:p => SB.geo.country(p.k)?.zh || '国家',
-    // v1.8.0：大洲国家目录页已删除，国家地图直接返回世界星图（地球会自动转向这个国家）
-    parent:() => ({id:'globe', params:{}}),
-    prepare(p){ const c = SB.geo.country(p.k); return c?.hasMap ? SB.geo.loadCountryMap(p.k).catch(()=>null) : Promise.resolve(); },
-    enter(p){ SB.fx.palette('night'); return load(p.k); },
-    leave(){ hidePop(true); }
+  /* ── 面板背景：华丽档 canvas 极光（约 30fps，仅面板打开时运行） ── */
+  const BG = { cv:null, g:null, w:0, h:0, last:0, t:0, calm:1, sp:null };
+  function bgStart(){
+    if(!fancy() || BG.on) return;
+    if(!BG.cv){ BG.cv = document.createElement('canvas'); $('cp-bg').prepend(BG.cv); BG.g = BG.cv.getContext('2d');
+      BG.sp = Array.from({length:90}, () => ({x:Math.random(), z:Math.random(), s:Math.random()*.6 + .4})); }
+    const r = panel.getBoundingClientRect(), dpr = Math.min(1.5, devicePixelRatio || 1);
+    BG.w = r.width; BG.h = r.height; BG.cv.width = Math.round(BG.w*dpr); BG.cv.height = Math.round(BG.h*dpr); BG.g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    BG.on = true; BG.last = 0; requestAnimationFrame(bgLoop);
+  }
+  function bgStop(){ BG.on = false; }
+  function bgLoop(now){
+    if(!BG.on) return;
+    if(document.hidden){ BG.on = false; return; }
+    requestAnimationFrame(bgLoop);
+    if(BG.last && now - BG.last < 31) return;
+    const dt = BG.last ? Math.min(.1, (now - BG.last)/1000) : 0; BG.last = now; BG.t += dt;
+    const g = BG.g, w = BG.w, h = BG.h, t = BG.t, a = S.phase === 'opening' ? .75 : .42;
+    g.clearRect(0, 0, w, h);
+    for(let i = 0; i < 9; i++){
+      const x = w*(.08 + .84*((i*.137 + Math.sin(t*.13 + i)*.04 + .5) % 1)), bw = w*(.05 + .05*Math.sin(i*1.7) + .05);
+      const gr = g.createLinearGradient(x - bw, 0, x + bw, 0), al = a*(.32 + .22*Math.sin(t*.7 + i*2.1));
+      gr.addColorStop(0, 'rgba(120,140,255,0)'); gr.addColorStop(.5, `rgba(${i % 3 ? '150,170,255' : '255,214,150'},${al.toFixed(3)})`); gr.addColorStop(1, 'rgba(120,140,255,0)');
+      g.fillStyle = gr; g.fillRect(x - bw, 0, bw*2, h);
+    }
+    for(const p of BG.sp){ const y = ((p.z + t*.05*p.s) % 1)*h; g.fillStyle = `rgba(255,236,200,${(a*.5*p.s).toFixed(3)})`; g.fillRect(p.x*w, h - y, 1.2, 1.2 + 6*p.s); }
+  }
+  document.addEventListener('visibilitychange', () => { if(!document.hidden && S.open && fancy() && !BG.on){ BG.on = false; bgStart(); } });
+
+  /* ── 时空裂隙：WAAPI clip-path inset 两段动画 + 两道边缘光（只动 transform / opacity） ── */
+  function clearAnims(){
+    S.anims.forEach(a => { try{ a.cancel(); }catch(_){} }); S.anims = [];
+    S.timers.forEach(clearTimeout); S.timers = [];
+    S.edges.forEach(e => e.remove()); S.edges = [];
+    panel.style.clipPath = ''; scrim.style.opacity = '';
+  }
+  const later = (ms, fn) => S.timers.push(setTimeout(fn, ms));
+  function geom(){
+    const r = panel.getBoundingClientRect(), rr = root.getBoundingClientRect();
+    const at = S.at || {x:r.left + r.width/2, y:r.top + r.height/2};
+    const px = SB.clamp(at.x - r.left, 28, r.width - 28), py = SB.clamp(at.y - r.top, 28, r.height - 28);
+    return { r, px, py, W:r.width, H:r.height, ox:r.left - rr.left, oy:r.top - rr.top };
+  }
+  function makeEdges(G){
+    return [0, 1].map(() => { const e = SB.el('div', 'cp-edge');
+      e.style.left = (G.ox + G.px) + 'px'; e.style.top = G.oy + 'px'; e.style.height = G.H + 'px'; e.style.transformOrigin = `50% ${G.py}px`;
+      root.appendChild(e); S.edges.push(e); return e; });
+  }
+  const EASE_A = 'cubic-bezier(.2,.8,.3,1)', EASE_B = 'cubic-bezier(.65,0,.35,1)', OUT = -64;
+  function slitFrames(G){
+    const {px, py, W, H} = G;
+    return [`inset(${py}px ${W - px}px ${H - py}px ${px}px round 2px)`,
+            `inset(${OUT}px ${W - px - 1.5}px ${OUT}px ${px - 1.5}px round 2px)`,
+            `inset(${OUT}px ${OUT}px ${OUT}px ${OUT}px round 22px)`];
+  }
+  function animOpen(){
+    const G = geom(), D = fancy() ? 1100 : 800, [k0, k1, k2] = slitFrames(G);
+    S.anims.push(panel.animate([{clipPath:k0, easing:EASE_A}, {clipPath:k1, offset:.3, easing:EASE_B}, {clipPath:k2}], {duration:D, fill:'both'}));
+    S.anims.push(scrim.animate([{opacity:0}, {opacity:1}], {duration:D*.6, easing:'ease-out', fill:'both'}));
+    const [eL, eR] = makeEdges(G);
+    const ef = dx => [{transform:'translateX(0) scaleY(0)', opacity:1, easing:EASE_A}, {transform:'translateX(0) scaleY(1)', opacity:1, offset:.3, easing:EASE_B},
+                      {transform:`translateX(${dx}px) scaleY(1)`, opacity:.9, offset:.9}, {transform:`translateX(${dx}px) scaleY(1)`, opacity:0}];
+    S.anims.push(eL.animate(ef(-G.px), {duration:D, fill:'both'}), eR.animate(ef(G.W - G.px), {duration:D, fill:'both'}));
+    later(D*.5, () => panel.classList.add('s1'));
+    later(D*.56, () => panel.classList.add('s2'));
+    later(D*.82, () => panel.classList.add('s3'));
+    later(D + 20, settle);
+  }
+  function settle(){
+    clearAnims(); S.phase = 'idle'; root.classList.add('on');
+    panel.classList.add('s1', 's2', 's3');
+    later(1500, () => panel.classList.add('drawn'));
+    $('cp-x').focus({preventScroll:true});
+    SB.countryPortal.settled = true;
+  }
+  function animClose(){
+    const G = geom(), D = fancy() ? 650 : 450, [k0, k1, k2] = slitFrames(G);
+    S.anims.push(panel.animate([{clipPath:k2, easing:'cubic-bezier(.55,0,.75,.4)'}, {clipPath:k1, offset:.62, easing:'cubic-bezier(.5,0,.8,.4)'}, {clipPath:k0}], {duration:D, fill:'both'}));
+    S.anims.push(scrim.animate([{opacity:1}, {opacity:0}], {duration:D, easing:'ease-in', fill:'both'}));
+    const [eL, eR] = makeEdges(G);
+    const ef = dx => [{transform:`translateX(${dx}px) scaleY(1)`, opacity:0, easing:'cubic-bezier(.55,0,.75,.4)'}, {transform:`translateX(${dx*.85}px) scaleY(1)`, opacity:1, offset:.1, easing:'cubic-bezier(.5,0,.7,.5)'},
+                      {transform:'translateX(0) scaleY(1)', opacity:1, offset:.62, easing:'cubic-bezier(.5,0,.8,.4)'}, {transform:'translateX(0) scaleY(0)', opacity:.6}];
+    S.anims.push(eL.animate(ef(-G.px), {duration:D, fill:'both'}), eR.animate(ef(G.W - G.px), {duration:D, fill:'both'}));
+    later(D + 10, finishClose);
+  }
+
+  /* ── 打开 / 关闭 ── */
+  function setInert(on){
+    if(on === S.inertOn) return; S.inertOn = on;
+    if(on){ S.inerted = [...(globeEl?.children || [])].filter(el => el !== root && !el.inert); S.inerted.forEach(el => { el.inert = true; }); globeEl?.classList.add('cp-on'); }
+    else{ S.inerted.forEach(el => { el.inert = false; }); S.inerted = []; globeEl?.classList.remove('cp-on'); }
+  }
+  function open(k, o = {}){
+    const c = SB.geo.country(k); if(!c) return false;
+    if(S.open && S.k === k && S.phase !== 'closing') return true;
+    const wasOpen = S.open && S.phase !== 'closing';
+    clearAnims(); S.closeRes?.(); S.closeRes = null; S.closeP = null;
+    S.k = k; S.country = c; S.sel = null; S.at = o.x != null ? {x:o.x, y:o.y} : null;
+    if(!wasOpen && !S.ret){ S.ret = document.activeElement !== document.body ? document.activeElement : null; }
+    $('cp-title').textContent = c.zh; $('cp-en').textContent = `TERRA · ${(c.a2 || c.key).toUpperCase()}`; $('cp-stat').textContent = '';
+    $('cp-add').hidden = !SB.store.canEdit; $('cp-list').innerHTML = ''; $('cp-filter').innerHTML = ''; hideTip();
+    root.classList.toggle('hi', fancy());
+    root.hidden = false; root.classList.add('live'); S.open = true; SB.countryPortal.settled = false;
+    if(!wasOpen) setInert(true);
+    loadMap(k);
+    bgStart();
+    if(o.instant || wasOpen || reduced() || typeof panel.animate !== 'function'){
+      panel.classList.remove('drawn');
+      if(reduced() && !o.instant && !wasOpen && typeof panel.animate === 'function'){
+        S.phase = 'opening';
+        S.anims.push(panel.animate([{opacity:0}, {opacity:1}], {duration:200, fill:'both'}), scrim.animate([{opacity:0}, {opacity:1}], {duration:200, fill:'both'}));
+        later(220, settle);
+      }else settle();
+      return true;
+    }
+    panel.classList.remove('s1', 's2', 's3', 'drawn'); root.classList.remove('on');
+    S.phase = 'opening';
+    animOpen();
+    return true;
+  }
+  function close(o = {}){
+    if(!S.open) return Promise.resolve();
+    if(S.phase === 'closing' && !o.instant) return S.closeP || Promise.resolve();
+    clearAnims();
+    S.closeP = new Promise(res => { S.closeRes = res; });
+    const p = S.closeP;
+    hideTip(); bgStop();
+    if(o.instant || reduced() || typeof panel.animate !== 'function'){
+      if(reduced() && !o.instant && typeof panel.animate === 'function'){
+        S.phase = 'closing'; root.classList.remove('on');
+        S.anims.push(panel.animate([{opacity:1}, {opacity:0}], {duration:180, fill:'both'}), scrim.animate([{opacity:1}, {opacity:0}], {duration:180, fill:'both'}));
+        later(200, finishClose);
+      }else finishClose();
+      return p;
+    }
+    S.phase = 'closing'; root.classList.remove('on');
+    panel.classList.remove('s3'); later(120, () => panel.classList.remove('s1', 's2'));
+    animClose();
+    return p;
+  }
+  function finishClose(){
+    clearAnims();
+    S.open = false; S.phase = ''; S.k = null; S.sel = null; S.token++;
+    root.hidden = true; root.classList.remove('live', 'on'); panel.classList.remove('s1', 's2', 's3', 'drawn');
+    SB.countryPortal.settled = false;
+    setInert(false);
+    const ret = S.ret; S.ret = null;
+    if(ret && document.contains(ret) && !ret.closest('[inert]')) try{ ret.focus({preventScroll:true}); }catch(_){}
+    const res = S.closeRes; S.closeRes = null; S.closeP = null; res?.();
+  }
+
+  /* ── 关闭入口：全部走 SB.scenes.back()（历史、返回光球、系统返回键一致） ── */
+  const requestClose = () => { if(S.open && S.phase !== 'closing' && SB.scenes.current === 'globe') SB.scenes.back(); };
+  $('cp-x').addEventListener('click', requestClose);
+  scrim.addEventListener('click', requestClose);
+  document.addEventListener('keydown', e => {
+    if(!S.open || SB.scenes.current !== 'globe') return;
+    if(document.querySelector('.sb-modal') || document.getElementById('sb-nav')?.classList.contains('open')) return;
+    if(e.key === 'Escape'){ e.preventDefault(); requestClose(); return; }
+    if(e.key === 'Tab'){        // WAI-ARIA APG：Tab 在面板内循环
+      const f = [...panel.querySelectorAll('button:not([disabled]):not([hidden]),[href],select,input,[tabindex]:not([tabindex="-1"])')].filter(el => el.offsetParent !== null);
+      if(!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if(e.shiftKey && (document.activeElement === first || !panel.contains(document.activeElement))){ e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey && (document.activeElement === last || !panel.contains(document.activeElement))){ e.preventDefault(); first.focus(); }
+    }
   });
+  let rzT = 0;
+  addEventListener('resize', () => { if(!S.open) return; clearTimeout(rzT); rzT = setTimeout(() => { draw(); if(BG.on){ BG.on = false; bgStart(); } }, 120); });
+  document.addEventListener('sb:data', () => { if(S.open && S.regions.length){ paint(); buildList(); } });
+
+  SB.countryPortal = {
+    open, close, settled:false,
+    get isOpen(){ return S.open && S.phase !== 'closing'; },
+    get key(){ return S.open ? S.k : null; },
+    get phase(){ return S.phase; },
+    // 调试 / 截图用：冻结展开或合拢动画在第 t 毫秒（停止后续阶段计时）；resume() 继续
+    debugFreeze(t){ S.timers.forEach(clearTimeout); S.timers = []; S.anims.forEach(a => { a.pause(); a.currentTime = t; }); return S.anims.length; },
+    debugResume(){ S.anims.forEach(a => a.play()); if(S.phase === 'opening') later(1200, settle); else if(S.phase === 'closing') later(800, finishClose); }
+  };
 })(window.SB);
 </script>
 <!-- ████ BLOCK 09-country-map END ████ -->
@@ -4741,7 +5052,8 @@ html[data-sb-perf="low"] .ca-badge{backdrop-filter:none;-webkit-backdrop-filter:
   SB.scenes.register('city', {
     world:'night',
     title:p => SB.store.city(p.id)?.name || '城市',
-    parent:p => { const c = SB.store.city(p.id); return c ? {id:'country', params:{k:c.country}} : {id:'globe', params:{}}; },
+    // v1.11.0：国家页改为地球上的星门面板 → 城市的父级是「展开了该国面板的世界星图」
+    parent:p => { const c = SB.store.city(p.id); return c && SB.geo.country(c.country) ? {id:'globe', params:{k:c.country}} : {id:'globe', params:{}}; },
     prepare:prepareCity,
     enter(p){ cityId = p.id; SB.fx.palette('night'); render(); document.querySelector('.sb-scene[data-scene="city"]').scrollTop = 0; }
   });

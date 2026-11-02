@@ -267,3 +267,11 @@ Book 级可选设置（`book_data.payload.settings.anniversary`，`YYYY-MM-DD`�
 - `SB.store.displayUrl(id, side?)` / `proxyOn()` / `displaySide()`：显示尺寸代理图（当前只在安卓启用），返回 `blob:` 或原签名地址；属于媒体读取层，不改变 Storage 内容。
 - `SB.dragSurface(el)`、`SB.perf.android`（Core）。
 - `SB.globe.rot`（调试）。
+
+### v1.11.0 新增接口 · 国家星门面板
+
+- **Scene Runtime `update(params, opts)` 钩子**（`blocks/00-core.html`）：`SB.scenes.go()` 的目标是当前场景、且场景声明了 `update` 时，由场景就地切换子状态（不走遮罩、不 prepare / swap），仍写浏览器历史并派发 `sb:scene`。返回 `false` 回到原流程。只用于同一场景内的子状态；换场景仍必须走 `prepare → await enter → nextPaint → reveal`。
+- `globe` 场景参数 `{k}` = 展开国家面板；`title / parent` 随之变化（魔法路径：世界星图 › 国家 › 城市）。旧的 `country` 场景已删除。
+- `SB.countryPortal`（`blocks/09-country-map.html`）：`open(k, {x, y, instant})` / `close({instant})` / `isOpen` / `key` / `phase` / `settled`。只由 `globe` 场景调用；业务代码打开国家请用 `SB.scenes.go('globe', {k})`，不要直接调用组件。
+- `SB.globe.pickAt(x, y)`、`SB.countryPortal.debugFreeze(t) / debugResume()`（调试 / 截图）。
+- 数据接口不变：城市仍由 `SB.store.addCity / updateCity / removeCity` 读写。面板是 `world-map` Experience 的视图，不进入 Starbook Core。

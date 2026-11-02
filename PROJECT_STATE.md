@@ -2,11 +2,11 @@
 
 ## Current Release
 
-- Version: `1.10.2` (时光剪影进度条与尾声 · 返回原位 · 拖动稳定 · 安卓性能)
+- Version: `1.11.0` (国家星门面板 · 时空裂隙)
 - Deadline: `2026-10-29`
 - Delivery goal: 私密、稳定、手机可用的周年纪念礼物。
 - Base: V1 `blocks + build.py + site/index.html`。
-- Runtime config version: `1.10.2`。
+- Runtime config version: `1.11.0`。
 
 ## Current Architecture
 
@@ -103,6 +103,14 @@ release/vX.X.X or feature/*
 
 `main` 是唯一 Production branch。普通代码发布不重置 Supabase 数据。
 
+
+## Country Portal Panel (v1.11.0)
+
+- 场景流程：魔法书 → 世界星图（地球 + 搜索栏；点国家 → 星门面板）→ 城市目录 → 回忆放映。**国家页（`country` 场景）已删除**；面板是 `globe` 场景的子状态 `params.k`。
+- `00-core`：Scene Runtime 新增 `update(params, opts)` 同场景钩子（不走遮罩，仍写历史、派发 `sb:scene`）。
+- `07-globe`：点击国家 / 信息卡 → `go('globe', {k}, {x, y})`；`update / prepare(k) / enter(k) / leave`；`title / parent` 随 `k` 变化；悬停预取省级地图；柔和档 / 安卓面板展开后跳过渲染；`SB.globe.pickAt`（调试）。
+- `09-country-map`：`SB.countryPortal`（时空裂隙：WAAPI clip-path 两段 + 光边；华丽档 canvas 极光 / 柔和档 CSS 光带；省级地图、省份筛选、城市栏、添加城市对话框、编辑城市；模态对话框可访问性）。
+- `10-city-album`：父级 `{id:'globe', params:{k}}`。
 
 ## Reel Seek / Return Position / Drag Robustness / Android (v1.10.2)
 

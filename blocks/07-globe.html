@@ -511,7 +511,8 @@
       if(moved < tapMoveLimit && e.type === 'pointerup' && from){ toCont(from); return; }      // 轻点大洲徽章
       if(moved < tapMoveLimit && e.type === 'pointerup'){
         const h = pick(e.clientX, e.clientY);
-        if(h?.country) SB.scenes.go('country', {k:h.country.key}, {transition:'portal', x:e.clientX, y:e.clientY});
+        // v1.11.0：国家不再是独立页面，而是地球上的星门面板（globe 场景子状态，见 prompts/09-country-map.md）
+        if(h?.country) SB.scenes.go('globe', {k:h.country.key}, {x:e.clientX, y:e.clientY});
       }
     };
     cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up); cv.addEventListener('lostpointercapture', up);
@@ -520,12 +521,13 @@
     cv.addEventListener('wheel', e => { e.preventDefault(); view.zoomT = SB.clamp(view.zoomT*(1 + Math.sign(e.deltaY)*.12), .58, 1.9); view.idle = 0; }, {passive:false});
   }
   let warmCountryT = 0, warmCountryKey = '';
+  const warmMap = k => { if(SB.geo.hasMap(k)) SB.geo.loadCountryMap(k).catch(() => {}); };
   function setHover(h, x, y){
     const c = h?.country;
     const idx = c ? SB.geo.countries.indexOf(c) + 1 : -1;
     earthMat.uniforms.hk.value = idx; earthMat.uniforms.hc.value = c ? (contIndex[c.cont] || -1) : -1;
     if(!c){ clearTimeout(warmCountryT); warmCountryKey = ''; tip.classList.remove('show'); return; }
-    if(c.key !== warmCountryKey){ clearTimeout(warmCountryT); warmCountryKey = c.key; warmCountryT = setTimeout(() => SB.scenes.prefetch?.('country',{k:c.key}),180); }
+    if(c.key !== warmCountryKey){ clearTimeout(warmCountryT); warmCountryKey = c.key; warmCountryT = setTimeout(() => warmMap(c.key), 180); }
     const n = SB.store.citiesIn(c.key).length;
     tip.innerHTML = `<b>${SB.esc(c.zh)}</b>${SB.esc(SB.geo.continent(c.cont)?.name || '')}${n ? ` · ${SB.icon('star')}${n} 座城市` : ''}`;
     tip.style.transform = `translate(${Math.min(x + 16, innerWidth - tip.offsetWidth - 12)}px, ${y + 18}px)`;
@@ -588,13 +590,13 @@
     card.querySelector('h2').textContent = o.zh; card.querySelector('p').textContent = sub;
     card.querySelector('.x').addEventListener('click', () => endFocus());
     const acts = card.querySelector('.acts');
-    // v1.8.1 分路转场：进入国家 = 幻影显形；直接打开城市 = 墨金书页
-    const go = (id, params, btn) => { const r = btn.getBoundingClientRect(); SB.scenes.go(id, params, {transition:id === 'city' ? 'quill' : 'portal', x:r.left + r.width/2, y:r.top + r.height/2}); };
+    // v1.8.1 分路转场：直接打开城市 = 墨金书页；v1.11.0 进入国家 = 在地球上撕开星门面板
+    const go = (id, params, btn) => { const r = btn.getBoundingClientRect(); SB.scenes.go(id, params, {transition:id === 'city' ? 'quill' : undefined, x:r.left + r.width/2, y:r.top + r.height/2}); };
     if(mine){ const b = SB.ui.button('打开我们的回忆', 'primary', () => go('city', {id:mine.id}, b), 'star'); acts.appendChild(b); }
-    if(ctry){ const b = SB.ui.button(`进入${ctry.zh}地图`, mine ? '' : 'primary', () => go('country', {k:ctry.key}, b)); acts.appendChild(b); }
+    if(ctry){ const b = SB.ui.button(`进入${ctry.zh}地图`, mine ? '' : 'primary', () => go('globe', {k:ctry.key}, b)); acts.appendChild(b); }
     if(!acts.children.length){ const p = SB.el('p'); p.textContent = '这里暂时没有可以进入的地图'; acts.appendChild(p); }
     card.classList.add('show');
-    if(ctry) SB.scenes.prefetch?.('country', {k:ctry.key});
+    if(ctry) warmMap(ctry.key);
   }
 
   /* ── 搜索 ── */
@@ -765,6 +767,8 @@
       view.rotY += view.vy*dt*8 + (view.idle > 4 && still ? dt*.06*Math.min(1, (view.idle-4)/2) : 0);
       view.rotX = SB.clamp(view.rotX + view.vx*dt*8, -1.25, 1.25);
     }
+    // v1.11.0：柔和档 / 安卓在国家面板完全展开且飞转结束后不再重绘地球（画布保留最后一帧，prompts/performance/03-globe-to-country.md）
+    if(!hi() && SB.countryPortal?.settled && !fly.on && view.intro >= 1){ requestAnimationFrame(loop); return; }
     globe.rotation.set(view.rotX, view.rotY, 0);
     view.intro = Math.min(1, view.intro + dt/2.4);
     const ease = 1 - Math.pow(1 - view.intro, 3);
@@ -811,34 +815,48 @@
   function stop(){ running = false; if(fly.on){ view.rotX = fly.x1; view.rotY = fly.y1; fly.on = false; fly.done?.(); fly.done = null; } }
   document.addEventListener('visibilitychange', () => { if(document.hidden) stop(); else if(SB.scenes.current === 'globe') start(); });
 
-  /* 记住刚离开的国家：从国家地图返回时地球转向它 */
-  let lastCountry = null;
-  document.addEventListener('sb:scene', e => { if(e.detail.id === 'country') lastCountry = e.detail.params?.k || null; else if(e.detail.id !== 'globe') lastCountry = null; });
-
   SB.globe = { get rot(){ return [view.rotX, view.rotY]; },      // 调试 / 测试用（v1.10.2）
+    pickAt:(x, y) => ready ? pick(x, y)?.country?.key || null : null,   // 调试 / 测试用（v1.11.0）
     warmEngine:()=>SB.loadScript(THREE_URLS), prepare:init, focus:o => focusTo(o), search:q => { qIn.value = q; search(); return S; } };
+
+  /* v1.11.0 国家星门面板：面板是 globe 场景的子状态（params.k），由块 09 SB.countryPortal 呈现 */
+  const portalKey = p => p?.k && SB.geo.country(p.k) ? p.k : null;
+  let unfocusT = 0;
+  function faceCountry(k, instant){
+    const c = SB.geo.country(k); if(!c?.mid) return;
+    clearTimeout(unfocusT);
+    if(instant){ const to = targetRotation(c.mid[0], c.mid[1]); view.rotX = to.x; view.rotY = to.y; view.vx = view.vy = 0; }
+    focusTo({kind:'country', key:c.key, zh:c.zh, lon:c.mid[0], lat:c.mid[1], silent:true});
+  }
+  function portalClosed(){ clearTimeout(unfocusT); unfocusT = setTimeout(() => { if(focus.o?.silent) endFocus(); }, 4000); }
 
   SB.scenes.register('globe', {
     world:'night', deepLink:true,
-    title:()=>'世界星图',
-    parent:()=>null,
-    prepare(){ return init(); },
+    title:p => portalKey(p) ? SB.geo.country(p.k).zh : '世界星图',
+    parent:p => portalKey(p) ? {id:'globe', params:{}} : null,
+    prepare(p){ const k = portalKey(p); return Promise.all([init(), k && SB.geo.hasMap(k) ? SB.geo.loadCountryMap(k).catch(() => null) : null]); },
+    // 同场景子状态：打开 / 切换 / 关闭国家面板，不走全屏转场（prompts/00-core.md v1.11.0）
+    update(p, opts){
+      if(!ready) return false;
+      const k = portalKey(p);
+      if(k){ hideCard(); closeResults(); setHover(null); faceCountry(k, false);
+        SB.countryPortal.open(k, {x:opts?.x, y:opts?.y}); }
+      else if(SB.countryPortal.isOpen || SB.countryPortal.phase === 'opening'){ SB.countryPortal.close(); portalClosed(); }
+      return true;
+    },
     async enter(p, opts){
       SB.fx.palette('night'); SB.fx.orbit(null);
       setTimeout(() => SB.fx.warp(false), p?.fromBook ? 900 : 0);
       setTimeout(() => SB.fx.calm(), 1400);
       refreshStats(); closeResults();
-      const back = lastCountry && SB.geo.country(lastCountry); lastCountry = null;
-      view.intro = p?.fromBook ? 0 : back ? .8 : .55;
+      const k = portalKey(p);
+      view.intro = p?.fromBook ? 0 : k ? 1 : .55;
       try{ await init(); }catch(e){ return; }
       resize(); view.zoomT = 1; start();
-      if(back && back.mid){
-        // 从国家地图返回：转向这个国家并短暂高亮（不弹信息卡）
-        const v = back.mid; focusTo({kind:'country', key:back.key, zh:back.zh, lon:v[0], lat:v[1], silent:true});
-        setTimeout(() => { if(focus.o?.silent) endFocus(); }, 4200);
-      }
+      // 从城市返回 / 深链：地球直接朝向该国，面板在遮罩后静态呈现
+      if(k){ faceCountry(k, true); SB.countryPortal.open(k, {instant:true}); }
     },
-    leave(){ stop(); setHover(null); closeResults(); hideCard(); }
+    leave(){ stop(); setHover(null); closeResults(); hideCard(); SB.countryPortal?.close({instant:true}); }
   });
 
   SB.menu.add({id:'globe', order:20, icon:'globe', label:'世界星图', desc:'旋转地球，搜索任意城市，寻找我们的足迹',
