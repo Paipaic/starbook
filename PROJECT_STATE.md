@@ -2,13 +2,13 @@
 
 ## Current Release
 
-- Version: `1.12.0` (数据安全：最近删除回收站 · 导出整本书)
+- Version: `1.12.1` (从备份导入 · 导出格式对应)
 - Phase: **周年后持续迭代**（2026-10-29 周年版已交付）。
 - Delivery goal: 私密、稳定、手机可用的纪念册；用户真实回忆数据持续存在。
 - Supabase plan: **Free**（无自动备份；连续 7 天低活动会被自动暂停，Owner 选择不做保活，暂停时到后台 Resume project）。
 - Planning: 跨版本总待办见仓库外 `C:\Users\87986\Desktop\version\github\星屿之书-后续迭代规划.md`。
 - Base: V1 `blocks + build.py + site/index.html`。
-- Runtime config version: `1.12.0`。
+- Runtime config version: `1.12.1`。
 
 ## Current Architecture
 
@@ -105,6 +105,11 @@ release/vX.X.X or feature/*
 
 `main` 是唯一 Production branch。普通代码发布不重置 Supabase 数据。
 
+
+## Backup Import (v1.12.1)
+
+- `05-store`：`bookId()`、`mediaExists(paths)`（`createSignedUrls` 批量判断）、`putPath(path, blob)`（原路径上传，已存在视为成功）、`importBackup(payload, {overwrite, remap})`（城市同 id 保留 / 覆盖、同名合并、回忆整体复制并改写 cityId、设置仅在缺失时恢复、回收站条目补回）。
+- `16-archive`：「从备份导入」对话框（多选 zip、book.json / part.json 校验、预览、覆盖选项、上传进度、结果与缺失清单）；导出每卷写 `part.json`，README 加入导入说明。
 
 ## Trash & Export (v1.12.0)
 
@@ -256,7 +261,7 @@ release/vX.X.X or feature/*
 - Theme / Experience 目前只有 Context，没有插件加载器。
 - Signed URL 仅做内存缓存；刷新后重新签名。
 - 核心 Third-party CDN 尚未全部本地化（Google Fonts、three.js、国家地图仍为外部依赖；supabase-js 已在 v1.11.1 锁定版本）。
-- v1.12.0 起删除先进回收站，并可导出整本书；尚无「从备份恢复」工具。
+- v1.12.0 起删除先进回收站，并可导出整本书；v1.12.1 起可从备份导入。
 - 完整深层 URL Router 尚未实现。
 - 暂未使用 Realtime。
 - 图片仍是单一压缩尺寸。
@@ -310,10 +315,10 @@ Confirmed by owner on 2026-10-26:
 
 ## Highest Priority Next
 
-1. 发布 v1.12.0，之后**在每台设备上刷新一次网页**。实测：删除一段回忆 → 在「珍藏与备份 → 最近删除」恢复；在电脑上导出整本书，解压检查照片数量。导出一次作为首份正式备份，电脑与网盘各存一份。
-2. v1.12.1 体验：添加城市取真实坐标、更多国家省份中文名、忘记密码。
+1. 发布 v1.12.1（若 v1.12.0 尚未发布，可直接发布 v1.12.1），之后**在每台设备上刷新一次网页**。实测：删除一段回忆 → 在「最近删除」恢复；在电脑上导出整本书；用「从备份导入」选这份备份，预览应显示「0 段新增、全部已存在」。导出一次作为首份正式备份，电脑与网盘各存一份。
+2. v1.12.2 体验：添加城市取真实坐标、更多国家省份中文名、忘记密码。
 3. v1.13.0 性能与工程：搜索数据外置、依赖自托管、照片多尺寸与缓存、端到端测试入库。
-4. 之后：从备份恢复工具；成员管理、数据正规化（需要 migration）；地球 / 国家面板视觉升级。
+4. 之后：成员管理、数据正规化（需要 migration）；地球 / 国家面板视觉升级。
 
 ## Release Automation (v1.6.0+)
 

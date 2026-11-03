@@ -254,6 +254,10 @@ if 'trash:normTrash(' not in st5 or '{purge:true}' not in st5 or 'if(!purge){' n
 if "SB.dock.add({id:'archive'" not in ar or 'jszip/3.10.1' not in ar or "compression:'STORE'" not in ar:
     print('ERROR: archive panel / export (v1.12.0) missing or JSZip not pinned')
     sys.exit(1)
+# v1.12.1 guards: import must match the export format (book.json files map, part.json) and only add data.
+if 'st.importBackup' not in st5 or 'st.mediaExists' not in st5 or 'function openImport(' not in ar or "format:'starbook-export-part'" not in ar or "m.format !== 'starbook-export'" not in ar:
+    print('ERROR: backup import (v1.12.1) missing or not aligned with the starbook-export format')
+    sys.exit(1)
 # GBK-misread UTF-8 (mojibake) markers that appeared when Windows PowerShell read BOM-less UTF-8 as ANSI.
 MOJIBAKE = ['銆', '锛', '鈥', '鈹', '鏄熷', '涔嬩功']
 for rel in ['AGENTS.md', 'README.md', 'PROJECT_STATE.md', 'CHANGELOG.md', 'ROADMAP.md', 'blocks/00-config.html']:

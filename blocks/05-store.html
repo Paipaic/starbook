@@ -267,6 +267,69 @@
   /* ── v1.12.0 导出：整本书引用到的全部媒体路径（含回收站）与原文件下载 ── */
   st.allMediaPaths = () => [...refs(data)];
   st.exportPayload = () => clone(data);
+  /* ── v1.12.1 从备份导入（prompts/16-archive.md 第 6 节） ── */
+  st.bookId = () => bookId();
+  // 已存在于 Storage 的路径（createSignedUrls 批量；不存在的对象该条返回 error）
+  st.mediaExists = async paths => {
+    const out = new Set(), b = bucket();
+    for(let i = 0; i < paths.length; i += 100){
+      const chunk = paths.slice(i, i + 100);
+      const {data:rows, error} = await b.createSignedUrls(chunk, 60); if(error) throw error;
+      (rows || []).forEach((r, k) => { if(!r?.error && (r?.signedUrl || r?.signedURL)) out.add(r?.path || chunk[k]); });
+    }
+    return out;
+  };
+  const TYPES = {jpg:'image/jpeg', jpeg:'image/jpeg', png:'image/png', webp:'image/webp', mp3:'audio/mpeg', m4a:'audio/mp4', mp4:'audio/mp4', aac:'audio/aac', wav:'audio/wav'};
+  // 按原路径上传（已存在视为成功，不覆盖）
+  st.putPath = async (path, blob) => {
+    if(!st.canUpload) throw {code:403};
+    if(!path.startsWith(bookId() + '/')) throw {code:'bad_path'};
+    const ext = (path.split('.').pop() || '').toLowerCase();
+    const {error} = await bucket().upload(path, blob, {contentType:TYPES[ext] || blob.type || undefined, cacheControl:'31536000', upsert:false});
+    if(error && !/exist|duplicate|409/i.test(String(error.message || error.error || error.statusCode || ''))) throw error;
+  };
+  // 合并备份 payload；remap(path) 把另一本书的路径改写到当前书；返回统计
+  function remapMedia(o, remap){
+    if(!o || !remap) return o;
+    const m = clone(o);
+    if(m.cover?.id) m.cover.id = remap(m.cover.id);
+    (m.slides || []).forEach(x => { if(x.id) x.id = remap(x.id); });
+    if(m.bgm?.id) m.bgm.id = remap(m.bgm.id);
+    if(m.slide?.id) m.slide.id = remap(m.slide.id);
+    return m;
+  }
+  st.importBackup = async (src, {overwrite=false, remap=null}={}) => {
+    src = normalize(src);
+    let rep;
+    await mutate(d => {
+      rep = {citiesAdded:0, citiesMerged:0, citiesKept:0, citiesReplaced:0, memAdded:0, memKept:0, memReplaced:0, memSkipped:0, trashAdded:0, settings:[]};
+      const alias = {};
+      for(const [id, c] of Object.entries(src.cities)){
+        if(d.cities[id]){ if(overwrite){ d.cities[id] = clone(c); rep.citiesReplaced++; } else rep.citiesKept++; continue; }
+        delete d.trash.cities[id];
+        const dup = sameCity(d, c);
+        if(dup){ alias[id] = dup[0]; rep.citiesMerged++; continue; }
+        d.cities[id] = clone(c); rep.citiesAdded++;
+      }
+      for(const [id, m0] of Object.entries(src.memories)){
+        const m = remapMedia(m0, remap), cid = alias[m.cityId] || m.cityId;
+        if(!d.cities[cid]){ rep.memSkipped++; continue; }
+        m.cityId = cid;
+        if(d.memories[id]){ if(overwrite){ d.memories[id] = m; rep.memReplaced++; } else rep.memKept++; continue; }
+        delete d.trash.memories[id];
+        d.memories[id] = m; rep.memAdded++;
+      }
+      const s = src.settings || {};
+      if(s.anniversary && !d.settings.anniversary){ d.settings.anniversary = s.anniversary; rep.settings.push('纪念日'); }
+      if(s.bgm?.id && !d.settings.bgm?.id){ d.settings.bgm = remap ? {...s.bgm, id:remap(s.bgm.id)} : clone(s.bgm); rep.settings.push('全站音乐'); }
+      const t = src.trash;
+      for(const [id, c] of Object.entries(t.cities)) if(!d.cities[id] && !d.trash.cities[id]){ d.trash.cities[id] = clone(c); rep.trashAdded++; }
+      for(const [id, m] of Object.entries(t.memories)) if(!d.memories[id] && !d.trash.memories[id]){ d.trash.memories[id] = remapMedia(m, remap); rep.trashAdded++; }
+      for(const [id, p] of Object.entries(t.photos)){ const nid = remap ? remap(id) : id; if(!d.trash.photos[nid]){ d.trash.photos[nid] = remapMedia(p, remap); rep.trashAdded++; } }
+      for(const [id, f] of Object.entries(t.files)){ const nid = remap ? remap(id) : id; if(!d.trash.files[nid]) d.trash.files[nid] = clone(f); }
+    });
+    return rep;
+  };
   st.download = async path => { const {data:blob, error} = await bucket().download(path); if(error) throw error; return blob; };
   st.saveSettings = patch => mutate(d => { d.settings = strip({...d.settings,...patch}); });
 

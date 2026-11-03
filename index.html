@@ -3,7 +3,7 @@
 /* ── Starbook v1.10.2 · 公开客户端配置 ──
    Publishable Key 设计上允许出现在浏览器；不要在此文件放 Secret / service_role / 数据库密码。 */
 window.STARBOOK_CONFIG = Object.freeze({
-  version: '1.12.0',
+  version: '1.12.1',
   supabaseUrl: 'https://xowbbcumcxtsrrnulunb.supabase.co',
   supabasePublishableKey: 'sb_publishable_SYGBrk2PiwwzRXZm03Patg_oDlYSIGd',
   storageBucket: 'starbook-media',
@@ -3055,6 +3055,69 @@ html:not([data-sb-perf="high"]) .cv-flow{display:none;}
   /* ── v1.12.0 导出：整本书引用到的全部媒体路径（含回收站）与原文件下载 ── */
   st.allMediaPaths = () => [...refs(data)];
   st.exportPayload = () => clone(data);
+  /* ── v1.12.1 从备份导入（prompts/16-archive.md 第 6 节） ── */
+  st.bookId = () => bookId();
+  // 已存在于 Storage 的路径（createSignedUrls 批量；不存在的对象该条返回 error）
+  st.mediaExists = async paths => {
+    const out = new Set(), b = bucket();
+    for(let i = 0; i < paths.length; i += 100){
+      const chunk = paths.slice(i, i + 100);
+      const {data:rows, error} = await b.createSignedUrls(chunk, 60); if(error) throw error;
+      (rows || []).forEach((r, k) => { if(!r?.error && (r?.signedUrl || r?.signedURL)) out.add(r?.path || chunk[k]); });
+    }
+    return out;
+  };
+  const TYPES = {jpg:'image/jpeg', jpeg:'image/jpeg', png:'image/png', webp:'image/webp', mp3:'audio/mpeg', m4a:'audio/mp4', mp4:'audio/mp4', aac:'audio/aac', wav:'audio/wav'};
+  // 按原路径上传（已存在视为成功，不覆盖）
+  st.putPath = async (path, blob) => {
+    if(!st.canUpload) throw {code:403};
+    if(!path.startsWith(bookId() + '/')) throw {code:'bad_path'};
+    const ext = (path.split('.').pop() || '').toLowerCase();
+    const {error} = await bucket().upload(path, blob, {contentType:TYPES[ext] || blob.type || undefined, cacheControl:'31536000', upsert:false});
+    if(error && !/exist|duplicate|409/i.test(String(error.message || error.error || error.statusCode || ''))) throw error;
+  };
+  // 合并备份 payload；remap(path) 把另一本书的路径改写到当前书；返回统计
+  function remapMedia(o, remap){
+    if(!o || !remap) return o;
+    const m = clone(o);
+    if(m.cover?.id) m.cover.id = remap(m.cover.id);
+    (m.slides || []).forEach(x => { if(x.id) x.id = remap(x.id); });
+    if(m.bgm?.id) m.bgm.id = remap(m.bgm.id);
+    if(m.slide?.id) m.slide.id = remap(m.slide.id);
+    return m;
+  }
+  st.importBackup = async (src, {overwrite=false, remap=null}={}) => {
+    src = normalize(src);
+    let rep;
+    await mutate(d => {
+      rep = {citiesAdded:0, citiesMerged:0, citiesKept:0, citiesReplaced:0, memAdded:0, memKept:0, memReplaced:0, memSkipped:0, trashAdded:0, settings:[]};
+      const alias = {};
+      for(const [id, c] of Object.entries(src.cities)){
+        if(d.cities[id]){ if(overwrite){ d.cities[id] = clone(c); rep.citiesReplaced++; } else rep.citiesKept++; continue; }
+        delete d.trash.cities[id];
+        const dup = sameCity(d, c);
+        if(dup){ alias[id] = dup[0]; rep.citiesMerged++; continue; }
+        d.cities[id] = clone(c); rep.citiesAdded++;
+      }
+      for(const [id, m0] of Object.entries(src.memories)){
+        const m = remapMedia(m0, remap), cid = alias[m.cityId] || m.cityId;
+        if(!d.cities[cid]){ rep.memSkipped++; continue; }
+        m.cityId = cid;
+        if(d.memories[id]){ if(overwrite){ d.memories[id] = m; rep.memReplaced++; } else rep.memKept++; continue; }
+        delete d.trash.memories[id];
+        d.memories[id] = m; rep.memAdded++;
+      }
+      const s = src.settings || {};
+      if(s.anniversary && !d.settings.anniversary){ d.settings.anniversary = s.anniversary; rep.settings.push('纪念日'); }
+      if(s.bgm?.id && !d.settings.bgm?.id){ d.settings.bgm = remap ? {...s.bgm, id:remap(s.bgm.id)} : clone(s.bgm); rep.settings.push('全站音乐'); }
+      const t = src.trash;
+      for(const [id, c] of Object.entries(t.cities)) if(!d.cities[id] && !d.trash.cities[id]){ d.trash.cities[id] = clone(c); rep.trashAdded++; }
+      for(const [id, m] of Object.entries(t.memories)) if(!d.memories[id] && !d.trash.memories[id]){ d.trash.memories[id] = remapMedia(m, remap); rep.trashAdded++; }
+      for(const [id, p] of Object.entries(t.photos)){ const nid = remap ? remap(id) : id; if(!d.trash.photos[nid]){ d.trash.photos[nid] = remapMedia(p, remap); rep.trashAdded++; } }
+      for(const [id, f] of Object.entries(t.files)){ const nid = remap ? remap(id) : id; if(!d.trash.files[nid]) d.trash.files[nid] = clone(f); }
+    });
+    return rep;
+  };
   st.download = async path => { const {data:blob, error} = await bucket().download(path); if(error) throw error; return blob; };
   st.saveSettings = patch => mutate(d => { d.settings = strip({...d.settings,...patch}); });
 
@@ -9236,6 +9299,15 @@ html[data-sb-perf="reduced"] .yr-strip{transform:translateX(var(--x0))!important
 .ar-stat{font-size:13px;letter-spacing:.04em;color:var(--text);min-height:1.6em;}
 .ar-parts{display:flex;flex-direction:column;gap:6px;margin-top:10px;}
 .ar-parts .sb-btn{justify-content:center;}
+/* v1.12.1 从备份导入 */
+.ar-pick{position:relative;display:flex;justify-content:center;margin:4px 0 6px;}
+.ar-pick input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.ar-files{font-size:12.5px;color:var(--text-dim);text-align:center;letter-spacing:.03em;min-height:1.4em;word-break:break-all;}
+.ar-plan{margin:12px 0 0;padding:12px 14px;border-radius:12px;border:1px solid rgba(244,184,96,.22);background:rgba(244,184,96,.04);font-size:13px;line-height:1.9;letter-spacing:.03em;}
+.ar-plan b{color:var(--gold-hi);font-weight:600;}
+.ar-plan .warn{color:#e7a493;}
+.ar-opt{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:13px;color:var(--text);cursor:pointer;}
+.ar-opt input{width:18px;height:18px;accent-color:#f4b860;}
 @media (max-width:480px){ .ar-sum{grid-template-columns:repeat(2,minmax(0,1fr));} .ar-item{flex-wrap:wrap;} .ar-item .ac{width:100%;justify-content:flex-end;} }
 </style>
 
@@ -9258,6 +9330,7 @@ html[data-sb-perf="reduced"] .yr-strip{transform:translateX(var(--x0))!important
         row('最近删除', n ? `${n} 项 · 保留 ${st().TRASH_DAYS} 天后自动清理` : `删除的内容会在这里保留 ${st().TRASH_DAYS} 天`, SB.ui.button('查看', 'small', () => { SB.dock.close(); openTrash(); })); }
       const le = lastExport();
       row('导出整本书', le ? `上次导出：${fmtDay(le)}` : '把全部文字和原图打包下载到本机', SB.ui.button('导出', 'small primary', () => { SB.dock.close(); openExport(); }));
+      if(st()?.canEdit) row('从备份导入', '把导出的 zip 重新放回这本书（只补回缺少的内容）', SB.ui.button('导入', 'small', () => { SB.dock.close(); openImport(); }));
     }});
   document.addEventListener('sb:data', () => { if(SB.dock.openId === 'archive') SB.dock.refresh('archive'); });
 
@@ -9334,7 +9407,10 @@ html[data-sb-perf="reduced"] .yr-strip{transform:translateX(var(--x0))!important
       `- images/：照片原图（文件名与 book.json 里每张照片的 id 末尾一致）。`, `- audio/：背景音乐。`,
       `- 清单-第N卷.txt：这一卷包含的文件。`, ``,
       parts > 1 ? `本次备份分为多卷（每卷一个 zip）。请把所有分卷都解压到同一个文件夹里。` : `本次备份只有一卷。`, ``,
-      `请把备份放在电脑和网盘各一份。星屿之书的数据库（Supabase Free 套餐）没有自动备份。`].join('\r\n');
+      `请把备份放在电脑和网盘各一份。星屿之书的数据库（Supabase Free 套餐）没有自动备份。`, ``,
+      `重新导入`, `- 在网站右上角「珍藏与备份」→「从备份导入」，选择这些 zip（分卷请一次选中全部分卷）。`,
+      `- 导入只补回缺少的城市、回忆和照片，不会删除现有内容；照片会放回原来的位置，回忆的照片顺序、说明、分组、日期、所在城市都会原样恢复。`,
+      `- 请不要修改 zip 里的文件名和 book.json，否则导入时无法对应。`].join('\r\n');
   }
   function openExport(){
     const S = {running:false, cancel:false};
@@ -9372,6 +9448,7 @@ html[data-sb-perf="reduced"] .yr-strip{transform:translateX(var(--x0))!important
         const flush = async last => {
           if(S.cancel) throw {cancel:true};
           zip.file(`清单-第${part}卷.txt`, inPart.join('\r\n'));
+          zip.file('part.json', JSON.stringify({format:'starbook-export-part', exportedAt, part, files:inPart}));   // v1.12.1：导入时校验分卷属于同一次导出
           if(last && failed.length) zip.file('导出失败的文件.txt', failed.join('\r\n'));
           if(part === 1) zip.file('README.txt', readme(last ? 1 : 2, meta));
           stat.textContent = `正在打包第 ${part} 卷…`;
@@ -9413,7 +9490,116 @@ html[data-sb-perf="reduced"] .yr-strip{transform:translateX(var(--x0))!important
     }
     return dlg;
   }
-  SB.archive = { openTrash, openExport };
+  /* ── v1.12.1 从备份导入（prompts/16-archive.md 第 6 节）：与导出格式 starbook-export v1 一一对应 ── */
+  function openImport(){
+    if(!st()?.canEdit) return;
+    const S = {meta:null, entries:new Map(), remap:null, plan:null, running:false, cancel:false, names:[], parts:[]};
+    let fileInp, filesEl, planEl, bar, stat, optEl, goBtn;
+    SB.ui.dialog({ title:'从备份导入', sub:'选择「导出整本书」得到的 zip（分卷备份请一次选中全部分卷）', wide:true,
+      build(b){
+        b.innerHTML = `<div class="ar-pick"><label class="sb-btn primary">选择备份文件<input type="file" accept=".zip,application/zip" multiple aria-label="选择备份 zip 文件"></label></div>
+          <div class="ar-files"></div><div class="ar-plan" hidden></div>
+          <label class="ar-opt" hidden><input type="checkbox"> 这本书里已有的回忆和城市，用备份里的版本覆盖（默认保留现在的版本）</label>
+          <div class="ar-bar" hidden><i></i></div><div class="ar-stat"></div>
+          <p class="ar-note">导入只会补回缺少的城市、回忆和照片，不会删除这本书里现有的任何内容；照片文件已经存在时不会重复上传。zip 在本机读取，不会上传 zip 本身。</p>`;
+        fileInp = b.querySelector('input[type=file]'); filesEl = b.querySelector('.ar-files'); planEl = b.querySelector('.ar-plan');
+        optEl = b.querySelector('.ar-opt'); bar = b.querySelector('.ar-bar'); stat = b.querySelector('.ar-stat');
+        fileInp.addEventListener('change', () => { const fs = [...fileInp.files]; if(fs.length) readZips(fs); });
+        optEl.querySelector('input').addEventListener('change', () => S.meta && showPlan());
+      },
+      actions:[ {text:'关闭'}, {text:'开始导入', kind:'primary', id:'import', async onClick(close, btn){ goBtn = btn; if(!S.running && S.meta) run(); return false; }} ],
+      onClose(){ S.cancel = true; } });
+    const dlgBtn = () => goBtn || document.querySelector('.sb-modal [data-act=import]');
+    const setGo = (on, text) => { const b = dlgBtn(); if(!b) return; b.disabled = !on; if(text) b.textContent = text; };
+    setTimeout(() => setGo(false), 0);
+    const setBar = k => { bar.hidden = false; bar.querySelector('i').style.transform = `scaleX(${Math.max(0, Math.min(1, k)).toFixed(3)})`; };
+
+    async function readZips(files){
+      S.meta = null; S.entries = new Map(); S.parts = []; S.names = files.map(f => f.name); planEl.hidden = true; optEl.hidden = true; setGo(false);
+      filesEl.textContent = `已选 ${files.length} 个文件：${S.names.join('、')}`; stat.textContent = '正在读取备份…';
+      try{
+        if(!window.JSZip) await SB.loadScript(ZIP_URLS);
+        if(!window.JSZip) throw {msg:'打包工具加载失败，请检查网络后重试'};
+        for(const f of files){
+          let zip; try{ zip = await JSZip.loadAsync(f); }catch(e){ throw {msg:`「${f.name}」不是有效的 zip 文件`}; }
+          const bj = zip.file('book.json');
+          if(bj){ let m; try{ m = JSON.parse(await bj.async('string')); }catch(e){ throw {msg:`「${f.name}」里的 book.json 无法读取`}; }
+            if(S.meta && S.meta.exportedAt !== m.exportedAt) throw {msg:'选中的文件来自不同时间的备份，请只选择同一次导出的分卷'};
+            S.meta = m; }
+          const pj = zip.file('part.json');
+          if(pj){ try{ const q = JSON.parse(await pj.async('string')); (S.parts = S.parts || []).push({name:f.name, exportedAt:q.exportedAt, part:q.part}); }catch(e){} }
+          zip.forEach((name, entry) => { if(!entry.dir && /^(images|audio)\//.test(name)) S.entries.set(name, entry); });
+        }
+        const m = S.meta;
+        if(!m) throw {msg:'没有找到 book.json。分卷备份请同时选中「第1卷」'};
+        if(m.format !== 'starbook-export' || !m.payload) throw {msg:'这不是星屿之书导出的备份文件'};
+        if(Number(m.formatVersion) > 1) throw {msg:'这是更新版本网站导出的备份，请先更新网站后再导入'};
+        const stray = (S.parts || []).filter(q => q.exportedAt && q.exportedAt !== m.exportedAt);
+        if(stray.length) throw {msg:`「${stray.map(q => q.name).join('、')}」来自另一次导出，请只选择同一次导出的分卷`};
+        const cur = st().bookId(), old = m.book?.id || '';
+        S.remap = old && cur && old !== cur ? (p => String(p).startsWith(old + '/') ? cur + String(p).slice(old.length) : p) : null;
+        showPlan(); setGo(true); stat.textContent = '';
+      }catch(e){ console.error('[Starbook import]', e); stat.textContent = e?.msg || '读取备份时出了点问题'; }
+    }
+    function showPlan(){
+      const m = S.meta, p = m.payload, over = optEl.querySelector('input').checked;
+      const live = st(), cities = Object.entries(p.cities || {}), mems = Object.entries(p.memories || {});
+      const same = c => live.cities.some(x => x.country === c.country && x.region === c.region && x.name === c.name);
+      const cNew = cities.filter(([id, c]) => !live.city(id) && !same(c)).length, cHas = cities.filter(([id]) => live.city(id)).length;
+      const mNew = mems.filter(([id]) => !live.memory(id)).length, mHas = mems.length - mNew;
+      const files = m.files || [], missing = files.filter(f => !S.entries.has(f.file));
+      const nPhoto = files.filter(f => /^images\//.test(f.file)).length;
+      const d = new Date(m.exportedAt);
+      planEl.innerHTML = `备份：<b>${esc(m.book?.name || '星屿之书')}</b> · ${isNaN(d) ? '' : esc(fmtDay(m.exportedAt))} 导出 · ${cities.length} 座城市 · ${mems.length} 段回忆 · ${nPhoto} 张照片<br>
+        将新增 <b>${cNew}</b> 座城市、<b>${mNew}</b> 段回忆${mHas || cHas ? `；${mHas} 段回忆、${cHas} 座城市这本书里已经有了（${over ? '用备份里的版本<b>覆盖</b>' : '保留现在的版本'}）` : ''}。<br>
+        照片和音乐：备份里 ${files.length} 个文件，已选分卷中找到 ${files.length - missing.length} 个${missing.length ? `，<span class="warn">缺少 ${missing.length} 个（可能没有选中全部分卷）</span>` : ''}；导入时只上传这本书里缺少的文件。
+        ${S.remap ? '<br><span class="warn">这个备份来自另一本书，照片会复制到当前这本书里。</span>' : ''}`;
+      planEl.hidden = false; optEl.hidden = !(mHas || cHas);
+    }
+    async function run(){
+      S.running = true; S.cancel = false; setGo(false, '正在导入…'); fileInp.disabled = true;
+      const m = S.meta, files = m.files || [], failed = [];
+      try{
+        const targets = files.map(f => ({src:f.file, dest:S.remap ? S.remap(f.path) : f.path})).filter(t => S.entries.has(t.src));
+        stat.textContent = '正在检查这本书里已有的照片…'; setBar(0);
+        const have = await st().mediaExists(targets.map(t => t.dest));
+        const todo = targets.filter(t => !have.has(t.dest));
+        let done = 0;
+        for(let i = 0; i < todo.length; i += 2){
+          if(S.cancel) throw {cancel:true};
+          await Promise.all(todo.slice(i, i + 2).map(async t => {
+            for(let k = 0; k < 3; k++){
+              try{ const blob = await S.entries.get(t.src).async('blob'); await st().putPath(t.dest, blob); return; }
+              catch(e){ if(k === 2){ console.warn('[Starbook import upload]', t.dest, e); failed.push(t.src); } else await SB.wait(700*(k + 1)); }
+            }
+          }));
+          done = Math.min(todo.length, i + 2); setBar(todo.length ? done/todo.length*.9 : .9);
+          stat.textContent = `正在上传缺少的照片 ${done} / ${todo.length}`;
+        }
+        if(S.cancel) throw {cancel:true};
+        stat.textContent = '正在写入城市与回忆…';
+        const over = optEl.querySelector('input').checked;
+        const r = await st().importBackup(m.payload, {overwrite:over, remap:S.remap});
+        setBar(1);
+        const parts = [];
+        if(r.citiesAdded) parts.push(`新增 ${r.citiesAdded} 座城市`);
+        if(r.citiesMerged) parts.push(`${r.citiesMerged} 座城市并入同名城市`);
+        if(r.memAdded) parts.push(`新增 ${r.memAdded} 段回忆`);
+        if(r.memReplaced || r.citiesReplaced) parts.push(`覆盖 ${r.memReplaced} 段回忆、${r.citiesReplaced} 座城市`);
+        if(r.memKept || r.citiesKept) parts.push(`保留现有 ${r.memKept} 段回忆、${r.citiesKept} 座城市`);
+        if(r.trashAdded) parts.push(`${r.trashAdded} 项放回「最近删除」`);
+        if(r.settings.length) parts.push(`恢复${r.settings.join('、')}`);
+        const missing = files.length - targets.length;
+        stat.innerHTML = `导入完成：${esc(parts.join('，') || '这本书里已经有备份中的全部内容')}。上传了 ${todo.length - failed.length} 个照片 / 音乐文件。`
+          + (failed.length || missing ? `<br><span style="color:#e7a493">${failed.length ? `${failed.length} 个文件上传失败` : ''}${failed.length && missing ? '，' : ''}${missing ? `${missing} 个文件不在已选分卷里` : ''}——可以稍后再导入一次补齐（已存在的不会重复上传）。</span>` : '');
+        SB.toast('备份已导入'); SB.fx?.burst?.(500); setGo(false, '已完成');
+      }catch(e){
+        if(e?.cancel) stat.textContent = '已取消导入（已上传的照片保留，可以再次导入继续）';
+        else{ console.error('[Starbook import]', e); stat.textContent = e?.msg || st().errText(e); setGo(true, '重新导入'); }
+      }finally{ S.running = false; fileInp.disabled = false; }
+    }
+  }
+  SB.archive = { openTrash, openExport, openImport };
   SB.debug.add('archive', {limitMB:0});
 })(window.SB);
 </script>
