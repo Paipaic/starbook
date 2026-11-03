@@ -492,7 +492,9 @@ html[data-sb-perf="reduced"] .yr-strip{transform:translateX(var(--x0))!important
     const el = R.el; el.classList.remove('on');
     setTimeout(() => { if(!R.open){ el.hidden = true; stage().innerHTML = ''; $q('.yr-wait').textContent = ''; } }, silent ? 0 : 900);
   }
-  SB.yearReel = { open:start, close, get state(){ return {open:!!R.open, T:R.T, playing:R.playing, total:R.p?.total || 0, chapters:R.p?.chs.map(c => ({t0:c.t0, dur:c.dur, layout:c.layout, n:c.ph.length, title:c.m.title})) || [], stats:R.p?.seq.filter(x => x.stats).map(x => x.t0) || []}; },
-    seek:T => seekTo(T) };
+  SB.yearReel = { open:start, close };
+  // v1.11.1：测试用接口移到 SB.debug（prompts/00-core.md）
+  SB.debug.add('reel', { get state(){ return {open:!!R.open, T:R.T, playing:R.playing, total:R.p?.total || 0, chapters:R.p?.chs.map(c => ({t0:c.t0, dur:c.dur, layout:c.layout, n:c.ph.length, title:c.m.title})) || [], stats:R.p?.seq.filter(x => x.stats).map(x => x.t0) || []}; },
+    seek:T => seekTo(T) });
 })(window.SB);
 </script>

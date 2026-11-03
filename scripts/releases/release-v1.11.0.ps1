@@ -1,5 +1,5 @@
 ﻿param(
-    [string]$Message = "v1.11.0版本更新"
+    [string]$Message = "v1.11.0国家星门面板（时空裂隙）"
 )
 
 $ErrorActionPreference = "Stop"

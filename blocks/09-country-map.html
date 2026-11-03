@@ -28,6 +28,7 @@
   background:radial-gradient(70% 70% at 45% 55%, rgba(7,9,32,.9) 30%, rgba(7,9,32,.55) 70%, rgba(7,9,32,.12) 100%);}
 .cp-panel.s1 .cp-veil{opacity:1;}
 .cp-head,.cp-body,.cp-foot{position:relative;z-index:1;}
+.cp-grip{display:none;}
 /* 头部 */
 .cp-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:22px 26px 6px;opacity:0;transform:translateY(-8px);
   transition:opacity .6s var(--ease-soft), transform .6s var(--ease-soft);}
@@ -117,7 +118,9 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
 @media (max-width:720px){
   .cp-panel{left:0;right:0;top:auto;bottom:0;width:auto;height:calc(100% - 66px - var(--safe-t));transform:none;border-radius:22px 22px 0 0;
     box-shadow:0 0 0 1px rgba(255,226,170,.45),0 -20px 60px rgba(0,0,0,.6),0 0 60px rgba(242,182,94,.1);}
-  .cp-head{padding:16px 16px 4px;}
+  .cp-head{padding:20px 16px 4px;touch-action:none;}
+  /* v1.11.1 下拉关闭把手（装饰；关闭仍以 × 为准，prompts/09-country-map.md 9.1） */
+  .cp-grip{display:block;position:absolute;left:50%;top:8px;width:36px;height:4px;margin-left:-18px;border-radius:2px;background:rgba(255,227,171,.42);z-index:2;pointer-events:none;}
   .cp-head h2{font-size:26px;}
   .cp-head p{font-size:12px;letter-spacing:.06em;}
   .cp-body{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;padding:4px 12px 6px;gap:8px;}
@@ -125,6 +128,9 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
   .cp-side h3 .lbl{display:none;}
   .cp-list{flex-direction:row;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scroll-snap-type:x mandatory;}
   .cp-card{min-width:148px;max-width:220px;scroll-snap-align:start;}
+  /* v1.11.1：城市 ≤ 2 座时纵向排列、占满宽度 */
+  .cp-list.few{flex-direction:column;overflow-x:hidden;overflow-y:auto;scroll-snap-type:none;}
+  .cp-list.few .cp-card{min-width:0;max-width:none;}
   .cp-card .go{min-height:56px;padding:8px 12px;}
   .cp-empty{padding:12px;}
   .cp-foot{padding:8px 12px calc(12px + var(--safe-b));}
@@ -143,6 +149,7 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
   <section class="cp-panel" id="cp-panel" role="dialog" aria-modal="true" aria-labelledby="cp-title" tabindex="-1">
     <div class="cp-bg" id="cp-bg" aria-hidden="true"><i></i><i></i><i></i></div>
     <div class="cp-veil" aria-hidden="true"></div>
+    <i class="cp-grip" aria-hidden="true"></i>
     <header class="cp-head">
       <div><small id="cp-en">TERRA</small><h2 id="cp-title"></h2><p id="cp-stat"></p></div>
       <button type="button" class="cp-x" id="cp-x" aria-label="关闭国家面板（Esc）"></button>
@@ -182,7 +189,7 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
   $('cp-x').innerHTML = SB.icon('close'); $('cp-zin').innerHTML = SB.icon('plus'); $('cp-zout').innerHTML = SB.icon('minus'); $('cp-zreset').innerHTML = SB.icon('reset');
   $('cp-add').innerHTML = `${SB.icon('plus')}<span>添加城市</span>`;
 
-  const S = { open:false, k:null, country:null, map:null, regions:[], fit:null, vb:{x:0, y:0, k:1}, pathEls:{}, starEls:{}, sel:null, hot:null,
+  const S = { act:0, dragOut:false, open:false, k:null, country:null, map:null, regions:[], fit:null, vb:{x:0, y:0, k:1}, pathEls:{}, starEls:{}, sel:null, hot:null,
     token:0, anims:[], timers:[], phase:'', at:null, inerted:[], ret:null, edges:[], bgRun:false, closeP:null, closeRes:null };
   const fancy = () => SB.perf.level === 'high' && !SB.perf.android;
   const reduced = () => SB.perf.level === 'reduced';
@@ -261,7 +268,7 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
 
   /* ── 城市栏 ── */
   function buildList(){
-    const list = $('cp-list'), filter = $('cp-filter'); list.innerHTML = ''; filter.innerHTML = '';
+    const list = $('cp-list'), filter = $('cp-filter'); list.innerHTML = ''; filter.innerHTML = ''; list.classList.remove('few');
     if(!S.k) return;
     const sel = S.sel && regionByKey(S.sel);
     if(sel && S.regions.length > 1){
@@ -278,6 +285,7 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
                           : `这里还没有我们的足迹。` + (SB.store.canEdit ? `点下方「添加城市」，写下在${S.country.zh}的第一段回忆。` : '');
       list.appendChild(p); return;
     }
+    list.classList.toggle('few', all.length <= 2);
     for(const {c, n} of all){
       const card = SB.el('div', 'cp-card'); card.dataset.region = c.region || '';
       const go = SB.el('button', 'go'); go.type = 'button';
@@ -444,7 +452,8 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
     if(!BG.on) return;
     if(document.hidden){ BG.on = false; return; }
     requestAnimationFrame(bgLoop);
-    if(BG.last && now - BG.last < 31) return;
+    // v1.11.1：面板 20 秒无操作降到约 10fps，有操作立即恢复约 30fps（prompts/09-country-map.md 9.3）
+    if(BG.last && now - BG.last < (now - S.act > 20000 ? 99 : 31)) return;
     const dt = BG.last ? Math.min(.1, (now - BG.last)/1000) : 0; BG.last = now; BG.t += dt;
     const g = BG.g, w = BG.w, h = BG.h, t = BG.t, a = S.phase === 'opening' ? .75 : .42;
     g.clearRect(0, 0, w, h);
@@ -498,7 +507,7 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
     later(D + 20, settle);
   }
   function settle(){
-    clearAnims(); S.phase = 'idle'; root.classList.add('on');
+    clearAnims(); S.phase = 'idle'; root.classList.add('on'); S.act = performance.now();
     panel.classList.add('s1', 's2', 's3');
     later(1500, () => panel.classList.add('drawn'));
     $('cp-x').focus({preventScroll:true});
@@ -556,6 +565,7 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
     S.closeP = new Promise(res => { S.closeRes = res; });
     const p = S.closeP;
     hideTip(); bgStop();
+    if(S.dragOut){ finishClose(); return p; }          // v1.11.1：已经下拉滑出，不再播放裂隙合拢
     if(o.instant || reduced() || typeof panel.animate !== 'function'){
       if(reduced() && !o.instant && typeof panel.animate === 'function'){
         S.phase = 'closing'; root.classList.remove('on');
@@ -573,12 +583,62 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
     clearAnims();
     S.open = false; S.phase = ''; S.k = null; S.sel = null; S.token++;
     root.hidden = true; root.classList.remove('live', 'on'); panel.classList.remove('s1', 's2', 's3', 'drawn');
+    S.dragOut = false; dg = null; panel.style.transform = panel.style.transition = ''; scrim.style.opacity = scrim.style.transition = '';
     SB.countryPortal.settled = false;
     setInert(false);
     const ret = S.ret; S.ret = null;
     if(ret && document.contains(ret) && !ret.closest('[inert]')) try{ ret.focus({preventScroll:true}); }catch(_){}
     const res = S.closeRes; S.closeRes = null; S.closeP = null; res?.();
   }
+
+  /* ── v1.11.1 手机抽屉下拉关闭（prompts/09-country-map.md 9.1；阈值参考 smooth_sheets：位移 30% / 甩动 2 倍视口高度每秒） ── */
+  const sheetMQ = matchMedia('(max-width:720px)'), head = panel.querySelector('.cp-head');
+  let dg = null;
+  const easeMs = ms => reduced() ? 0 : ms;
+  function snapBack(){
+    const ms = easeMs(240);
+    panel.style.transition = ms ? `transform ${ms}ms var(--ease-soft)` : 'none'; scrim.style.transition = ms ? `opacity ${ms}ms` : 'none';
+    panel.style.transform = ''; scrim.style.opacity = '';
+    setTimeout(() => { if(!dg && !S.dragOut){ panel.style.transition = ''; scrim.style.transition = ''; } }, ms + 30);
+  }
+  function dismissByDrag(dy, h){
+    S.dragOut = true;
+    const ms = easeMs(200);
+    panel.style.transition = ms ? `transform ${ms}ms cubic-bezier(.4,0,1,1)` : 'none'; scrim.style.transition = ms ? `opacity ${ms}ms` : 'none';
+    panel.style.transform = `translateY(${Math.round(h + 40)}px)`; scrim.style.opacity = '0';
+    setTimeout(() => { if(S.open && S.dragOut) requestClose(); }, ms + 20);
+  }
+  head.addEventListener('pointerdown', e => {
+    if(!sheetMQ.matches || !S.open || S.phase !== 'idle' || (e.button && e.pointerType === 'mouse') || e.target.closest('button')) return;
+    dg = {id:e.pointerId, x0:e.clientX, y0:e.clientY, dy:0, on:false, h:panel.offsetHeight, pts:[{y:e.clientY, t:e.timeStamp}]};
+    try{ head.setPointerCapture(e.pointerId); }catch(_){}
+  });
+  head.addEventListener('pointermove', e => {
+    if(!dg || e.pointerId !== dg.id) return;
+    const dx = e.clientX - dg.x0, dy = e.clientY - dg.y0;
+    if(!dg.on){
+      if(Math.hypot(dx, dy) < 8) return;
+      if(Math.abs(dx) > Math.abs(dy) || dy < 0){ dg = null; return; }      // 横向或向上：不是下拉
+      dg.on = true; panel.style.transition = 'none'; scrim.style.transition = 'none';
+    }
+    dg.dy = Math.max(0, dy);
+    panel.style.transform = `translateY(${dg.dy.toFixed(1)}px)`;
+    scrim.style.opacity = (1 - Math.min(1, dg.dy/dg.h)).toFixed(3);
+    dg.pts.push({y:e.clientY, t:e.timeStamp}); if(dg.pts.length > 6) dg.pts.shift();
+  });
+  const dragEnd = e => {
+    if(!dg || (e && e.pointerId != null && e.pointerId !== dg.id)) return;
+    const d = dg; dg = null; if(!d.on) return;
+    const a = d.pts[0], b = d.pts[d.pts.length - 1], v = b.t > a.t ? (b.y - a.y)/(b.t - a.t) : 0;   // px/ms
+    const fling = v*1000 >= 2*innerHeight && d.dy > 24;
+    if(e?.type !== 'pointercancel' && (d.dy > d.h*.3 || fling)) dismissByDrag(d.dy, d.h); else snapBack();
+  };
+  head.addEventListener('pointerup', dragEnd); head.addEventListener('pointercancel', dragEnd);
+  head.addEventListener('lostpointercapture', e => { if(dg && e.pointerId === dg.id) dragEnd({type:'pointerup', pointerId:e.pointerId}); });
+  addEventListener('pointerup', dragEnd); addEventListener('pointercancel', dragEnd);
+  addEventListener('blur', () => { if(dg){ const on = dg.on; dg = null; if(on) snapBack(); } });
+  // 静置降耗：记录面板内最近一次操作
+  ['pointerdown', 'pointermove', 'wheel', 'keydown', 'scroll'].forEach(t => root.addEventListener(t, () => { S.act = performance.now(); }, {passive:true, capture:true}));
 
   /* ── 关闭入口：全部走 SB.scenes.back()（历史、返回光球、系统返回键一致） ── */
   const requestClose = () => { if(S.open && S.phase !== 'closing' && SB.scenes.current === 'globe') SB.scenes.back(); };
@@ -604,10 +664,12 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
     open, close, settled:false,
     get isOpen(){ return S.open && S.phase !== 'closing'; },
     get key(){ return S.open ? S.k : null; },
-    get phase(){ return S.phase; },
-    // 调试 / 截图用：冻结展开或合拢动画在第 t 毫秒（停止后续阶段计时）；resume() 继续
-    debugFreeze(t){ S.timers.forEach(clearTimeout); S.timers = []; S.anims.forEach(a => { a.pause(); a.currentTime = t; }); return S.anims.length; },
-    debugResume(){ S.anims.forEach(a => a.play()); if(S.phase === 'opening') later(1200, settle); else if(S.phase === 'closing') later(800, finishClose); }
+    get phase(){ return S.phase; }
   };
+  // 调试 / 截图用（v1.11.1 移到 SB.debug）：冻结展开或合拢动画在第 t 毫秒（停止后续阶段计时）；resume() 继续
+  SB.debug.add('portal', {
+    freeze(t){ S.timers.forEach(clearTimeout); S.timers = []; S.anims.forEach(a => { a.pause(); a.currentTime = t; }); return S.anims.length; },
+    resume(){ S.anims.forEach(a => a.play()); if(S.phase === 'opening') later(1200, settle); else if(S.phase === 'closing') later(800, finishClose); }
+  });
 })(window.SB);
 </script>

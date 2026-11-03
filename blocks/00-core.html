@@ -217,6 +217,10 @@ window.SB = window.SB || {};
   try{ const saved = localStorage.getItem('sb-motion'); if(saved && !reduced) SB.perf.level = saved; }catch(e){}
   document.documentElement.dataset.sbPerf = SB.perf.level;
 
+  /* v1.11.1 调试接口收口（prompts/00-core.md）：只有 ?debug=1 或 localStorage sb-debug=1 时才注册测试 / 截图用接口 */
+  const debugOn = (() => { try{ return /(?:^|[?&])debug=1(?:&|$)/.test(location.search.slice(1)) || localStorage.getItem('sb-debug') === '1'; }catch(e){ return false; } })();
+  SB.debug = { enabled:debugOn, add(name, obj){ if(debugOn && name && name !== 'add' && name !== 'enabled') SB.debug[name] = obj; } };
+
   /* v1.10.2 全局拖放保护：页面里没有需要原生拖拽的图片 / 文字 / 链接；原生拖放一旦接管指针会触发 pointercancel，
      地球 / 时光之环就「转不动」并显示禁止光标。只有显式 draggable="true" 的元素（编辑器照片卡）允许拖拽。 */
   document.addEventListener('dragstart', e => { const t = e.target; if(!(t?.closest?.('[draggable="true"]'))) e.preventDefault(); }, true);

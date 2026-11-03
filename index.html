@@ -3,7 +3,7 @@
 /* ── Starbook v1.10.2 · 公开客户端配置 ──
    Publishable Key 设计上允许出现在浏览器；不要在此文件放 Secret / service_role / 数据库密码。 */
 window.STARBOOK_CONFIG = Object.freeze({
-  version: '1.11.0',
+  version: '1.11.1',
   supabaseUrl: 'https://xowbbcumcxtsrrnulunb.supabase.co',
   supabasePublishableKey: 'sb_publishable_SYGBrk2PiwwzRXZm03Patg_oDlYSIGd',
   storageBucket: 'starbook-media',
@@ -237,6 +237,10 @@ window.SB = window.SB || {};
   SB.perf = { level: reduced ? 'reduced' : (lowHardware ? 'low' : 'high'), small, reduced, touch, cores, memory:memory || null, android };
   try{ const saved = localStorage.getItem('sb-motion'); if(saved && !reduced) SB.perf.level = saved; }catch(e){}
   document.documentElement.dataset.sbPerf = SB.perf.level;
+
+  /* v1.11.1 调试接口收口（prompts/00-core.md）：只有 ?debug=1 或 localStorage sb-debug=1 时才注册测试 / 截图用接口 */
+  const debugOn = (() => { try{ return /(?:^|[?&])debug=1(?:&|$)/.test(location.search.slice(1)) || localStorage.getItem('sb-debug') === '1'; }catch(e){ return false; } })();
+  SB.debug = { enabled:debugOn, add(name, obj){ if(debugOn && name && name !== 'add' && name !== 'enabled') SB.debug[name] = obj; } };
 
   /* v1.10.2 全局拖放保护：页面里没有需要原生拖拽的图片 / 文字 / 链接；原生拖放一旦接管指针会触发 pointercancel，
      地球 / 时光之环就「转不动」并显示禁止光标。只有显式 draggable="true" 的元素（编辑器照片卡）允许拖拽。 */
@@ -712,8 +716,9 @@ html:not([data-sb-perf="high"]) .sb-gate-tw,html:not([data-sb-perf="high"]) .sb-
   const gateBody = document.getElementById('sb-gate-body');
   const gateIntro = document.getElementById('sb-gate-intro');
   const SUPABASE_CDNS = [
-    'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
-    'https://unpkg.com/@supabase/supabase-js@2'
+    // v1.11.1：锁定确切版本（之前 @2 会自动拿到 2.x 最新版，上游更新可能让网站在不改代码的情况下出问题）。升级时改这里并完整回归登录 / 读写 / 签名 / 上传。
+    'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js',
+    'https://unpkg.com/@supabase/supabase-js@2.116.0/dist/umd/supabase.js'
   ];
 
   /* v1.9.0 字体只决策一次：2.2 秒内网络字体到齐就用网络字体，否则整个启动过程固定用本地宋体，不再中途替换 */
@@ -746,6 +751,9 @@ html:not([data-sb-perf="high"]) .sb-gate-tw,html:not([data-sb-perf="high"]) .sb-
     gateIntro.textContent = text || '星海暂时失去了连接。';
     const p = SB.el('p','sb-gate-error'); p.textContent = detail || '请检查网络后重新尝试。';
     const actions = SB.el('div','sb-gate-actions');
+    // v1.11.1：Supabase Free 项目长时间无人访问会被自动暂停（prompts/00-login-gate.md）；权限类错误不显示
+    const pauseNote = options.pausedHint ? SB.el('p','sb-gate-note') : null;
+    if(pauseNote) pauseNote.textContent = '如果很久没有打开过星屿，数据库可能已被 Supabase 自动暂停：请到 Supabase 后台打开该项目，点击 Resume project 恢复后再重新连接。';
 
     if(options.retry !== false){
       const retryLabel = options.retryLabel || '重新连接';
@@ -768,6 +776,7 @@ html:not([data-sb-perf="high"]) .sb-gate-tw,html:not([data-sb-perf="high"]) .sb-
     }
 
     gateBody.append(p,actions);
+    if(pauseNote) gateBody.appendChild(pauseNote);
   }
   function hideGate(){
     const ms = SB.perf.level === 'high' ? 520 : 320;
@@ -877,7 +886,8 @@ html:not([data-sb-perf="high"]) .sb-gate-tw,html:not([data-sb-perf="high"]) .sb-
           retryLabel:'重新尝试',
           retry:()=>finishAuthenticated(),
           backToLogin:true,
-          loginMessage:'已返回登录界面。'
+          loginMessage:'已返回登录界面。',
+          pausedHint:!permissionLike
         }
       );
     }
@@ -901,7 +911,7 @@ html:not([data-sb-perf="high"]) .sb-gate-tw,html:not([data-sb-perf="high"]) .sb-
       catch(ex){
         console.error('[Starbook auth]',ex);
         const msg=String(ex?.message||'');
-        err.textContent = /invalid login|invalid credentials/i.test(msg) ? '邮箱或密码不正确。' : '暂时无法登录，请检查网络后再试。';
+        err.textContent = /invalid login|invalid credentials/i.test(msg) ? '邮箱或密码不正确。' : '暂时无法登录，请检查网络后再试。如果很久没有打开过星屿，数据库可能已被 Supabase 自动暂停，需要到后台点击 Resume project 恢复。';
         submit.disabled=false; submit.textContent='开启星屿';
       }
     });
@@ -928,7 +938,7 @@ html:not([data-sb-perf="high"]) .sb-gate-tw,html:not([data-sb-perf="high"]) .sb-
       if(user.current) await finishAuthenticated(); else showLogin();
     }catch(e){
       console.error('[Starbook boot]',e); rejectReady?.(e);
-      showFatal('星海暂时失去了连接。','Supabase 客户端未能加载。请检查网络后重新连接。');
+      showFatal('星海暂时失去了连接。','Supabase 客户端未能加载。请检查网络后重新连接。',{pausedHint:true});
     }
   }
   bootRuntime();
@@ -3401,7 +3411,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   const cv = $('gl-canvas'), labelsEl = $('gl-labels'), tip = $('gl-tip');
   let T, renderer, scene, camera, globe, earth, earthMat, texCanvas, tex, idCanvas, idTex, starMat, dustMats = [], cityGroup, starTexture;
   let cloud, cloudMat, halo, astro, arcGroup, arcMats = [], arcRunners = [], constGroup, focusGroup, focusRings = [], focusStar;
-  let ready = false, running = false, last = 0, time = 0;
+  let ready = false, running = false, last = 0, time = 0, portalFrame = 0;
   const view = { rotX:.35, rotY:-1.9, vx:0, vy:0, dist:3.2, distT:3.2, base:3.2, zoom:1, zoomT:1, idle:0, intro:0, shift:.06 };
   const contIndex = Object.fromEntries(SB.geo.CONTINENTS.map((c,i) => [c.code, i+1]));
   const hover = { country:-1, cont:-1 };
@@ -4050,6 +4060,8 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
     }
     // v1.11.0：柔和档 / 安卓在国家面板完全展开且飞转结束后不再重绘地球（画布保留最后一帧，prompts/performance/03-globe-to-country.md）
     if(!hi() && SB.countryPortal?.settled && !fly.on && view.intro >= 1){ requestAnimationFrame(loop); return; }
+    // v1.11.1：华丽档面板展开后限制到约 30fps（prompts/07-globe.md v1.11.1）
+    if(SB.countryPortal?.settled && !fly.on){ if(now - portalFrame < 32){ requestAnimationFrame(loop); return; } portalFrame = now; }
     globe.rotation.set(view.rotX, view.rotY, 0);
     view.intro = Math.min(1, view.intro + dt/2.4);
     const ease = 1 - Math.pow(1 - view.intro, 3);
@@ -4096,8 +4108,9 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   function stop(){ running = false; if(fly.on){ view.rotX = fly.x1; view.rotY = fly.y1; fly.on = false; fly.done?.(); fly.done = null; } }
   document.addEventListener('visibilitychange', () => { if(document.hidden) stop(); else if(SB.scenes.current === 'globe') start(); });
 
-  SB.globe = { get rot(){ return [view.rotX, view.rotY]; },      // 调试 / 测试用（v1.10.2）
-    pickAt:(x, y) => ready ? pick(x, y)?.country?.key || null : null,   // 调试 / 测试用（v1.11.0）
+  SB.debug.add('globe', { get rot(){ return [view.rotX, view.rotY]; },    // v1.11.1：调试接口移到 SB.debug（prompts/00-core.md）
+    pickAt:(x, y) => ready ? pick(x, y)?.country?.key || null : null });
+  SB.globe = {
     warmEngine:()=>SB.loadScript(THREE_URLS), prepare:init, focus:o => focusTo(o), search:q => { qIn.value = q; search(); return S; } };
 
   /* v1.11.0 国家星门面板：面板是 globe 场景的子状态（params.k），由块 09 SB.countryPortal 呈现 */
@@ -4178,6 +4191,7 @@ SB.WORLD_RAW = {"q":50,"countries":[{"k":"fo","a2":"FO","n":"Faroe Islands","c":
   background:radial-gradient(70% 70% at 45% 55%, rgba(7,9,32,.9) 30%, rgba(7,9,32,.55) 70%, rgba(7,9,32,.12) 100%);}
 .cp-panel.s1 .cp-veil{opacity:1;}
 .cp-head,.cp-body,.cp-foot{position:relative;z-index:1;}
+.cp-grip{display:none;}
 /* 头部 */
 .cp-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:22px 26px 6px;opacity:0;transform:translateY(-8px);
   transition:opacity .6s var(--ease-soft), transform .6s var(--ease-soft);}
@@ -4267,7 +4281,9 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
 @media (max-width:720px){
   .cp-panel{left:0;right:0;top:auto;bottom:0;width:auto;height:calc(100% - 66px - var(--safe-t));transform:none;border-radius:22px 22px 0 0;
     box-shadow:0 0 0 1px rgba(255,226,170,.45),0 -20px 60px rgba(0,0,0,.6),0 0 60px rgba(242,182,94,.1);}
-  .cp-head{padding:16px 16px 4px;}
+  .cp-head{padding:20px 16px 4px;touch-action:none;}
+  /* v1.11.1 下拉关闭把手（装饰；关闭仍以 × 为准，prompts/09-country-map.md 9.1） */
+  .cp-grip{display:block;position:absolute;left:50%;top:8px;width:36px;height:4px;margin-left:-18px;border-radius:2px;background:rgba(255,227,171,.42);z-index:2;pointer-events:none;}
   .cp-head h2{font-size:26px;}
   .cp-head p{font-size:12px;letter-spacing:.06em;}
   .cp-body{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;padding:4px 12px 6px;gap:8px;}
@@ -4275,6 +4291,9 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
   .cp-side h3 .lbl{display:none;}
   .cp-list{flex-direction:row;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scroll-snap-type:x mandatory;}
   .cp-card{min-width:148px;max-width:220px;scroll-snap-align:start;}
+  /* v1.11.1：城市 ≤ 2 座时纵向排列、占满宽度 */
+  .cp-list.few{flex-direction:column;overflow-x:hidden;overflow-y:auto;scroll-snap-type:none;}
+  .cp-list.few .cp-card{min-width:0;max-width:none;}
   .cp-card .go{min-height:56px;padding:8px 12px;}
   .cp-empty{padding:12px;}
   .cp-foot{padding:8px 12px calc(12px + var(--safe-b));}
@@ -4293,6 +4312,7 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
   <section class="cp-panel" id="cp-panel" role="dialog" aria-modal="true" aria-labelledby="cp-title" tabindex="-1">
     <div class="cp-bg" id="cp-bg" aria-hidden="true"><i></i><i></i><i></i></div>
     <div class="cp-veil" aria-hidden="true"></div>
+    <i class="cp-grip" aria-hidden="true"></i>
     <header class="cp-head">
       <div><small id="cp-en">TERRA</small><h2 id="cp-title"></h2><p id="cp-stat"></p></div>
       <button type="button" class="cp-x" id="cp-x" aria-label="关闭国家面板（Esc）"></button>
@@ -4332,7 +4352,7 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
   $('cp-x').innerHTML = SB.icon('close'); $('cp-zin').innerHTML = SB.icon('plus'); $('cp-zout').innerHTML = SB.icon('minus'); $('cp-zreset').innerHTML = SB.icon('reset');
   $('cp-add').innerHTML = `${SB.icon('plus')}<span>添加城市</span>`;
 
-  const S = { open:false, k:null, country:null, map:null, regions:[], fit:null, vb:{x:0, y:0, k:1}, pathEls:{}, starEls:{}, sel:null, hot:null,
+  const S = { act:0, dragOut:false, open:false, k:null, country:null, map:null, regions:[], fit:null, vb:{x:0, y:0, k:1}, pathEls:{}, starEls:{}, sel:null, hot:null,
     token:0, anims:[], timers:[], phase:'', at:null, inerted:[], ret:null, edges:[], bgRun:false, closeP:null, closeRes:null };
   const fancy = () => SB.perf.level === 'high' && !SB.perf.android;
   const reduced = () => SB.perf.level === 'reduced';
@@ -4411,7 +4431,7 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
 
   /* ── 城市栏 ── */
   function buildList(){
-    const list = $('cp-list'), filter = $('cp-filter'); list.innerHTML = ''; filter.innerHTML = '';
+    const list = $('cp-list'), filter = $('cp-filter'); list.innerHTML = ''; filter.innerHTML = ''; list.classList.remove('few');
     if(!S.k) return;
     const sel = S.sel && regionByKey(S.sel);
     if(sel && S.regions.length > 1){
@@ -4428,6 +4448,7 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
                           : `这里还没有我们的足迹。` + (SB.store.canEdit ? `点下方「添加城市」，写下在${S.country.zh}的第一段回忆。` : '');
       list.appendChild(p); return;
     }
+    list.classList.toggle('few', all.length <= 2);
     for(const {c, n} of all){
       const card = SB.el('div', 'cp-card'); card.dataset.region = c.region || '';
       const go = SB.el('button', 'go'); go.type = 'button';
@@ -4594,7 +4615,8 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
     if(!BG.on) return;
     if(document.hidden){ BG.on = false; return; }
     requestAnimationFrame(bgLoop);
-    if(BG.last && now - BG.last < 31) return;
+    // v1.11.1：面板 20 秒无操作降到约 10fps，有操作立即恢复约 30fps（prompts/09-country-map.md 9.3）
+    if(BG.last && now - BG.last < (now - S.act > 20000 ? 99 : 31)) return;
     const dt = BG.last ? Math.min(.1, (now - BG.last)/1000) : 0; BG.last = now; BG.t += dt;
     const g = BG.g, w = BG.w, h = BG.h, t = BG.t, a = S.phase === 'opening' ? .75 : .42;
     g.clearRect(0, 0, w, h);
@@ -4648,7 +4670,7 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
     later(D + 20, settle);
   }
   function settle(){
-    clearAnims(); S.phase = 'idle'; root.classList.add('on');
+    clearAnims(); S.phase = 'idle'; root.classList.add('on'); S.act = performance.now();
     panel.classList.add('s1', 's2', 's3');
     later(1500, () => panel.classList.add('drawn'));
     $('cp-x').focus({preventScroll:true});
@@ -4706,6 +4728,7 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
     S.closeP = new Promise(res => { S.closeRes = res; });
     const p = S.closeP;
     hideTip(); bgStop();
+    if(S.dragOut){ finishClose(); return p; }          // v1.11.1：已经下拉滑出，不再播放裂隙合拢
     if(o.instant || reduced() || typeof panel.animate !== 'function'){
       if(reduced() && !o.instant && typeof panel.animate === 'function'){
         S.phase = 'closing'; root.classList.remove('on');
@@ -4723,12 +4746,62 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
     clearAnims();
     S.open = false; S.phase = ''; S.k = null; S.sel = null; S.token++;
     root.hidden = true; root.classList.remove('live', 'on'); panel.classList.remove('s1', 's2', 's3', 'drawn');
+    S.dragOut = false; dg = null; panel.style.transform = panel.style.transition = ''; scrim.style.opacity = scrim.style.transition = '';
     SB.countryPortal.settled = false;
     setInert(false);
     const ret = S.ret; S.ret = null;
     if(ret && document.contains(ret) && !ret.closest('[inert]')) try{ ret.focus({preventScroll:true}); }catch(_){}
     const res = S.closeRes; S.closeRes = null; S.closeP = null; res?.();
   }
+
+  /* ── v1.11.1 手机抽屉下拉关闭（prompts/09-country-map.md 9.1；阈值参考 smooth_sheets：位移 30% / 甩动 2 倍视口高度每秒） ── */
+  const sheetMQ = matchMedia('(max-width:720px)'), head = panel.querySelector('.cp-head');
+  let dg = null;
+  const easeMs = ms => reduced() ? 0 : ms;
+  function snapBack(){
+    const ms = easeMs(240);
+    panel.style.transition = ms ? `transform ${ms}ms var(--ease-soft)` : 'none'; scrim.style.transition = ms ? `opacity ${ms}ms` : 'none';
+    panel.style.transform = ''; scrim.style.opacity = '';
+    setTimeout(() => { if(!dg && !S.dragOut){ panel.style.transition = ''; scrim.style.transition = ''; } }, ms + 30);
+  }
+  function dismissByDrag(dy, h){
+    S.dragOut = true;
+    const ms = easeMs(200);
+    panel.style.transition = ms ? `transform ${ms}ms cubic-bezier(.4,0,1,1)` : 'none'; scrim.style.transition = ms ? `opacity ${ms}ms` : 'none';
+    panel.style.transform = `translateY(${Math.round(h + 40)}px)`; scrim.style.opacity = '0';
+    setTimeout(() => { if(S.open && S.dragOut) requestClose(); }, ms + 20);
+  }
+  head.addEventListener('pointerdown', e => {
+    if(!sheetMQ.matches || !S.open || S.phase !== 'idle' || (e.button && e.pointerType === 'mouse') || e.target.closest('button')) return;
+    dg = {id:e.pointerId, x0:e.clientX, y0:e.clientY, dy:0, on:false, h:panel.offsetHeight, pts:[{y:e.clientY, t:e.timeStamp}]};
+    try{ head.setPointerCapture(e.pointerId); }catch(_){}
+  });
+  head.addEventListener('pointermove', e => {
+    if(!dg || e.pointerId !== dg.id) return;
+    const dx = e.clientX - dg.x0, dy = e.clientY - dg.y0;
+    if(!dg.on){
+      if(Math.hypot(dx, dy) < 8) return;
+      if(Math.abs(dx) > Math.abs(dy) || dy < 0){ dg = null; return; }      // 横向或向上：不是下拉
+      dg.on = true; panel.style.transition = 'none'; scrim.style.transition = 'none';
+    }
+    dg.dy = Math.max(0, dy);
+    panel.style.transform = `translateY(${dg.dy.toFixed(1)}px)`;
+    scrim.style.opacity = (1 - Math.min(1, dg.dy/dg.h)).toFixed(3);
+    dg.pts.push({y:e.clientY, t:e.timeStamp}); if(dg.pts.length > 6) dg.pts.shift();
+  });
+  const dragEnd = e => {
+    if(!dg || (e && e.pointerId != null && e.pointerId !== dg.id)) return;
+    const d = dg; dg = null; if(!d.on) return;
+    const a = d.pts[0], b = d.pts[d.pts.length - 1], v = b.t > a.t ? (b.y - a.y)/(b.t - a.t) : 0;   // px/ms
+    const fling = v*1000 >= 2*innerHeight && d.dy > 24;
+    if(e?.type !== 'pointercancel' && (d.dy > d.h*.3 || fling)) dismissByDrag(d.dy, d.h); else snapBack();
+  };
+  head.addEventListener('pointerup', dragEnd); head.addEventListener('pointercancel', dragEnd);
+  head.addEventListener('lostpointercapture', e => { if(dg && e.pointerId === dg.id) dragEnd({type:'pointerup', pointerId:e.pointerId}); });
+  addEventListener('pointerup', dragEnd); addEventListener('pointercancel', dragEnd);
+  addEventListener('blur', () => { if(dg){ const on = dg.on; dg = null; if(on) snapBack(); } });
+  // 静置降耗：记录面板内最近一次操作
+  ['pointerdown', 'pointermove', 'wheel', 'keydown', 'scroll'].forEach(t => root.addEventListener(t, () => { S.act = performance.now(); }, {passive:true, capture:true}));
 
   /* ── 关闭入口：全部走 SB.scenes.back()（历史、返回光球、系统返回键一致） ── */
   const requestClose = () => { if(S.open && S.phase !== 'closing' && SB.scenes.current === 'globe') SB.scenes.back(); };
@@ -4754,11 +4827,13 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
     open, close, settled:false,
     get isOpen(){ return S.open && S.phase !== 'closing'; },
     get key(){ return S.open ? S.k : null; },
-    get phase(){ return S.phase; },
-    // 调试 / 截图用：冻结展开或合拢动画在第 t 毫秒（停止后续阶段计时）；resume() 继续
-    debugFreeze(t){ S.timers.forEach(clearTimeout); S.timers = []; S.anims.forEach(a => { a.pause(); a.currentTime = t; }); return S.anims.length; },
-    debugResume(){ S.anims.forEach(a => a.play()); if(S.phase === 'opening') later(1200, settle); else if(S.phase === 'closing') later(800, finishClose); }
+    get phase(){ return S.phase; }
   };
+  // 调试 / 截图用（v1.11.1 移到 SB.debug）：冻结展开或合拢动画在第 t 毫秒（停止后续阶段计时）；resume() 继续
+  SB.debug.add('portal', {
+    freeze(t){ S.timers.forEach(clearTimeout); S.timers = []; S.anims.forEach(a => { a.pause(); a.currentTime = t; }); return S.anims.length; },
+    resume(){ S.anims.forEach(a => a.play()); if(S.phase === 'opening') later(1200, settle); else if(S.phase === 'closing') later(800, finishClose); }
+  });
 })(window.SB);
 </script>
 <!-- ████ BLOCK 09-country-map END ████ -->
@@ -6943,15 +7018,19 @@ html[data-sb-perf="reduced"] .pl-hold i::after{animation:none;opacity:.5;}
   /* 调试 / 自动化验收：在暂停状态下定位到时间线上的某一刻 */
   function seek(T){ if(!P.showing) return; setPlaying(false); resetHold(); P.T = Math.max(0, T); prefetch(P.T); render(); }
   SB.player = {
-    play:() => play(false), seek, jump, prime, next:() => advance(1), prev:() => advance(-1), setMode:id => setMode(id),
+    play:() => play(false), prime, next:() => advance(1), prev:() => advance(-1), setMode:id => setMode(id),
     setStyle(id){ if(SB.cinema.styles.some(s => s.id === id)){ P.style = id; if(P.showing) rebuild(false); else if(P.m){ refreshStyleUI(); updateStat(); } } },
     setSeason(id){ P.seasonPref = id; setSeason(SB.cinema.resolveSeason(id, P.m?.date), true); },
+    estimate:(m, style) => estimate(buildTL(m, style || SB.cinema.styleOf(m)))
+  };
+  // v1.11.1：测试 / 截图用接口移到 SB.debug（prompts/00-core.md）
+  SB.debug.add('player', {
+    seek, jump,
     stepSeason(ms){ for(let k = 0; k < ms/50; k++) stepSeason(50); render(); },
-    estimate:(m, style) => estimate(buildTL(m, style || SB.cinema.styleOf(m))),
     get state(){ const TL = P.TL; return {T:P.T, playing:P.playing, mode:P.mode, held:P.held, holds:(TL?.holds || []).map(Math.round), showing:P.showing, style:P.style, season:P.season, C0:TL?.C0, endT:TL?.endT,
       marks:TL?.marks.map(m => ({t:Math.round(m.t), i:m.i})) || [], items:TL ? TL.items.filter(x => x.kind === 'photo').map(x => ({i:x.i, t0:Math.round(x.t0), t1:Math.round(x.t1), enter:x.enter.type, exit:x.exit.type, frame:x.frame})) : [],
       texts:TL ? TL.items.filter(x => x.kind === 'text').map(x => ({t0:Math.round(x.t0), t1:Math.round(x.t1 ?? -1), look:x.look, text:x.lines.join(''), idx:x.idx})) : [], groups:TL?.ng || 0}; }
-  };
+  });
 })(window.SB);
 </script>
 <!-- ████ BLOCK 11-memory-player END ████ -->
@@ -8530,9 +8609,9 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
     enter(p, opts){ SB.fx.palette('night'); S.active = true; S.clock = 0; const ret = !!(opts?.back || opts?.fromHistory) && S.lastKey != null; build(!ret, ret ? S.lastKey : null); kick(); },
     leave(){ S.lastKey = keyOf(S.st[S.near]); S.active = false; cancelAnimationFrame(S.raf); S.raf = 0; S.drag = null; S.tw = null; setHb(-1); SB.yearReel?.close?.(true); }
   });
-  SB.overview = { get state(){ return {n:S.st.length, near:S.near, u:uNow(), anchor:S.anchor, cards:S.st.filter(o => !o.off).length,
+  SB.debug.add('overview', { get state(){ return {n:S.st.length, near:S.near, u:uNow(), anchor:S.anchor, cards:S.st.filter(o => !o.off).length,
       nodes:S.st.filter(o => o.type === 'node').map(o => ({kind:o.kind, year:o.year, k:o.k, date:D.str(o.k), count:o.list?.length ?? 0, i:o.i}))}; },
-    center, hitPoint:i => { const o = S.st[i]; if(!o?.p) return null; const r = view.getBoundingClientRect(), q = o.type === 'mem' ? (o.bead || o.p) : o.p; return {x:r.left + q.x, y:r.top + q.y}; } };
+    center, hitPoint:i => { const o = S.st[i]; if(!o?.p) return null; const r = view.getBoundingClientRect(), q = o.type === 'mem' ? (o.bead || o.p) : o.p; return {x:r.left + q.x, y:r.top + q.y}; } });
   SB.menu.add({id:'overview', order:40, icon:'scroll', label:'时光长卷',
     desc:() => { const l = sorted().filter(m => dayOf(m) != null); const n = SB.store.memories.length;
       return n ? `${n} 段回忆${l.length ? ' · 从 ' + D.parse(l[0].date).y + ' 到 ' + D.parse(l[l.length - 1].date).y : ''}` : '我们的故事从这里开始'; },
@@ -9036,8 +9115,10 @@ html[data-sb-perf="reduced"] .yr-strip{transform:translateX(var(--x0))!important
     const el = R.el; el.classList.remove('on');
     setTimeout(() => { if(!R.open){ el.hidden = true; stage().innerHTML = ''; $q('.yr-wait').textContent = ''; } }, silent ? 0 : 900);
   }
-  SB.yearReel = { open:start, close, get state(){ return {open:!!R.open, T:R.T, playing:R.playing, total:R.p?.total || 0, chapters:R.p?.chs.map(c => ({t0:c.t0, dur:c.dur, layout:c.layout, n:c.ph.length, title:c.m.title})) || [], stats:R.p?.seq.filter(x => x.stats).map(x => x.t0) || []}; },
-    seek:T => seekTo(T) };
+  SB.yearReel = { open:start, close };
+  // v1.11.1：测试用接口移到 SB.debug（prompts/00-core.md）
+  SB.debug.add('reel', { get state(){ return {open:!!R.open, T:R.T, playing:R.playing, total:R.p?.total || 0, chapters:R.p?.chs.map(c => ({t0:c.t0, dur:c.dur, layout:c.layout, n:c.ph.length, title:c.m.title})) || [], stats:R.p?.seq.filter(x => x.stats).map(x => x.t0) || []}; },
+    seek:T => seekTo(T) });
 })(window.SB);
 </script>
 <!-- ████ BLOCK 14-year-reel END ████ -->

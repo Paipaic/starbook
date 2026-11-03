@@ -275,3 +275,10 @@ Book 级可选设置（`book_data.payload.settings.anniversary`，`YYYY-MM-DD`�
 - `SB.countryPortal`（`blocks/09-country-map.html`）：`open(k, {x, y, instant})` / `close({instant})` / `isOpen` / `key` / `phase` / `settled`。只由 `globe` 场景调用；业务代码打开国家请用 `SB.scenes.go('globe', {k})`，不要直接调用组件。
 - `SB.globe.pickAt(x, y)`、`SB.countryPortal.debugFreeze(t) / debugResume()`（调试 / 截图）。
 - 数据接口不变：城市仍由 `SB.store.addCity / updateCity / removeCity` 读写。面板是 `world-map` Experience 的视图，不进入 Starbook Core。
+
+### v1.11.1 · `SB.debug`
+
+- Core（`blocks/00-core.html`）：`SB.debug = {enabled, add(name, obj)}`。只有网址带 `?debug=1` 或本机 localStorage `sb-debug=1` 时 `add` 才会注册。
+- 已移入：`SB.debug.globe`（`rot`、`pickAt`，原 `SB.globe.rot / pickAt`）、`SB.debug.portal`（`freeze`、`resume`，原 `SB.countryPortal.debugFreeze / debugResume`）、`SB.debug.overview`（原 `SB.overview`）、`SB.debug.reel`（`state`、`seek`，原 `SB.yearReel.state / seek`）、`SB.debug.player`（`seek`、`jump`、`stepSeason`、`state`，原 `SB.player` 同名成员）。
+- 保持不变的业务接口：`SB.player.play / prime / next / prev / setMode / setStyle / setSeason / estimate`、`SB.yearReel.open / close`、`SB.globe.focus / search / prepare / warmEngine`、`SB.countryPortal.open / close / isOpen / key / phase / settled`。
+- 业务代码不得依赖 `SB.debug`；不在其中放写数据的接口。

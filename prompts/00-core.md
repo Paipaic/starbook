@@ -49,3 +49,10 @@
 - `update` 必须是同步的轻量操作（可以启动动画，但不能 await 网络）；动画中重复调用要能安全合并。
 - `popstate` 仍调用 `go(..., {fromHistory:true, force:true})`；同场景时同样先走 `update`。
 - `is-busy` 期间到达的同场景请求与以前一样排队到 `_pendingHistory`。
+
+## v1.11.1 · 调试接口收口 `SB.debug`（复盘 #14）
+- `SB.debug.enabled`：网址带 `?debug=1`，或本机 `localStorage['sb-debug'] === '1'` 时为 `true`。
+- `SB.debug.add(name, obj)`：只有 enabled 时才把 `obj` 挂到 `SB.debug[name]`，否则什么都不做。
+- 纯测试 / 截图用的接口一律通过它注册，不再挂在业务对象上：`SB.debug.globe`（`rot`、`pickAt`）、`SB.debug.portal`（`freeze`、`resume`）、`SB.debug.overview`（`state`、`center`、`hitPoint`）、`SB.debug.reel`（`state`、`seek`）、`SB.debug.player`（`seek`、`jump`、`state`、`stepSeason`）。
+- 业务代码真正依赖的接口保持原位：`SB.player.estimate / play / prime / next / prev / setMode / setStyle / setSeason`、`SB.yearReel.open / close`、`SB.globe.focus / search / prepare / warmEngine`。原来的 `SB.overview` 只有测试在用，整体移到 `SB.debug.overview`。
+- 不要在 `SB.debug` 里放任何会写数据的接口。

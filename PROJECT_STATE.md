@@ -2,11 +2,13 @@
 
 ## Current Release
 
-- Version: `1.11.0` (国家星门面板 · 时空裂隙)
-- Deadline: `2026-10-29`
-- Delivery goal: 私密、稳定、手机可用的周年纪念礼物。
+- Version: `1.11.1` (复盘小优化：锁定依赖 · 抽屉下拉关闭 · 降耗 · 仓库整理)
+- Phase: **周年后持续迭代**（2026-10-29 周年版已交付）。
+- Delivery goal: 私密、稳定、手机可用的纪念册；用户真实回忆数据持续存在。
+- Supabase plan: **Free**（无自动备份；连续 7 天低活动会被自动暂停，Owner 选择不做保活，暂停时到后台 Resume project）。
+- Planning: 跨版本总待办见仓库外 `C:\Users\87986\Desktop\version\github\星屿之书-后续迭代规划.md`。
 - Base: V1 `blocks + build.py + site/index.html`。
-- Runtime config version: `1.11.0`。
+- Runtime config version: `1.11.1`。
 
 ## Current Architecture
 
@@ -103,6 +105,13 @@ release/vX.X.X or feature/*
 
 `main` 是唯一 Production branch。普通代码发布不重置 Supabase 数据。
 
+
+## Review Fixes (v1.11.1)
+
+- `00-runtime`：supabase-js 锁定 `2.116.0`（jsDelivr / unpkg 的 `dist/umd/supabase.js`）；非权限类连接失败与登录失败提示「数据库可能已被 Supabase 暂停」。
+- `00-core`：`SB.debug`（`enabled` / `add(name, obj)`，`?debug=1` 或 localStorage `sb-debug=1` 才注册）；测试接口 `globe / portal / overview / reel / player` 移入。
+- `09-country-map`：手机抽屉下拉关闭（把手 + 头部拖动，30% 位移 / 2 倍视口高度每秒甩动）、城市 ≤ 2 座纵向排列、极光 20 秒静置降到 10fps。`07-globe`：华丽档面板展开后 30fps。
+- 仓库：删除 `index copy.html`、`icon copy.png`、乱码部署说明副本；`check_project.py` 禁止根目录出现 `* copy.*` / 乱码文件名。
 
 ## Country Portal Panel (v1.11.0)
 
@@ -240,7 +249,8 @@ release/vX.X.X or feature/*
 - Memory 当前仍与 City 强耦合。
 - Theme / Experience 目前只有 Context，没有插件加载器。
 - Signed URL 仅做内存缓存；刷新后重新签名。
-- 核心 Third-party CDN 尚未全部本地化（Google Fonts 仍为外部依赖；加载失败时回退系统宋体，版式不变）。
+- 核心 Third-party CDN 尚未全部本地化（Google Fonts、three.js、国家地图仍为外部依赖；supabase-js 已在 v1.11.1 锁定版本）。
+- 删除回忆 / 城市会立即删除 Storage 照片（无回收站），且 Free 套餐无备份——计划 v1.12.0 处理。
 - 完整深层 URL Router 尚未实现。
 - 暂未使用 Realtime。
 - 图片仍是单一压缩尺寸。
@@ -294,12 +304,11 @@ Confirmed by owner on 2026-10-26:
 
 ## Highest Priority Next
 
-1. 发布 v1.10.2（`.\release-current.ps1`），实测：时光剪影拖动进度条、看完尾声；从时光长卷点进回忆再返回停在原位；地球 / 时光之环长时间转动不再卡住；安卓手机转场与放映是否顺滑（尤其 30 张以上照片的回忆）。v1.10.1 项：时光长卷不再闪烁、卡片图片都能出来；点击远处光珠直接转到；在「纪念日」徽记设置纪念日后周年节点按日重算；给旧回忆补上具体日期后按日排序；魔法书页背景为星空深蓝；时光剪影放映中不再出现「正在准备」文字。
-2. 后续：v1.11.0 地球省 / 州矢量边界与局部高清（GLB-001），v1.11.1 国家地图「星图手稿」（MAP-001）。
-3. 完成 Private Storage 正式照片与 BGM 的实际内容填充，并优先使用 v1.7.2 之后的新上传缓存策略。
-4. 核心稳定后实现周年扉页 / 献词 / 结尾（ANN-008）。
-5. 进行最终手机端 Production URL 验收；重点观察弱网照片等待、发热、掉帧与页面残影。
-6. 2026-10-28 晚 Feature Freeze；v1.8.0 之后只修 bug。若真机上新转场卡顿，可在菜单「动效强度」选择柔和 / 关闭（reduced 档不显示门）。
+1. 发布 v1.11.1（`ship-starbook.ps1`），实测：手机国家面板下拉关闭与回弹、只有 1–2 座城市时的纵向卡片；网站在电脑上打开国家面板静置时风扇 / 耗电是否改善；登录与读写照常（supabase-js 已锁定版本）。
+2. v1.12.0 数据安全：回收站「最近删除」+ 导出整本书（Free 套餐无备份，优先级最高）。在此之前定期按 `部署说明.md` 做临时文字备份。
+3. v1.12.1 体验：添加城市取真实坐标、更多国家省份中文名、忘记密码。
+4. v1.13.0 性能与工程：搜索数据外置、依赖自托管、照片多尺寸与缓存、端到端测试入库。
+5. 之后（需要 migration）：成员管理、数据正规化、地球 / 国家面板视觉升级（GLB-001 / MAP-001）。
 
 ## Release Automation (v1.6.0+)
 

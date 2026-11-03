@@ -7,7 +7,7 @@
 ## 1. 当前项目身份
 
 - Project: **Starbook / 星屿之书**
-- Current version: **1.11.0**
+- Current version: **1.11.1**
 - Production branch: **`main`**
 - Production deploy: **GitHub Pages via GitHub Actions**
 - Runtime backend: **Supabase Anniversary Bridge**
@@ -16,7 +16,7 @@
   - relationship: `romantic`
   - theme: `magic-celestial`
   - experience: `world-map`
-- Current delivery priority: **2026-10-29 周年纪念版稳定交付**
+- Current phase: **周年后持续迭代**（2026-10-29 周年版已交付）；跨版本总待办见仓库外 `C:\Users\87986\Desktop\version\github\星屿之书-后续迭代规划.md`
 
 ## 2. Agent 必读顺序
 
@@ -245,3 +245,10 @@ python tools/check_project.py
 - 同场景子状态使用 Scene Runtime 的 `update(params, opts)` 钩子（`prompts/00-core.md` v1.11.0）：不走遮罩、仍写历史。只用于同一场景内的状态切换；换场景必须照旧 `prepare → await enter → nextPaint → reveal`。
 - 面板组件 `SB.countryPortal`（`blocks/09-country-map.html`）只由 `globe` 场景调用。裂隙动画用 WAAPI `clip-path: inset()` 关键帧 + 两个只动 transform / opacity 的光边元素；不要改成逐帧 JS 写 clip-path，也不要给地球 WebGL 画布加 CSS filter。
 - 面板是模态对话框（WAI-ARIA APG）：`role="dialog"` + `aria-modal`、打开时其余地球界面 `inert`、Tab 循环、Esc 关闭、关闭后焦点归还。
+
+### v1.11.1 依赖锁定 / 调试接口 / 抽屉手势 / 交付清单
+- 外部脚本必须锁定确切版本（例如 `@supabase/supabase-js@2.116.0/dist/umd/supabase.js`），不要再写 `@2` 这类浮动版本；升级时完整回归登录 / 读写 / 签名 / 上传。
+- 测试 / 截图用的接口一律 `SB.debug.add(name, obj)` 注册（只有 `?debug=1` 或 localStorage `sb-debug=1` 时存在）；业务代码不得依赖 `SB.debug`，也不要在里面放会写数据的接口。
+- 手机国家面板的下拉关闭只绑定在把手 / 头部；关闭仍走 `SB.scenes.back()`，已经滑出时 `close()` 不再播放裂隙合拢（`S.dragOut`）。
+- 交付给 Owner 的版本文件夹如需删除仓库旧文件，在文件夹根目录放 `.starbook-delete.txt`（每行一个相对路径），由仓库外的 `ship-starbook.ps1` 确认后删除；仓库根目录不得出现 `* copy.*` 或乱码文件名（`check_project.py` 会检查）。
+- Supabase 是 Free 套餐：没有自动备份；删除操作会立即删 Storage 文件。在 v1.12.0 回收站完成前，任何新增的删除路径都必须二次确认。
