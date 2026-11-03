@@ -7,7 +7,7 @@
 ## 1. 当前项目身份
 
 - Project: **Starbook / 星屿之书**
-- Current version: **1.12.0**
+- Current version: **1.12.1**
 - Production branch: **`main`**
 - Production deploy: **GitHub Pages via GitHub Actions**
 - Runtime backend: **Supabase Anniversary Bridge**
@@ -258,3 +258,7 @@ python tools/check_project.py
 - `normalize()` 必须保留 `trash`；`refs()` 必须包含回收站里的全部媒体。新增数据字段时同样要保证旧字段不会被 `normalize` 丢掉。
 - 导出在 `blocks/16-archive.html`：JSZip 锁定 `3.10.1`，`compression:'STORE'`，按卷大小分卷，第 2 卷起由用户点击保存。导出只读，所有成员可用。
 - 测试可用 `SB.debug.archive.limitMB` 改小分卷（需 `?debug=1`）。
+
+### v1.12.1 从备份导入
+- 导出格式 `starbook-export` v1 是导出与导入的唯一契约（`prompts/16-archive.md` 6.1）：`book.json.files` 记录「原路径 ↔ zip 内文件名」，`payload` 原样保存；每卷 `part.json`。改动导出时必须同步导入，并保持旧备份可导入（只加字段不改含义；`formatVersion` 变大时导入会拒绝）。
+- 导入只**新增 / 可选覆盖**，从不删除现有内容；媒体先上传（已存在跳过，上传到原路径或改写到当前书），最后一次 `mutate` 合并（`SB.store.importBackup`）。

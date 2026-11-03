@@ -1,5 +1,5 @@
 ﻿param(
-    [string]$Message = "v1.12.0数据安全：最近删除 · 导出整本书"
+    [string]$Message = "v1.12.0数据安全：最近删除回收站与导出整本书"
 )
 
 $ErrorActionPreference = "Stop"

@@ -289,3 +289,9 @@ Book 级可选设置（`book_data.payload.settings.anniversary`，`YYYY-MM-DD`�
 - `SB.archive = {openTrash, openExport}`（`blocks/16-archive.html`），右上角 `SB.dock` 新增 `archive`（order 25）。
 - 导出格式 `starbook-export` v1：`book.json = {format, formatVersion, app, exportedAt, book:{id, name}, counts, files:[{path, file}], payload}`。未来的「从备份恢复」与多 Book 导出必须兼容这一格式（新增字段只加不改）。
 - 回收站与导出都以 Book 为单位，不包含账户 / 成员信息；不绑定情侣关系或当前 Theme。
+
+### v1.12.1 · 备份导入
+
+- Store：`bookId()`、`mediaExists(paths)`、`putPath(path, blob)`、`importBackup(payload, {overwrite, remap})`；`SB.archive.openImport()`。
+- 导出格式补充：每卷 `part.json = {format:'starbook-export-part', exportedAt, part, files}`。导入兼容没有 `part.json` 的 v1.12.0 备份。
+- 未来多 Book：`remap` 已支持把另一本书的媒体路径改写到当前书；导入以当前 `SB.book.current` 为目标。
