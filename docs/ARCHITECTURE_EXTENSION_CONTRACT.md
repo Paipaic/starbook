@@ -282,3 +282,10 @@ Book 级可选设置（`book_data.payload.settings.anniversary`，`YYYY-MM-DD`�
 - 已移入：`SB.debug.globe`（`rot`、`pickAt`，原 `SB.globe.rot / pickAt`）、`SB.debug.portal`（`freeze`、`resume`，原 `SB.countryPortal.debugFreeze / debugResume`）、`SB.debug.overview`（原 `SB.overview`）、`SB.debug.reel`（`state`、`seek`，原 `SB.yearReel.state / seek`）、`SB.debug.player`（`seek`、`jump`、`stepSeason`、`state`，原 `SB.player` 同名成员）。
 - 保持不变的业务接口：`SB.player.play / prime / next / prev / setMode / setStyle / setSeason / estimate`、`SB.yearReel.open / close`、`SB.globe.focus / search / prepare / warmEngine`、`SB.countryPortal.open / close / isOpen / key / phase / settled`。
 - 业务代码不得依赖 `SB.debug`；不在其中放写数据的接口。
+
+### v1.12.0 · 回收站与导出
+
+- Store：`removeMemory / removeCity` 为软删除；新增 `restoreMemory / restoreCity / restorePhoto / purgeTrash(which) / trash / trashCount() / trashDaysLeft(e) / TRASH_DAYS / allMediaPaths() / exportPayload() / download(path)`；`mutate(fn, {purge})` 内部选项。
+- `SB.archive = {openTrash, openExport}`（`blocks/16-archive.html`），右上角 `SB.dock` 新增 `archive`（order 25）。
+- 导出格式 `starbook-export` v1：`book.json = {format, formatVersion, app, exportedAt, book:{id, name}, counts, files:[{path, file}], payload}`。未来的「从备份恢复」与多 Book 导出必须兼容这一格式（新增字段只加不改）。
+- 回收站与导出都以 Book 为单位，不包含账户 / 成员信息；不绑定情侣关系或当前 Theme。

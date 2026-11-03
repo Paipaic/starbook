@@ -349,8 +349,8 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
       actions:[
         {text:'删除这座城市', kind:'danger', async onClick(){
           const n = SB.store.memoriesOf(c.id).length;
-          if(!await SB.ui.confirm(n ? `删除「${c.name}」会同时删除它的 ${n} 段回忆和照片，无法恢复。确定吗？` : `确定删除「${c.name}」吗？`, '删除')) return false;
-          try{ await SB.store.removeCity(c.id); SB.toast('已删除'); paint(); buildList(); }catch(e){ SB.toast(SB.store.errText(e)); return false; } }},
+          if(!await SB.ui.confirm(n ? `删除「${c.name}」？它的 ${n} 段回忆和照片会一起移到「最近删除」，${SB.store.TRASH_DAYS || 30} 天内可以在右上角「珍藏与备份」里恢复。` : `删除「${c.name}」？${SB.store.TRASH_DAYS || 30} 天内可以在「最近删除」里恢复。`, '删除')) return false;
+          try{ await SB.store.removeCity(c.id); SB.toast('已移到最近删除'); paint(); buildList(); }catch(e){ SB.toast(SB.store.errText(e)); return false; } }},
         'spacer',
         {text:'取消'},
         {text:'保存', kind:'primary', async onClick(){

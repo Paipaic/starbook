@@ -2,13 +2,13 @@
 
 ## Current Release
 
-- Version: `1.11.1` (复盘小优化：锁定依赖 · 抽屉下拉关闭 · 降耗 · 仓库整理)
+- Version: `1.12.0` (数据安全：最近删除回收站 · 导出整本书)
 - Phase: **周年后持续迭代**（2026-10-29 周年版已交付）。
 - Delivery goal: 私密、稳定、手机可用的纪念册；用户真实回忆数据持续存在。
 - Supabase plan: **Free**（无自动备份；连续 7 天低活动会被自动暂停，Owner 选择不做保活，暂停时到后台 Resume project）。
 - Planning: 跨版本总待办见仓库外 `C:\Users\87986\Desktop\version\github\星屿之书-后续迭代规划.md`。
 - Base: V1 `blocks + build.py + site/index.html`。
-- Runtime config version: `1.11.1`。
+- Runtime config version: `1.12.0`。
 
 ## Current Architecture
 
@@ -105,6 +105,12 @@ release/vX.X.X or feature/*
 
 `main` 是唯一 Production branch。普通代码发布不重置 Supabase 数据。
 
+
+## Trash & Export (v1.12.0)
+
+- `05-store`：`payload.trash`（memories / cities / photos / files）；`removeMemory / removeCity` 软删除；`saveMemory` 记录被移除的照片；`mutate()` 把不再被引用的文件记入 `trash.files`；`purgeTrash('expired' | 'all' | {kind, id})` 才删除 Storage 文件（编辑者载入 4 秒后自动清理超过 30 天的条目）；`restoreMemory / restoreCity`（同名城市合并）/ `restorePhoto`；`download(path)`、`allMediaPaths()`、`exportPayload()`。
+- `16-archive`（新块）：`SB.dock` 的「珍藏与备份」；「最近删除」对话框；「导出整本书」（JSZip 3.10.1，STORE，电脑 400 MB / 手机 150 MB 分卷，第 2 卷起点击保存，失败重试与清单）。
+- `09-country-map` / `12-memory-editor`：删除确认文案改为「移到最近删除」。
 
 ## Review Fixes (v1.11.1)
 
@@ -250,7 +256,7 @@ release/vX.X.X or feature/*
 - Theme / Experience 目前只有 Context，没有插件加载器。
 - Signed URL 仅做内存缓存；刷新后重新签名。
 - 核心 Third-party CDN 尚未全部本地化（Google Fonts、three.js、国家地图仍为外部依赖；supabase-js 已在 v1.11.1 锁定版本）。
-- 删除回忆 / 城市会立即删除 Storage 照片（无回收站），且 Free 套餐无备份——计划 v1.12.0 处理。
+- v1.12.0 起删除先进回收站，并可导出整本书；尚无「从备份恢复」工具。
 - 完整深层 URL Router 尚未实现。
 - 暂未使用 Realtime。
 - 图片仍是单一压缩尺寸。
@@ -304,11 +310,10 @@ Confirmed by owner on 2026-10-26:
 
 ## Highest Priority Next
 
-1. 发布 v1.11.1（`ship-starbook.ps1`），实测：手机国家面板下拉关闭与回弹、只有 1–2 座城市时的纵向卡片；网站在电脑上打开国家面板静置时风扇 / 耗电是否改善；登录与读写照常（supabase-js 已锁定版本）。
-2. v1.12.0 数据安全：回收站「最近删除」+ 导出整本书（Free 套餐无备份，优先级最高）。在此之前定期按 `部署说明.md` 做临时文字备份。
-3. v1.12.1 体验：添加城市取真实坐标、更多国家省份中文名、忘记密码。
-4. v1.13.0 性能与工程：搜索数据外置、依赖自托管、照片多尺寸与缓存、端到端测试入库。
-5. 之后（需要 migration）：成员管理、数据正规化、地球 / 国家面板视觉升级（GLB-001 / MAP-001）。
+1. 发布 v1.12.0，之后**在每台设备上刷新一次网页**。实测：删除一段回忆 → 在「珍藏与备份 → 最近删除」恢复；在电脑上导出整本书，解压检查照片数量。导出一次作为首份正式备份，电脑与网盘各存一份。
+2. v1.12.1 体验：添加城市取真实坐标、更多国家省份中文名、忘记密码。
+3. v1.13.0 性能与工程：搜索数据外置、依赖自托管、照片多尺寸与缓存、端到端测试入库。
+4. 之后：从备份恢复工具；成员管理、数据正规化（需要 migration）；地球 / 国家面板视觉升级。
 
 ## Release Automation (v1.6.0+)
 

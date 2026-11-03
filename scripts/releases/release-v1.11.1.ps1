@@ -1,5 +1,5 @@
 ﻿param(
-    [string]$Message = "v1.11.1复盘小优化：锁定依赖 · 抽屉下拉关闭 · 降耗 · 仓库整理"
+    [string]$Message = "v1.11.1复盘小优化：锁定依赖、抽屉下拉关闭、降耗与仓库整理"
 )
 
 $ErrorActionPreference = "Stop"

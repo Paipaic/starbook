@@ -245,6 +245,15 @@ if 'SB.debug = ' not in block_text.get('00-core.html', '') or 'debugFreeze' in c
 if 'cp-grip' not in cm or 'dismissByDrag' not in cm:
     print('ERROR: country portal mobile drag-to-close (v1.11.1) missing')
     sys.exit(1)
+# v1.12.0 guards: deletions go to the trash (no immediate Storage removal); archive panel with export.
+st5 = block_text.get('05-store.html', '')
+ar = block_text.get('16-archive.html', '')
+if 'trash:normTrash(' not in st5 or '{purge:true}' not in st5 or 'if(!purge){' not in st5 or 'st.restoreMemory' not in st5:
+    print('ERROR: store trash (v1.12.0): normalize must keep trash, mutate must move unreferenced files to trash.files, purge only via purgeTrash')
+    sys.exit(1)
+if "SB.dock.add({id:'archive'" not in ar or 'jszip/3.10.1' not in ar or "compression:'STORE'" not in ar:
+    print('ERROR: archive panel / export (v1.12.0) missing or JSZip not pinned')
+    sys.exit(1)
 # GBK-misread UTF-8 (mojibake) markers that appeared when Windows PowerShell read BOM-less UTF-8 as ANSI.
 MOJIBAKE = ['銆', '锛', '鈥', '鈹', '鏄熷', '涔嬩功']
 for rel in ['AGENTS.md', 'README.md', 'PROJECT_STATE.md', 'CHANGELOG.md', 'ROADMAP.md', 'blocks/00-config.html']:

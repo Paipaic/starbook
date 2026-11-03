@@ -565,8 +565,8 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
         },
         actions:[
           ...(memory ? [{text:'删除这段回忆', kind:'danger', async onClick(close){
-            if(!await SB.ui.confirm(`确定删除「${memory.title}」吗？它的照片也会一起删除，无法恢复。`, '删除')) return false;
-            try{ await SB.store.removeMemory(memory.id); SB.toast('已删除'); if(SB.scenes.current === 'player') SB.scenes.back(); }
+            if(!await SB.ui.confirm(`删除「${memory.title}」？它会连同照片移到「最近删除」，${SB.store.TRASH_DAYS || 30} 天内可以在右上角「珍藏与备份」里恢复。`, '删除')) return false;
+            try{ await SB.store.removeMemory(memory.id); SB.toast('已移到最近删除'); if(SB.scenes.current === 'player') SB.scenes.back(); }
             catch(e){ SB.toast(SB.store.errText(e)); return false; } }}, 'spacer'] : []),
           {text:'取消', onClick(){ cleanup(false); }},
           {text:'保存', kind:'primary', id:'save', async onClick(close, btn){

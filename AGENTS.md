@@ -7,7 +7,7 @@
 ## 1. 当前项目身份
 
 - Project: **Starbook / 星屿之书**
-- Current version: **1.11.1**
+- Current version: **1.12.0**
 - Production branch: **`main`**
 - Production deploy: **GitHub Pages via GitHub Actions**
 - Runtime backend: **Supabase Anniversary Bridge**
@@ -251,4 +251,10 @@ python tools/check_project.py
 - 测试 / 截图用的接口一律 `SB.debug.add(name, obj)` 注册（只有 `?debug=1` 或 localStorage `sb-debug=1` 时存在）；业务代码不得依赖 `SB.debug`，也不要在里面放会写数据的接口。
 - 手机国家面板的下拉关闭只绑定在把手 / 头部；关闭仍走 `SB.scenes.back()`，已经滑出时 `close()` 不再播放裂隙合拢（`S.dragOut`）。
 - 交付给 Owner 的版本文件夹如需删除仓库旧文件，在文件夹根目录放 `.starbook-delete.txt`（每行一个相对路径），由仓库外的 `ship-starbook.ps1` 确认后删除；仓库根目录不得出现 `* copy.*` 或乱码文件名（`check_project.py` 会检查）。
-- Supabase 是 Free 套餐：没有自动备份；删除操作会立即删 Storage 文件。在 v1.12.0 回收站完成前，任何新增的删除路径都必须二次确认。
+- Supabase 是 Free 套餐：没有自动备份。（v1.12.0 起删除先进回收站，见下。）
+
+### v1.12.0 回收站 / 导出整本书
+- 任何删除都必须走 Store 的回收站：`removeMemory / removeCity` 移入 `payload.trash`；`saveMemory` 把移除的照片记入 `trash.photos`；`mutate()` 会把不再被引用的文件记入 `trash.files`。**只有** `purgeTrash()`（彻底删除 / 清空 / 超过 30 天）才调用 Storage remove。不要新增直接调用 `bucket().remove()` 的路径。
+- `normalize()` 必须保留 `trash`；`refs()` 必须包含回收站里的全部媒体。新增数据字段时同样要保证旧字段不会被 `normalize` 丢掉。
+- 导出在 `blocks/16-archive.html`：JSZip 锁定 `3.10.1`，`compression:'STORE'`，按卷大小分卷，第 2 卷起由用户点击保存。导出只读，所有成员可用。
+- 测试可用 `SB.debug.archive.limitMB` 改小分卷（需 `?debug=1`）。

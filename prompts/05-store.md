@@ -28,3 +28,8 @@
 
 ## 兼容
 - 在 Claude 上打开时继续使用 Claude 云端存储；本地打开文件时用本机临时存储。
+
+## v1.12.0 · 回收站（软删除）与导出所需接口
+- 详见 `prompts/16-archive.md` 第 1、2 节：`payload.trash`（memories / cities / photos / files），`mutate()` 不再立即删除不再被引用的 Storage 文件（记入 `trash.files`），只有 `mutate(fn, {purge:true})` 才删除。
+- 新接口：`restoreMemory / restoreCity / restorePhoto / purgeTrash / trash / trashCount / allMediaPaths / download(path)`。
+- 兼容：旧版本客户端（未刷新的标签页）保存时会丢掉 `trash` 字段（它的 `normalize` 不认识），但不会删除回收站里的文件（它的 `refs` 看不到它们）；发布后请在其他设备上刷新一次网页。
