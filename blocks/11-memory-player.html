@@ -1879,14 +1879,18 @@ html[data-sb-perf="reduced"] .pl-hold i::after{animation:none;opacity:.5;}
   /* 调试 / 自动化验收：在暂停状态下定位到时间线上的某一刻 */
   function seek(T){ if(!P.showing) return; setPlaying(false); resetHold(); P.T = Math.max(0, T); prefetch(P.T); render(); }
   SB.player = {
-    play:() => play(false), seek, jump, prime, next:() => advance(1), prev:() => advance(-1), setMode:id => setMode(id),
+    play:() => play(false), prime, next:() => advance(1), prev:() => advance(-1), setMode:id => setMode(id),
     setStyle(id){ if(SB.cinema.styles.some(s => s.id === id)){ P.style = id; if(P.showing) rebuild(false); else if(P.m){ refreshStyleUI(); updateStat(); } } },
     setSeason(id){ P.seasonPref = id; setSeason(SB.cinema.resolveSeason(id, P.m?.date), true); },
+    estimate:(m, style) => estimate(buildTL(m, style || SB.cinema.styleOf(m)))
+  };
+  // v1.11.1：测试 / 截图用接口移到 SB.debug（prompts/00-core.md）
+  SB.debug.add('player', {
+    seek, jump,
     stepSeason(ms){ for(let k = 0; k < ms/50; k++) stepSeason(50); render(); },
-    estimate:(m, style) => estimate(buildTL(m, style || SB.cinema.styleOf(m))),
     get state(){ const TL = P.TL; return {T:P.T, playing:P.playing, mode:P.mode, held:P.held, holds:(TL?.holds || []).map(Math.round), showing:P.showing, style:P.style, season:P.season, C0:TL?.C0, endT:TL?.endT,
       marks:TL?.marks.map(m => ({t:Math.round(m.t), i:m.i})) || [], items:TL ? TL.items.filter(x => x.kind === 'photo').map(x => ({i:x.i, t0:Math.round(x.t0), t1:Math.round(x.t1), enter:x.enter.type, exit:x.exit.type, frame:x.frame})) : [],
       texts:TL ? TL.items.filter(x => x.kind === 'text').map(x => ({t0:Math.round(x.t0), t1:Math.round(x.t1 ?? -1), look:x.look, text:x.lines.join(''), idx:x.idx})) : [], groups:TL?.ng || 0}; }
-  };
+  });
 })(window.SB);
 </script>

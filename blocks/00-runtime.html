@@ -115,8 +115,9 @@ html:not([data-sb-perf="high"]) .sb-gate-tw,html:not([data-sb-perf="high"]) .sb-
   const gateBody = document.getElementById('sb-gate-body');
   const gateIntro = document.getElementById('sb-gate-intro');
   const SUPABASE_CDNS = [
-    'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
-    'https://unpkg.com/@supabase/supabase-js@2'
+    // v1.11.1：锁定确切版本（之前 @2 会自动拿到 2.x 最新版，上游更新可能让网站在不改代码的情况下出问题）。升级时改这里并完整回归登录 / 读写 / 签名 / 上传。
+    'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js',
+    'https://unpkg.com/@supabase/supabase-js@2.116.0/dist/umd/supabase.js'
   ];
 
   /* v1.9.0 字体只决策一次：2.2 秒内网络字体到齐就用网络字体，否则整个启动过程固定用本地宋体，不再中途替换 */
@@ -149,6 +150,9 @@ html:not([data-sb-perf="high"]) .sb-gate-tw,html:not([data-sb-perf="high"]) .sb-
     gateIntro.textContent = text || '星海暂时失去了连接。';
     const p = SB.el('p','sb-gate-error'); p.textContent = detail || '请检查网络后重新尝试。';
     const actions = SB.el('div','sb-gate-actions');
+    // v1.11.1：Supabase Free 项目长时间无人访问会被自动暂停（prompts/00-login-gate.md）；权限类错误不显示
+    const pauseNote = options.pausedHint ? SB.el('p','sb-gate-note') : null;
+    if(pauseNote) pauseNote.textContent = '如果很久没有打开过星屿，数据库可能已被 Supabase 自动暂停：请到 Supabase 后台打开该项目，点击 Resume project 恢复后再重新连接。';
 
     if(options.retry !== false){
       const retryLabel = options.retryLabel || '重新连接';
@@ -171,6 +175,7 @@ html:not([data-sb-perf="high"]) .sb-gate-tw,html:not([data-sb-perf="high"]) .sb-
     }
 
     gateBody.append(p,actions);
+    if(pauseNote) gateBody.appendChild(pauseNote);
   }
   function hideGate(){
     const ms = SB.perf.level === 'high' ? 520 : 320;
@@ -280,7 +285,8 @@ html:not([data-sb-perf="high"]) .sb-gate-tw,html:not([data-sb-perf="high"]) .sb-
           retryLabel:'重新尝试',
           retry:()=>finishAuthenticated(),
           backToLogin:true,
-          loginMessage:'已返回登录界面。'
+          loginMessage:'已返回登录界面。',
+          pausedHint:!permissionLike
         }
       );
     }
@@ -304,7 +310,7 @@ html:not([data-sb-perf="high"]) .sb-gate-tw,html:not([data-sb-perf="high"]) .sb-
       catch(ex){
         console.error('[Starbook auth]',ex);
         const msg=String(ex?.message||'');
-        err.textContent = /invalid login|invalid credentials/i.test(msg) ? '邮箱或密码不正确。' : '暂时无法登录，请检查网络后再试。';
+        err.textContent = /invalid login|invalid credentials/i.test(msg) ? '邮箱或密码不正确。' : '暂时无法登录，请检查网络后再试。如果很久没有打开过星屿，数据库可能已被 Supabase 自动暂停，需要到后台点击 Resume project 恢复。';
         submit.disabled=false; submit.textContent='开启星屿';
       }
     });
@@ -331,7 +337,7 @@ html:not([data-sb-perf="high"]) .sb-gate-tw,html:not([data-sb-perf="high"]) .sb-
       if(user.current) await finishAuthenticated(); else showLogin();
     }catch(e){
       console.error('[Starbook boot]',e); rejectReady?.(e);
-      showFatal('星海暂时失去了连接。','Supabase 客户端未能加载。请检查网络后重新连接。');
+      showFatal('星海暂时失去了连接。','Supabase 客户端未能加载。请检查网络后重新连接。',{pausedHint:true});
     }
   }
   bootRuntime();

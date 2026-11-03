@@ -120,7 +120,7 @@
   const cv = $('gl-canvas'), labelsEl = $('gl-labels'), tip = $('gl-tip');
   let T, renderer, scene, camera, globe, earth, earthMat, texCanvas, tex, idCanvas, idTex, starMat, dustMats = [], cityGroup, starTexture;
   let cloud, cloudMat, halo, astro, arcGroup, arcMats = [], arcRunners = [], constGroup, focusGroup, focusRings = [], focusStar;
-  let ready = false, running = false, last = 0, time = 0;
+  let ready = false, running = false, last = 0, time = 0, portalFrame = 0;
   const view = { rotX:.35, rotY:-1.9, vx:0, vy:0, dist:3.2, distT:3.2, base:3.2, zoom:1, zoomT:1, idle:0, intro:0, shift:.06 };
   const contIndex = Object.fromEntries(SB.geo.CONTINENTS.map((c,i) => [c.code, i+1]));
   const hover = { country:-1, cont:-1 };
@@ -769,6 +769,8 @@
     }
     // v1.11.0：柔和档 / 安卓在国家面板完全展开且飞转结束后不再重绘地球（画布保留最后一帧，prompts/performance/03-globe-to-country.md）
     if(!hi() && SB.countryPortal?.settled && !fly.on && view.intro >= 1){ requestAnimationFrame(loop); return; }
+    // v1.11.1：华丽档面板展开后限制到约 30fps（prompts/07-globe.md v1.11.1）
+    if(SB.countryPortal?.settled && !fly.on){ if(now - portalFrame < 32){ requestAnimationFrame(loop); return; } portalFrame = now; }
     globe.rotation.set(view.rotX, view.rotY, 0);
     view.intro = Math.min(1, view.intro + dt/2.4);
     const ease = 1 - Math.pow(1 - view.intro, 3);
@@ -815,8 +817,9 @@
   function stop(){ running = false; if(fly.on){ view.rotX = fly.x1; view.rotY = fly.y1; fly.on = false; fly.done?.(); fly.done = null; } }
   document.addEventListener('visibilitychange', () => { if(document.hidden) stop(); else if(SB.scenes.current === 'globe') start(); });
 
-  SB.globe = { get rot(){ return [view.rotX, view.rotY]; },      // 调试 / 测试用（v1.10.2）
-    pickAt:(x, y) => ready ? pick(x, y)?.country?.key || null : null,   // 调试 / 测试用（v1.11.0）
+  SB.debug.add('globe', { get rot(){ return [view.rotX, view.rotY]; },    // v1.11.1：调试接口移到 SB.debug（prompts/00-core.md）
+    pickAt:(x, y) => ready ? pick(x, y)?.country?.key || null : null });
+  SB.globe = {
     warmEngine:()=>SB.loadScript(THREE_URLS), prepare:init, focus:o => focusTo(o), search:q => { qIn.value = q; search(); return S; } };
 
   /* v1.11.0 国家星门面板：面板是 globe 场景的子状态（params.k），由块 09 SB.countryPortal 呈现 */

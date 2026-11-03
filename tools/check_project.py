@@ -106,7 +106,7 @@ if 'st.prefetchUrls' not in store_text:
 if re.search(r'async function applyRemote\(row\)\s*\{[^}]*await\s+warmUrls', store_text, re.S):
     print('ERROR: Store startup must not await full-library warmUrls; use scene-level prefetch')
     sys.exit(1)
-for marker in ('async function prime(m)', 'SB.fx?.playback?.(true)', 'play:() => play(false), seek, jump, prime'):
+for marker in ('async function prime(m)', 'SB.fx?.playback?.(true)', 'play:() => play(false), prime'):
     if marker not in player_text:
         print(f'ERROR: player performance marker {marker!r} missing from 11-memory-player.html')
         sys.exit(1)
@@ -229,6 +229,21 @@ if 'data-scene="country"' in cm or "register('country'" in cm or "go('country'" 
     sys.exit(1)
 if 'SB.countryPortal = ' not in cm or 'panel.animate(' not in cm or 'update(p, opts)' not in gl or "typeof cur.update === 'function'" not in block_text.get('00-core.html', ''):
     print('ERROR: country portal v1.11.0 (SB.countryPortal, WAAPI rift, globe update hook, core update path) broken')
+    sys.exit(1)
+# v1.11.1 guards: no stray copies / garbled file names in the repo root; supabase-js pinned; debug hooks only via SB.debug.
+stray = [f.name for f in root.iterdir() if f.is_file() and (' copy.' in f.name or any(m in f.name for m in ('閮', '銆', '锛', '鈥')))]
+if stray:
+    print('ERROR: stray copy / garbled files in repo root (list them in .starbook-delete.txt of the version folder): ' + ', '.join(stray))
+    sys.exit(1)
+rt = block_text.get('00-runtime.html', '')
+if '@supabase/supabase-js@2\'' in rt or not re.search(r'@supabase/supabase-js@2\.\d+\.\d+/', rt):
+    print('ERROR: supabase-js must be pinned to an exact 2.x.y version (v1.11.1)')
+    sys.exit(1)
+if 'SB.debug = ' not in block_text.get('00-core.html', '') or 'debugFreeze' in cm or 'pickAt:' in gl.split("SB.debug.add('globe'")[0] or 'SB.overview = ' in ov:
+    print('ERROR: test-only hooks must be registered through SB.debug.add (v1.11.1)')
+    sys.exit(1)
+if 'cp-grip' not in cm or 'dismissByDrag' not in cm:
+    print('ERROR: country portal mobile drag-to-close (v1.11.1) missing')
     sys.exit(1)
 # GBK-misread UTF-8 (mojibake) markers that appeared when Windows PowerShell read BOM-less UTF-8 as ANSI.
 MOJIBAKE = ['銆', '锛', '鈥', '鈹', '鏄熷', '涔嬩功']

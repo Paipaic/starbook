@@ -136,3 +136,23 @@ SB.magicBook = 3D 魔法书视觉控制器
 3. 不手写一套新的发布流程；
 4. 直接运行 `release-current.ps1`；
 5. 若修改了发布链路本身，同步更新本文件与 `PROJECT_MANAGEMENT_FULL_CHAIN.md`。
+
+## v1.11.1 · 版本文件夹一键发布 `ship-starbook.ps1`
+
+Owner 的实际交付方式是：Agent 把新版本完整放进 `C:\Users\87986\Desktop\version\github\starbook-vX.Y.Z`，Owner 再同步到仓库 `starbook-repo` 并发布。原来需要手动执行 14 步，现在由仓库外的 `C:\Users\87986\Desktop\version\github\ship-starbook.ps1` 一条命令完成：
+
+1. 把 `.starbook-login.local.json` 加入 `.git/info/exclude`；
+2. 用远端 `main` 覆盖本地（有未提交改动时先列出并确认）；远端已是同版本或更新时停止；
+3. 新建 `release/vX.Y.Z`；
+4. 复制版本文件夹（跳过 `.git`、`.github`、登录文件、`.starbook-delete.txt`）；按 `.starbook-delete.txt` 删除旧文件（确认后）；
+5. 核对 `VERSION` 与 `blocks/00-config.html` 版本号；
+6. 扫描 Git 冲突标记；
+7. `python build.py` + `python tools/check_project.py`；
+8. 列出改动摘要；`-Preview` 时打开本地预览；`-CheckOnly` 到此结束；
+9. 调用 `release-current.ps1`，然后等待 PR 检查、自动合并与 Pages 部署，最后切回 `main`。
+
+脚本放在仓库外（与 `starbook-repo` 同级），否则第 2 步的 `git clean` 会把它删掉。脚本不执行 SQL，不读取登录文件。
+
+### 删除文件清单 `.starbook-delete.txt`
+
+新版本需要删除仓库中的文件时，在版本文件夹根目录放 `.starbook-delete.txt`（UTF-8，每行一个相对仓库根目录的路径，`#` 开头为注释）。脚本只接受仓库内的相对路径（拒绝 `..` 与绝对路径），删除前列出并确认。该文件本身不会复制进仓库。

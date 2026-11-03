@@ -663,9 +663,9 @@
     enter(p, opts){ SB.fx.palette('night'); S.active = true; S.clock = 0; const ret = !!(opts?.back || opts?.fromHistory) && S.lastKey != null; build(!ret, ret ? S.lastKey : null); kick(); },
     leave(){ S.lastKey = keyOf(S.st[S.near]); S.active = false; cancelAnimationFrame(S.raf); S.raf = 0; S.drag = null; S.tw = null; setHb(-1); SB.yearReel?.close?.(true); }
   });
-  SB.overview = { get state(){ return {n:S.st.length, near:S.near, u:uNow(), anchor:S.anchor, cards:S.st.filter(o => !o.off).length,
+  SB.debug.add('overview', { get state(){ return {n:S.st.length, near:S.near, u:uNow(), anchor:S.anchor, cards:S.st.filter(o => !o.off).length,
       nodes:S.st.filter(o => o.type === 'node').map(o => ({kind:o.kind, year:o.year, k:o.k, date:D.str(o.k), count:o.list?.length ?? 0, i:o.i}))}; },
-    center, hitPoint:i => { const o = S.st[i]; if(!o?.p) return null; const r = view.getBoundingClientRect(), q = o.type === 'mem' ? (o.bead || o.p) : o.p; return {x:r.left + q.x, y:r.top + q.y}; } };
+    center, hitPoint:i => { const o = S.st[i]; if(!o?.p) return null; const r = view.getBoundingClientRect(), q = o.type === 'mem' ? (o.bead || o.p) : o.p; return {x:r.left + q.x, y:r.top + q.y}; } });
   SB.menu.add({id:'overview', order:40, icon:'scroll', label:'时光长卷',
     desc:() => { const l = sorted().filter(m => dayOf(m) != null); const n = SB.store.memories.length;
       return n ? `${n} 段回忆${l.length ? ' · 从 ' + D.parse(l[0].date).y + ' 到 ' + D.parse(l[l.length - 1].date).y : ''}` : '我们的故事从这里开始'; },

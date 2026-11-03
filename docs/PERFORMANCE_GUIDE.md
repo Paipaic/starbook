@@ -119,3 +119,9 @@
 ## 15. v1.11.0 国家星门面板
 
 见 `prompts/performance/03-globe-to-country.md`。要点：裂隙形状用 WAAPI `clip-path: inset()` 关键帧（不要每帧 JS 写 clip-path）；裂缝光边是独立元素，只动 transform / opacity；不对地球 WebGL 画布用 CSS filter（变暗用幕布）；面板背景 canvas 只在华丽档、约 30fps、面板打开时运行，柔和档 / 安卓用 CSS 光带；柔和档 / 安卓面板展开后地球跳过渲染；省份描边绘入只在华丽档。
+
+## 16. v1.11.1 静置降耗
+
+- 国家面板极光背景（华丽档 canvas）：20 秒无指针 / 键盘 / 滚轮 / 滚动操作后降到约 10fps，有操作立即恢复约 30fps。
+- 华丽档面板完全展开后地球限制到约 30fps（柔和档 / 安卓仍跳过渲染）。
+- 手机抽屉下拉只改 `transform` 与幕布 `opacity`，跟手期间关闭 CSS transition。

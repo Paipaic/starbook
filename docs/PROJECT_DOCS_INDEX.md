@@ -82,3 +82,5 @@ v1.6.0+ 一键版本发布机制。说明 `release-current.ps1`、自动 Release
 
 - `docs/TRANSITION_STABILITY_TEST.md`：登录→Book→Globe→Country→City→Player 全链路真机验收（v1.8.0 增加秘境之门与搜索验收项）。
 - `releases/v1.11.0.md` — 国家星门面板（时空裂隙）。
+- `releases/v1.11.1.md` — 复盘小优化（锁定依赖、抽屉下拉关闭、降耗、仓库整理、`SB.debug`）。
+- `RELEASE_AUTOMATION.md` — v1.11.1 起补充仓库外的 `ship-starbook.ps1` 与 `.starbook-delete.txt`。
