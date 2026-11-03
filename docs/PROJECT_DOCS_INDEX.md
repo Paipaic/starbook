@@ -84,3 +84,5 @@ v1.6.0+ 一键版本发布机制。说明 `release-current.ps1`、自动 Release
 - `releases/v1.11.0.md` — 国家星门面板（时空裂隙）。
 - `releases/v1.11.1.md` — 复盘小优化（锁定依赖、抽屉下拉关闭、降耗、仓库整理、`SB.debug`）。
 - `RELEASE_AUTOMATION.md` — v1.11.1 起补充仓库外的 `ship-starbook.ps1` 与 `.starbook-delete.txt`。
+- `../prompts/16-archive.md` — v1.12.0 珍藏与备份：最近删除（回收站）与导出整本书。
+- `releases/v1.12.0.md` — 数据安全版。

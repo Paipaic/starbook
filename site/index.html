@@ -19,7 +19,7 @@
 /* ── Starbook v1.10.2 · 公开客户端配置 ──
    Publishable Key 设计上允许出现在浏览器；不要在此文件放 Secret / service_role / 数据库密码。 */
 window.STARBOOK_CONFIG = Object.freeze({
-  version: '1.11.1',
+  version: '1.12.0',
   supabaseUrl: 'https://xowbbcumcxtsrrnulunb.supabase.co',
   supabasePublishableKey: 'sb_publishable_SYGBrk2PiwwzRXZm03Patg_oDlYSIGd',
   storageBucket: 'starbook-media',
@@ -2814,29 +2814,45 @@ html:not([data-sb-perf="high"]) .cv-flow{display:none;}
   const st = SB.store = { mode:'connecting', role:'viewer', canEdit:false, canUpload:false, cities:[], memories:[], settings:{}, revision:0, ready:null };
   const emit = () => document.dispatchEvent(new CustomEvent('sb:data'));
   const now = () => new Date().toISOString();
-  const empty = () => ({cities:{}, memories:{}, settings:{}});
+  const empty = () => ({cities:{}, memories:{}, settings:{}, trash:emptyTrash()});
+  // v1.12.0 回收站（prompts/16-archive.md）：删除先进入 trash，30 天后才真正删除 Storage 文件
+  const TRASH_DAYS = 30, DAY = 86400000;
+  function emptyTrash(){ return {memories:{}, cities:{}, photos:{}, files:{}}; }
+  function normTrash(t){ t = t || {}; return {memories:t.memories || {}, cities:t.cities || {}, photos:t.photos || {}, files:t.files || {}}; }
   const clone = o => JSON.parse(JSON.stringify(o));
   let data = empty(), dataSig = '';
   const preview = Object.create(null);   // 本次浏览器会话刚上传的文件 path → object URL
   const signed = Object.create(null);    // Private Storage path → {url, expiresAt}
   const signing = new Set();             // 正在补签的 path，避免同一图片并发重复请求
 
-  function normalize(d){ return {cities:d?.cities || {}, memories:d?.memories || {}, settings:d?.settings || {}}; }
+  function normalize(d){ return {cities:d?.cities || {}, memories:d?.memories || {}, settings:d?.settings || {}, trash:normTrash(d?.trash)}; }
   function setData(d){
     d = normalize(d); const sig = JSON.stringify(d); data = d;
     st.cities = Object.entries(d.cities).map(([id,v]) => ({id, ...v}));
     st.memories = Object.entries(d.memories).map(([id,v]) => ({id, ...v}));
     st.settings = d.settings;
+    st.trash = d.trash;
     if(sig !== dataSig){ dataSig = sig; emit(); }
   }
-  function refs(d){
+  function memRefs(m, s){
+    m?.cover?.id && s.add(m.cover.id);
+    (m?.slides || []).forEach(x => x.id && s.add(x.id));
+    m?.bgm?.id && s.add(m.bgm.id);
+  }
+  function liveRefs(d){
     const s = new Set();
-    for(const m of Object.values(d?.memories || {})){
-      m.cover?.id && s.add(m.cover.id);
-      (m.slides || []).forEach(x => x.id && s.add(x.id));
-      m.bgm?.id && s.add(m.bgm.id);
-    }
+    for(const m of Object.values(d?.memories || {})) memRefs(m, s);
     d?.settings?.bgm?.id && s.add(d.settings.bgm.id);
+    return s;
+  }
+  // v1.12.0：回收站里的回忆、照片、文件也算「仍被引用」——在回收站期间不会删除 Storage 文件
+  function refs(d){
+    const s = liveRefs(d), t = d?.trash;
+    if(t){
+      for(const m of Object.values(t.memories || {})) memRefs(m, s);
+      for(const [id, p] of Object.entries(t.photos || {})){ s.add(id); p?.slide?.id && s.add(p.slide.id); }
+      for(const id of Object.keys(t.files || {})) s.add(id);
+    }
     return s;
   }
   function errText(e){
@@ -2927,6 +2943,8 @@ html:not([data-sb-perf="high"]) .cv-flow{display:none;}
     SB.menu?.status(`${SB.book.current?.name || '星屿之书'} · ${st.canEdit ? '可以编辑' : '只读浏览'}`);
     SB.menu?.refresh();
     await refreshRemote();
+    // v1.12.0：编辑者载入后静默清理超过 30 天的回收站条目（只有这时才真正删除 Storage 文件）
+    if(st.canEdit && expired(data, Date.now() - TRASH_DAYS*DAY).length) setTimeout(() => st.purgeTrash('expired').catch(e => console.warn('[Starbook trash purge]', e)), 4000);
     document.addEventListener('visibilitychange',()=>{
       if(!document.hidden && st.mode==='supabase' && !document.querySelector('.sb-modal')) refreshRemote({silent:true});
     });
@@ -2943,11 +2961,15 @@ html:not([data-sb-perf="high"]) .cv-flow{display:none;}
   }
 
   /* 基于 revision 的轻量冲突检测：保留 JSONB 桥接结构，同时避免两台设备静默覆盖。 */
-  async function mutate(fn){
+  async function mutate(fn, {purge=false}={}){
     if(!st.canEdit) throw {code:403};
     for(let attempt=0; attempt<3; attempt++){
       const cur = await readRow();
       const next = clone(normalize(cur.payload)); fn(next);
+      // v1.12.0 通用兜底：之前被引用、现在不再被引用的文件先记入 trash.files（30 天后清理），不立即删除；
+      // 只有 purge（彻底删除 / 过期清理）才真正删除 Storage 文件
+      if(!purge){ const after = refs(next), at = now(); for(const id of refs(cur.payload)) if(!after.has(id)) next.trash.files[id] = {deletedAt:at};
+        const live = liveRefs(next); for(const id of Object.keys(next.trash.files)) if(live.has(id)) delete next.trash.files[id]; }
       const nextRevision = (Number(cur.revision)||0) + 1;
       const {data:updated,error} = await SB.supabase.from('book_data')
         .update({payload:next,revision:nextRevision,updated_at:now()})
@@ -2975,16 +2997,81 @@ html:not([data-sb-perf="high"]) .cv-flow{display:none;}
     return id;
   };
   st.updateCity = (id,patch) => mutate(d => { if(d.cities[id]) d.cities[id] = {...d.cities[id],...patch,updatedAt:now()}; });
+  // v1.12.0：删除城市 / 回忆 = 移入回收站（30 天内可恢复）
   st.removeCity = id => mutate(d => {
-    delete d.cities[id];
-    for(const [mid,m] of Object.entries(d.memories)) if(m.cityId === id) delete d.memories[mid];
+    const c = d.cities[id], at = now(); if(!c) return;
+    d.trash.cities[id] = {...c, deletedAt:at}; delete d.cities[id];
+    for(const [mid,m] of Object.entries(d.memories)) if(m.cityId === id){ d.trash.memories[mid] = {...m, deletedAt:at, viaCity:id}; delete d.memories[mid]; }
   });
   st.saveMemory = async m => {
     const id = m.id || SB.uid();
-    await mutate(d => { const prev=d.memories[id]; d.memories[id]=strip({...m,createdAt:prev?.createdAt||now(),updatedAt:now()}); });
+    await mutate(d => {
+      const prev = d.memories[id], at = now();
+      d.memories[id] = strip({...m, createdAt:prev?.createdAt || now(), updatedAt:at});
+      // 编辑时移除的照片进入回收站（保留原 slide，恢复时追加回这段回忆）
+      if(prev){ const keep = new Set((d.memories[id].slides || []).map(x => x.id));
+        for(const sl of prev.slides || []) if(sl.id && !keep.has(sl.id)) d.trash.photos[sl.id] = {slide:sl, memoryId:id, memoryTitle:prev.title || '', deletedAt:at}; }
+    });
     return id;
   };
-  st.removeMemory = id => mutate(d => { delete d.memories[id]; });
+  st.removeMemory = id => mutate(d => { const m = d.memories[id]; if(!m) return; d.trash.memories[id] = {...m, deletedAt:now()}; delete d.memories[id]; });
+
+  /* ── v1.12.0 回收站：恢复 / 彻底删除 / 过期清理 ── */
+  const bare = o => { const c = {...o}; delete c.deletedAt; delete c.viaCity; return c; };
+  const sameCity = (d, c) => Object.entries(d.cities).find(([, x]) => x.region === c.region && x.name === c.name && x.country === c.country);
+  function reviveCity(d, cid){
+    if(d.cities[cid]) return cid;
+    const c = d.trash.cities[cid]; if(!c) return null;
+    const dup = sameCity(d, c); delete d.trash.cities[cid];
+    if(dup) return dup[0];                                  // 删除后又重新加过同名城市 → 并入现有城市
+    d.cities[cid] = bare(c); return cid;
+  }
+  st.restoreMemory = id => mutate(d => {
+    const m = d.trash.memories[id]; if(!m) return;
+    const cid = reviveCity(d, m.cityId);
+    if(!cid) throw {code:'gone', msg:'它所在的城市已经彻底删除，无法恢复这段回忆'};
+    d.memories[id] = {...bare(m), cityId:cid}; delete d.trash.memories[id];
+  });
+  st.restoreCity = id => mutate(d => {
+    if(!d.trash.cities[id]) return;
+    const cid = reviveCity(d, id);
+    for(const [mid, m] of Object.entries(d.trash.memories)) if(m.viaCity === id){ d.memories[mid] = {...bare(m), cityId:cid}; delete d.trash.memories[mid]; }
+  });
+  st.restorePhoto = pid => mutate(d => {
+    const p = d.trash.photos[pid]; if(!p) return;
+    const m = d.memories[p.memoryId];
+    if(!m) throw {code:'gone', msg:d.trash.memories[p.memoryId] ? `请先恢复它所在的回忆「${p.memoryTitle || '未命名的回忆'}」` : '它所在的回忆已经彻底删除，无法恢复这张照片'};
+    const sl = {...p.slide}; delete sl.g;                    // 追加到末尾，去掉分组标记（保持组成员连续）
+    m.slides = [...(m.slides || []).filter(x => x.id !== sl.id), sl];
+    if(!m.cover?.id) m.cover = {id:sl.id};
+    delete d.trash.photos[pid];
+  });
+  function dropEntry(d, kind, id){
+    const t = d.trash;
+    if(kind === 'city'){ delete t.cities[id]; for(const [mid, m] of Object.entries(t.memories)) if(m.viaCity === id || m.cityId === id) dropEntry(d, 'memory', mid); }
+    else if(kind === 'memory'){ delete t.memories[id]; for(const [pid, p] of Object.entries(t.photos)) if(p.memoryId === id) delete t.photos[pid]; }
+    else if(kind === 'photo') delete t.photos[id];
+    else if(kind === 'file') delete t.files[id];
+  }
+  const KIND = {cities:'city', memories:'memory', photos:'photo', files:'file'};
+  function expired(d, cutoff){
+    const out = [];
+    for(const [k, kind] of Object.entries(KIND)) for(const [id, e] of Object.entries(d.trash[k])){ const t = Date.parse(e?.deletedAt || ''); if(!(t > cutoff)) out.push([kind, id]); }
+    return out;
+  }
+  // which：{kind, id} 单项 | 'expired' 超过 30 天的 | 'all' 全部
+  st.purgeTrash = which => mutate(d => {
+    if(which === 'all'){ d.trash = emptyTrash(); return; }
+    if(which === 'expired'){ expired(d, Date.now() - TRASH_DAYS*DAY).forEach(([k, id]) => dropEntry(d, k, id)); return; }
+    if(which?.kind && which.id) dropEntry(d, which.kind, which.id);
+  }, {purge:true});
+  st.TRASH_DAYS = TRASH_DAYS;
+  st.trashCount = () => { const t = st.trash || emptyTrash(); return Object.keys(t.cities).length + Object.keys(t.memories).length + Object.keys(t.photos).length; };
+  st.trashDaysLeft = e => Math.max(0, Math.ceil((Date.parse(e?.deletedAt || 0) + TRASH_DAYS*DAY - Date.now())/DAY));
+  /* ── v1.12.0 导出：整本书引用到的全部媒体路径（含回收站）与原文件下载 ── */
+  st.allMediaPaths = () => [...refs(data)];
+  st.exportPayload = () => clone(data);
+  st.download = async path => { const {data:blob, error} = await bucket().download(path); if(error) throw error; return blob; };
   st.saveSettings = patch => mutate(d => { d.settings = strip({...d.settings,...patch}); });
 
   /* ── Private Storage ── */
@@ -4528,8 +4615,8 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
       actions:[
         {text:'删除这座城市', kind:'danger', async onClick(){
           const n = SB.store.memoriesOf(c.id).length;
-          if(!await SB.ui.confirm(n ? `删除「${c.name}」会同时删除它的 ${n} 段回忆和照片，无法恢复。确定吗？` : `确定删除「${c.name}」吗？`, '删除')) return false;
-          try{ await SB.store.removeCity(c.id); SB.toast('已删除'); paint(); buildList(); }catch(e){ SB.toast(SB.store.errText(e)); return false; } }},
+          if(!await SB.ui.confirm(n ? `删除「${c.name}」？它的 ${n} 段回忆和照片会一起移到「最近删除」，${SB.store.TRASH_DAYS || 30} 天内可以在右上角「珍藏与备份」里恢复。` : `删除「${c.name}」？${SB.store.TRASH_DAYS || 30} 天内可以在「最近删除」里恢复。`, '删除')) return false;
+          try{ await SB.store.removeCity(c.id); SB.toast('已移到最近删除'); paint(); buildList(); }catch(e){ SB.toast(SB.store.errText(e)); return false; } }},
         'spacer',
         {text:'取消'},
         {text:'保存', kind:'primary', async onClick(){
@@ -7619,8 +7706,8 @@ html[data-sb-perf="low"] .ed-poster .badge{backdrop-filter:none;-webkit-backdrop
         },
         actions:[
           ...(memory ? [{text:'删除这段回忆', kind:'danger', async onClick(close){
-            if(!await SB.ui.confirm(`确定删除「${memory.title}」吗？它的照片也会一起删除，无法恢复。`, '删除')) return false;
-            try{ await SB.store.removeMemory(memory.id); SB.toast('已删除'); if(SB.scenes.current === 'player') SB.scenes.back(); }
+            if(!await SB.ui.confirm(`删除「${memory.title}」？它会连同照片移到「最近删除」，${SB.store.TRASH_DAYS || 30} 天内可以在右上角「珍藏与备份」里恢复。`, '删除')) return false;
+            try{ await SB.store.removeMemory(memory.id); SB.toast('已移到最近删除'); if(SB.scenes.current === 'player') SB.scenes.back(); }
             catch(e){ SB.toast(SB.store.errText(e)); return false; } }}, 'spacer'] : []),
           {text:'取消', onClick(){ cleanup(false); }},
           {text:'保存', kind:'primary', id:'save', async onClick(close, btn){
@@ -9138,6 +9225,215 @@ html[data-sb-perf="reduced"] .yr-strip{transform:translateX(var(--x0))!important
 })(window.SB);
 </script>
 <!-- ████ BLOCK 14-year-reel END ████ -->
+
+<!-- ████ BLOCK 16-archive START ████ -->
+<style>
+/* ── 块 16 · 珍藏与备份：最近删除（回收站）+ 导出整本书（v1.12.0，prompts/16-archive.md） ── */
+.ar-sec{margin:0 0 16px;}
+.ar-sec:last-child{margin-bottom:0;}
+.ar-sec h5{margin:0 0 8px;font-family:var(--f-rune);font-weight:600;font-size:11px;letter-spacing:.32em;color:var(--gold-dim);}
+.ar-list{display:flex;flex-direction:column;gap:8px;}
+.ar-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;border:1px solid rgba(244,184,96,.22);background:rgba(244,184,96,.04);}
+.ar-item .th{flex:none;width:46px;height:46px;border-radius:8px;background:#141433 center/cover no-repeat;border:1px solid rgba(244,184,96,.2);display:grid;place-items:center;color:var(--gold-dim);}
+.ar-item .th .sb-ico{width:18px;height:18px;}
+.ar-item .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.ar-item .tx b{font-family:var(--f-display);font-weight:var(--fw-display);font-size:15.5px;letter-spacing:.06em;color:var(--gold-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ar-item .tx span{font-size:12px;letter-spacing:.04em;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ar-item .tx em{font-style:normal;font-size:11.5px;color:#d9a46a;}
+.ar-item .ac{flex:none;display:flex;gap:6px;}
+.ar-empty{padding:18px;border-radius:12px;border:1px dashed var(--line);font-size:13.5px;line-height:1.9;letter-spacing:.04em;color:var(--text-dim);text-align:center;}
+.ar-note{margin:10px 0 0;font-size:12px;line-height:1.8;color:var(--text-dim);letter-spacing:.03em;}
+.ar-sum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:4px 0 14px;}
+.ar-sum div{padding:10px 6px;border-radius:10px;border:1px solid rgba(244,184,96,.2);text-align:center;}
+.ar-sum b{display:block;font-family:var(--f-num);font-size:22px;color:var(--gold-hi);}
+.ar-sum span{font-size:11.5px;color:var(--text-dim);letter-spacing:.08em;}
+.ar-bar{position:relative;height:8px;border-radius:999px;background:rgba(244,184,96,.12);overflow:hidden;margin:12px 0 8px;}
+.ar-bar i{position:absolute;left:0;top:0;bottom:0;width:100%;transform-origin:left;transform:scaleX(0);background:linear-gradient(90deg,#c98a3c,#ffe2a8);transition:transform .3s;}
+.ar-stat{font-size:13px;letter-spacing:.04em;color:var(--text);min-height:1.6em;}
+.ar-parts{display:flex;flex-direction:column;gap:6px;margin-top:10px;}
+.ar-parts .sb-btn{justify-content:center;}
+@media (max-width:480px){ .ar-sum{grid-template-columns:repeat(2,minmax(0,1fr));} .ar-item{flex-wrap:wrap;} .ar-item .ac{width:100%;justify-content:flex-end;} }
+</style>
+
+<script>
+(function(SB){
+  const ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h16v9.2a1.8 1.8 0 0 1-1.8 1.8H5.8A1.8 1.8 0 0 1 4 18.7z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M3 6.2c0-.9.7-1.7 1.7-1.7h14.6c.9 0 1.7.8 1.7 1.7v3.3H3z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M9.5 13h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M12 1.6l.5 1.3 1.3.5-1.3.5-.5 1.3-.5-1.3-1.3-.5 1.3-.5z" fill="currentColor"/></svg>';
+  const st = () => SB.store;
+  const esc = s => SB.esc(String(s ?? ''));
+  const lastKey = () => 'sb-last-export-' + (SB.book?.current?.id || '');
+  const lastExport = () => { try{ return localStorage.getItem(lastKey()) || ''; }catch(e){ return ''; } };
+  const fmtDay = iso => { const d = new Date(iso); return isNaN(d) ? '' : `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`; };
+
+  /* ── 右上角「珍藏与备份」 ── */
+  SB.dock.add({id:'archive', order:25, label:'珍藏与备份', icon:ICON,
+    render(p){
+      p.innerHTML = '<h4>珍藏与备份</h4><p class="rn">THESAURUS · CUSTODIA</p>';
+      const row = (lb, sm, btn) => { const r = SB.el('div', 'row'); const t = SB.el('div'); const a = SB.el('div', 'lb'); a.textContent = lb; t.appendChild(a);
+        if(sm){ const s = SB.el('div', 'sm'); s.textContent = sm; t.appendChild(s); } r.append(t, btn); p.appendChild(r); };
+      if(st()?.canEdit){ const n = st().trashCount();
+        row('最近删除', n ? `${n} 项 · 保留 ${st().TRASH_DAYS} 天后自动清理` : `删除的内容会在这里保留 ${st().TRASH_DAYS} 天`, SB.ui.button('查看', 'small', () => { SB.dock.close(); openTrash(); })); }
+      const le = lastExport();
+      row('导出整本书', le ? `上次导出：${fmtDay(le)}` : '把全部文字和原图打包下载到本机', SB.ui.button('导出', 'small primary', () => { SB.dock.close(); openExport(); }));
+    }});
+  document.addEventListener('sb:data', () => { if(SB.dock.openId === 'archive') SB.dock.refresh('archive'); });
+
+  /* ── 最近删除 ── */
+  let trashDlg = null, trashSig = '';
+  function openTrash(){
+    if(!st()?.canEdit) return;
+    trashSig = '';
+    trashDlg = SB.ui.dialog({ title:'最近删除', sub:`删除的城市、回忆和照片会在这里保留 ${st().TRASH_DAYS} 天，之后自动彻底删除`, wide:true,
+      build(b){ b.classList.add('ar-body'); renderTrash(b); },
+      actions:[ {text:'清空最近删除', kind:'danger', async onClick(){
+          if(!st().trashCount() && !Object.keys(st().trash.files).length){ SB.toast('最近删除已经是空的'); return false; }
+          if(!await SB.ui.confirm('清空后，这里的全部城市、回忆和照片会被彻底删除，无法恢复。确定吗？', '彻底删除')) return false;
+          try{ await st().purgeTrash('all'); SB.toast('已清空'); }catch(e){ SB.toast(st().errText(e)); }
+          return false; }},
+        'spacer', {text:'关闭'} ],
+      onClose(){ trashDlg = null; } });
+  }
+  document.addEventListener('sb:data', () => { if(trashDlg && document.contains(trashDlg.body)) renderTrash(trashDlg.body); });
+
+  function renderTrash(b){
+    const t = st().trash, sig = JSON.stringify(t);
+    if(sig === trashSig) return; trashSig = sig;
+    b.innerHTML = '';
+    const byTime = obj => Object.entries(obj).sort((x, y) => (y[1].deletedAt || '').localeCompare(x[1].deletedAt || ''));
+    const cities = byTime(t.cities), mems = byTime(t.memories).filter(([, m]) => !m.viaCity || !t.cities[m.viaCity]), photos = byTime(t.photos);
+    if(!cities.length && !mems.length && !photos.length){
+      const e = SB.el('div', 'ar-empty'); e.textContent = `最近删除是空的。删除的回忆、城市和照片会在这里保留 ${st().TRASH_DAYS} 天。`; b.appendChild(e);
+    }
+    const left = e => `还剩 ${st().trashDaysLeft(e)} 天`;
+    const sec = (title, items) => { if(!items.length) return; const s = SB.el('section', 'ar-sec'); const h = SB.el('h5'); h.textContent = title; const l = SB.el('div', 'ar-list'); s.append(h, l); items.forEach(x => l.appendChild(x)); b.appendChild(s); };
+    const item = ({thumb, name, sub, e, restore, purge, purgeMsg}) => {
+      const r = SB.el('div', 'ar-item');
+      const th = SB.el('div', 'th'); if(thumb) th.dataset.src = thumb; else th.innerHTML = SB.icon('star');
+      const tx = SB.el('div', 'tx'); tx.innerHTML = '<b></b><span></span><em></em>';
+      tx.querySelector('b').textContent = name; tx.querySelector('span').textContent = sub; tx.querySelector('em').textContent = left(e);
+      const ac = SB.el('div', 'ac');
+      const rb = SB.ui.button('恢复', 'small primary', async () => { rb.disabled = true; try{ await restore(); SB.toast(`已恢复「${name}」`); SB.fx?.burst?.(400); }catch(err){ SB.toast(err.msg || st().errText(err)); rb.disabled = false; } });
+      const pb = SB.ui.button('彻底删除', 'small danger', async () => {
+        if(!await SB.ui.confirm(purgeMsg || `彻底删除「${name}」？删除后无法恢复。`, '彻底删除')) return;
+        pb.disabled = true; try{ await purge(); SB.toast('已彻底删除'); }catch(err){ SB.toast(st().errText(err)); pb.disabled = false; } });
+      ac.append(rb, pb); r.append(th, tx, ac); return r;
+    };
+    const memSub = m => { const c = st().city(m.cityId) || t.cities[m.cityId]; return [c?.name, m.date ? SB.fmtDate?.(m.date) || m.date : '', `${(m.slides || []).length} 张照片`].filter(Boolean).join(' · '); };
+    sec('URBES · 城市', cities.map(([id, c]) => { const n = Object.values(t.memories).filter(m => m.viaCity === id).length;
+      return item({name:c.name, sub:[c.regionName, c.countryName, n ? `连同 ${n} 段回忆` : ''].filter(Boolean).join(' · '), e:c,
+        restore:() => st().restoreCity(id), purge:() => st().purgeTrash({kind:'city', id}),
+        purgeMsg:`彻底删除「${c.name}」${n ? `和它的 ${n} 段回忆、全部照片` : ''}？删除后无法恢复。`}); }));
+    sec('MEMORIAE · 回忆', mems.map(([id, m]) => item({thumb:m.cover?.id || m.slides?.[0]?.id, name:m.title || '未命名的回忆', sub:memSub(m), e:m,
+      restore:() => st().restoreMemory(id), purge:() => st().purgeTrash({kind:'memory', id}),
+      purgeMsg:`彻底删除「${m.title || '未命名的回忆'}」和它的 ${(m.slides || []).length} 张照片？删除后无法恢复。`})));
+    sec('IMAGINES · 照片', photos.map(([id, p]) => item({thumb:id, name:p.slide?.caption || '一张照片', sub:`来自「${p.memoryTitle || '未命名的回忆'}」`, e:p,
+      restore:() => st().restorePhoto(id), purge:() => st().purgeTrash({kind:'photo', id})})));
+    const nf = Object.keys(t.files).length;
+    if(nf){ const n = SB.el('p', 'ar-note'); n.textContent = `另有 ${nf} 个被替换或移除的文件（例如换掉的音乐）暂存 ${st().TRASH_DAYS} 天后自动清理。`; b.appendChild(n); }
+    // 缩略图：批量签名后再填入（避免逐张请求）
+    const ths = [...b.querySelectorAll('.th[data-src]')];
+    if(ths.length) st().prefetchUrls(ths.map(x => x.dataset.src)).then(() => ths.forEach(x => { const u = st().url(x.dataset.src); if(u) x.style.backgroundImage = `url("${u}")`; }));
+  }
+
+  /* ── 导出整本书 ── */
+  const ZIP_URLS = ['https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js', 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'];
+  const MB = 1024*1024;
+  const fileName = p => (/\/audio\//.test(p) ? 'audio/' : 'images/') + String(p).split('/').pop();
+  const stamp = () => { const d = new Date(); return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`; };
+  const human = n => n >= 1024*MB ? (n/1024/MB).toFixed(2) + ' GB' : (n/MB).toFixed(1) + ' MB';
+  function save(blob, name){
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 120000);
+  }
+  function readme(parts, meta){
+    return [`星屿之书 · 整本书备份`, ``, `导出时间：${meta.exportedAt}`, `书名：${meta.book.name}`, `内容：${meta.counts.cities} 座城市 · ${meta.counts.memories} 段回忆 · ${meta.counts.photos} 张照片 · ${meta.counts.audio} 首音乐（含「最近删除」里的内容）`, ``,
+      `文件说明`, `- book.json：全部文字数据（城市、回忆、照片说明与顺序、日期、纪念日、最近删除），可以用任何文本编辑器打开。`,
+      `- images/：照片原图（文件名与 book.json 里每张照片的 id 末尾一致）。`, `- audio/：背景音乐。`,
+      `- 清单-第N卷.txt：这一卷包含的文件。`, ``,
+      parts > 1 ? `本次备份分为多卷（每卷一个 zip）。请把所有分卷都解压到同一个文件夹里。` : `本次备份只有一卷。`, ``,
+      `请把备份放在电脑和网盘各一份。星屿之书的数据库（Supabase Free 套餐）没有自动备份。`].join('\r\n');
+  }
+  function openExport(){
+    const S = {running:false, cancel:false};
+    const paths = st().allMediaPaths().sort(), payload = st().exportPayload();
+    const counts = {cities:Object.keys(payload.cities).length, memories:Object.keys(payload.memories).length,
+      photos:paths.filter(p => !/\/audio\//.test(p)).length, audio:paths.filter(p => /\/audio\//.test(p)).length};
+    const limit = (SB.debug.archive?.limitMB || (SB.perf.touch ? 150 : 400))*MB;     // 测试可用 SB.debug.archive.limitMB 改小分卷
+    let body, bar, stat, partsBox, startBtn;
+    const dlg = SB.ui.dialog({ title:'导出整本书', sub:'把全部文字和照片原图打包成 zip 保存到本机', wide:true,
+      build(b){
+        body = b;
+        b.innerHTML = `<div class="ar-sum"><div><b>${counts.cities}</b><span>城市</span></div><div><b>${counts.memories}</b><span>回忆</span></div><div><b>${counts.photos}</b><span>照片</span></div><div><b>${counts.audio}</b><span>音乐</span></div></div>
+          <p class="ar-note">包含 book.json（全部文字数据）、照片原图与音乐，以及「最近删除」里的内容。建议在电脑上导出；照片很多时会分成几卷（每卷最多 ${Math.round(limit/MB)} MB），第 2 卷起需要点按钮保存。导出只读取数据，不会修改这本书。</p>
+          <div class="ar-bar" hidden><i></i></div><div class="ar-stat"></div><div class="ar-parts"></div>`;
+        bar = b.querySelector('.ar-bar'); stat = b.querySelector('.ar-stat'); partsBox = b.querySelector('.ar-parts');
+        if(lastExport()){ stat.textContent = `上次导出：${fmtDay(lastExport())}`; }
+      },
+      actions:[ {text:'关闭'}, {text:'开始导出', kind:'primary', id:'go', async onClick(close, btn){ startBtn = btn; if(!S.running) run(); return false; }} ],
+      onClose(){ S.cancel = true; } });
+    const setBar = k => { bar.hidden = false; bar.querySelector('i').style.transform = `scaleX(${Math.max(0, Math.min(1, k)).toFixed(3)})`; };
+    async function run(){
+      S.running = true; startBtn.disabled = true; startBtn.textContent = '正在导出…'; partsBox.innerHTML = '';
+      stat.textContent = '正在准备打包工具…'; setBar(0);
+      try{
+        if(!window.JSZip) await SB.loadScript(ZIP_URLS);
+        if(!window.JSZip) throw new Error('jszip');
+        const base = `星屿之书-备份-${stamp()}`, exportedAt = new Date().toISOString();
+        const meta = {format:'starbook-export', formatVersion:1, app:window.STARBOOK_CONFIG?.version || '', exportedAt,
+          book:{id:SB.book?.current?.id || '', name:SB.book?.current?.name || '星屿之书'}, counts,
+          files:paths.map(p => ({path:p, file:fileName(p)})), payload};
+        let zip = new JSZip(), part = 1, bytes = 0, inPart = [], done = 0, total = 0;
+        const failed = [];
+        zip.file('book.json', JSON.stringify(meta, null, 2));
+        const fetchOne = async p => { for(let k = 0; k < 3; k++){ if(S.cancel) return null; try{ return await st().download(p); }catch(e){ if(k === 2) throw e; await SB.wait(600*(k + 1)); } } };
+        const flush = async last => {
+          if(S.cancel) throw {cancel:true};
+          zip.file(`清单-第${part}卷.txt`, inPart.join('\r\n'));
+          if(last && failed.length) zip.file('导出失败的文件.txt', failed.join('\r\n'));
+          if(part === 1) zip.file('README.txt', readme(last ? 1 : 2, meta));
+          stat.textContent = `正在打包第 ${part} 卷…`;
+          const blob = await zip.generateAsync({type:'blob', compression:'STORE', mimeType:'application/zip'}, m => { stat.textContent = `正在打包第 ${part} 卷… ${Math.round(m.percent)}%`; });
+          const name = last && part === 1 ? `${base}.zip` : `${base}-第${part}卷.zip`;
+          total += blob.size;
+          if(part === 1) save(blob, name);
+          else await new Promise((res, rej) => {        // 第 2 卷起由用户点击保存（浏览器会拦截连续自动下载）
+            const b = SB.ui.button(`保存第 ${part} 卷（${human(blob.size)}）`, 'primary', () => { save(blob, name); b.disabled = true; b.textContent = `第 ${part} 卷已保存`; res(); });
+            partsBox.appendChild(b); stat.textContent = `第 ${part} 卷已打包好，请点下面的按钮保存`;
+            const chk = setInterval(() => { if(S.cancel){ clearInterval(chk); rej({cancel:true}); } }, 300);
+            b.addEventListener('click', () => clearInterval(chk));
+          });
+          const note = SB.el('p', 'ar-note'); note.textContent = `✓ ${name} · ${inPart.length} 个文件 · ${human(blob.size)}`; partsBox.appendChild(note);
+          zip = new JSZip(); part++; bytes = 0; inPart = [];
+        };
+        for(let i = 0; i < paths.length; i += 3){
+          if(S.cancel) throw {cancel:true};
+          const group = paths.slice(i, i + 3);
+          const blobs = await Promise.all(group.map(p => fetchOne(p).catch(e => { console.warn('[Starbook export]', p, e); return null; })));
+          if(S.cancel) throw {cancel:true};
+          group.forEach((p, k) => { const bl = blobs[k]; if(bl){ zip.file(fileName(p), bl, {binary:true}); bytes += bl.size; inPart.push(fileName(p)); } else failed.push(p); });
+          done += group.length; setBar(done/Math.max(1, paths.length));
+          stat.textContent = `正在下载 ${done} / ${paths.length} 个文件 · 第 ${part} 卷已 ${human(bytes)}`;
+          if(bytes >= limit && i + 3 < paths.length) await flush(false);
+        }
+        await flush(true);
+        try{ localStorage.setItem(lastKey(), exportedAt); }catch(e){}
+        setBar(1);
+        stat.textContent = failed.length ? `导出完成，共 ${part - 1} 卷（${human(total)}）。有 ${failed.length} 个文件没能下载，已列在「导出失败的文件.txt」里，可以稍后再导出一次。`
+                                         : `导出完成，共 ${part - 1} 卷（${human(total)}）。请把备份放在电脑和网盘各一份。`;
+        SB.toast('整本书已导出'); SB.dock.refresh('archive');
+        startBtn.textContent = '已完成';
+      }catch(e){
+        if(e?.cancel){ stat.textContent = '已取消导出（已经保存的分卷仍然有效）'; }
+        else{ console.error('[Starbook export]', e); stat.textContent = e?.message === 'jszip' ? '打包工具加载失败，请检查网络后重试' : '导出时出了点问题，请检查网络后重试'; startBtn.disabled = false; startBtn.textContent = '重新导出'; }
+        S.running = false;
+      }
+    }
+    return dlg;
+  }
+  SB.archive = { openTrash, openExport };
+  SB.debug.add('archive', {limitMB:0});
+})(window.SB);
+</script>
+<!-- ████ BLOCK 16-archive END ████ -->
 
 <!-- ████ BLOCK 99-boot START ████ -->
 <script>

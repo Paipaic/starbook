@@ -10,29 +10,45 @@
   const st = SB.store = { mode:'connecting', role:'viewer', canEdit:false, canUpload:false, cities:[], memories:[], settings:{}, revision:0, ready:null };
   const emit = () => document.dispatchEvent(new CustomEvent('sb:data'));
   const now = () => new Date().toISOString();
-  const empty = () => ({cities:{}, memories:{}, settings:{}});
+  const empty = () => ({cities:{}, memories:{}, settings:{}, trash:emptyTrash()});
+  // v1.12.0 回收站（prompts/16-archive.md）：删除先进入 trash，30 天后才真正删除 Storage 文件
+  const TRASH_DAYS = 30, DAY = 86400000;
+  function emptyTrash(){ return {memories:{}, cities:{}, photos:{}, files:{}}; }
+  function normTrash(t){ t = t || {}; return {memories:t.memories || {}, cities:t.cities || {}, photos:t.photos || {}, files:t.files || {}}; }
   const clone = o => JSON.parse(JSON.stringify(o));
   let data = empty(), dataSig = '';
   const preview = Object.create(null);   // 本次浏览器会话刚上传的文件 path → object URL
   const signed = Object.create(null);    // Private Storage path → {url, expiresAt}
   const signing = new Set();             // 正在补签的 path，避免同一图片并发重复请求
 
-  function normalize(d){ return {cities:d?.cities || {}, memories:d?.memories || {}, settings:d?.settings || {}}; }
+  function normalize(d){ return {cities:d?.cities || {}, memories:d?.memories || {}, settings:d?.settings || {}, trash:normTrash(d?.trash)}; }
   function setData(d){
     d = normalize(d); const sig = JSON.stringify(d); data = d;
     st.cities = Object.entries(d.cities).map(([id,v]) => ({id, ...v}));
     st.memories = Object.entries(d.memories).map(([id,v]) => ({id, ...v}));
     st.settings = d.settings;
+    st.trash = d.trash;
     if(sig !== dataSig){ dataSig = sig; emit(); }
   }
-  function refs(d){
+  function memRefs(m, s){
+    m?.cover?.id && s.add(m.cover.id);
+    (m?.slides || []).forEach(x => x.id && s.add(x.id));
+    m?.bgm?.id && s.add(m.bgm.id);
+  }
+  function liveRefs(d){
     const s = new Set();
-    for(const m of Object.values(d?.memories || {})){
-      m.cover?.id && s.add(m.cover.id);
-      (m.slides || []).forEach(x => x.id && s.add(x.id));
-      m.bgm?.id && s.add(m.bgm.id);
-    }
+    for(const m of Object.values(d?.memories || {})) memRefs(m, s);
     d?.settings?.bgm?.id && s.add(d.settings.bgm.id);
+    return s;
+  }
+  // v1.12.0：回收站里的回忆、照片、文件也算「仍被引用」——在回收站期间不会删除 Storage 文件
+  function refs(d){
+    const s = liveRefs(d), t = d?.trash;
+    if(t){
+      for(const m of Object.values(t.memories || {})) memRefs(m, s);
+      for(const [id, p] of Object.entries(t.photos || {})){ s.add(id); p?.slide?.id && s.add(p.slide.id); }
+      for(const id of Object.keys(t.files || {})) s.add(id);
+    }
     return s;
   }
   function errText(e){
@@ -123,6 +139,8 @@
     SB.menu?.status(`${SB.book.current?.name || '星屿之书'} · ${st.canEdit ? '可以编辑' : '只读浏览'}`);
     SB.menu?.refresh();
     await refreshRemote();
+    // v1.12.0：编辑者载入后静默清理超过 30 天的回收站条目（只有这时才真正删除 Storage 文件）
+    if(st.canEdit && expired(data, Date.now() - TRASH_DAYS*DAY).length) setTimeout(() => st.purgeTrash('expired').catch(e => console.warn('[Starbook trash purge]', e)), 4000);
     document.addEventListener('visibilitychange',()=>{
       if(!document.hidden && st.mode==='supabase' && !document.querySelector('.sb-modal')) refreshRemote({silent:true});
     });
@@ -139,11 +157,15 @@
   }
 
   /* 基于 revision 的轻量冲突检测：保留 JSONB 桥接结构，同时避免两台设备静默覆盖。 */
-  async function mutate(fn){
+  async function mutate(fn, {purge=false}={}){
     if(!st.canEdit) throw {code:403};
     for(let attempt=0; attempt<3; attempt++){
       const cur = await readRow();
       const next = clone(normalize(cur.payload)); fn(next);
+      // v1.12.0 通用兜底：之前被引用、现在不再被引用的文件先记入 trash.files（30 天后清理），不立即删除；
+      // 只有 purge（彻底删除 / 过期清理）才真正删除 Storage 文件
+      if(!purge){ const after = refs(next), at = now(); for(const id of refs(cur.payload)) if(!after.has(id)) next.trash.files[id] = {deletedAt:at};
+        const live = liveRefs(next); for(const id of Object.keys(next.trash.files)) if(live.has(id)) delete next.trash.files[id]; }
       const nextRevision = (Number(cur.revision)||0) + 1;
       const {data:updated,error} = await SB.supabase.from('book_data')
         .update({payload:next,revision:nextRevision,updated_at:now()})
@@ -171,16 +193,81 @@
     return id;
   };
   st.updateCity = (id,patch) => mutate(d => { if(d.cities[id]) d.cities[id] = {...d.cities[id],...patch,updatedAt:now()}; });
+  // v1.12.0：删除城市 / 回忆 = 移入回收站（30 天内可恢复）
   st.removeCity = id => mutate(d => {
-    delete d.cities[id];
-    for(const [mid,m] of Object.entries(d.memories)) if(m.cityId === id) delete d.memories[mid];
+    const c = d.cities[id], at = now(); if(!c) return;
+    d.trash.cities[id] = {...c, deletedAt:at}; delete d.cities[id];
+    for(const [mid,m] of Object.entries(d.memories)) if(m.cityId === id){ d.trash.memories[mid] = {...m, deletedAt:at, viaCity:id}; delete d.memories[mid]; }
   });
   st.saveMemory = async m => {
     const id = m.id || SB.uid();
-    await mutate(d => { const prev=d.memories[id]; d.memories[id]=strip({...m,createdAt:prev?.createdAt||now(),updatedAt:now()}); });
+    await mutate(d => {
+      const prev = d.memories[id], at = now();
+      d.memories[id] = strip({...m, createdAt:prev?.createdAt || now(), updatedAt:at});
+      // 编辑时移除的照片进入回收站（保留原 slide，恢复时追加回这段回忆）
+      if(prev){ const keep = new Set((d.memories[id].slides || []).map(x => x.id));
+        for(const sl of prev.slides || []) if(sl.id && !keep.has(sl.id)) d.trash.photos[sl.id] = {slide:sl, memoryId:id, memoryTitle:prev.title || '', deletedAt:at}; }
+    });
     return id;
   };
-  st.removeMemory = id => mutate(d => { delete d.memories[id]; });
+  st.removeMemory = id => mutate(d => { const m = d.memories[id]; if(!m) return; d.trash.memories[id] = {...m, deletedAt:now()}; delete d.memories[id]; });
+
+  /* ── v1.12.0 回收站：恢复 / 彻底删除 / 过期清理 ── */
+  const bare = o => { const c = {...o}; delete c.deletedAt; delete c.viaCity; return c; };
+  const sameCity = (d, c) => Object.entries(d.cities).find(([, x]) => x.region === c.region && x.name === c.name && x.country === c.country);
+  function reviveCity(d, cid){
+    if(d.cities[cid]) return cid;
+    const c = d.trash.cities[cid]; if(!c) return null;
+    const dup = sameCity(d, c); delete d.trash.cities[cid];
+    if(dup) return dup[0];                                  // 删除后又重新加过同名城市 → 并入现有城市
+    d.cities[cid] = bare(c); return cid;
+  }
+  st.restoreMemory = id => mutate(d => {
+    const m = d.trash.memories[id]; if(!m) return;
+    const cid = reviveCity(d, m.cityId);
+    if(!cid) throw {code:'gone', msg:'它所在的城市已经彻底删除，无法恢复这段回忆'};
+    d.memories[id] = {...bare(m), cityId:cid}; delete d.trash.memories[id];
+  });
+  st.restoreCity = id => mutate(d => {
+    if(!d.trash.cities[id]) return;
+    const cid = reviveCity(d, id);
+    for(const [mid, m] of Object.entries(d.trash.memories)) if(m.viaCity === id){ d.memories[mid] = {...bare(m), cityId:cid}; delete d.trash.memories[mid]; }
+  });
+  st.restorePhoto = pid => mutate(d => {
+    const p = d.trash.photos[pid]; if(!p) return;
+    const m = d.memories[p.memoryId];
+    if(!m) throw {code:'gone', msg:d.trash.memories[p.memoryId] ? `请先恢复它所在的回忆「${p.memoryTitle || '未命名的回忆'}」` : '它所在的回忆已经彻底删除，无法恢复这张照片'};
+    const sl = {...p.slide}; delete sl.g;                    // 追加到末尾，去掉分组标记（保持组成员连续）
+    m.slides = [...(m.slides || []).filter(x => x.id !== sl.id), sl];
+    if(!m.cover?.id) m.cover = {id:sl.id};
+    delete d.trash.photos[pid];
+  });
+  function dropEntry(d, kind, id){
+    const t = d.trash;
+    if(kind === 'city'){ delete t.cities[id]; for(const [mid, m] of Object.entries(t.memories)) if(m.viaCity === id || m.cityId === id) dropEntry(d, 'memory', mid); }
+    else if(kind === 'memory'){ delete t.memories[id]; for(const [pid, p] of Object.entries(t.photos)) if(p.memoryId === id) delete t.photos[pid]; }
+    else if(kind === 'photo') delete t.photos[id];
+    else if(kind === 'file') delete t.files[id];
+  }
+  const KIND = {cities:'city', memories:'memory', photos:'photo', files:'file'};
+  function expired(d, cutoff){
+    const out = [];
+    for(const [k, kind] of Object.entries(KIND)) for(const [id, e] of Object.entries(d.trash[k])){ const t = Date.parse(e?.deletedAt || ''); if(!(t > cutoff)) out.push([kind, id]); }
+    return out;
+  }
+  // which：{kind, id} 单项 | 'expired' 超过 30 天的 | 'all' 全部
+  st.purgeTrash = which => mutate(d => {
+    if(which === 'all'){ d.trash = emptyTrash(); return; }
+    if(which === 'expired'){ expired(d, Date.now() - TRASH_DAYS*DAY).forEach(([k, id]) => dropEntry(d, k, id)); return; }
+    if(which?.kind && which.id) dropEntry(d, which.kind, which.id);
+  }, {purge:true});
+  st.TRASH_DAYS = TRASH_DAYS;
+  st.trashCount = () => { const t = st.trash || emptyTrash(); return Object.keys(t.cities).length + Object.keys(t.memories).length + Object.keys(t.photos).length; };
+  st.trashDaysLeft = e => Math.max(0, Math.ceil((Date.parse(e?.deletedAt || 0) + TRASH_DAYS*DAY - Date.now())/DAY));
+  /* ── v1.12.0 导出：整本书引用到的全部媒体路径（含回收站）与原文件下载 ── */
+  st.allMediaPaths = () => [...refs(data)];
+  st.exportPayload = () => clone(data);
+  st.download = async path => { const {data:blob, error} = await bucket().download(path); if(error) throw error; return blob; };
   st.saveSettings = patch => mutate(d => { d.settings = strip({...d.settings,...patch}); });
 
   /* ── Private Storage ── */

@@ -164,10 +164,10 @@ tags
 
 周年后 P1 应实现：
 
-- Book JSON 导出；
-- Metadata 导出；
-- Storage asset manifest；
-- 恢复流程。
+- Book JSON 导出；（v1.12.0 已实现：「导出整本书」，含照片原图与文件清单）
+- Metadata 导出；（v1.12.0：`book.json` 含书名、导出时间、统计）
+- Storage asset manifest；（v1.12.0：`book.json.files` + 每卷清单）
+- 恢复流程。（待做）
 
 在此之前，重要 schema migration 前至少应有 Supabase 侧备份/导出策略。
 
@@ -194,3 +194,11 @@ tags
 - 回忆 `date`：在原有 `YYYY-MM` 之外允许 `YYYY-MM-DD`（编辑器新增「日」）。旧数据保持原样，前端按当月 1 日排序；不需要、也不允许批量改写旧数据。
 - `settings.anniversary`：可选 `YYYY-MM-DD`；在时光长卷「纪念日」徽记里设置 / 恢复默认（写 `null`）。
 - 两者都在 `book_data.payload` 内，通过现有 `SB.store.saveMemory / saveSettings` 写入（乐观锁 revision 不变），无 SQL、无 schema 变化；回滚到 v1.10.0 时旧前端会把 `YYYY-MM-DD` 当作年月读取（显示到月），不会丢数据。
+
+## v1.12.0 回收站（软删除）与导出备份（无 migration）
+
+- 新可选字段 `book_data.payload.trash = {memories, cities, photos, files}`（结构见 `prompts/16-archive.md`）。删除回忆 / 城市、在编辑器移除照片、替换音乐，都先进入回收站保留 30 天；期间 Storage 文件**不删除**。
+- 只有「彻底删除」「清空最近删除」或编辑者载入时的过期清理（超过 30 天）才删除 Storage 文件（`mutate(fn, {purge:true})`）。
+- Supabase 为 **Free 套餐，没有自动备份**；付费套餐的数据库备份也不包含 Storage 文件。因此 v1.12.0 提供「导出整本书」：`book.json`（完整 payload，含回收站）+ 照片原图 + 音乐，按卷打包下载到本机。建议每季度导出一次，电脑与网盘各存一份。
+- 回滚到 v1.11.x 时：旧前端不认识 `trash`，下一次保存会丢掉回收站记录（文件不会被删除，但无法再从界面恢复）；回收站中的照片文件会成为孤立文件，不影响任何功能。
+- 从导出包恢复（重新导入）的工具尚未实现，属于后续版本；在此之前导出包用于人工查看与留存。
