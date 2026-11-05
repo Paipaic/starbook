@@ -87,3 +87,4 @@ v1.6.0+ 一键版本发布机制。说明 `release-current.ps1`、自动 Release
 - `../prompts/16-archive.md` — v1.12.0 珍藏与备份：最近删除（回收站）与导出整本书。
 - `releases/v1.12.0.md` — 数据安全版。
 - `releases/v1.12.1.md` — 从备份导入（与导出格式对应）。
+- `releases/v1.12.2.md` — 城市真实位置、省份中文名、忘记密码 / 修改密码。

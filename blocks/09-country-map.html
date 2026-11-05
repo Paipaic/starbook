@@ -142,6 +142,25 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
 /* 地球场景：面板打开时隐藏自己的界面 */
 .sb-scene[data-scene="globe"].cp-on .gl-head,.sb-scene[data-scene="globe"].cp-on .gl-labels,.sb-scene[data-scene="globe"].cp-on .gl-card,
 .sb-scene[data-scene="globe"].cp-on .gl-dock,.sb-scene[data-scene="globe"].cp-on .gl-hint,.sb-scene[data-scene="globe"].cp-on .gl-tip{opacity:0!important;pointer-events:none!important;transition:opacity .4s;}
+/* v1.12.2 · 添加 / 校准城市的位置候选（prompts/09-country-map.md v1.12.2） */
+.cp-pick{display:flex;flex-direction:column;gap:6px;}
+.cp-pick > span{font-family:var(--f-display);font-weight:var(--fw-display);font-size:13.5px;letter-spacing:.12em;color:var(--text-dim);}
+.cp-pick-l{display:flex;flex-direction:column;gap:4px;max-height:236px;overflow:auto;overscroll-behavior:contain;}
+.cp-pk{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:7px 12px;border-radius:10px;border:1px solid rgba(244,184,96,.16);background:rgba(244,184,96,.03);
+  color:var(--text);text-align:left;cursor:pointer;font:inherit;transition:border-color .25s, background .25s;}
+.cp-pk:hover{border-color:rgba(244,184,96,.42);}
+.cp-pk[aria-selected="true"]{border-color:rgba(255,226,168,.75);background:rgba(244,184,96,.1);box-shadow:0 0 14px rgba(244,184,96,.16);}
+.cp-pk i{flex:none;width:14px;height:14px;border-radius:50%;border:1.4px solid rgba(244,184,96,.55);position:relative;}
+.cp-pk[aria-selected="true"] i{border-color:var(--gold-hi);}
+.cp-pk[aria-selected="true"] i::after{content:"";position:absolute;inset:2.5px;border-radius:50%;background:var(--gold-hi);box-shadow:0 0 6px rgba(255,214,150,.9);}
+.cp-pk span{display:flex;flex-direction:column;min-width:0;line-height:1.35;}
+.cp-pk b{font-weight:600;font-size:15px;color:var(--gold-hi);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cp-pk em{font-style:normal;font-size:12px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cp-pk.none b{color:var(--text);font-weight:500;font-size:14px;}
+.cp-pick-n{margin:0;font-size:12px;line-height:1.7;color:var(--text-dim);}
+.cp-pick-n.warn{color:#e7c493;}
+.cp-loc{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;color:var(--text-dim);}
+.cp-loc b{font-weight:500;color:var(--text);}
 </style>
 
 <div class="cp-root" id="cp-root" hidden>
@@ -312,9 +331,95 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
   }
 
   /* ── 添加 / 编辑城市 ── */
+  /* v1.12.2：位置候选。本地结果立即显示，在线结果 350ms 后补充；名称完全相同的第一条自动选中（用户点选后不再自动改） */
+  function placePicker(opts){
+    const box = SB.el('div', 'cp-pick');
+    box.innerHTML = '<span>位置</span><div class="cp-pick-l" role="listbox" aria-label="选择城市的位置"></div><p class="cp-pick-n" aria-live="polite"></p>';
+    // 编辑城市时用单独的搜索框（城市名可以和地名不同，例如「京都站」），添加城市时由城市名驱动
+    if(opts.ownSearch){
+      const q = SB.ui.input({type:'text', placeholder:'搜索地点，例如：京都', maxlength:'40', 'aria-label':'搜索地点', autocomplete:'off', value:opts.ownSearch});
+      q.addEventListener('input', () => search(q.value));
+      q.addEventListener('keydown', e => { if(e.key === 'Enter') e.preventDefault(); });
+      box.insertBefore(q, box.children[1]); box.querySelector('span').textContent = '校准位置';
+    }
+    const listEl = box.querySelector('.cp-pick-l'), note = box.querySelector('.cp-pick-n');
+    const P = {q:'', local:[], online:[], state:'', pick:null, user:false, locked:false, timer:0, ctl:null};
+    const regionOf = c => SB.geo.guessRegion(S.regions, c);
+    const all = () => {
+      const out = P.local.map(l => ({...l, admin1:l.admin1 || ''}));
+      for(const o of P.online){
+        const same = out.find(l => Math.abs(l.lat - o.lat) < .25 && Math.abs(l.lon - o.lon) < .25);
+        // 本地城市库没有一级行政区：借用同一地点在线结果的 admin1 来判断地区（比「最近的地区代表点」准确）
+        if(same){ if(!same.admin1 && o.admin1) same.admin1 = o.admin1; } else out.push(o);
+      }
+      P.list = out.slice(0, 8);
+      if(P.pick) P.pick = P.list.find(c => c.lon === P.pick.lon && c.lat === P.pick.lat && c.zh === P.pick.zh) || P.pick;
+      return P.list;
+    };
+    function auto(){
+      if(P.user) return;
+      const list = all(), want = opts.region?.();
+      const ex = list.filter(c => c.exact);
+      // 用户亲手选过「所在地区」：只在这个地区里自动选；否则名称完全相同的第一条，并把地区切过去（面板筛选带入的地区不算亲手选）
+      P.pick = (want && ex.find(c => regionOf(c)?.key === want)) || (P.locked ? null : ex[0]) || null;
+      if(P.pick && opts.onRegion){ const r = regionOf(P.pick); if(r && r.key !== want) opts.onRegion(r); }
+    }
+    function render(){
+      listEl.innerHTML = '';
+      const list = all();
+      const row = (c, label, sub) => {
+        const b = SB.el('button', 'cp-pk' + (c ? '' : ' none')); b.type = 'button'; b.setAttribute('role', 'option');
+        b.setAttribute('aria-selected', String(c ? P.pick === c : !P.pick && P.user));
+        b.innerHTML = '<i></i><span><b></b><em></em></span>'; b.querySelector('b').textContent = label; b.querySelector('em').textContent = sub || '';
+        b.addEventListener('click', () => { P.user = true; P.pick = c; if(c){ const r = regionOf(c); if(r) opts.onRegion?.(r); } render(); });
+        listEl.appendChild(b);
+      };
+      for(const c of list){
+        const r = regionOf(c);
+        // 副标题：所在地区 + 来源给的补充（与地区同名的部分不重复，例如「云南 · 云南省」只留「云南」）
+        const rn = r && S.regions.length > 1 ? r.name : '';
+        const extra = String(c.sub || '').split(' · ').filter(v => v && !(rn && (v === rn || v.startsWith(rn) || rn.startsWith(v.replace(/(省|州|府|县|県|都|道|市|区)$/, '')))));
+        const sub = [rn, ...extra].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(' · ');
+        row(c, c.zh, sub || S.country?.zh || '');
+      }
+      if(P.q) row(null, '不指定位置', '放在所在地区的中心，之后可以校准');
+      listEl.hidden = !P.q;
+      let t = '';
+      if(!P.q) t = '输入城市名后，在这里选一个位置，地球上的光点会落在那里。';
+      else if(P.state === 'wait') t = list.length ? '正在星图中寻找更多地点…' : '正在星图中寻找「' + P.q + '」…';
+      else if(P.state === 'fail') t = list.length ? '在线搜索暂时不可用，已显示本地结果。' : '在线搜索暂时不可用。可以先保存，之后在编辑里校准位置。';
+      else if(!list.length) t = '没有找到这个地方。可以换个写法（中文或英文），或者先保存，城市会放在地区中心。';
+      const r = P.pick && regionOf(P.pick), cur = opts.region?.();
+      if(P.pick && opts.moveNote && r && cur && r.key !== cur) t = `这个位置在「${r.name}」，保存后城市会移到${r.name}。`;
+      note.textContent = t; note.classList.toggle('warn', P.state === 'fail');
+      opts.onChange?.();
+    }
+    function search(q){
+      q = String(q || '').trim(); if(q === P.q) return; P.q = q;
+      clearTimeout(P.timer); P.ctl?.abort(); P.ctl = null;
+      P.user = false; P.pick = null; P.online = [];
+      P.local = q ? SB.geo.placesLocal(S.k, q) : [];
+      P.state = q && [...q].length >= 2 ? 'wait' : '';
+      auto(); render();
+      if(P.state !== 'wait') return;
+      const asked = q, ctl = P.ctl = new AbortController();
+      P.timer = setTimeout(async () => {
+        try{ const r = await SB.geo.placesOnline(S.k, asked, ctl.signal); if(asked !== P.q) return; P.online = r; P.state = ''; }
+        catch(e){ if(asked !== P.q) return; P.online = []; P.state = 'fail'; }
+        auto(); render();
+      }, 350);
+    }
+    render();
+    return { el:box, search, value:() => P.pick, region:() => P.pick ? regionOf(P.pick) : null, refresh:() => { auto(); render(); },
+      // 用户改了「所在地区」：已选的位置不在这个地区时取消（城市放在新地区的中心），并且之后只在这个地区里自动选
+      regionChanged:() => { P.locked = true; const w = opts.region?.(); if(P.pick && regionOf(P.pick)?.key !== w){ P.pick = null; P.user = false; } auto(); render(); },
+      stop:() => { clearTimeout(P.timer); P.ctl?.abort(); }, get state(){ return P.state; } };
+  }
+  const near = (a, b) => a && b && Math.abs(a[0] - b[0]) < .01 && Math.abs(a[1] - b[1]) < .01;
+  const roughPos = c => c.lon == null || near([c.lon, c.lat], regionByKey(c.region)?.lonlat) || near([c.lon, c.lat], S.country?.mid);
   function addCity(){
     if(!SB.store.canEdit || !S.k) return;
-    let sel, inp;
+    let sel, inp, pick;
     const multi = S.regions.length > 1;
     SB.ui.dialog({ title:'添加城市', sub:S.country.zh,
       build(b){
@@ -325,27 +430,46 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
           if(S.sel) sel.value = S.sel;
           b.appendChild(SB.ui.field('所在地区', sel));
         }
-        inp = SB.ui.input({type:'text', placeholder:'城市名，例如：京都', maxlength:'30', 'aria-label':'城市名'});
+        inp = SB.ui.input({type:'text', placeholder:'城市名，例如：京都', maxlength:'30', 'aria-label':'城市名', autocomplete:'off'});
         inp.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); b.closest('.sb-modal')?.querySelector('.sb-btn.primary')?.click(); } });
         b.appendChild(SB.ui.field('城市名', inp));
+        pick = placePicker({ region:() => multi ? sel.value : S.regions[0]?.key, onRegion:r => { if(multi) sel.value = r.key; } });
+        inp.addEventListener('input', () => pick.search(inp.value));
+        sel?.addEventListener('change', () => pick.regionChanged());
+        b.appendChild(pick.el);
       },
+      onClose(){ pick?.stop(); },
       actions:[ {text:'取消'}, {text:'点亮', kind:'primary', async onClick(){
         const r = multi ? regionByKey(sel.value) : S.regions[0];
         if(!r){ SB.toast('请选择城市所在的地区'); return false; }
         const name = inp.value.trim(); if(!name){ SB.toast('请输入城市名'); return false; }
         try{
-          const lon = r.lonlat?.[0] ?? S.country.mid?.[0], lat = r.lonlat?.[1] ?? S.country.mid?.[1];
+          const p = pick.value();
+          const lon = p ? +p.lon.toFixed(4) : r.lonlat?.[0] ?? S.country.mid?.[0], lat = p ? +p.lat.toFixed(4) : r.lonlat?.[1] ?? S.country.mid?.[1];
           await SB.store.addCity({country:S.k, countryName:S.country.zh, region:r.key, regionName:r.name, name, lon, lat});
-          SB.toast(`${name} 已点亮`); SB.fx?.burst?.(500);
+          SB.toast(p ? `${name} 已点亮` : `${name} 已点亮 · 暂放在地区中心，可以在编辑里校准位置`, p ? 2600 : 4200); SB.fx?.burst?.(500);
           if(multi) S.sel = r.key;
           paint(r.key); buildList();
         }catch(e){ SB.toast(e.msg || SB.store.errText(e)); return false; }
       }} ]});
   }
   function editCity(c){
-    let inp;
+    let inp, pick, locRow;
     SB.ui.dialog({ title:'编辑城市', sub:(c.regionName ? c.regionName + ' · ' : '') + (c.countryName || S.country?.zh || ''),
-      build(b){ inp = SB.ui.input({type:'text', value:c.name, maxlength:'30'}); b.appendChild(SB.ui.field('城市名', inp)); },
+      build(b){
+        inp = SB.ui.input({type:'text', value:c.name, maxlength:'30'}); b.appendChild(SB.ui.field('城市名', inp));
+        // v1.12.2：校准位置（旧城市多数放在地区或国家中心）
+        locRow = SB.el('div', 'cp-loc'); const t = SB.el('span');
+        t.innerHTML = '位置：<b></b>'; t.querySelector('b').textContent = roughPos(c) ? '大致位置（地区中心）' : '已校准';
+        const btn = SB.ui.button('校准位置', 'small', () => {
+          btn.hidden = true;
+          pick = placePicker({ region:() => c.region, moveNote:true, ownSearch:inp.value || c.name });
+          b.appendChild(pick.el); pick.search(inp.value || c.name);
+          setTimeout(() => pick.el.querySelector('input')?.focus(), 60);
+        });
+        locRow.append(t, btn); b.appendChild(locRow);
+      },
+      onClose(){ pick?.stop(); },
       actions:[
         {text:'删除这座城市', kind:'danger', async onClick(){
           const n = SB.store.memoriesOf(c.id).length;
@@ -355,7 +479,18 @@ html:not([data-sb-perf="high"]) .cp-edge::after{animation:none;}
         {text:'取消'},
         {text:'保存', kind:'primary', async onClick(){
           const name = inp.value.trim(); if(!name){ SB.toast('城市名不能为空'); return false; }
-          try{ await SB.store.updateCity(c.id, {name}); SB.toast('已保存'); paint(); buildList(); }catch(e){ SB.toast(SB.store.errText(e)); return false; } }}
+          const patch = {name}, p = pick?.value();
+          if(p){
+            patch.lon = +p.lon.toFixed(4); patch.lat = +p.lat.toFixed(4);
+            const r = pick.region();
+            if(r && r.key !== c.region){
+              if(SB.store.cities.some(x => x.id !== c.id && x.region === r.key && x.name === name)){ SB.toast(`${r.name}已经有一座「${name}」`); return false; }
+              patch.region = r.key; patch.regionName = r.name;
+            }
+          }
+          try{ await SB.store.updateCity(c.id, patch); SB.toast(p ? '已保存，位置已校准' : '已保存');
+            if(patch.region) S.sel = S.sel ? patch.region : S.sel;
+            paint(); buildList(); }catch(e){ SB.toast(SB.store.errText(e)); return false; } }}
       ]});
   }
   $('cp-add').addEventListener('click', addCity);

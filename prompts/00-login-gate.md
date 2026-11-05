@@ -31,3 +31,28 @@
 - 背景：Supabase Free 套餐的项目连续 7 天数据库活动很少会被自动暂停，暂停后网站连不上；Owner 选择不做保活，被暂停时到后台手动恢复。
 - 启动门「星海暂时失去了连接」与「数据库连接或权限配置暂时异常」两种错误页，在原说明下面加一行小字：「如果长时间没有打开过星屿，数据库可能已被 Supabase 自动暂停：请到 Supabase 后台打开该项目，点击 Resume project 恢复后再重新连接。」
 - 只在非权限类错误时显示（权限错误与暂停无关）；不改变按钮与重试逻辑。
+
+## v1.12.2 · 忘记密码与修改密码（复盘 #6a，无数据库变化）
+
+### 研究结论
+- `supabase.auth.resetPasswordForEmail(email, {redirectTo})` 发送重设邮件；链接回到 `redirectTo` 时，客户端（`detectSessionInUrl:true`，默认 implicit 流程）从网址 `#access_token…&type=recovery` 建立临时会话并触发 `PASSWORD_RECOVERY` 事件；随后 `auth.updateUser({password})` 设置新密码。
+- `redirectTo` 必须在 Supabase「Authentication → URL Configuration → Redirect URLs」允许列表中，否则回到 Site URL。
+- Supabase 自带的默认邮件服务**只发给项目所在组织的团队成员**，且每小时 2 封；发给其他地址报错「Email address not authorized」。→ 另做「登录后修改密码」（不需要邮件），伴侣可以用它；需要给伴侣发重设邮件时，Owner 需在 Supabase 配置自定义 SMTP（release record 写明）。
+- 链接失效时网址带 `#error=access_denied&error_code=otp_expired`。
+
+### 登录卡片
+- 密码框下方右侧加一个文字链接「忘记密码？」→ 卡片换成「重设密码」：邮箱（带入已填的邮箱）、「发送重设链接」、「返回登录」。
+- 发送成功（或接口没有报错）：「如果这个邮箱已开通星屿，几分钟内会收到一封重设密码的邮件。请在同一台设备的浏览器里打开邮件中的链接。」——不透露邮箱是否存在。
+- 报错：频率限制 →「请求太频繁，请稍后再试」；`not authorized` →「这个邮箱暂时收不到 Supabase 的默认邮件（Free 项目只发给项目团队成员）。可以请书的主人在 Supabase 后台设置自定义邮件服务；或者用旧密码登录后在右上角『账户』里修改密码。」；其他 →「暂时无法发送…」（含暂停提示）。
+
+### 从邮件链接回来
+- 在创建 Supabase 客户端**之前**读取网址片段：`type=recovery` → 进入「设置新密码」；`error_code=otp_expired` 等 → 登录卡片显示「重设链接已失效或已使用，请重新发送」。
+- 「设置新密码」卡片：新密码 + 再输一次（至少 6 位，两次一致），「保存新密码」；保存成功后提示「密码已更新」并照常进入书（`finishAuthenticated`）。另有「暂不修改，直接进入」。
+- 处理后用 `history.replaceState` 清掉网址里的令牌片段（不留在地址栏与历史记录）。
+
+### 账户面板 · 修改密码
+- 登录后「账户」面板加「修改密码」按钮 → 对话框（新密码、再输一次）→ `auth.updateUser({password})` →「密码已更新」。不需要邮件。
+- 错误：与旧密码相同 →「新密码不能和旧密码一样」；太短 →「至少 6 位」；需要重新验证 / 会话过期 →「请退出后重新登录再修改」。
+
+### 不变
+- 启动链路 `bootRuntime → finishAuthenticated → 99-boot 揭开 Gate` 不变；Gate 的视觉、字体策略不变。

@@ -2,13 +2,13 @@
 
 ## Current Release
 
-- Version: `1.12.1` (从备份导入 · 导出格式对应)
+- Version: `1.12.2` (城市真实位置 · 省份中文名 · 忘记密码)
 - Phase: **周年后持续迭代**（2026-10-29 周年版已交付）。
 - Delivery goal: 私密、稳定、手机可用的纪念册；用户真实回忆数据持续存在。
 - Supabase plan: **Free**（无自动备份；连续 7 天低活动会被自动暂停，Owner 选择不做保活，暂停时到后台 Resume project）。
 - Planning: 跨版本总待办见仓库外 `C:\Users\87986\Desktop\version\github\星屿之书-后续迭代规划.md`。
 - Base: V1 `blocks + build.py + site/index.html`。
-- Runtime config version: `1.12.1`。
+- Runtime config version: `1.12.2`。
 
 ## Current Architecture
 
@@ -105,6 +105,14 @@ release/vX.X.X or feature/*
 
 `main` 是唯一 Production branch。普通代码发布不重置 Supabase 数据。
 
+
+## City Position · Region Names · Password (v1.12.2)
+
+- `06-region-zh`（新生成块，`tools/make_region_zh.py`）：50 个国家的省级中文名与代表点（Natural Earth label point）；`06-world-geo` 的 `regionZh()` 查表，投影地图的地区中心改用代表点（以前退回国家中心）。
+- `06-world-geo`：`placesLocal(k, q)`（内置城市库 + 中国地级 / 县级行政区划）、`placesOnline(k, q)`（Open-Meteo，`countryCode` 过滤，6 秒超时，缓存）、`guessRegion(regions, cand)`（自带省份 → admin1 名称 → 最近代表点）。
+- `09-country-map`：「添加城市」位置候选（名称相同的第一条自动选中，并带出所在地区；用户亲手选过地区后只在该地区里自动选），没有选中时放在地区中心并提示；「编辑城市」显示「大致位置 / 已校准」与「校准位置」（单独的搜索框，可移到另一个地区，检查重名）。
+- `00-runtime`：登录卡片「忘记密码？」→ 发送重设链接；邮件链接回来（`type=recovery`）→「设置新密码」；链接失效提示；处理后清除网址片段。`02z-account`：「修改密码」。
+- 需要 Owner 手动：Supabase → Authentication → URL Configuration 的 Redirect URLs 加入 `https://paipaic.github.io/starbook/`；默认邮件服务只发给项目团队成员（每小时 2 封），给伴侣发重设邮件需配置自定义 SMTP（见 `docs/releases/v1.12.2.md` 第 15 节）。
 
 ## Backup Import (v1.12.1)
 
@@ -315,8 +323,8 @@ Confirmed by owner on 2026-10-26:
 
 ## Highest Priority Next
 
-1. 发布 v1.12.1（若 v1.12.0 尚未发布，可直接发布 v1.12.1），之后**在每台设备上刷新一次网页**。实测：删除一段回忆 → 在「最近删除」恢复；在电脑上导出整本书；用「从备份导入」选这份备份，预览应显示「0 段新增、全部已存在」。导出一次作为首份正式备份，电脑与网盘各存一份。
-2. v1.12.2 体验：添加城市取真实坐标、更多国家省份中文名、忘记密码。
+1. 发布 v1.12.2，在 Supabase 的 Redirect URLs 加入正式网址；用「添加城市」点亮一座新城市确认光点位置；把旧城市逐个「校准位置」。在电脑上导出一次整本书作为备份（v1.12.1 已发布）。
+2. （可选）配置自定义 SMTP，让伴侣也能收到重设密码邮件；在此之前用「账户 → 修改密码」。
 3. v1.13.0 性能与工程：搜索数据外置、依赖自托管、照片多尺寸与缓存、端到端测试入库。
 4. 之后：成员管理、数据正规化（需要 migration）；地球 / 国家面板视觉升级。
 
