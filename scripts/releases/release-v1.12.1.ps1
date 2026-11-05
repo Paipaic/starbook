@@ -1,5 +1,5 @@
 ﻿param(
-    [string]$Message = "v1.12.1从备份导入（与导出格式对应）"
+    [string]$Message = "v1.12.1从备份导入：与导出格式对应的重新导入"
 )
 
 $ErrorActionPreference = "Stop"

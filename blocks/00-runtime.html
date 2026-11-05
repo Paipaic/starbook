@@ -71,6 +71,10 @@ html:not([data-gate-type]) #sb-gate .gt{opacity:0;transform:translateY(4px);}
 .sb-gate-submit{margin-top:4px;width:100%;justify-content:center;min-height:46px;letter-spacing:.24em;}
 .sb-gate-error{min-height:20px;margin:10px 0 0;color:#e7a493;font-size:12.5px;line-height:1.7;}
 .sb-gate-note{margin:10px 0 0;color:rgba(191,165,130,.7);font-size:11px;line-height:1.6;letter-spacing:.06em;}
+.sb-gate-link{align-self:flex-end;margin:-4px 0 0;padding:4px 2px;border:0;background:none;color:var(--gold-dim);font:inherit;font-size:12px;letter-spacing:.08em;cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(244,184,96,.35);}
+.sb-gate-link:hover{color:var(--gold-hi);}
+.sb-gate-link.center{align-self:center;margin-top:2px;}
+.sb-gate-ok{margin:10px 0 0;color:#cfe3b0;font-size:12.5px;line-height:1.7;}
 .sb-gate-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:14px;}
 .sb-gate-actions .sb-btn{min-width:132px;}
 html[data-sb-perf="high"] .sb-gate-sky{will-change:transform;animation:sbGateSpin 240s linear infinite;}
@@ -191,6 +195,25 @@ html:not([data-sb-perf="high"]) .sb-gate-tw,html:not([data-sb-perf="high"]) .sb-
       user.session = data.session || null; user.current = data.user || data.session?.user || null;
       return user.current;
     },
+    // v1.12.2：忘记密码 / 修改密码（prompts/00-login-gate.md v1.12.2）
+    async sendReset(email){
+      const redirectTo = location.origin + location.pathname;
+      const {error} = await SB.supabase.auth.resetPasswordForEmail(email,{redirectTo});
+      if(error) throw error;
+    },
+    async setPassword(password){
+      const {data,error} = await SB.supabase.auth.updateUser({password});
+      if(error) throw error;
+      if(data?.user) user.current = data.user;
+      return true;
+    },
+    passwordErrText(e){
+      const m = String(e?.message || e || ''), c = String(e?.code || '');
+      if(/same_password|different from the old|should be different/i.test(m + c)) return '新密码不能和旧密码一样。';
+      if(/weak_password|at least|too short|should be at least/i.test(m + c)) return '密码太短或太简单，请至少 6 位，并避免常见密码。';
+      if(/reauthentication|session.*(missing|expired)|not authenticated|jwt/i.test(m + c)) return '登录状态已过期，请退出后重新登录再修改。';
+      return '暂时无法修改密码，请检查网络后再试。';
+    },
     async signOut(options={}){
       const reload = options.reload !== false;
       try{ await SB.supabase?.auth?.signOut(); }catch(e){ console.error(e); }
@@ -292,18 +315,88 @@ html:not([data-sb-perf="high"]) .sb-gate-tw,html:not([data-sb-perf="high"]) .sb-
     }
   }
 
-  function showLogin(message=''){
+  /* v1.12.2 · 忘记密码：发送重设邮件（不透露邮箱是否存在） */
+  function showForgot(prefill=''){
+    gate.hidden = false; gate.classList.remove('leaving'); gateBody.innerHTML=''; setState('login');
+    gateIntro.textContent = '重设密码';
+    const form = SB.el('form','sb-gate-form');
+    const email = SB.el('input'); email.type='email'; email.autocomplete='email'; email.placeholder='your@email.com'; email.required=true; email.value=prefill||'';
+    const l1=SB.el('label'); l1.textContent='登录用的邮箱'; l1.appendChild(email);
+    const submit = SB.ui.button('发送重设链接','primary sb-gate-submit'); submit.type='submit';
+    const err=SB.el('p','sb-gate-error'), ok=SB.el('p','sb-gate-ok'); ok.hidden=true;
+    const back=SB.el('button','sb-gate-link center'); back.type='button'; back.textContent='返回登录';
+    back.addEventListener('click',()=>showLogin('',email.value.trim()));
+    const note=SB.el('p','sb-gate-note'); note.textContent='邮件里的链接请在同一台设备的浏览器里打开。也可以用旧密码登录后，在右上角「账户」里直接修改密码。';
+    form.append(l1,submit,err,ok,back,note); gateBody.appendChild(form);
+    form.addEventListener('submit',async e=>{
+      e.preventDefault(); err.textContent=''; ok.hidden=true; submit.disabled=true; submit.textContent='正在发送…';
+      try{
+        await user.sendReset(email.value.trim());
+        ok.hidden=false; ok.textContent='如果这个邮箱已开通星屿，几分钟内会收到一封重设密码的邮件，打开邮件里的链接即可设置新密码。';
+        submit.textContent='重新发送';
+      }catch(ex){
+        console.error('[Starbook reset]',ex);
+        const m=String(ex?.message||'')+' '+String(ex?.code||'')+' '+String(ex?.status||'');
+        err.textContent = /not authorized|email_address_not_authorized/i.test(m)
+          ? '这个邮箱暂时收不到 Supabase 的默认邮件（Free 项目的默认邮件只发给项目团队成员）。可以请书的主人在 Supabase 后台设置自定义邮件服务；或者用旧密码登录后，在右上角「账户」里修改密码。'
+          : /rate|too many|429|security purposes|over_email_send_rate_limit/i.test(m)
+            ? '请求太频繁了，请过一会儿再试（默认邮件服务每小时只能发送少量邮件）。'
+            : '暂时无法发送，请检查网络后再试。如果很久没有打开过星屿，数据库可能已被 Supabase 自动暂停，需要到后台点击 Resume project 恢复。';
+        submit.textContent='发送重设链接';
+      }
+      submit.disabled=false;
+    });
+    if(!SB.perf.touch) setTimeout(()=>email.focus(),120);
+  }
+
+  /* v1.12.2 · 从重设邮件回来：设置新密码，然后照常进入书 */
+  function showNewPassword(){
+    gate.hidden = false; gate.classList.remove('leaving'); gateBody.innerHTML=''; setState('login');
+    gateIntro.textContent = '设置新密码' + (user.current?.email ? ' · ' + user.current.email : '');
+    const form = SB.el('form','sb-gate-form');
+    const mk = (ph) => { const i=SB.el('input'); i.type='password'; i.autocomplete='new-password'; i.placeholder=ph; i.required=true; i.minLength=6; return i; };
+    const p1 = mk('至少 6 位'), p2 = mk('再输入一次');
+    const l1=SB.el('label'); l1.textContent='新密码'; l1.appendChild(p1);
+    const l2=SB.el('label'); l2.textContent='确认新密码'; l2.appendChild(p2);
+    const submit = SB.ui.button('保存新密码','primary sb-gate-submit'); submit.type='submit';
+    const err=SB.el('p','sb-gate-error');
+    const skip=SB.el('button','sb-gate-link center'); skip.type='button'; skip.textContent='暂不修改，直接进入';
+    skip.addEventListener('click',()=>finishAuthenticated());
+    form.append(l1,l2,submit,err,skip); gateBody.appendChild(form);
+    form.addEventListener('submit',async e=>{
+      e.preventDefault(); err.textContent='';
+      if(p1.value.length < 6){ err.textContent='密码至少 6 位。'; return; }
+      if(p1.value !== p2.value){ err.textContent='两次输入的密码不一致。'; return; }
+      submit.disabled=true; submit.textContent='正在保存…';
+      try{ await user.setPassword(p1.value); showLoading('密码已更新，正在翻开书页…'); await finishAuthenticated(); }
+      catch(ex){ console.error('[Starbook new password]',ex); err.textContent=user.passwordErrText(ex); submit.disabled=false; submit.textContent='保存新密码'; }
+    });
+    if(!SB.perf.touch) setTimeout(()=>p1.focus(),120);
+  }
+
+  /* 在创建客户端之前读取网址片段：重设链接回来（type=recovery）或链接失效（error_code=otp_expired 等） */
+  function readAuthHash(){
+    const h = String(location.hash || '').replace(/^#/, '');
+    if(!/(^|&)(access_token|error|error_code|type)=/.test(h)) return {};
+    const q = new URLSearchParams(h);
+    return { recovery: q.get('type') === 'recovery', error: q.get('error_code') || q.get('error') || '', raw:true };
+  }
+  function clearAuthHash(){ try{ history.replaceState(history.state, '', location.pathname + location.search); }catch(e){} }
+
+  function showLogin(message='', prefill=''){
     gate.hidden = false; gate.classList.remove('leaving'); gateBody.innerHTML=''; setState('login');
     gateIntro.textContent = '这本书只向被邀请的人开启。';
     const form = SB.el('form','sb-gate-form');
-    const email = SB.el('input'); email.type='email'; email.autocomplete='email'; email.placeholder='your@email.com'; email.required=true;
+    const email = SB.el('input'); email.type='email'; email.autocomplete='email'; email.placeholder='your@email.com'; email.required=true; if(prefill) email.value=prefill;
     const password = SB.el('input'); password.type='password'; password.autocomplete='current-password'; password.placeholder='••••••••'; password.required=true;
     const l1=SB.el('label'); l1.textContent='邮箱'; l1.appendChild(email);
     const l2=SB.el('label'); l2.textContent='密码'; l2.appendChild(password);
     const submit = SB.ui.button('开启星屿','primary sb-gate-submit'); submit.type='submit';
     const err=SB.el('p','sb-gate-error'); err.textContent=message;
     const note=SB.el('p','sb-gate-note'); note.textContent='当前周年版本暂不开放公开注册。';
-    form.append(l1,l2,submit,err,note); gateBody.appendChild(form);
+    const forgot=SB.el('button','sb-gate-link'); forgot.type='button'; forgot.textContent='忘记密码？';
+    forgot.addEventListener('click',()=>showForgot(email.value.trim()));
+    form.append(l1,l2,forgot,submit,err,note); gateBody.appendChild(form);
     form.addEventListener('submit',async e=>{
       e.preventDefault(); err.textContent=''; submit.disabled=true; submit.textContent='正在开启…';
       try{ await user.signIn(email.value.trim(),password.value); await finishAuthenticated(); }
@@ -323,18 +416,23 @@ html:not([data-sb-perf="high"]) .sb-gate-tw,html:not([data-sb-perf="high"]) .sb-
       if(!cfg.supabaseUrl || !cfg.supabasePublishableKey) throw new Error('missing_supabase_config');
       if(!window.supabase?.createClient) await SB.loadScript(SUPABASE_CDNS);
       if(!window.supabase?.createClient) throw new Error('supabase_client_unavailable');
+      const authHash = readAuthHash(); let recovering = !!authHash.recovery;
       SB.supabase = window.supabase.createClient(cfg.supabaseUrl,cfg.supabasePublishableKey,{
         auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},
         global:{headers:{'x-client-info':'starbook-v'+(cfg.version||'')}}
       });
       SB.supabase.auth.onAuthStateChange((event,session)=>{
         user.session=session||null; user.current=session?.user||null;
+        if(event==='PASSWORD_RECOVERY'){ recovering = true; return; }
         if(event==='SIGNED_OUT' && !gate.hidden) return;
         if(event==='SIGNED_OUT'){ showLogin('登录状态已结束，请重新开启星屿。'); }
       });
       const {data,error}=await SB.supabase.auth.getSession(); if(error) throw error;
       user.session=data.session||null; user.current=data.session?.user||null;
-      if(user.current) await finishAuthenticated(); else showLogin();
+      if(authHash.raw) clearAuthHash();
+      if(recovering && user.current) showNewPassword();
+      else if(authHash.error && !user.current) showLogin(/expired|invalid|denied/i.test(authHash.error) ? '重设密码的链接已失效或已经用过，请重新发送。' : '链接无法使用，请重新登录或重新发送重设邮件。');
+      else if(user.current) await finishAuthenticated(); else showLogin();
     }catch(e){
       console.error('[Starbook boot]',e); rejectReady?.(e);
       showFatal('星海暂时失去了连接。','Supabase 客户端未能加载。请检查网络后重新连接。',{pausedHint:true});

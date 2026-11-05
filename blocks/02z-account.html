@@ -11,9 +11,30 @@
       row('账号', u?.email || '未登录');
       if(b){ row('当前的书', b.name || '星屿之书'); const badge = SB.el('span', 'sb-badge'); badge.textContent = ROLE[b.role] || b.role || '成员'; row('身份', badge); }
       if(u){ const acts = SB.el('div', 'acts');
+        // v1.12.2：登录后直接修改密码（不需要邮件；prompts/00-login-gate.md v1.12.2）
+        acts.appendChild(SB.ui.button('修改密码', 'small', () => { SB.dock.close(); changePassword(); }));
         acts.appendChild(SB.ui.button('退出登录', 'small danger', async () => { SB.dock.close(); if(await SB.ui.confirm('退出当前账号？', '退出', 'danger')) await SB.user.signOut(); }));
         p.appendChild(acts); }
     }});
+  function changePassword(){
+    let p1, p2, err;
+    SB.ui.dialog({ title:'修改密码', sub:SB.user?.current?.email || '',
+      build(b){
+        p1 = SB.ui.input({type:'password', autocomplete:'new-password', placeholder:'至少 6 位', 'aria-label':'新密码'});
+        p2 = SB.ui.input({type:'password', autocomplete:'new-password', placeholder:'再输入一次', 'aria-label':'确认新密码'});
+        b.append(SB.ui.field('新密码', p1), SB.ui.field('确认新密码', p2));
+        err = SB.el('p', 'ac-err'); err.style.cssText = 'margin:0;min-height:20px;color:#e7a493;font-size:13px;line-height:1.7'; b.appendChild(err);
+        p2.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); b.closest('.sb-modal')?.querySelector('.sb-btn.primary')?.click(); } });
+      },
+      actions:[ {text:'取消'}, {text:'保存新密码', kind:'primary', async onClick(close, btn){
+        err.textContent = '';
+        if(p1.value.length < 6){ err.textContent = '密码至少 6 位。'; return false; }
+        if(p1.value !== p2.value){ err.textContent = '两次输入的密码不一致。'; return false; }
+        btn.disabled = true;
+        try{ await SB.user.setPassword(p1.value); SB.toast('密码已更新，下次登录请使用新密码'); }
+        catch(e){ console.error('[Starbook password]', e); err.textContent = SB.user.passwordErrText(e); btn.disabled = false; return false; }
+      }} ]});
+  }
   document.addEventListener('sb:book', () => SB.dock.refresh('account'));
 })(window.SB);
 </script>

@@ -7,7 +7,7 @@
 ## 1. 当前项目身份
 
 - Project: **Starbook / 星屿之书**
-- Current version: **1.12.1**
+- Current version: **1.12.2**
 - Production branch: **`main`**
 - Production deploy: **GitHub Pages via GitHub Actions**
 - Runtime backend: **Supabase Anniversary Bridge**
@@ -262,3 +262,9 @@ python tools/check_project.py
 ### v1.12.1 从备份导入
 - 导出格式 `starbook-export` v1 是导出与导入的唯一契约（`prompts/16-archive.md` 6.1）：`book.json.files` 记录「原路径 ↔ zip 内文件名」，`payload` 原样保存；每卷 `part.json`。改动导出时必须同步导入，并保持旧备份可导入（只加字段不改含义；`formatVersion` 变大时导入会拒绝）。
 - 导入只**新增 / 可选覆盖**，从不删除现有内容；媒体先上传（已存在跳过，上传到原路径或改写到当前书），最后一次 `mutate` 合并（`SB.store.importBackup`）。
+
+### v1.12.2 城市真实位置 / 省份中文名 / 密码
+- `blocks/06-region-zh.html` 是**生成文件**（`tools/make_region_zh.py`，CLDR + Natural Earth + OpenCC），不要手改；需要更多国家时改脚本里的 `COUNTRIES` 后重新生成。中国 / 美国 / 日本的中文名仍以 `06-world-geo` 手工表为准。
+- 添加 / 校准城市的位置候选：`SB.geo.placesLocal / placesOnline / guessRegion`。在线搜索只能发送「城市名 + 国家代码」（Open-Meteo `countryCode`），不得发送用户数据；失败必须可以继续保存（后备地区中心）。
+- 城市名永远是用户输入的文字，候选只提供经纬度和所在地区；校准到另一个地区时同时更新 `region / regionName`，并检查同地区重名。
+- 忘记密码：`resetPasswordForEmail(email, {redirectTo: 当前页面地址})`；回到网站时**在创建客户端前**读取网址片段（`type=recovery` / `error_code`），处理后 `clearAuthHash()`。登录后修改密码走 `SB.user.setPassword`（不需要邮件）。不得新增任何需要 `service_role` 的前端调用。

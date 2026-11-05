@@ -56,13 +56,29 @@
   const CN = {bj:'北京',tj:'天津',he:'河北',sx:'山西',nm:'内蒙古',ln:'辽宁',jl:'吉林',hl:'黑龙江',sh:'上海',js:'江苏',zj:'浙江',ah:'安徽',fj:'福建',jx:'江西',sd:'山东',ha:'河南',hb:'湖北',hn:'湖南',gd:'广东',gx:'广西',hi:'海南',cq:'重庆',sc:'四川',gz:'贵州',yn:'云南',xz:'西藏',sn:'陕西',gs:'甘肃',qh:'青海',nx:'宁夏',xj:'新疆',tw:'台湾',hk:'香港',mo:'澳门'};
   const US = {al:'亚拉巴马',ak:'阿拉斯加',az:'亚利桑那',ar:'阿肯色',ca:'加利福尼亚',co:'科罗拉多',ct:'康涅狄格',de:'特拉华',dc:'华盛顿特区',fl:'佛罗里达',ga:'佐治亚',hi:'夏威夷',id:'爱达荷',il:'伊利诺伊',in:'印第安纳',ia:'艾奥瓦',ks:'堪萨斯',ky:'肯塔基',la:'路易斯安那',me:'缅因',md:'马里兰',ma:'马萨诸塞',mi:'密歇根',mn:'明尼苏达',ms:'密西西比',mo:'密苏里',mt:'蒙大拿',ne:'内布拉斯加',nv:'内华达',nh:'新罕布什尔',nj:'新泽西',nm:'新墨西哥',ny:'纽约',nc:'北卡罗来纳',nd:'北达科他',oh:'俄亥俄',ok:'俄克拉何马',or:'俄勒冈',pa:'宾夕法尼亚',ri:'罗得岛',sc:'南卡罗来纳',sd:'南达科他',tn:'田纳西',tx:'得克萨斯',ut:'犹他',vt:'佛蒙特',va:'弗吉尼亚',wa:'华盛顿',wv:'西弗吉尼亚',wi:'威斯康星',wy:'怀俄明'};
   const JP = {Hokkaido:'北海道',Aomori:'青森',Iwate:'岩手',Miyagi:'宫城',Akita:'秋田',Yamagata:'山形',Fukushima:'福岛',Ibaraki:'茨城',Tochigi:'栃木',Gunma:'群马',Saitama:'埼玉',Chiba:'千叶',Tokyo:'东京',Kanagawa:'神奈川',Niigata:'新潟',Toyama:'富山',Ishikawa:'石川',Fukui:'福井',Yamanashi:'山梨',Nagano:'长野',Gifu:'岐阜',Shizuoka:'静冈',Aichi:'爱知',Mie:'三重',Shiga:'滋贺',Kyoto:'京都',Osaka:'大阪',Hyogo:'兵库',Nara:'奈良',Wakayama:'和歌山',Tottori:'鸟取',Shimane:'岛根',Okayama:'冈山',Hiroshima:'广岛',Yamaguchi:'山口',Tokushima:'德岛',Kagawa:'香川',Ehime:'爱媛',Kochi:'高知',Fukuoka:'福冈',Saga:'佐贺',Nagasaki:'长崎',Kumamoto:'熊本',Oita:'大分',Miyazaki:'宫崎',Kagoshima:'鹿儿岛',Okinawa:'冲绳'};
+  /* v1.12.2：其他国家的中文名与代表点来自生成块 06-region-zh（tools/make_region_zh.py；CLDR + Natural Earth） */
+  const RZ = {};
+  function regionTable(country){
+    if(RZ[country]) return RZ[country];
+    const m = {};
+    for(const e of String(SB.REGION_ZH?.[country] || '').split(';')){
+      const i = e.indexOf('='); if(i < 1) continue;
+      const [zh, lo, la] = e.slice(i + 1).split(',');
+      m[e.slice(0, i)] = {zh:zh || '', lonlat: lo !== '' && lo != null && la !== '' && la != null ? [+lo, +la] : null};
+    }
+    return RZ[country] = m;
+  }
+  const shortKey = key => (key || '').split('-').slice(1).join('-');
   function regionZh(country, key, en){
-    const short = (key||'').split('-').slice(1).join('-');
+    const short = shortKey(key);
     if(country === 'cn' && CN[short]) return CN[short];
     if(country === 'us' && US[short]) return US[short];
     if(country === 'jp' && JP[en]) return JP[en];
+    const t = regionTable(country)[short];
+    if(t?.zh) return t.zh;
     return en || key;
   }
+  const regionPoint = (country, key) => regionTable(country)[shortKey(key)]?.lonlat || null;
 
   /* 省级地图：加载 → 统一成 {regions:[{key, name, polys:[[x,y,...]], mid:[x,y]}], lines:[], planar} */
   const mapCache = {};
@@ -93,10 +109,84 @@
       else if(p['hc-middle-x'] != null) mid = [b[0] + (b[2]-b[0])*p['hc-middle-x'], b[1] + (b[3]-b[1])*p['hc-middle-y']];
       else mid = [(b[0]+b[2])/2, (b[1]+b[3])/2];
       const key = p['hc-key'] || ('r' + regions.length);
-      const lonlat = (p['hc-middle-lon'] != null) ? [p['hc-middle-lon'], p['hc-middle-lat']] : (p.longitude ? [+p.longitude, +p.latitude] : null);
+      // v1.12.2：投影坐标的地图没有经纬度时，用生成表里的代表点（在分区内部），不再退回国家中心
+      const lonlat = (p['hc-middle-lon'] != null) ? [p['hc-middle-lon'], p['hc-middle-lat']] : (p.longitude ? [+p.longitude, +p.latitude] : regionPoint(k, key));
       regions.push({ key, en:p.name || '', name: regionZh(k, key, p.name) || '未命名地区', polys, bbox:b, mid, lonlat });
     }
     return mapCache[k] = { regions, lines, planar };
+  }
+
+  /* ── v1.12.2 · 添加 / 校准城市的位置候选（prompts/09-country-map.md v1.12.2）──
+     本地：内置城市库（这个国家）+ 中国地级 / 县级行政区划（自带省份）；在线：Open-Meteo（countryCode 过滤，只发送城市名与国家代码）。 */
+  const pnorm = s => String(s || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[\s·・'’\-_.,，()（）]/g, '');
+  const ADM_SUFFIX = /(特别行政区|维吾尔自治区|壮族自治区|回族自治区|自治区|自治州|自治县|地区|盟|省|市|县|県|区|旗|州|府|道|都|郡|大区|专区|广域市|特别市|特别自治市|特别自治道)$/;
+  const bareAdm = s => pnorm(s).replace(ADM_SUFFIX, '');
+  // 同一个地名的不同写法：「大阪」=「大阪市」、「京都府」=「京都」（只去掉一侧的后缀，避免「全州」被削成「全」）
+  const sameName = (x, y) => { const a = pnorm(x), b = pnorm(y); return !!a && (a === b || bareAdm(x) === b || a === bareAdm(y)); };
+  const CN_BY_ZH = Object.fromEntries(Object.entries(CN).map(([k, v]) => [v, k]));
+  let cnAdmin = null;
+  function cnRows(){
+    if(cnAdmin) return cnAdmin;
+    const A = SB.ADMIN_DIVISIONS?.cn; if(!A) return cnAdmin = [];
+    const rows = t => (t || '').split(';').filter(Boolean).map(r => r.split(','));
+    const P = rows(A.p), out = [];
+    const prov = i => { const n = P[+i]?.[0] || ''; const b = n.replace(ADM_SUFFIX, ''); return {name:n, key: CN_BY_ZH[b] ? 'cn-' + CN_BY_ZH[b] : (CN_BY_ZH[n] ? 'cn-' + CN_BY_ZH[n] : '')}; };
+    const C = rows(A.c);
+    C.forEach(([n, p, lon, lat]) => { const pv = prov(p); out.push({zh:n, sub:pv.name, region:pv.key, lon:+lon, lat:+lat, rank:9}); });
+    rows(A.d).forEach(([n, p, c, lon, lat]) => { const pv = prov(p); if(/市辖区|直辖/.test(n)) return;
+      out.push({zh:n, sub:[pv.name, +c >= 0 ? C[+c]?.[0] : ''].filter(Boolean).join(' · '), region:pv.key, lon:+lon, lat:+lat, rank:/市$/.test(n) ? 5 : 0}); });
+    return cnAdmin = out;
+  }
+  function placesLocal(k, q){
+    const c = byKey[k], nq = pnorm(q); if(!c || !nq) return [];
+    const sc = (names) => { let s = -1; for(const n of names){ if(!n) continue; const v = pnorm(n);
+        if(sameName(n, q)) s = Math.max(s, 100); else if(v.startsWith(nq)) s = Math.max(s, 80 - Math.min(20, v.length - nq.length)); else if(nq.length >= 2 && v.includes(nq)) s = Math.max(s, 50); }
+      return s; };
+    const out = [];
+    for(const [zh, en, cc, lon, lat, tier] of (SB.WORLD_CITIES || [])){
+      if(cc !== c.a2) continue; const s = sc([zh, en]); if(s < 0) continue;
+      out.push({zh, en, sub:en && en !== zh ? en : '', lon, lat, s:s + (tier === 1 ? 6 : 0)});
+    }
+    if(k === 'cn') for(const r of cnRows()){ const s = sc([r.zh]); if(s >= 80) out.push({...r, s:s + r.rank}); }
+    out.sort((a, b) => b.s - a.s);
+    const uniq = [];
+    for(const o of out){ if(!uniq.some(u => Math.abs(u.lat - o.lat) < .25 && Math.abs(u.lon - o.lon) < .25)) uniq.push(o); if(uniq.length >= 6) break; }
+    return uniq.map(o => ({...o, exact:o.s >= 100, src:'local'}));
+  }
+  const placeCache = new Map();
+  async function placesOnline(k, q, signal){
+    const c = byKey[k], name = String(q || '').trim(); if(!c?.a2 || [...name].length < 2) return [];
+    const ck = c.a2 + '|' + name; if(placeCache.has(ck)) return placeCache.get(ck);
+    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=10&language=zh&format=json&countryCode=${encodeURIComponent(c.a2)}`;
+    const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 6000);
+    const stop = () => ctl.abort(); signal?.addEventListener('abort', stop);
+    try{
+      const r = await fetch(url, {signal:ctl.signal, credentials:'omit'}); if(!r.ok) throw new Error('geo ' + r.status);
+      const j = await r.json(), nq = pnorm(name);
+      const out = (j.results || []).filter(x => (!x.country_code || x.country_code.toUpperCase() === c.a2) && /^PPL/.test(x.feature_code || 'PPL') && x.latitude != null)
+        .sort((a, b) => (b.population || 0) - (a.population || 0)).slice(0, 8)
+        .map(x => ({zh:x.name, sub:[x.admin1, x.admin2].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(' · '), admin1:x.admin1 || '', lon:x.longitude, lat:x.latitude,
+          exact: sameName(x.name, name), src:'online'}));
+      placeCache.set(ck, out); return out;
+    } finally { clearTimeout(to); signal?.removeEventListener('abort', stop); }
+  }
+  /* 候选所在的地区：自带省份 → admin1 名称匹配 → 最近的地区代表点 */
+  function guessRegion(regions, cand){
+    if(!regions?.length || !cand) return null;
+    if(regions.length === 1) return regions[0];
+    if(cand.region){ const r = regions.find(x => x.key === cand.region); if(r) return r; }
+    // 依次：完全相同 → 去掉省 / 州 / 府等后缀后相同 → 互相包含（两边都至少 2 个字，避免「京」命中「东京」）
+    const raw = pnorm(cand.admin1 || ''), a = bareAdm(cand.admin1 || '');
+    if(raw){
+      const names = r => [r.name, r.en].filter(Boolean);
+      const hit = regions.find(r => names(r).some(n => pnorm(n) === raw))
+        || regions.find(r => names(r).some(n => sameName(n, cand.admin1)))
+        || (a.length >= 2 ? regions.find(r => names(r).some(n => { const b = pnorm(n); return b.length >= 2 && (b.includes(a) || a.includes(b)); })) : null);
+      if(hit) return hit;
+    }
+    let best = null, bd = Infinity; const cl = Math.cos((cand.lat || 0) * Math.PI / 180);
+    for(const r of regions){ if(!r.lonlat) continue; const dx = (r.lonlat[0] - cand.lon) * cl, dy = r.lonlat[1] - cand.lat, d = dx*dx + dy*dy; if(d < bd){ bd = d; best = r; } }
+    return best;
   }
 
   SB.geo = {
@@ -113,7 +203,7 @@
       }
       return null;
     },
-    loadCountryMap, regionZh
+    loadCountryMap, regionZh, regionPoint, placesLocal, placesOnline, guessRegion
   };
 })(window.SB);
 </script>

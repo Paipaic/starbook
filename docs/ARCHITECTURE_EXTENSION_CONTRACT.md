@@ -295,3 +295,10 @@ Book 级可选设置（`book_data.payload.settings.anniversary`，`YYYY-MM-DD`�
 - Store：`bookId()`、`mediaExists(paths)`、`putPath(path, blob)`、`importBackup(payload, {overwrite, remap})`；`SB.archive.openImport()`。
 - 导出格式补充：每卷 `part.json = {format:'starbook-export-part', exportedAt, part, files}`。导入兼容没有 `part.json` 的 v1.12.0 备份。
 - 未来多 Book：`remap` 已支持把另一本书的媒体路径改写到当前书；导入以当前 `SB.book.current` 为目标。
+
+### v1.12.2 · 城市位置与地区名
+
+- 新生成块 `blocks/06-region-zh.html`：`SB.REGION_ZH[国家key] = "短key=中文名,经度,纬度;..."`（`tools/make_region_zh.py`），按 Highcharts map-collection 2.3.3 的 `hc-key` 对应；换地图版本时必须重新生成。
+- `SB.geo` 新增：`regionPoint(k, key)`、`placesLocal(k, q)`、`placesOnline(k, q, signal)`、`guessRegion(regions, cand)`。与 Theme / Relationship 无关，未来其他 Experience 也可以复用。
+- City 字段不变：`{country, countryName, region, regionName, name, lon, lat}`；`lon / lat` 从 v1.12.2 起尽量是真实位置（保留 4 位小数）。
+- Auth：`SB.user.sendReset(email)`、`SB.user.setPassword(password)`、`SB.user.passwordErrText(e)`；只使用 publishable key 下的用户自身操作，不需要服务端密钥。
